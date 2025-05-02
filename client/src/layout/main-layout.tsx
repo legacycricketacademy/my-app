@@ -52,7 +52,7 @@ export function MainLayout({ children, title }: MainLayoutProps) {
             
             {/* Page Title (mobile only) */}
             <div className="md:hidden flex items-center">
-              <span className="text-xl font-bold text-primary heading">CricketTrack</span>
+              <span className="text-xl font-bold text-primary heading">Legacy Cricket Academy</span>
             </div>
             
             {/* Search (shown on larger screens) */}

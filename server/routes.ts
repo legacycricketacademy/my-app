@@ -347,6 +347,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import players endpoint
+  app.post(`${apiPrefix}/import/players`, async (req, res) => {
+    // Check if user is authenticated and has required role
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    if (req.user.role !== "admin" && req.user.role !== "coach") {
+      return res.status(403).json({ error: "Permission denied" });
+    }
+
+    try {
+      const { format, data } = req.body;
+
+      if (!format || !data) {
+        return res.status(400).json({ error: "Missing required parameters" });
+      }
+
+      let playersData = [];
+
+      // Parse the data based on format
+      if (format === "csv") {
+        playersData = parseCsvData(data);
+      } else if (format === "json") {
+        playersData = parseJsonData(data);
+      } else {
+        return res.status(400).json({ error: "Invalid format" });
+      }
+
+      // Validate and process the data
+      const results = await processPlayersData(playersData);
+
+      return res.status(200).json({
+        success: true,
+        imported: results.imported,
+        errors: results.errors,
+      });
+    } catch (error) {
+      console.error("Error importing players:", error);
+      return res.status(500).json({ error: "Error importing players" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

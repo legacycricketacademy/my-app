@@ -10,7 +10,8 @@ import {
   Send, 
   DollarSign, 
   Settings, 
-  LogOut 
+  LogOut,
+  Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CricketIcon } from "@/components/ui/cricket-icon";
@@ -35,7 +36,8 @@ export function Sidebar() {
     logoutMutation.mutate();
   };
   
-  const navItems = [
+  // Base nav items for all roles
+  const baseNavItems = [
     { label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" />, path: "/" },
     { label: "Team Management", icon: <Users className="h-5 w-5" />, path: "/players" },
     { label: "Schedule", icon: <Calendar className="h-5 w-5" />, path: "/schedule" },
@@ -46,11 +48,21 @@ export function Sidebar() {
     { label: "Settings", icon: <Settings className="h-5 w-5" />, path: "/settings" },
   ];
   
+  // Admin/Coach specific items
+  const adminItems = [
+    { label: "Import Data", icon: <Upload className="h-5 w-5" />, path: "/import-data" },
+  ];
+  
+  // Final nav items based on user role
+  const navItems = user?.role === "parent" 
+    ? baseNavItems 
+    : [...baseNavItems, ...adminItems];
+  
   return (
     <aside className="flex flex-col h-full bg-white shadow-md z-10 w-64">
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <span className="text-2xl font-bold text-primary heading">CricketTrack</span>
+          <span className="text-2xl font-bold text-primary heading">Legacy Cricket</span>
           <CricketIcon className="h-6 w-6 text-accent" />
         </div>
         <p className="text-gray-600 text-sm mt-1">Coach Dashboard</p>

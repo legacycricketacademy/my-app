@@ -75,7 +75,7 @@ export default function AuthPage() {
             <div className="flex justify-center">
               <CricketIcon className="h-10 w-10 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold">CricketTrack</CardTitle>
+            <CardTitle className="text-2xl font-bold">Legacy Cricket Academy</CardTitle>
             <CardDescription>
               Cricket Academy Management System
             </CardDescription>
@@ -230,7 +230,7 @@ export default function AuthPage() {
         {/* Right side: Hero section */}
         <div className="hidden md:block p-6 bg-gradient-to-br from-primary to-primary/80 text-white rounded-lg">
           <div className="space-y-6">
-            <h1 className="text-3xl font-bold heading">Welcome to CricketTrack</h1>
+            <h1 className="text-3xl font-bold heading">Welcome to Legacy Cricket Academy</h1>
             <p className="text-lg">
               The comprehensive cricket academy management system designed for coaches, parents, and administrators.
             </p>
