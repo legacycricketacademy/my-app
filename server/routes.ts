@@ -65,26 +65,50 @@ async function processPlayersData(playersData: any[]) {
         }
       }
       
-      // Check if required fields are present
-      const requiredFields = ["firstName", "lastName", "dateOfBirth", "ageGroup", "parentEmail"];
-      const missingFields = requiredFields.filter(field => !playerData[field]);
+      // Check if firstName exists (this is absolutely required)
+      if (!playerData.firstName) {
+        results.errors.push(`Missing first name for a player record`);
+        continue; // Cannot proceed without a first name
+      }
       
+      // Now check all required fields
+      const requiredFields = ["firstName", "lastName", "dateOfBirth", "ageGroup", "parentEmail"];
+      let missingFields = requiredFields.filter(field => !playerData[field]);
+      
+      // Try to fix missing fields where possible
+      let fixedFields = [];
+      
+      // Fix missing lastName by using firstName
+      if (missingFields.includes("lastName")) {
+        playerData.lastName = playerData.firstName;
+        console.log(`Using first name "${playerData.firstName}" as last name for player`);
+        fixedFields.push("lastName");
+        missingFields = missingFields.filter(field => field !== "lastName");
+      }
+      
+      // Generate parent email if missing
+      if (missingFields.includes("parentEmail")) {
+        playerData.parentEmail = `${playerData.firstName.toLowerCase()}${playerData.lastName.toLowerCase()}parent@cricket.example.com`;
+        console.log(`Generated parent email ${playerData.parentEmail} for ${playerData.firstName}`);
+        fixedFields.push("parentEmail");
+        missingFields = missingFields.filter(field => field !== "parentEmail");
+      }
+      
+      // Report the original missing fields in errors
+      if (requiredFields.some(field => !playerData[field])) {
+        const originalMissingFields = requiredFields.filter(field => !playerData[field]);
+        results.errors.push(`Missing required fields for ${playerData.firstName} ${playerData.lastName || "Player"}: ${originalMissingFields.join(", ")}`);
+      }
+      
+      // Report fixed fields if any
+      if (fixedFields.length > 0) {
+        console.log(`Fixed fields for ${playerData.firstName}: ${fixedFields.join(", ")}`);
+      }
+      
+      // If we still have missing fields after our fixes, skip this record
       if (missingFields.length > 0) {
-        results.errors.push(`Missing required fields for ${playerData.firstName || "Unknown"} ${playerData.lastName || "Player"}: ${missingFields.join(", ")}`);
-        
-        // Try to fix common issues
-        let canProceed = false;
-        
-        // If last name is missing but we have first name, use first name as last name too
-        if (missingFields.includes("lastName") && playerData.firstName) {
-          playerData.lastName = playerData.firstName;
-          console.log(`Using first name "${playerData.firstName}" as last name for player`);
-          canProceed = missingFields.length === 1; // Only proceed if lastName was the only missing field
-        }
-        
-        if (!canProceed) {
-          continue; // Skip this player if we can't fix the data
-        }
+        console.log(`Cannot import ${playerData.firstName} - still missing: ${missingFields.join(", ")}`);
+        continue;
       }
       
       // Ensure all optional fields have default values if missing
