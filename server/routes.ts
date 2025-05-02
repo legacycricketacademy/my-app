@@ -13,6 +13,119 @@ import {
   insertPaymentSchema 
 } from "@shared/schema";
 
+// Helper function to parse CSV data
+function parseCsvData(csvData: string) {
+  const lines = csvData.split("\n").filter(line => line.trim() !== "");
+  const headers = lines[0].split(",").map(header => header.trim());
+  
+  const data = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(",").map(val => val.trim());
+    const record: Record<string, string> = {};
+    
+    headers.forEach((header, index) => {
+      if (index < values.length) {
+        record[header] = values[index];
+      }
+    });
+    
+    data.push(record);
+  }
+  
+  return data;
+}
+
+// Helper function to parse JSON data
+function parseJsonData(jsonData: string) {
+  try {
+    const data = JSON.parse(jsonData);
+    return Array.isArray(data) ? data : [data];
+  } catch (error) {
+    throw new Error("Invalid JSON format");
+  }
+}
+
+// Process and import player data
+async function processPlayersData(playersData: any[]) {
+  const results = {
+    imported: 0,
+    errors: [] as string[],
+  };
+
+  for (const playerData of playersData) {
+    try {
+      // Check if required fields are present
+      const requiredFields = ["firstName", "lastName", "dateOfBirth", "ageGroup", "parentEmail"];
+      const missingFields = requiredFields.filter(field => !playerData[field]);
+      
+      if (missingFields.length > 0) {
+        results.errors.push(`Missing required fields for ${playerData.firstName || "Unknown"} ${playerData.lastName || "Player"}: ${missingFields.join(", ")}`);
+        continue;
+      }
+
+      // Check if parent exists by email
+      let parentUser = await storage.getUserByEmail(playerData.parentEmail);
+      
+      // If parent doesn't exist, create a new parent user
+      if (!parentUser) {
+        // Generate username and password from parent name and email
+        const parentName = playerData.parentName || "Parent";
+        const nameParts = parentName.split(" ");
+        const firstName = nameParts[0].toLowerCase();
+        const initialUsername = `${firstName}${Math.floor(Math.random() * 1000)}`;
+        
+        // Generate a random password
+        const tempPassword = Math.random().toString(36).slice(-8);
+        
+        try {
+          const newUserData = {
+            username: initialUsername,
+            password: tempPassword, // This will be hashed in storage.createUser
+            email: playerData.parentEmail,
+            fullName: playerData.parentName || "Parent",
+            role: "parent" as const,
+            phone: playerData.parentPhone || "",
+          };
+          
+          // Create the parent user
+          parentUser = await storage.createUser(newUserData);
+          
+          // TODO: In a production system, send an email to the parent with their login credentials
+          console.log(`Created new parent user: ${initialUsername} with temp password: ${tempPassword}`);
+        } catch (error) {
+          results.errors.push(`Failed to create parent account for ${playerData.parentEmail}: ${error.message}`);
+          continue;
+        }
+      }
+
+      // Create the player record
+      const newPlayerData = {
+        firstName: playerData.firstName,
+        lastName: playerData.lastName,
+        dateOfBirth: new Date(playerData.dateOfBirth),
+        ageGroup: playerData.ageGroup,
+        parentId: parentUser.id,
+        playerType: playerData.playerType || null,
+        emergencyContact: playerData.emergencyContact || null,
+        medicalInformation: playerData.medicalInformation || null,
+      };
+      
+      // Validate with schema
+      const validatedData = insertPlayerSchema.parse(newPlayerData);
+      
+      // Create the player
+      await storage.createPlayer(validatedData);
+      results.imported++;
+      
+    } catch (error) {
+      results.errors.push(`Error processing player ${playerData.firstName || ""} ${playerData.lastName || ""}: ${error.message}`);
+    }
+  }
+
+  return results;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes and middleware
   setupAuth(app);
