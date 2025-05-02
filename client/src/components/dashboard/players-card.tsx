@@ -45,8 +45,8 @@ export function PlayersCard() {
               <SelectItem value="Under 16s">Under 16s</SelectItem>
             </SelectContent>
           </Select>
-          <Link href="/players">
-            <a className="text-primary text-sm hover:underline flex items-center">View All</a>
+          <Link href="/players" className="text-primary text-sm hover:underline flex items-center">
+            View All
           </Link>
         </div>
       </CardHeader>

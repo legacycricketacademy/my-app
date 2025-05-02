@@ -81,11 +81,9 @@ export function AnnouncementsCard() {
         
         {announcements && announcements.length > 0 && (
           <div className="mt-3 text-center">
-            <Link href="/announcements">
-              <a className="text-primary text-sm hover:underline flex items-center justify-center">
-                <span>View All Announcements</span>
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </a>
+            <Link href="/announcements" className="text-primary text-sm hover:underline flex items-center justify-center">
+              <span>View All Announcements</span>
+              <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           </div>
         )}

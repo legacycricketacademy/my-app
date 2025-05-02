@@ -65,6 +65,11 @@ async function processPlayersData(playersData: any[]) {
         results.errors.push(`Missing required fields for ${playerData.firstName || "Unknown"} ${playerData.lastName || "Player"}: ${missingFields.join(", ")}`);
         continue;
       }
+      
+      // Ensure parentPhone has a default value if missing
+      if (!playerData.parentPhone) {
+        playerData.parentPhone = ""; // Set empty string as default
+      }
 
       // Check if parent exists by email
       let parentUser = await storage.getUserByEmail(playerData.parentEmail);
