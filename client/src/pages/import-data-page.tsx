@@ -173,7 +173,7 @@ export default function ImportDataPage() {
       }
       
       const requiredFields = ["firstName", "lastName", "dateOfBirth", "ageGroup", "parentName", "parentEmail"];
-      const errors = [];
+      const errors: string[] = [];
       
       jsonData.forEach((item, index) => {
         const missingFields = requiredFields.filter(field => !item[field]);
