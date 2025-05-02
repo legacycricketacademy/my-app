@@ -128,9 +128,22 @@ async function processPlayersData(playersData: any[]) {
         const player = await storage.createPlayer(validatedData);
         console.log("Player created successfully:", player.id);
         results.imported++;
-      } catch (validationError) {
-        console.error("Player validation or creation error:", validationError);
-        throw validationError;
+      } catch (validationError: any) {
+        console.error("Player validation or creation error:", 
+          validationError instanceof z.ZodError 
+            ? JSON.stringify(validationError.errors) 
+            : validationError.message || 'Unknown error'
+        );
+        
+        // Add to errors instead of throwing so we can continue with other players
+        results.errors.push(`Error creating player ${playerData.firstName} ${playerData.lastName}: ${
+          validationError instanceof z.ZodError 
+            ? validationError.errors.map(e => `${e.path}: ${e.message}`).join(', ') 
+            : validationError.message || 'Unknown error'
+        }`);
+        
+        // Continue processing other players instead of throwing
+        continue;
       }
       
     } catch (error: any) {
@@ -503,6 +516,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         return res.status(400).json({ error: "Invalid format" });
       }
+      
+      console.log(`Attempting to import ${playersData.length} players`)
 
       // Validate and process the data
       const results = await processPlayersData(playersData);
