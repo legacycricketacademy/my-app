@@ -118,12 +118,20 @@ async function processPlayersData(playersData: any[]) {
         medicalInformation: playerData.medicalInformation || null,
       };
       
-      // Validate with schema
-      const validatedData = insertPlayerSchema.parse(newPlayerData);
+      console.log("Attempting to create player:", JSON.stringify(newPlayerData));
       
-      // Create the player
-      await storage.createPlayer(validatedData);
-      results.imported++;
+      try {
+        // Validate with schema
+        const validatedData = insertPlayerSchema.parse(newPlayerData);
+        
+        // Create the player
+        const player = await storage.createPlayer(validatedData);
+        console.log("Player created successfully:", player.id);
+        results.imported++;
+      } catch (validationError) {
+        console.error("Player validation or creation error:", validationError);
+        throw validationError;
+      }
       
     } catch (error: any) {
       results.errors.push(`Error processing player ${playerData.firstName || ""} ${playerData.lastName || ""}: ${error.message || 'Unknown error'}`);
