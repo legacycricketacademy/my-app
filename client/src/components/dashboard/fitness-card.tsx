@@ -146,11 +146,9 @@ export function FitnessCard() {
         )}
         
         <div className="border-t border-gray-100 pt-3">
-          <Link href="/fitness">
-            <a className="text-primary text-sm hover:underline flex items-center justify-center">
-              <span>View Detailed Fitness Report</span>
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </a>
+          <Link href="/fitness" className="text-primary text-sm hover:underline flex items-center justify-center">
+            <span>View Detailed Fitness Report</span>
+            <ArrowRight className="ml-1 h-4 w-4" />
           </Link>
         </div>
       </CardContent>
