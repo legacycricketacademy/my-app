@@ -127,7 +127,34 @@ export class DatabaseStorage implements IStorage {
     return await query;
   }
   
+  async getPlayerByNameAndParent(firstName: string, lastName: string, parentId: number): Promise<any> {
+    const result = await db
+      .select()
+      .from(players)
+      .where(
+        and(
+          eq(players.firstName, firstName),
+          eq(players.lastName, lastName),
+          eq(players.parentId, parentId)
+        )
+      );
+    return result[0];
+  }
+  
   async createPlayer(playerData: InsertPlayer): Promise<any> {
+    // Check if player already exists with same name and parent
+    const existingPlayer = await this.getPlayerByNameAndParent(
+      playerData.firstName,
+      playerData.lastName,
+      playerData.parentId
+    );
+    
+    if (existingPlayer) {
+      console.log(`Player ${playerData.firstName} ${playerData.lastName} already exists with ID ${existingPlayer.id}`);
+      return existingPlayer;
+    }
+    
+    // Player doesn't exist, create a new one
     const [player] = await db.insert(players).values(playerData).returning();
     return player;
   }
