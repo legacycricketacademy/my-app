@@ -18,8 +18,8 @@ export function ScheduleCard() {
     <Card className="bg-white rounded-lg shadow">
       <CardHeader className="flex items-center justify-between border-b border-gray-200 p-4">
         <CardTitle className="font-semibold text-lg heading">Today's Schedule</CardTitle>
-        <Link href="/schedule">
-          <a className="text-primary text-sm hover:underline">View All</a>
+        <Link href="/schedule" className="text-primary text-sm hover:underline">
+          View All
         </Link>
       </CardHeader>
       
