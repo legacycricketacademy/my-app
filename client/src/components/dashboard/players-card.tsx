@@ -1,0 +1,118 @@
+import { useState } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { Search, User, Heart, Mail } from "lucide-react";
+import { Link } from "wouter";
+
+export function PlayersCard() {
+  const [ageGroup, setAgeGroup] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  
+  const { data: players, isLoading } = useQuery<any[]>({
+    queryKey: ["/api/players", ageGroup],
+    queryFn: () => fetch(`/api/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`).then(res => res.json())
+  });
+  
+  const filteredPlayers = players?.filter(player => {
+    if (!searchQuery) return true;
+    const fullName = `${player.firstName} ${player.lastName}`.toLowerCase();
+    return fullName.includes(searchQuery.toLowerCase()) || 
+           player.playerType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           player.ageGroup?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+  
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
+  };
+
+  return (
+    <Card className="bg-white rounded-lg shadow">
+      <CardHeader className="flex items-center justify-between border-b border-gray-200 p-4">
+        <CardTitle className="font-semibold text-lg heading">Players</CardTitle>
+        <div className="flex space-x-2">
+          <Select value={ageGroup} onValueChange={setAgeGroup}>
+            <SelectTrigger className="text-sm bg-gray-100 rounded px-2 py-1 border-0 focus:ring-1 focus:ring-primary h-8">
+              <SelectValue placeholder="All Age Groups" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Age Groups</SelectItem>
+              <SelectItem value="Under 12s">Under 12s</SelectItem>
+              <SelectItem value="Under 14s">Under 14s</SelectItem>
+              <SelectItem value="Under 16s">Under 16s</SelectItem>
+            </SelectContent>
+          </Select>
+          <Link href="/players">
+            <a className="text-primary text-sm hover:underline flex items-center">View All</a>
+          </Link>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="p-4">
+        <div className="relative">
+          <Input
+            placeholder="Search players..."
+            className="w-full pl-10 pr-4 py-2"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
+        </div>
+        
+        <div className="mt-4 space-y-3 max-h-80 overflow-y-auto scrollbar-hide">
+          {isLoading ? (
+            Array(5).fill(0).map((_, index) => (
+              <div key={index} className="flex items-center justify-between border-b border-gray-100 pb-3 animate-pulse">
+                <div className="flex items-center space-x-3">
+                  <div className="h-10 w-10 rounded-full bg-gray-200"></div>
+                  <div>
+                    <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                    <div className="h-3 bg-gray-100 rounded w-32"></div>
+                  </div>
+                </div>
+                <div className="flex space-x-1">
+                  <div className="h-8 w-8 rounded-full bg-gray-100"></div>
+                  <div className="h-8 w-8 rounded-full bg-gray-100"></div>
+                  <div className="h-8 w-8 rounded-full bg-gray-100"></div>
+                </div>
+              </div>
+            ))
+          ) : filteredPlayers && filteredPlayers.length > 0 ? (
+            filteredPlayers.map((player) => (
+              <div key={player.id} className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div className="flex items-center space-x-3">
+                  <Avatar className={player.id % 5 === 0 ? "border-2 border-primary" : ""}>
+                    <AvatarImage src={player.profileImage} alt={`${player.firstName} ${player.lastName}`} />
+                    <AvatarFallback>{getInitials(player.firstName, player.lastName)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="text-sm font-medium">{player.firstName} {player.lastName}</h4>
+                    <p className="text-xs text-gray-600">{player.ageGroup} • {player.playerType || "Player"}</p>
+                  </div>
+                </div>
+                <div className="flex space-x-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-gray-500 hover:text-primary hover:bg-gray-100" title="View Profile">
+                    <User className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-gray-500 hover:text-primary hover:bg-gray-100" title="Fitness Data">
+                    <Heart className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-gray-500 hover:text-primary hover:bg-gray-100" title="Contact Parents">
+                    <Mail className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              <p>No players found</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
