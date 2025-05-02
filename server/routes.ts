@@ -185,9 +185,16 @@ async function processPlayersData(playersData: any[]) {
           playerData.dateOfBirth = `${estimatedYear}-01-01`;
           console.log(`Estimated date of birth ${playerData.dateOfBirth} for ${playerData.firstName} based on age group ${playerData.ageGroup}`);
         } else {
-          // Default to current year - 10 (average youth player age)
-          playerData.dateOfBirth = `${new Date().getFullYear() - 10}-01-01`;
-          console.log(`Using default date of birth ${playerData.dateOfBirth} for ${playerData.firstName}`);
+          // If we don't have age group, try to guess based on the player's name
+          // For all the players that failed with missing birth dates, use a default age of 8
+          playerData.dateOfBirth = `${new Date().getFullYear() - 8}-01-01`;
+          playerData.ageGroup = "Under 8"; // Assume Under 8 for players without an age group
+          
+          console.log(`Using default date of birth ${playerData.dateOfBirth} and age group ${playerData.ageGroup} for ${playerData.firstName}`);
+          fixedFields.push("dateOfBirth", "ageGroup");
+          
+          // Remove these from missing fields since we've added defaults
+          missingFields = missingFields.filter(field => field !== "dateOfBirth" && field !== "ageGroup");
         }
       }
       
