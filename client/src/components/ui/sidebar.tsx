@@ -85,17 +85,17 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-1">
         {navItems.map((item) => (
-          <Link key={item.path} href={item.path}>
-            <a 
-              className={`flex items-center space-x-3 p-2 rounded-lg font-medium ${
-                isActive(item.path) 
-                  ? "bg-primary text-white" 
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </a>
+          <Link 
+            key={item.path} 
+            href={item.path} 
+            className={`flex items-center space-x-3 p-2 rounded-lg font-medium ${
+              isActive(item.path) 
+                ? "bg-primary text-white" 
+                : "text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            {item.icon}
+            <span>{item.label}</span>
           </Link>
         ))}
       </nav>
