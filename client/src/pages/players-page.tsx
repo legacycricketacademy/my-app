@@ -67,6 +67,8 @@ export default function PlayersPage() {
   const [ageGroup, setAgeGroup] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
+  const [showEditPlayerDialog, setShowEditPlayerDialog] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const { toast } = useToast();
   
   const form = useForm<PlayerFormValues>({
@@ -75,6 +77,20 @@ export default function PlayersPage() {
       firstName: "",
       lastName: "",
       ageGroup: "Under 12s",
+      playerType: "Batsman",
+      emergencyContact: "",
+      medicalInformation: "",
+      parentName: "",
+      parentEmail: ""
+    }
+  });
+  
+  const editForm = useForm<PlayerFormValues>({
+    resolver: zodResolver(playerFormSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      ageGroup: "Under 12s", 
       playerType: "Batsman",
       emergencyContact: "",
       medicalInformation: "",
@@ -115,6 +131,34 @@ export default function PlayersPage() {
       });
     }
   });
+  
+  const updatePlayerMutation = useMutation({
+    mutationFn: async ({ playerId, data }: { playerId: number, data: any }) => {
+      const res = await apiRequest("PATCH", `/api/players/${playerId}`, data);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update player");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Player updated successfully",
+        description: "The player information has been updated.",
+        variant: "default",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      setShowEditPlayerDialog(false);
+      setSelectedPlayer(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update player",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   function onSubmit(data: PlayerFormValues) {
     try {
@@ -133,6 +177,49 @@ export default function PlayersPage() {
         variant: "destructive",
       });
     }
+  }
+  
+  function onEditSubmit(data: PlayerFormValues) {
+    if (!selectedPlayer) return;
+    
+    try {
+      // Format the date to ISO string for the API
+      const formattedData = {
+        ...data,
+        dateOfBirth: data.dateOfBirth.toISOString(),
+      };
+      
+      updatePlayerMutation.mutate({ 
+        playerId: selectedPlayer.id,
+        data: formattedData
+      });
+    } catch (error) {
+      console.error("Error updating player:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem updating the player. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }
+  
+  function handleEditPlayer(player: any) {
+    setSelectedPlayer(player);
+    
+    // Reset the form with the player's values
+    editForm.reset({
+      firstName: player.firstName,
+      lastName: player.lastName,
+      dateOfBirth: new Date(player.dateOfBirth),
+      ageGroup: player.ageGroup,
+      playerType: player.playerType || "Batsman",
+      emergencyContact: player.emergencyContact || "",
+      medicalInformation: player.medicalInformation || "",
+      parentName: player.parentName || "",
+      parentEmail: player.parentEmail || ""
+    });
+    
+    setShowEditPlayerDialog(true);
   }
   
   const filteredPlayers = players?.filter(player => {
@@ -243,6 +330,28 @@ export default function PlayersPage() {
                       <TableCell>{player.parentName}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title="Edit Player"
+                            onClick={() => handleEditPlayer(player)}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-4 w-4"
+                            >
+                              <path d="M12 20h9"/>
+                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                          </Button>
                           <Button variant="ghost" size="icon" title="Fitness Data">
                             <Heart className="h-4 w-4" />
                           </Button>
@@ -498,6 +607,240 @@ export default function PlayersPage() {
                     <>
                       <Save className="h-4 w-4" />
                       Create Player
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Player Dialog */}
+      <Dialog open={showEditPlayerDialog} onOpenChange={setShowEditPlayerDialog}>
+        <DialogContent className="sm:max-w-[625px]">
+          <DialogHeader>
+            <DialogTitle>Edit Player</DialogTitle>
+            <DialogDescription>
+              Update player details below. Fields marked with an asterisk (*) are required.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Player Information */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-gray-500">Player Information</h3>
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Smith" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Date of Birth *</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date > new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="ageGroup"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Age Group *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select age group" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Under 8s">Under 8s</SelectItem>
+                            <SelectItem value="Under 12s">Under 12s</SelectItem>
+                            <SelectItem value="Under 14s">Under 14s</SelectItem>
+                            <SelectItem value="Under 16s">Under 16s</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="playerType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Player Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select player type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Batsman">Batsman</SelectItem>
+                            <SelectItem value="Bowler">Bowler</SelectItem>
+                            <SelectItem value="All-Rounder">All-Rounder</SelectItem>
+                            <SelectItem value="Wicket-Keeper">Wicket-Keeper</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                {/* Parent Information */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-gray-500">Parent Information</h3>
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="parentName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Parent Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Jane Smith" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="parentEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Parent Email *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="parent@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="emergencyContact"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Emergency Contact</FormLabel>
+                        <FormControl>
+                          <Input placeholder="+1 (555) 123-4567" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="medicalInformation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Medical Information</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Any medical conditions or allergies" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowEditPlayerDialog(false)}
+                  className="gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="gap-2"
+                  disabled={updatePlayerMutation.isPending}
+                >
+                  {updatePlayerMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Update Player
                     </>
                   )}
                 </Button>
