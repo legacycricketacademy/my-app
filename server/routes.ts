@@ -407,16 +407,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch(`${apiPrefix}/players/:id`, async (req, res) => {
     try {
       const playerId = parseInt(req.params.id);
-      const updateData = req.body;
+      const { parentEmail, parentName, ...playerData } = req.body;
       
-      const updatedPlayer = await storage.updatePlayer(playerId, updateData);
+      // First, get the existing player to determine the parent relationship
+      const existingPlayer = await storage.getPlayerById(playerId);
+      if (!existingPlayer) {
+        return res.status(404).json({ message: "Player not found" });
+      }
+      
+      // Only handle parent update if parent info is provided
+      if (parentEmail) {
+        // Check if a different parent with this email exists
+        let parentUser = await storage.getUserByEmail(parentEmail);
+        
+        // If no parent with this email exists, update the existing parent or create a new one
+        if (!parentUser) {
+          // Get current parent
+          const currentParent = await storage.getUser(existingPlayer.parentId);
+          
+          // If current parent exists and only has this one player, update the parent
+          if (currentParent) {
+            // Get all players associated with this parent
+            const parentPlayers = await storage.getPlayersByParentId(currentParent.id);
+            
+            if (parentPlayers.length <= 1) {
+              // Update the existing parent with new email/name
+              await storage.updateUser(currentParent.id, {
+                email: parentEmail,
+                fullName: parentName || currentParent.fullName
+              });
+              
+              // Keep the same parentId
+              playerData.parentId = currentParent.id;
+            } else {
+              // Parent has multiple players - create a new parent account
+              const username = parentEmail.split('@')[0];
+              const password = Math.random().toString(36).slice(-8);
+              
+              try {
+                parentUser = await storage.createUser({
+                  username,
+                  password,
+                  email: parentEmail,
+                  fullName: parentName || username,
+                  role: "parent"
+                });
+                
+                // Set new parent ID
+                playerData.parentId = parentUser.id;
+                console.log(`Created new parent user: ${parentUser.id} (${username})`);
+              } catch (createError) {
+                console.error("Error creating parent user:", createError);
+                return res.status(400).json({ message: "Failed to create parent user account" });
+              }
+            }
+          }
+        } else {
+          // Existing parent found with this email - update player to link to this parent
+          playerData.parentId = parentUser.id;
+        }
+      }
+      
+      // Update player with validated data
+      const updatedPlayer = await storage.updatePlayer(playerId, playerData);
       
       if (!updatedPlayer) {
-        return res.status(404).json({ message: "Player not found" });
+        return res.status(404).json({ message: "Player update failed" });
       }
       
       res.json(updatedPlayer);
     } catch (error) {
+      console.error("Error updating player:", error);
       res.status(500).json({ message: "Error updating player" });
     }
   });
