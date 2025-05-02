@@ -57,18 +57,46 @@ async function processPlayersData(playersData: any[]) {
 
   for (const playerData of playersData) {
     try {
+      // Clean up and normalize data
+      // Trim whitespace from string fields
+      for (const key in playerData) {
+        if (typeof playerData[key] === 'string') {
+          playerData[key] = playerData[key].trim();
+        }
+      }
+      
       // Check if required fields are present
       const requiredFields = ["firstName", "lastName", "dateOfBirth", "ageGroup", "parentEmail"];
       const missingFields = requiredFields.filter(field => !playerData[field]);
       
       if (missingFields.length > 0) {
         results.errors.push(`Missing required fields for ${playerData.firstName || "Unknown"} ${playerData.lastName || "Player"}: ${missingFields.join(", ")}`);
-        continue;
+        
+        // Try to fix common issues
+        let canProceed = false;
+        
+        // If last name is missing but we have first name, use first name as last name too
+        if (missingFields.includes("lastName") && playerData.firstName) {
+          playerData.lastName = playerData.firstName;
+          console.log(`Using first name "${playerData.firstName}" as last name for player`);
+          canProceed = missingFields.length === 1; // Only proceed if lastName was the only missing field
+        }
+        
+        if (!canProceed) {
+          continue; // Skip this player if we can't fix the data
+        }
       }
       
-      // Ensure parentPhone has a default value if missing
+      // Ensure all optional fields have default values if missing
       if (!playerData.parentPhone) {
         playerData.parentPhone = ""; // Set empty string as default
+      }
+      
+      if (!playerData.parentName && playerData.parentEmail) {
+        // Extract name from email
+        const emailName = playerData.parentEmail.split('@')[0];
+        playerData.parentName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+        console.log(`Generated parent name "${playerData.parentName}" from email for ${playerData.firstName}`);
       }
 
       // Check if parent exists by email
@@ -106,6 +134,70 @@ async function processPlayersData(playersData: any[]) {
         }
       }
 
+      // Handle missing dateOfBirth
+      if (!playerData.dateOfBirth) {
+        // If we have ageGroup, estimate a birth year based on the age group
+        if (playerData.ageGroup) {
+          const currentYear = new Date().getFullYear();
+          let estimatedAge = 0;
+          
+          if (playerData.ageGroup.toLowerCase().includes("under 8")) {
+            estimatedAge = 6; // Average age for Under 8
+          } else if (playerData.ageGroup.toLowerCase().includes("under 12")) {
+            estimatedAge = 10; // Average age for Under 12
+          } else if (playerData.ageGroup.toLowerCase().includes("under 14")) {
+            estimatedAge = 12; // Average age for Under 14
+          } else if (playerData.ageGroup.toLowerCase().includes("under 16")) {
+            estimatedAge = 14; // Average age for Under 16
+          } else {
+            estimatedAge = 8; // Default estimate
+          }
+          
+          const estimatedYear = currentYear - estimatedAge;
+          playerData.dateOfBirth = `${estimatedYear}-01-01`;
+          console.log(`Estimated date of birth ${playerData.dateOfBirth} for ${playerData.firstName} based on age group ${playerData.ageGroup}`);
+        } else {
+          // Default to current year - 10 (average youth player age)
+          playerData.dateOfBirth = `${new Date().getFullYear() - 10}-01-01`;
+          console.log(`Using default date of birth ${playerData.dateOfBirth} for ${playerData.firstName}`);
+        }
+      }
+      
+      // Handle missing ageGroup
+      if (!playerData.ageGroup) {
+        // Try to determine age group from date of birth
+        try {
+          const dob = new Date(playerData.dateOfBirth);
+          const today = new Date();
+          let age = today.getFullYear() - dob.getFullYear();
+          
+          // Adjust age if birthday hasn't occurred yet this year
+          if (
+            today.getMonth() < dob.getMonth() || 
+            (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
+          ) {
+            age--;
+          }
+          
+          // Assign age group based on age
+          if (age < 8) {
+            playerData.ageGroup = "Under 8";
+          } else if (age < 12) {
+            playerData.ageGroup = "Under 12";
+          } else if (age < 14) {
+            playerData.ageGroup = "Under 14";
+          } else {
+            playerData.ageGroup = "Under 16";
+          }
+          
+          console.log(`Determined age group ${playerData.ageGroup} for ${playerData.firstName} based on date of birth`);
+        } catch (error) {
+          // Default to Under 12 if we can't calculate
+          playerData.ageGroup = "Under 12";
+          console.log(`Using default age group ${playerData.ageGroup} for ${playerData.firstName}`);
+        }
+      }
+      
       // Create the player record
       const newPlayerData = {
         firstName: playerData.firstName,
