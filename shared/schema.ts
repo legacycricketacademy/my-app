@@ -121,10 +121,6 @@ export const announcementViews = pgTable("announcement_views", {
   announcementId: integer("announcement_id").references(() => announcements.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   viewedAt: timestamp("viewed_at").defaultNow().notNull(),
-}, (table) => {
-  return {
-    pk: primaryKey({ columns: [table.announcementId, table.userId] }),
-  }
 });
 
 // Payments
