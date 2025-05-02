@@ -55,6 +55,9 @@ async function processPlayersData(playersData: any[]) {
     errors: [] as string[],
   };
 
+  // Keep track of players we've already seen to avoid duplicates
+  const processedPlayers = new Map<string, boolean>();
+
   for (const playerData of playersData) {
     try {
       // Clean up and normalize data
@@ -80,6 +83,7 @@ async function processPlayersData(playersData: any[]) {
       
       // Fix missing lastName by using firstName
       if (missingFields.includes("lastName")) {
+        // Use firstName as lastName if lastName is missing
         playerData.lastName = playerData.firstName;
         console.log(`Using first name "${playerData.firstName}" as last name for player`);
         fixedFields.push("lastName");
@@ -222,6 +226,35 @@ async function processPlayersData(playersData: any[]) {
         }
       }
       
+      // Check if player already exists (combine firstName, lastName, and parentId to check)
+      const playerKey = `${playerData.firstName.toLowerCase()}-${playerData.lastName.toLowerCase()}-${parentUser.id}`;
+      
+      // If we've already processed this player, skip it to avoid creating duplicate entries
+      if (processedPlayers.has(playerKey)) {
+        console.log(`Skipping duplicate player ${playerData.firstName} ${playerData.lastName}`);
+        results.errors.push(`Skipped duplicate player ${playerData.firstName} ${playerData.lastName}`);
+        continue;
+      }
+      
+      // Check if this player already exists in the database
+      try {
+        const existingPlayer = await storage.getPlayerByNameAndParent(
+          playerData.firstName, 
+          playerData.lastName, 
+          parentUser.id
+        );
+        
+        if (existingPlayer) {
+          console.log(`Player ${playerData.firstName} ${playerData.lastName} already exists with ID ${existingPlayer.id}`);
+          results.errors.push(`Player ${playerData.firstName} ${playerData.lastName} already exists in the database`);
+          processedPlayers.set(playerKey, true);
+          continue;
+        }
+      } catch (error) {
+        // If there's an error checking for existing player, log it but continue with creation
+        console.log(`Error checking for existing player: ${error}`);
+      }
+      
       // Create the player record
       const newPlayerData = {
         firstName: playerData.firstName,
@@ -243,6 +276,10 @@ async function processPlayersData(playersData: any[]) {
         // Create the player
         const player = await storage.createPlayer(validatedData);
         console.log("Player created successfully:", player.id);
+        
+        // Mark this player as processed to avoid creating duplicates within the same import
+        processedPlayers.set(playerKey, true);
+        
         results.imported++;
       } catch (validationError: any) {
         console.error("Player validation or creation error:", 
