@@ -41,8 +41,12 @@ export default function ImportDataPage() {
     onSuccess: (data) => {
       toast({
         title: "Data imported successfully",
-        description: `${data.imported} players were imported.`,
+        description: `${data.imported} players were imported.${data.errors.length > 0 ? ' Some records had errors.' : ''}`,
       });
+      
+      if (data.errors.length > 0) {
+        console.error("Import errors:", data.errors);
+      }
       
       // Clear the form
       setCsvData("");
