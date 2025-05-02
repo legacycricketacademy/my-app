@@ -192,7 +192,10 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
 
 // Zod Schemas for validation
 export const insertUserSchema = createInsertSchema(users);
-export const insertPlayerSchema = createInsertSchema(players);
+export const insertPlayerSchema = createInsertSchema(players, {
+  // Override dateOfBirth to accept Date objects
+  dateOfBirth: (schema) => z.date(),
+});
 export const insertSessionSchema = createInsertSchema(sessions);
 export const insertFitnessRecordSchema = createInsertSchema(fitnessRecords);
 export const insertMealPlanSchema = createInsertSchema(mealPlans);
