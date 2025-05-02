@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { z } from "zod";
@@ -33,9 +33,15 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [, navigate] = useLocation();
   
-  // Redirect if user is already logged in
+  // Use useEffect for navigation to avoid setState during render
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+  
+  // Early return if user is already logged in
   if (user) {
-    navigate("/");
     return null;
   }
   

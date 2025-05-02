@@ -15,7 +15,9 @@ import {
 
 // Helper function to parse CSV data
 function parseCsvData(csvData: string) {
-  const lines = csvData.split("\n").filter(line => line.trim() !== "");
+  // Replace escaped \n with actual newlines
+  const cleanedData = csvData.replace(/\\n/g, "\n");
+  const lines = cleanedData.split("\n").filter(line => line.trim() !== "");
   const headers = lines[0].split(",").map(header => header.trim());
   
   const data = [];
@@ -93,8 +95,8 @@ async function processPlayersData(playersData: any[]) {
           
           // TODO: In a production system, send an email to the parent with their login credentials
           console.log(`Created new parent user: ${initialUsername} with temp password: ${tempPassword}`);
-        } catch (error) {
-          results.errors.push(`Failed to create parent account for ${playerData.parentEmail}: ${error.message}`);
+        } catch (error: any) {
+          results.errors.push(`Failed to create parent account for ${playerData.parentEmail}: ${error.message || 'Unknown error'}`);
           continue;
         }
       }
@@ -118,8 +120,8 @@ async function processPlayersData(playersData: any[]) {
       await storage.createPlayer(validatedData);
       results.imported++;
       
-    } catch (error) {
-      results.errors.push(`Error processing player ${playerData.firstName || ""} ${playerData.lastName || ""}: ${error.message}`);
+    } catch (error: any) {
+      results.errors.push(`Error processing player ${playerData.firstName || ""} ${playerData.lastName || ""}: ${error.message || 'Unknown error'}`);
     }
   }
 
