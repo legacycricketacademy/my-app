@@ -103,7 +103,7 @@ export default function ImportDataPage() {
     
     // Extract headers from the first row
     const headers = rows[0].split(",").map(h => h.trim());
-    const requiredHeaders = ["firstName", "lastName", "dateOfBirth", "ageGroup", "parentName", "parentEmail", "parentPhone"];
+    const requiredHeaders = ["firstName", "lastName", "dateOfBirth", "ageGroup", "parentName", "parentEmail"];
     const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
     
     if (missingHeaders.length > 0) {
@@ -172,7 +172,7 @@ export default function ImportDataPage() {
         return;
       }
       
-      const requiredFields = ["firstName", "lastName", "dateOfBirth", "ageGroup", "parentName", "parentEmail", "parentPhone"];
+      const requiredFields = ["firstName", "lastName", "dateOfBirth", "ageGroup", "parentName", "parentEmail"];
       const errors = [];
       
       jsonData.forEach((item, index) => {
@@ -413,13 +413,13 @@ export default function ImportDataPage() {
                   <li><span className="font-mono">ageGroup</span> - Age group (e.g., "Under 12s", "Under 14s", "Under 16s")</li>
                   <li><span className="font-mono">parentName</span> - Full name of parent</li>
                   <li><span className="font-mono">parentEmail</span> - Email address of parent (will be used for account creation)</li>
-                  <li><span className="font-mono">parentPhone</span> - Phone number of parent</li>
                 </ul>
               </div>
               
               <div>
                 <h3 className="font-medium mb-2">Optional Fields</h3>
                 <ul className="list-disc list-inside text-sm text-gray-600">
+                  <li><span className="font-mono">parentPhone</span> - Phone number of parent</li>
                   <li><span className="font-mono">playerType</span> - Player type (e.g., "Batsman", "Bowler", "All-rounder")</li>
                   <li><span className="font-mono">emergencyContact</span> - Emergency contact information</li>
                   <li><span className="font-mono">medicalInformation</span> - Medical information or notes</li>
