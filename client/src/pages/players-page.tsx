@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
-import { DayPicker } from "react-day-picker";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -435,7 +434,7 @@ export default function PlayersPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-10">
-                      <p className="text-gray-500">No players found</p>
+                      <p className="text-gray-500">No players found.</p>
                     </TableCell>
                   </TableRow>
                 )}
@@ -443,491 +442,391 @@ export default function PlayersPage() {
             </Table>
           </div>
         </div>
+
+        {/* Add New Player Dialog */}
+        <Dialog open={showAddPlayerDialog} onOpenChange={setShowAddPlayerDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Player</DialogTitle>
+              <DialogDescription>
+                Enter the player's details to add them to the system.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Smith" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Date of Birth *</FormLabel>
+                        <FormControl>
+                          <DatePicker 
+                            date={field.value} 
+                            setDate={(date) => field.onChange(date)} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="ageGroup"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Age Group *</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select age group" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Under 12s">Under 12s</SelectItem>
+                            <SelectItem value="Under 14s">Under 14s</SelectItem>
+                            <SelectItem value="Under 16s">Under 16s</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="playerType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Player Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select player type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Batsman">Batsman</SelectItem>
+                            <SelectItem value="Bowler">Bowler</SelectItem>
+                            <SelectItem value="All-rounder">All-rounder</SelectItem>
+                            <SelectItem value="Wicket-keeper">Wicket-keeper</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="emergencyContact"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Emergency Contact</FormLabel>
+                        <FormControl>
+                          <Input placeholder="+1234567890" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="md:col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="medicalInformation"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Medical Information</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Any allergies or conditions" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <hr className="md:col-span-2 border-gray-200" />
+                  <h3 className="md:col-span-2 text-lg font-semibold">Parent Information</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="parentName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Parent Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Parent's full name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="parentEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Parent Email *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="parent@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setShowAddPlayerDialog(false)}>
+                    <span>Cancel</span>
+                  </Button>
+                  <Button type="submit" disabled={createPlayerMutation.isPending}>
+                    {createPlayerMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        <span>Save Player</span>
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Player Dialog */}
+        <Dialog open={showEditPlayerDialog} onOpenChange={setShowEditPlayerDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Player</DialogTitle>
+              <DialogDescription>
+                Update the player's information.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={editForm.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Smith" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Date of Birth *</FormLabel>
+                        <FormControl>
+                          <DatePicker 
+                            date={field.value} 
+                            setDate={(date) => field.onChange(date)} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="ageGroup"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Age Group *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select age group" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Under 12s">Under 12s</SelectItem>
+                            <SelectItem value="Under 14s">Under 14s</SelectItem>
+                            <SelectItem value="Under 16s">Under 16s</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="playerType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Player Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || "Batsman"}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select player type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Batsman">Batsman</SelectItem>
+                            <SelectItem value="Bowler">Bowler</SelectItem>
+                            <SelectItem value="All-rounder">All-rounder</SelectItem>
+                            <SelectItem value="Wicket-keeper">Wicket-keeper</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="emergencyContact"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Emergency Contact</FormLabel>
+                        <FormControl>
+                          <Input placeholder="+1234567890" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="md:col-span-2">
+                    <FormField
+                      control={editForm.control}
+                      name="medicalInformation"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Medical Information</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Any allergies or conditions" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <hr className="md:col-span-2 border-gray-200" />
+                  <h3 className="md:col-span-2 text-lg font-semibold">Parent Information</h3>
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="parentName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Parent Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Parent's full name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="parentEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Parent Email *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="parent@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => {
+                    setShowEditPlayerDialog(false);
+                    setSelectedPlayer(null);
+                  }}>
+                    <X className="mr-2 h-4 w-4" />
+                    <span>Cancel</span>
+                  </Button>
+                  <Button type="submit" disabled={updatePlayerMutation.isPending}>
+                    {updatePlayerMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        <span>Update Player</span>
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
-      
-      {/* Add Player Dialog */}
-      <Dialog open={showAddPlayerDialog} onOpenChange={setShowAddPlayerDialog}>
-        <DialogContent className="sm:max-w-[625px]">
-          <DialogHeader>
-            <DialogTitle>Add New Player</DialogTitle>
-            <DialogDescription>
-              Enter player details below. Fields marked with an asterisk (*) are required.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Player Information */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-gray-500">Player Information</h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Smith" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="dateOfBirth"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Date of Birth *</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <CalendarComponent
-                              mode="single"
-                              selected={field.value}
-                              onSelect={(date) => {
-                                if (date) {
-                                  field.onChange(new Date(date));
-                                } else {
-                                  field.onChange(undefined);
-                                }
-                              }}
-                              disabled={(date) => date > new Date()}
-                              initialFocus
-                              captionLayout="dropdown-buttons"
-                              fromYear={1990}
-                              toYear={new Date().getFullYear()}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="ageGroup"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Age Group *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select age group" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Under 8s">Under 8s</SelectItem>
-                            <SelectItem value="Under 12s">Under 12s</SelectItem>
-                            <SelectItem value="Under 14s">Under 14s</SelectItem>
-                            <SelectItem value="Under 16s">Under 16s</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="playerType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Player Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select player type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Batsman">Batsman</SelectItem>
-                            <SelectItem value="Bowler">Bowler</SelectItem>
-                            <SelectItem value="All-Rounder">All-Rounder</SelectItem>
-                            <SelectItem value="Wicket-Keeper">Wicket-Keeper</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                {/* Parent Information */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-gray-500">Parent Information</h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="parentName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Parent Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Jane Smith" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="parentEmail"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Parent Email *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="parent@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="emergencyContact"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Emergency Contact</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+1 (555) 123-4567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="medicalInformation"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Medical Information</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Any medical conditions or allergies" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowAddPlayerDialog(false)}
-                  className="gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="gap-2"
-                  disabled={createPlayerMutation.isPending}
-                >
-                  {createPlayerMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Create Player
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Edit Player Dialog */}
-      <Dialog open={showEditPlayerDialog} onOpenChange={setShowEditPlayerDialog}>
-        <DialogContent className="sm:max-w-[625px]">
-          <DialogHeader>
-            <DialogTitle>Edit Player</DialogTitle>
-            <DialogDescription>
-              Update player details below. Fields marked with an asterisk (*) are required.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6 py-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Player Information */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-gray-500">Player Information</h3>
-                  
-                  <FormField
-                    control={editForm.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={editForm.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Smith" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={editForm.control}
-                    name="dateOfBirth"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Date of Birth *</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <CalendarComponent
-                              mode="single"
-                              selected={field.value}
-                              onSelect={(date) => {
-                                if (date) {
-                                  field.onChange(new Date(date));
-                                } else {
-                                  field.onChange(undefined);
-                                }
-                              }}
-                              disabled={(date) => date > new Date()}
-                              initialFocus
-                              captionLayout="dropdown-buttons"
-                              fromYear={1990}
-                              toYear={new Date().getFullYear()}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={editForm.control}
-                    name="ageGroup"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Age Group *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select age group" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Under 8s">Under 8s</SelectItem>
-                            <SelectItem value="Under 12s">Under 12s</SelectItem>
-                            <SelectItem value="Under 14s">Under 14s</SelectItem>
-                            <SelectItem value="Under 16s">Under 16s</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={editForm.control}
-                    name="playerType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Player Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select player type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Batsman">Batsman</SelectItem>
-                            <SelectItem value="Bowler">Bowler</SelectItem>
-                            <SelectItem value="All-Rounder">All-Rounder</SelectItem>
-                            <SelectItem value="Wicket-Keeper">Wicket-Keeper</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                {/* Parent Information */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-gray-500">Parent Information</h3>
-                  
-                  <FormField
-                    control={editForm.control}
-                    name="parentName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Parent Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Jane Smith" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={editForm.control}
-                    name="parentEmail"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Parent Email *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="parent@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={editForm.control}
-                    name="emergencyContact"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Emergency Contact</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+1 (555) 123-4567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={editForm.control}
-                    name="medicalInformation"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Medical Information</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Any medical conditions or allergies" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowEditPlayerDialog(false)}
-                  className="gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="gap-2"
-                  disabled={updatePlayerMutation.isPending}
-                >
-                  {updatePlayerMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Update Player
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
     </MainLayout>
   );
 }
