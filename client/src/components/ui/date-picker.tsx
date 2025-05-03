@@ -52,20 +52,34 @@ export function DatePicker({ date, setDate }: DatePickerProps) {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
-        <DayPicker
-          mode="single"
-          selected={date}
-          onSelect={handleSelect}
-          captionLayout="dropdown"
-          fromYear={1990}
-          toYear={new Date().getFullYear()}
-          disabled={(date) => date > new Date()}
-          className="p-3"
-          styles={{
-            caption: { display: "flex", justifyContent: "center", alignItems: "center" },
-            caption_dropdowns: { display: "flex", justifyContent: "center", gap: "1rem" }
-          }}
-        />
+        <div className="flex flex-col">
+          <DayPicker
+            mode="single"
+            selected={date}
+            onSelect={handleSelect}
+            captionLayout="dropdown"
+            fromYear={1990}
+            toYear={new Date().getFullYear()}
+            disabled={(date) => date > new Date()}
+            className="p-3"
+            styles={{
+              caption: { display: "flex", justifyContent: "center", alignItems: "center" },
+              caption_dropdowns: { display: "flex", justifyContent: "center", gap: "1rem" }
+            }}
+          />
+          <div className="border-t p-3 flex justify-end">
+            <Button
+              size="sm"
+              onClick={() => {
+                // Close the popover
+                const buttonElement = document.activeElement as HTMLElement;
+                buttonElement?.blur();
+              }}
+            >
+              OK
+            </Button>
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
   )
