@@ -193,8 +193,13 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
 // Zod Schemas for validation
 export const insertUserSchema = createInsertSchema(users);
 export const insertPlayerSchema = createInsertSchema(players, {
-  // Override dateOfBirth to accept Date objects
-  dateOfBirth: (schema) => z.date(),
+  // Override dateOfBirth to accept both Date objects and ISO string dates
+  dateOfBirth: (schema) => z.union([
+    z.date(),
+    z.string().refine((val) => !isNaN(new Date(val).getTime()), {
+      message: "Invalid date string format, must be ISO 8601"
+    }).transform(val => new Date(val))
+  ]),
 });
 export const insertSessionSchema = createInsertSchema(sessions);
 export const insertFitnessRecordSchema = createInsertSchema(fitnessRecords);
