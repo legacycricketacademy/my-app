@@ -43,7 +43,10 @@ import {
   Loader2,
   CalendarIcon,
   X,
-  Save
+  Save,
+  Copy,
+  CheckCircle,
+  Link
 } from "lucide-react";
 
 // Define the schema for player creation
@@ -69,7 +72,16 @@ export default function PlayersPage() {
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
   const [showEditPlayerDialog, setShowEditPlayerDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [copiedPlayerId, setCopiedPlayerId] = useState<number | null>(null);
   const { toast } = useToast();
+  
+  // Reset the copied state after 3 seconds
+  const resetCopiedState = (playerId: number) => {
+    setCopiedPlayerId(playerId);
+    setTimeout(() => {
+      setCopiedPlayerId(null);
+    }, 3000);
+  };
   
   const form = useForm<PlayerFormValues>({
     resolver: zodResolver(playerFormSchema),
@@ -232,6 +244,40 @@ export default function PlayersPage() {
   
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
+  };
+  
+  // Function to copy invitation link
+  const copyInvitationLink = async (player: any) => {
+    try {
+      // Create a unique invitation token that includes the parent's email
+      const token = btoa(JSON.stringify({
+        email: player.parentEmail,
+        playerId: player.id,
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days from now
+      }));
+      
+      // Create the invitation URL
+      const inviteUrl = `${window.location.origin}/auth?invite=${token}`;
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(inviteUrl);
+      
+      // Set copied state and show toast
+      resetCopiedState(player.id);
+      
+      toast({
+        title: "Invitation Link Copied!",
+        description: `An invitation link for ${player.parentName} has been copied to your clipboard.`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error copying invitation link:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem creating the invitation link.",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
