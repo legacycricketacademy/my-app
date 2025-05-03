@@ -413,6 +413,19 @@ export default function PlayersPage() {
                           <Button variant="ghost" size="icon" title="Contact Parent">
                             <Mail className="h-4 w-4" />
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Send Invitation"
+                            onClick={() => copyInvitationLink(player)}
+                            disabled={copiedPlayerId === player.id}
+                          >
+                            {copiedPlayerId === player.id ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Link className="h-4 w-4" />
+                            )}
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
