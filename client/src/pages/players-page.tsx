@@ -175,18 +175,26 @@ export default function PlayersPage() {
 
   function onSubmit(data: PlayerFormValues) {
     try {
+      // Make sure dateOfBirth is a valid Date before formatting
+      if (!(data.dateOfBirth instanceof Date) || isNaN(data.dateOfBirth.getTime())) {
+        throw new Error("Invalid date of birth");
+      }
+      
       // Format the date to ISO string for the API
       const formattedData = {
         ...data,
         dateOfBirth: data.dateOfBirth.toISOString(),
       };
       
+      // Debug info
+      console.log("Submitting player data:", formattedData);
+      
       createPlayerMutation.mutate(formattedData);
     } catch (error) {
       console.error("Error submitting form:", error);
       toast({
         title: "Error",
-        description: "There was a problem with your submission. Please try again.",
+        description: "There was a problem with your submission. Please ensure all fields are correctly filled.",
         variant: "destructive",
       });
     }
@@ -196,11 +204,19 @@ export default function PlayersPage() {
     if (!selectedPlayer) return;
     
     try {
+      // Make sure dateOfBirth is a valid Date before formatting
+      if (!(data.dateOfBirth instanceof Date) || isNaN(data.dateOfBirth.getTime())) {
+        throw new Error("Invalid date of birth");
+      }
+      
       // Format the date to ISO string for the API
       const formattedData = {
         ...data,
         dateOfBirth: data.dateOfBirth.toISOString(),
       };
+      
+      // Debug info
+      console.log("Updating player data:", formattedData);
       
       updatePlayerMutation.mutate({ 
         playerId: selectedPlayer.id,
@@ -210,7 +226,7 @@ export default function PlayersPage() {
       console.error("Error updating player:", error);
       toast({
         title: "Error",
-        description: "There was a problem updating the player. Please try again.",
+        description: "There was a problem updating the player. Please ensure all fields are correctly filled.",
         variant: "destructive",
       });
     }
