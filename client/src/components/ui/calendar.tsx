@@ -11,7 +11,7 @@ function Calendar({
   className,
   classNames,
   showOutsideDays = true,
-  captionLayout = "buttons",
+  captionLayout = "dropdown",
   fromYear = 1990,
   toYear = new Date().getFullYear(),
   ...props
