@@ -514,9 +514,18 @@ export default function PlayersPage() {
                             <CalendarComponent
                               mode="single"
                               selected={field.value}
-                              onSelect={field.onChange}
+                              onSelect={(date) => {
+                                if (date) {
+                                  field.onChange(new Date(date));
+                                } else {
+                                  field.onChange(undefined);
+                                }
+                              }}
                               disabled={(date) => date > new Date()}
                               initialFocus
+                              captionLayout="dropdown-buttons"
+                              fromYear={1990}
+                              toYear={new Date().getFullYear()}
                             />
                           </PopoverContent>
                         </Popover>
@@ -746,9 +755,18 @@ export default function PlayersPage() {
                             <CalendarComponent
                               mode="single"
                               selected={field.value}
-                              onSelect={field.onChange}
+                              onSelect={(date) => {
+                                if (date) {
+                                  field.onChange(new Date(date));
+                                } else {
+                                  field.onChange(undefined);
+                                }
+                              }}
                               disabled={(date) => date > new Date()}
                               initialFocus
+                              captionLayout="dropdown-buttons"
+                              fromYear={1990}
+                              toYear={new Date().getFullYear()}
                             />
                           </PopoverContent>
                         </Popover>

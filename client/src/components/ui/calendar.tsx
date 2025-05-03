@@ -33,8 +33,6 @@ function Calendar({
         dropdown_icon: "ml-2 h-4 w-4 opacity-50",
         dropdown_month: "text-sm font-medium",
         dropdown_year: "text-sm font-medium",
-        dropdown_item: "py-1 px-2 hover:bg-accent rounded-md",
-        dropdown_item_selected: "bg-primary text-primary-foreground rounded-md",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
