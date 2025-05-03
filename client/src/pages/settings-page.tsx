@@ -45,6 +45,12 @@ import {
   LogOut,
   Save,
   Loader2,
+  Calendar,
+  DollarSign,
+  BarChart,
+  Utensils,
+  Heart,
+  CalendarClock,
 } from "lucide-react";
 
 const profileFormSchema = z.object({
@@ -287,7 +293,7 @@ export default function SettingsPage() {
                         <div className="w-full max-w-[120px] mx-auto md:mx-0">
                           <Avatar className="h-24 w-24 mx-auto">
                             <AvatarImage 
-                              src={user?.profileImage} 
+                              src={user?.profileImage || undefined} 
                               alt={user?.fullName || "User"} 
                             />
                             <AvatarFallback className="text-2xl">

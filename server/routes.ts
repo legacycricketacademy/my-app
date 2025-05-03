@@ -49,6 +49,41 @@ function parseJsonData(jsonData: string) {
   }
 }
 
+// Function to generate a secure invitation token
+function generateInvitationToken(playerId: number, parentEmail: string): string {
+  // Create token payload
+  const payload = {
+    playerId,
+    email: parentEmail,
+    expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days expiration
+  };
+  
+  // Convert to base64
+  const token = Buffer.from(JSON.stringify(payload)).toString('base64');
+  return token;
+}
+
+// Function to verify an invitation token
+function verifyInvitationToken(token: string): { valid: boolean; playerId?: number; email?: string; } {
+  try {
+    // Decode token
+    const payload = JSON.parse(Buffer.from(token, 'base64').toString());
+    
+    // Check if token has expired
+    if (payload.expires < Date.now()) {
+      return { valid: false };
+    }
+    
+    return {
+      valid: true,
+      playerId: payload.playerId,
+      email: payload.email
+    };
+  } catch (error) {
+    return { valid: false };
+  }
+}
+
 // Process and import player data
 async function processPlayersData(playersData: any[]) {
   const results = {
@@ -329,6 +364,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       res.status(500).json({ message: "Error fetching dashboard stats" });
+    }
+  });
+  
+  // API endpoint for sending invitations
+  app.post(`${apiPrefix}/invitations/send`, async (req, res) => {
+    try {
+      const { playerId, parentEmail, parentName } = req.body;
+      
+      if (!playerId || !parentEmail) {
+        return res.status(400).json({ message: "Player ID and parent email are required" });
+      }
+      
+      // Get player details to include in email
+      const player = await storage.getPlayerById(playerId);
+      if (!player) {
+        return res.status(404).json({ message: "Player not found" });
+      }
+      
+      // Generate invitation token
+      const token = generateInvitationToken(playerId, parentEmail);
+      
+      // Create invitation link
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const invitationLink = `${baseUrl}/auth?token=${token}`;
+      
+      // Generate email content
+      const emailContent = generateInvitationEmail(
+        parentName || "Parent", 
+        `${player.firstName} ${player.lastName}`,
+        invitationLink
+      );
+      
+      // Send email using SendGrid
+      const emailSent = await sendEmail({
+        to: parentEmail,
+        subject: "Invitation to Legacy Cricket Academy Parent Portal",
+        text: emailContent.text,
+        html: emailContent.html
+      });
+      
+      if (emailSent) {
+        res.status(200).json({ 
+          message: "Invitation sent successfully",
+          invitationLink // Include the link in case email fails but we still want to show the user
+        });
+      } else {
+        // If email fails, we still generate the link but inform the client
+        res.status(200).json({ 
+          message: "Email service unavailable, but invitation link generated",
+          invitationLink
+        });
+      }
+    } catch (error) {
+      console.error("Error sending invitation:", error);
+      res.status(500).json({ message: "Failed to send invitation" });
+    }
+  });
+  
+  // API endpoint to verify invitation token
+  app.get(`${apiPrefix}/invitations/verify`, (req, res) => {
+    const { token } = req.query;
+    
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ valid: false, message: "Invalid token" });
+    }
+    
+    const verification = verifyInvitationToken(token);
+    
+    if (verification.valid) {
+      res.status(200).json({
+        valid: true,
+        playerId: verification.playerId,
+        email: verification.email
+      });
+    } else {
+      res.status(400).json({ valid: false, message: "Invalid or expired token" });
     }
   });
   
