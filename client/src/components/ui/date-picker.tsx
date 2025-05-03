@@ -16,6 +16,27 @@ export interface DatePickerProps {
 }
 
 export function DatePicker({ date, setDate }: DatePickerProps) {
+  // Function to handle date selection with validation
+  const handleSelect = (selectedDate: Date | undefined) => {
+    // If no date is selected, pass undefined
+    if (!selectedDate) {
+      setDate(undefined);
+      return;
+    }
+    
+    // Ensure we always have a valid Date object
+    const validDate = new Date(selectedDate.toISOString().split('T')[0]);
+    console.log("Selected date:", validDate);
+    
+    // Check if valid date before setting
+    if (validDate instanceof Date && !isNaN(validDate.getTime())) {
+      setDate(validDate);
+    } else {
+      console.error("Invalid date selected:", selectedDate);
+      // Don't update if invalid
+    }
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -34,7 +55,7 @@ export function DatePicker({ date, setDate }: DatePickerProps) {
         <DayPicker
           mode="single"
           selected={date}
-          onSelect={setDate}
+          onSelect={handleSelect}
           captionLayout="dropdown"
           fromYear={1990}
           toYear={new Date().getFullYear()}
