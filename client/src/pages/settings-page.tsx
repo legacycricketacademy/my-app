@@ -223,15 +223,15 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-6">
-          {/* Sidebar */}
-          <Card className="md:sticky md:top-4 h-fit">
-            <CardContent className="p-0">
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                orientation="vertical"
-                className="h-full"
-              >
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            orientation="vertical"
+            className="w-full h-full flex md:flex-row flex-col"
+          >
+            {/* Sidebar */}
+            <Card className="md:sticky md:top-4 h-fit md:w-auto w-full">
+              <CardContent className="p-0">
                 <TabsList className="flex flex-col h-full items-stretch justify-start bg-transparent p-0 border-r border-gray-200">
                   <TabsTrigger
                     value="profile"
@@ -264,12 +264,11 @@ export default function SettingsPage() {
                     Sign Out
                   </Button>
                 </TabsList>
-              </Tabs>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Content Area */}
-          <div className="space-y-6">
+            {/* Content Area */}
+            <div className="space-y-6 w-full">
             <TabsContent value="profile" className="mt-0 space-y-6">
               <Card>
                 <CardHeader>
@@ -679,6 +678,7 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
           </div>
+          </Tabs>
         </div>
       </div>
     </MainLayout>
