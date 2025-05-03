@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CricketIcon } from "@/components/ui/cricket-icon";
-import { Users, Heart, Bell, DollarSign } from "lucide-react";
+import { Users, Heart, Bell, DollarSign, LinkIcon, CheckCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -28,22 +29,19 @@ const registerSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
+// Interface for the decoded invitation token
+interface InvitationToken {
+  email: string;
+  playerId: number;
+  expires: number;
+}
+
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
+  const [invitationToken, setInvitationToken] = useState<InvitationToken | null>(null);
+  const [invitationExpired, setInvitationExpired] = useState<boolean>(false);
   const { user, loginMutation, registerMutation } = useAuth();
-  const [, navigate] = useLocation();
-  
-  // Use useEffect for navigation to avoid setState during render
-  useEffect(() => {
-    if (user) {
-      navigate("/");
-    }
-  }, [user, navigate]);
-  
-  // Early return if user is already logged in
-  if (user) {
-    return null;
-  }
+  const [location, navigate] = useLocation();
   
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -63,6 +61,45 @@ export default function AuthPage() {
       role: "parent",
     },
   });
+  
+  // Parse URL for invitation token
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const inviteParam = params.get('invite');
+    
+    if (inviteParam) {
+      try {
+        // Decode the token
+        const decodedToken = JSON.parse(atob(inviteParam)) as InvitationToken;
+        
+        // Check if token is expired
+        if (decodedToken.expires < Date.now()) {
+          setInvitationExpired(true);
+        } else {
+          setInvitationToken(decodedToken);
+          
+          // Auto-select the register tab and populate email
+          setActiveTab("register");
+          registerForm.setValue("email", decodedToken.email);
+          registerForm.setValue("role", "parent");
+        }
+      } catch (error) {
+        console.error("Invalid invitation token:", error);
+      }
+    }
+  }, [location, registerForm]);
+  
+  // Use useEffect for navigation to avoid setState during render
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+  
+  // Early return if user is already logged in
+  if (user) {
+    return null;
+  }
   
   function onLoginSubmit(data: LoginFormValues) {
     loginMutation.mutate(data);
@@ -88,6 +125,26 @@ export default function AuthPage() {
           </CardHeader>
           
           <CardContent>
+            {invitationToken && (
+              <Alert className="mb-4 border-primary/20 bg-primary/5">
+                <LinkIcon className="h-4 w-4 text-primary" />
+                <AlertTitle className="text-primary">Invitation Link Detected</AlertTitle>
+                <AlertDescription>
+                  You've been invited to register as a parent. Complete the registration form below.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {invitationExpired && (
+              <Alert className="mb-4 border-destructive/20 bg-destructive/5">
+                <CheckCircle className="h-4 w-4 text-destructive" />
+                <AlertTitle className="text-destructive">Invitation Link Expired</AlertTitle>
+                <AlertDescription>
+                  This invitation link has expired. Please contact the academy for a new invitation.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="login">Login</TabsTrigger>
@@ -189,26 +246,29 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={registerForm.control}
-                      name="role"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Role</FormLabel>
-                          <FormControl>
-                            <select 
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                              {...field}
-                            >
-                              <option value="parent">Parent</option>
-                              <option value="coach">Coach</option>
-                              <option value="admin">Admin</option>
-                            </select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Only show role selection if not from an invitation */}
+                    {!invitationToken && (
+                      <FormField
+                        control={registerForm.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Role</FormLabel>
+                            <FormControl>
+                              <select 
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                {...field}
+                              >
+                                <option value="parent">Parent</option>
+                                <option value="coach">Coach</option>
+                                <option value="admin">Admin</option>
+                              </select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     <Button 
                       type="submit" 
                       className="w-full mt-4" 
