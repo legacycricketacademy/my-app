@@ -74,6 +74,7 @@ export default function PlayersPage() {
   const [showEditPlayerDialog, setShowEditPlayerDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [copiedPlayerId, setCopiedPlayerId] = useState<number | null>(null);
+  const [sendingEmailId, setSendingEmailId] = useState<number | null>(null);
   const { toast } = useToast();
   
   // Reset the copied state after 3 seconds
@@ -297,6 +298,57 @@ export default function PlayersPage() {
     }
   };
   
+  // Function to send email invitation
+  const sendEmailInvitation = async (player: any) => {
+    if (!player.parentEmail) {
+      toast({
+        title: "Error",
+        description: "This player doesn't have a parent email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      // Set loading state
+      setSendingEmailId(player.id);
+      
+      // Call the API to send the invitation
+      const response = await apiRequest(
+        "POST", 
+        "/api/invitations/send", 
+        {
+          playerId: player.id,
+          parentEmail: player.parentEmail,
+          parentName: player.parentName
+        }
+      );
+      
+      const data = await response.json();
+      
+      // Reset loading state
+      setSendingEmailId(null);
+      
+      if (response.ok) {
+        toast({
+          title: "Invitation Email Sent!",
+          description: `An invitation email has been sent to ${player.parentName} at ${player.parentEmail}.`,
+          variant: "default",
+        });
+      } else {
+        throw new Error(data.message || "Failed to send invitation email");
+      }
+    } catch (error) {
+      console.error("Error sending invitation email:", error);
+      setSendingEmailId(null);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "There was a problem sending the invitation email.",
+        variant: "destructive",
+      });
+    }
+  };
+  
   return (
     <MainLayout title="Team Management">
       <div className="space-y-6">
@@ -433,7 +485,7 @@ export default function PlayersPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            title="Send Invitation"
+                            title="Copy Invitation Link"
                             onClick={() => copyInvitationLink(player)}
                             disabled={copiedPlayerId === player.id}
                           >
@@ -441,6 +493,35 @@ export default function PlayersPage() {
                               <CheckCircle className="h-4 w-4 text-green-500" />
                             ) : (
                               <Link className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Send Email Invitation"
+                            onClick={() => sendEmailInvitation(player)}
+                            disabled={sendingEmailId === player.id}
+                          >
+                            {sendingEmailId === player.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="h-4 w-4"
+                              >
+                                <path d="M22 13V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h8" />
+                                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                                <path d="M16 19h6" />
+                                <path d="M19 16v6" />
+                              </svg>
                             )}
                           </Button>
                         </div>
