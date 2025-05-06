@@ -17,7 +17,13 @@ export function RoleBasedRoute({
   redirectTo = "/dashboard",
 }: RoleBasedRouteProps) {
   const { user, isLoading } = useAuth();
-
+  
+  // For testing only - will allow access to parent or admin views
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewParam = urlParams.get('view');
+  const isTestingParentView = viewParam === 'parent';
+  const isTestingAdminView = viewParam === 'admin';
+  
   return (
     <Route path={path}>
       {(params) => {
@@ -34,7 +40,17 @@ export function RoleBasedRoute({
           return <Redirect to="/auth" />;
         }
 
-        // If user doesn't have the required role, redirect
+        // Special test case for parent view
+        if (isTestingParentView && allowedRoles.includes("parent")) {
+          return <Component {...params} />;
+        }
+        
+        // Special test case for admin view
+        if (isTestingAdminView && allowedRoles.includes("admin")) {
+          return <Component {...params} />;
+        }
+
+        // Check user's actual role
         if (!allowedRoles.includes(user.role as UserRole)) {
           return <Redirect to={redirectTo} />;
         }

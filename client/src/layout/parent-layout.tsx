@@ -36,10 +36,8 @@ export function ParentLayout({
   };
   
   const navigation = [
-    { name: "Dashboard", href: "/", icon: Home },
+    { name: "Dashboard", href: "/parent", icon: Home },
     { name: "Schedule", href: "/parent/schedule", icon: Calendar },
-    { name: "Fitness", href: "/parent/fitness", icon: Heart },
-    { name: "Meal Plans", href: "/parent/meal-plans", icon: Utensils },
     { name: "Announcements", href: "/parent/announcements", icon: Bell },
   ];
   

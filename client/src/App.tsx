@@ -23,13 +23,19 @@ import NotFound from "@/pages/not-found";
 // Parent Pages
 import ParentDashboard from "@/pages/parent-dashboard";
 import ParentSchedulePage from "@/pages/parent/parent-schedule";
+import ParentTest from "@/pages/parent-test";
 
 function RouterContent() {
   const { user } = useAuth();
   
+  // For testing only - will display parent view when passing ?view=parent in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewParam = urlParams.get('view');
+  const isTestingParentView = viewParam === 'parent';
+  
   // If user is logged in, redirect based on role
   if (user) {
-    if (user.role === "parent") {
+    if (user.role === "parent" || isTestingParentView) {
       // Redirect admin/coach routes to parent dashboard
       if (
         window.location.pathname === "/" ||
@@ -44,7 +50,7 @@ function RouterContent() {
       ) {
         return <Redirect to="/parent" />;
       }
-    } else {
+    } else if (!isTestingParentView) {
       // Redirect parent routes to admin dashboard
       if (
         window.location.pathname === "/parent" ||
@@ -131,6 +137,9 @@ function RouterContent() {
         allowedRoles={["parent"]}
         redirectTo="/schedule"
       />
+      
+      {/* Special testing route - accessible to everyone */}
+      <Route path="/parent-test" component={ParentTest} />
       
       <Route component={NotFound} />
     </Switch>
