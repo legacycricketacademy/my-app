@@ -461,6 +461,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get players for the logged-in parent
+  app.get(`${apiPrefix}/players/parent`, async (req, res) => {
+    try {
+      // Ensure user is authenticated
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "You must be logged in to view your players" });
+      }
+      
+      // Only parents can access this endpoint
+      if (req.user.role !== "parent") {
+        return res.status(403).json({ message: "Only parents can access this endpoint" });
+      }
+      
+      const players = await storage.getPlayersByParentId(req.user.id);
+      res.json(players);
+    } catch (error) {
+      console.error("Error fetching parent's players:", error);
+      res.status(500).json({ message: "Error fetching players" });
+    }
+  });
+  
   app.get(`${apiPrefix}/players/:id`, async (req, res) => {
     try {
       const playerId = parseInt(req.params.id);
