@@ -65,9 +65,42 @@ export default function AuthPage() {
   // Parse URL for invitation token
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const inviteParam = params.get('invite');
+    const tokenParam = params.get('token');
     
-    if (inviteParam) {
+    if (tokenParam) {
+      try {
+        // First try server-side verification
+        fetch(`/api/invitations/verify?token=${tokenParam}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.valid && data.email) {
+              setInvitationToken({
+                email: data.email,
+                playerId: data.playerId,
+                expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // Not used but required by interface
+              });
+              
+              // Auto-select the register tab and populate email
+              setActiveTab("register");
+              registerForm.setValue("email", data.email);
+              registerForm.setValue("role", "parent");
+            } else {
+              setInvitationExpired(true);
+            }
+          })
+          .catch(err => {
+            console.error("Error verifying token:", err);
+            setInvitationExpired(true);
+          });
+      } catch (error) {
+        console.error("Invalid invitation token:", error);
+        setInvitationExpired(true);
+      }
+    }
+    
+    // Also support client-side tokens (for backward compatibility)
+    const inviteParam = params.get('invite');
+    if (inviteParam && !tokenParam) {
       try {
         // Decode the token
         const decodedToken = JSON.parse(atob(inviteParam)) as InvitationToken;

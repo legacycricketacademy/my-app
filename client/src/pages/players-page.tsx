@@ -267,18 +267,36 @@ export default function PlayersPage() {
   // Function to copy invitation link
   const copyInvitationLink = async (player: any) => {
     try {
-      // Create a unique invitation token that includes the parent's email
-      const token = btoa(JSON.stringify({
-        email: player.parentEmail,
-        playerId: player.id,
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days from now
-      }));
+      // First try to get a server-generated token
+      const response = await apiRequest(
+        "POST", 
+        "/api/invitations/send", 
+        {
+          playerId: player.id,
+          parentEmail: player.parentEmail,
+          parentName: player.parentName
+        }
+      );
       
-      // Create the invitation URL
-      const inviteUrl = `${window.location.origin}/auth?invite=${token}`;
+      const data = await response.json();
       
-      // Copy to clipboard
-      await navigator.clipboard.writeText(inviteUrl);
+      if (response.ok && data.invitationLink) {
+        // Use the server-generated link
+        await navigator.clipboard.writeText(data.invitationLink);
+      } else {
+        // Fallback to client-side token generation
+        const token = btoa(JSON.stringify({
+          email: player.parentEmail,
+          playerId: player.id,
+          expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days from now
+        }));
+        
+        // Create the invitation URL with client-side token
+        const inviteUrl = `${window.location.origin}/auth?invite=${token}`;
+        
+        // Copy to clipboard
+        await navigator.clipboard.writeText(inviteUrl);
+      }
       
       // Set copied state and show toast
       resetCopiedState(player.id);
