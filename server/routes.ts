@@ -461,6 +461,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Special test endpoint for parent dashboard demo
+  app.get(`${apiPrefix}/test/parent-dashboard-data`, async (req, res) => {
+    try {
+      // Get sample data for test demonstration without authentication
+      const allPlayers = await storage.getAllPlayers();
+      const samplePlayers = allPlayers.slice(0, 3);
+      
+      // Make sure we have enough test data
+      if (samplePlayers.length === 0) {
+        return res.json([
+          {
+            id: 9999,
+            firstName: "Test",
+            lastName: "Player",
+            ageGroup: "Under 12s",
+            dateOfBirth: new Date("2013-05-15"),
+            profileImage: null,
+            playerType: "Batsman",
+            emergencyContact: "1234567890",
+            medicalInformation: "No allergies",
+            parentId: 1,
+            parentName: "Test Parent",
+            parentEmail: "parent@example.com"
+          }
+        ]);
+      }
+      
+      return res.json(samplePlayers);
+    } catch (error) {
+      console.error("Error fetching test data:", error);
+      res.status(500).json({ message: "Error fetching test data" });
+    }
+  });
+
   // Get players for the logged-in parent
   app.get(`${apiPrefix}/players/parent`, async (req, res) => {
     try {
