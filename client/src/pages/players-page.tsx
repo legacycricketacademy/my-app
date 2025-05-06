@@ -267,6 +267,20 @@ export default function PlayersPage() {
   // Function to copy invitation link
   const copyInvitationLink = async (player: any) => {
     try {
+      // Debug player data
+      console.log("Player data for invitation:", player);
+      
+      // Make sure we have the required data
+      if (!player.id) {
+        console.error("Player ID is missing!");
+        throw new Error("Player ID is required for generating an invitation");
+      }
+      
+      if (!player.parentEmail) {
+        console.error("Parent email is missing!");
+        throw new Error("Parent email is required for generating an invitation");
+      }
+      
       // First try to get a server-generated token
       const response = await apiRequest(
         "POST", 
@@ -274,7 +288,7 @@ export default function PlayersPage() {
         {
           playerId: player.id,
           parentEmail: player.parentEmail,
-          parentName: player.parentName
+          parentName: player.parentName || ""
         }
       );
       
@@ -318,6 +332,19 @@ export default function PlayersPage() {
   
   // Function to send email invitation
   const sendEmailInvitation = async (player: any) => {
+    // Debug player data
+    console.log("Player data for email invitation:", player);
+    
+    // Validate player data
+    if (!player.id) {
+      toast({
+        title: "Error",
+        description: "Player ID is missing. Cannot send invitation.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!player.parentEmail) {
       toast({
         title: "Error",
@@ -338,7 +365,7 @@ export default function PlayersPage() {
         {
           playerId: player.id,
           parentEmail: player.parentEmail,
-          parentName: player.parentName
+          parentName: player.parentName || ""
         }
       );
       

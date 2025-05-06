@@ -116,6 +116,7 @@ export class DatabaseStorage implements IStorage {
     let query = db.select({
       ...players,
       parentName: users.fullName,
+      parentEmail: users.email,
     }).from(players)
       .leftJoin(users, eq(players.parentId, users.id))
       .orderBy(players.firstName);
