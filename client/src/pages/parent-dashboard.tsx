@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MainLayout } from "@/layout/main-layout";
+import { ParentLayout } from "@/layout/parent-layout";
 import { Calendar, Clock, Info } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
@@ -47,7 +47,7 @@ export default function ParentDashboard() {
   }
 
   return (
-    <MainLayout title="Parent Dashboard">
+    <ParentLayout title="Parent Dashboard">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -221,6 +221,6 @@ export default function ParentDashboard() {
           )}
         </div>
       </div>
-    </MainLayout>
+    </ParentLayout>
   );
 }
