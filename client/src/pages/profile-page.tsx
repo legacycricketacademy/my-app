@@ -84,22 +84,25 @@ export default function ProfilePage() {
   return (
     <MainLayout title="My Profile">
       <div className="max-w-4xl mx-auto">
-        <Card>
-          <CardHeader className="bg-primary/5 flex flex-row items-center gap-4">
-            <Avatar className="h-16 w-16">
+        <Card className="shadow-sm">
+          <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 flex flex-row items-center gap-4">
+            <Avatar className="h-16 w-16 border-2 border-primary/20">
               {user.profileImage ? (
                 <AvatarImage src={user.profileImage} alt={user.fullName} />
               ) : null}
-              <AvatarFallback className="text-lg">{getInitials(user.fullName)}</AvatarFallback>
+              <AvatarFallback className="text-lg bg-primary/10 text-primary font-semibold">{getInitials(user.fullName)}</AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-2xl">{user.fullName}</CardTitle>
-              <p className="text-muted-foreground capitalize">{user.role}</p>
+              <CardTitle className="text-2xl bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">{user.fullName}</CardTitle>
+              <p className="text-muted-foreground capitalize flex items-center gap-1 mt-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
+                {user.role}
+              </p>
             </div>
             {!isEditing && (
               <Button 
                 variant="outline" 
-                className="ml-auto"
+                className="ml-auto border-primary/20 hover:bg-primary/5 text-primary"
                 onClick={() => setIsEditing(true)}
               >
                 Edit Profile
@@ -109,70 +112,74 @@ export default function ProfilePage() {
           <CardContent className="pt-6">
             {isEditing ? (
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="fullName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Address</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex justify-end gap-2">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <FormField
+                      control={form.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem className="border-b pb-4">
+                          <FormLabel className="text-sm font-medium text-muted-foreground">Full Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="mt-2 bg-gray-50/50" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem className="border-b pb-4">
+                          <FormLabel className="text-sm font-medium text-muted-foreground">Email</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="mt-2 bg-gray-50/50" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem className="border-b pb-4">
+                          <FormLabel className="text-sm font-medium text-muted-foreground">Phone Number</FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value || ""} className="mt-2 bg-gray-50/50" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem className="border-b pb-4">
+                          <FormLabel className="text-sm font-medium text-muted-foreground">Address</FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value || ""} className="mt-2 bg-gray-50/50" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
                     <Button 
                       type="button" 
                       variant="outline" 
                       onClick={() => setIsEditing(false)}
+                      className="border-gray-300"
                     >
                       Cancel
                     </Button>
                     <Button 
                       type="submit" 
                       disabled={updateProfileMutation.isPending}
+                      className="bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary"
                     >
                       {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
                     </Button>
@@ -180,36 +187,38 @@ export default function ProfilePage() {
                 </form>
               </Form>
             ) : (
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <dt className="text-muted-foreground font-medium">Email</dt>
-                  <dd className="mt-1">{user.email}</dd>
+              <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="border-b pb-4">
+                  <dt className="text-muted-foreground font-medium text-sm">Email</dt>
+                  <dd className="mt-2 text-lg">{user.email}</dd>
                 </div>
-                <div>
-                  <dt className="text-muted-foreground font-medium">Phone</dt>
-                  <dd className="mt-1">{user.phone || "Not provided"}</dd>
+                <div className="border-b pb-4">
+                  <dt className="text-muted-foreground font-medium text-sm">Phone</dt>
+                  <dd className="mt-2 text-lg">{user.phone || "Not provided"}</dd>
                 </div>
-                <div>
-                  <dt className="text-muted-foreground font-medium">Address</dt>
-                  <dd className="mt-1">{user.address || "Not provided"}</dd>
+                <div className="border-b pb-4">
+                  <dt className="text-muted-foreground font-medium text-sm">Address</dt>
+                  <dd className="mt-2 text-lg">{user.address || "Not provided"}</dd>
                 </div>
-                <div>
-                  <dt className="text-muted-foreground font-medium">Username</dt>
-                  <dd className="mt-1">{user.username}</dd>
+                <div className="border-b pb-4">
+                  <dt className="text-muted-foreground font-medium text-sm">Username</dt>
+                  <dd className="mt-2 text-lg">{user.username}</dd>
                 </div>
-                <div>
-                  <dt className="text-muted-foreground font-medium">Email Verification</dt>
-                  <dd className="mt-1">
+                <div className="border-b pb-4">
+                  <dt className="text-muted-foreground font-medium text-sm">Email Verification</dt>
+                  <dd className="mt-2">
                     {user.isEmailVerified ? (
-                      <span className="text-green-600 font-medium">Verified</span>
+                      <span className="text-green-600 font-medium bg-green-50 px-3 py-1 rounded-full text-sm">Verified</span>
                     ) : (
-                      <span className="text-amber-600 font-medium">Pending verification</span>
+                      <span className="text-amber-600 font-medium bg-amber-50 px-3 py-1 rounded-full text-sm">Pending verification</span>
                     )}
                   </dd>
                 </div>
-                <div>
-                  <dt className="text-muted-foreground font-medium">Account Status</dt>
-                  <dd className="mt-1 capitalize">{user.status}</dd>
+                <div className="border-b pb-4">
+                  <dt className="text-muted-foreground font-medium text-sm">Account Status</dt>
+                  <dd className="mt-2">
+                    <span className="bg-primary-50 text-primary px-3 py-1 rounded-full text-sm font-medium capitalize">{user.status}</span>
+                  </dd>
                 </div>
               </dl>
             )}
