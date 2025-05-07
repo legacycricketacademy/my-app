@@ -76,6 +76,13 @@ export interface IStorage {
   createPayment(paymentData: InsertPayment): Promise<any>;
   updatePaymentStatus(id: number, status: string, paidDate?: Date): Promise<any | undefined>;
   
+  // Connection request methods
+  getConnectionRequestById(id: number): Promise<any>;
+  getConnectionRequestsByParentId(parentId: number): Promise<any[]>;
+  getAllConnectionRequests(status?: string): Promise<any[]>;
+  createConnectionRequest(requestData: InsertConnectionRequest): Promise<any>;
+  updateConnectionRequest(id: number, data: Partial<InsertConnectionRequest>): Promise<any>;
+  
   // Stats methods
   getDashboardStats(): Promise<any>;
   
@@ -518,6 +525,62 @@ export class DatabaseStorage implements IStorage {
       announcementCount: announcementCount[0]?.count || 0,
       lastAnnouncementDate: lastAnnouncement[0]?.createdAt,
     };
+  }
+  
+  // Connection request methods
+  async getConnectionRequestById(id: number): Promise<any> {
+    const result = await db.select().from(connectionRequests).where(eq(connectionRequests.id, id));
+    return result[0];
+  }
+  
+  async getConnectionRequestsByParentId(parentId: number): Promise<any[]> {
+    const requests = await db.select({
+      ...connectionRequests,
+      playerFirstName: players.firstName,
+      playerLastName: players.lastName,
+      playerAgeGroup: players.ageGroup
+    })
+    .from(connectionRequests)
+    .leftJoin(players, eq(connectionRequests.playerId, players.id))
+    .where(eq(connectionRequests.parentId, parentId))
+    .orderBy(desc(connectionRequests.createdAt));
+    
+    return requests;
+  }
+  
+  async getAllConnectionRequests(status?: string): Promise<any[]> {
+    let query = db.select({
+      ...connectionRequests,
+      parentName: users.fullName,
+      parentEmail: users.email,
+      playerFirstName: players.firstName,
+      playerLastName: players.lastName,
+      playerAgeGroup: players.ageGroup
+    })
+    .from(connectionRequests)
+    .leftJoin(users, eq(connectionRequests.parentId, users.id))
+    .leftJoin(players, eq(connectionRequests.playerId, players.id))
+    .orderBy(desc(connectionRequests.createdAt));
+    
+    if (status && status !== 'all') {
+      query = query.where(eq(connectionRequests.status, status));
+    }
+    
+    return await query;
+  }
+  
+  async createConnectionRequest(requestData: InsertConnectionRequest): Promise<any> {
+    const [request] = await db.insert(connectionRequests).values(requestData).returning();
+    return request;
+  }
+  
+  async updateConnectionRequest(id: number, data: Partial<InsertConnectionRequest>): Promise<any> {
+    const [updatedRequest] = await db
+      .update(connectionRequests)
+      .set(data)
+      .where(eq(connectionRequests.id, id))
+      .returning();
+    return updatedRequest;
   }
 }
 
