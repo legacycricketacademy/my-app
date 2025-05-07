@@ -42,6 +42,7 @@ export function ParentLayout({
     { name: "Schedule", href: "/parent/schedule", icon: Calendar },
     { name: "Announcements", href: "/parent/announcements", icon: Bell },
     { name: "Connect Child", href: "/parent/connect-child", icon: Users },
+    { name: "My Profile", href: "/profile", icon: User },
   ];
   
   const Logo = () => (
@@ -144,7 +145,7 @@ export function ParentLayout({
           </div>
           
           <Button variant="ghost" size="icon" asChild className="md:hidden">
-            <Link href="/parent/profile">
+            <Link href="/profile">
               <User className="h-5 w-5" />
               <span className="sr-only">Profile</span>
             </Link>
