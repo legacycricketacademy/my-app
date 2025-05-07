@@ -5,7 +5,9 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { User as SelectUser, users } from "@shared/schema";
+import { db } from "@db";
+import { eq } from "drizzle-orm";
 
 declare global {
   namespace Express {
@@ -91,6 +93,19 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email already in use" });
       }
 
+      // Check if phone number is provided and if it's already in use
+      if (req.body.phone) {
+        try {
+          const existingUsers = await db.select().from(users).where(eq(users.phone, req.body.phone));
+          if (existingUsers.length > 0) {
+            return res.status(400).json({ message: "Phone number already registered" });
+          }
+        } catch (err) {
+          console.error("Error checking phone number:", err);
+          // Continue with registration even if phone check fails - not critical
+        }
+      }
+      
       // Create new user with hashed password
       const hashedPassword = await hashPassword(req.body.password);
       let userData = {

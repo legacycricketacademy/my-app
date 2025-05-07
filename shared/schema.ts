@@ -17,7 +17,7 @@ export const users = pgTable("users", {
   role: text("role", { enum: userRoles }).notNull().default("parent"),
   status: text("status").default("active"),  // active, pending, inactive
   isActive: boolean("is_active").default(true),
-  phone: text("phone"),
+  phone: text("phone").unique(),
   address: text("address"),
   profileImage: text("profile_image"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
