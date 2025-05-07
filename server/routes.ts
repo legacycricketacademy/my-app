@@ -426,19 +426,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate email content
       const { text, html } = generateVerificationEmail(user.fullName, verificationLink);
       
-      // Send verification email
-      const emailSent = await sendEmail({
-        to: user.email,
-        subject: "Verify Your Email Address",
-        text,
-        html
-      });
-      
-      if (!emailSent) {
-        return res.status(500).json({ message: "Failed to send verification email" });
+      // Try to send verification email
+      try {
+        const emailSent = await sendEmail({
+          to: user.email,
+          subject: "Verify Your Email Address",
+          text,
+          html
+        });
+        
+        if (!emailSent) {
+          // Still return success but with a warning
+          return res.status(200).json({ 
+            message: "Verification email could not be sent, but verification link is valid",
+            verificationLink, // Return the link so we can display it directly to the user
+            status: "warning"
+          });
+        }
+        
+        res.status(200).json({ message: "Verification email sent", status: "success" });
+      } catch (emailError) {
+        console.error("Email sending error:", emailError);
+        // Return the verification link to the user instead of failing
+        return res.status(200).json({ 
+          message: "Email service unavailable, but here's your verification link",
+          verificationLink, // Return the link so the user can still verify
+          status: "warning"
+        });
       }
-      
-      res.status(200).json({ message: "Verification email sent" });
     } catch (error) {
       console.error("Error sending verification email:", error);
       res.status(500).json({ message: "Internal server error" });
