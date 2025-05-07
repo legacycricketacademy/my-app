@@ -10,7 +10,9 @@ import {
   insertMealPlanSchema, 
   insertMealItemSchema, 
   insertAnnouncementSchema, 
-  insertPaymentSchema 
+  insertPaymentSchema,
+  insertConnectionRequestSchema,
+  connectionRequests
 } from "@shared/schema";
 import { sendEmail, generateInvitationEmail } from "./email";
 
@@ -978,6 +980,190 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error importing players:", error);
       return res.status(500).json({ error: "Error importing players" });
+    }
+  });
+
+  // Parent - Search for players to connect with
+  app.get(`${apiPrefix}/parent/search-players`, async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const query = req.query.query as string || '';
+      if (!query || query.length < 2) {
+        return res.status(400).json({ message: "Search query must be at least 2 characters" });
+      }
+
+      // Get all players where firstName or lastName contains the query
+      const allPlayers = await storage.getAllPlayers();
+      
+      // Filter players that match the search term
+      const matchingPlayers = allPlayers.filter(player => {
+        const fullName = `${player.firstName} ${player.lastName}`.toLowerCase();
+        return fullName.includes(query.toLowerCase());
+      });
+
+      // Filter out players that are already connected to this parent
+      const parentPlayers = await storage.getPlayersByParentId(req.user.id);
+      const parentPlayerIds = new Set(parentPlayers.map(p => p.id));
+      
+      // Also filter out players that already have pending connection requests
+      const existingRequests = await storage.getConnectionRequestsByParentId(req.user.id);
+      const requestedPlayerIds = new Set(existingRequests.map(r => r.playerId));
+
+      const availablePlayers = matchingPlayers.filter(player => 
+        !parentPlayerIds.has(player.id) && !requestedPlayerIds.has(player.id)
+      );
+
+      // Return limited player data (no private details like medical info)
+      const sanitizedPlayers = availablePlayers.map(player => ({
+        id: player.id,
+        firstName: player.firstName,
+        lastName: player.lastName,
+        ageGroup: player.ageGroup
+      }));
+
+      return res.json(sanitizedPlayers);
+    } catch (error) {
+      console.error("Error searching players:", error);
+      return res.status(500).json({ message: "Error searching players" });
+    }
+  });
+
+  // Parent - Get connection requests
+  app.get(`${apiPrefix}/parent/connection-requests`, async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const requests = await storage.getConnectionRequestsByParentId(req.user.id);
+      return res.json(requests);
+    } catch (error) {
+      console.error("Error fetching connection requests:", error);
+      return res.status(500).json({ message: "Error fetching connection requests" });
+    }
+  });
+
+  // Parent - Create connection request
+  app.post(`${apiPrefix}/parent/connection-requests`, async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { playerId } = req.body;
+      
+      if (!playerId) {
+        return res.status(400).json({ message: "Player ID is required" });
+      }
+
+      // Verify the player exists
+      const player = await storage.getPlayerById(playerId);
+      if (!player) {
+        return res.status(404).json({ message: "Player not found" });
+      }
+
+      // Check if the player is already connected to this parent
+      const parentPlayers = await storage.getPlayersByParentId(req.user.id);
+      if (parentPlayers.some(p => p.id === playerId)) {
+        return res.status(400).json({ message: "Already connected to this player" });
+      }
+
+      // Check if there's already a connection request
+      const existingRequests = await storage.getConnectionRequestsByParentId(req.user.id);
+      if (existingRequests.some(r => r.playerId === playerId)) {
+        return res.status(400).json({ message: "Connection request already exists" });
+      }
+
+      // Create the connection request
+      const connectionRequest = await storage.createConnectionRequest({
+        parentId: req.user.id,
+        playerId,
+        status: "pending",
+        notes: `Connection request from ${req.user.fullName}`,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      return res.status(201).json(connectionRequest);
+    } catch (error) {
+      console.error("Error creating connection request:", error);
+      return res.status(500).json({ message: "Error creating connection request" });
+    }
+  });
+
+  // Admin - Get all connection requests
+  app.get(`${apiPrefix}/admin/connection-requests`, async (req, res) => {
+    if (!req.isAuthenticated() || !['admin', 'coach'].includes(req.user.role)) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const status = req.query.status as string | undefined;
+      const search = req.query.search as string | undefined;
+      
+      const requests = await storage.getAllConnectionRequests(status);
+      
+      // Filter by search term if provided
+      let filteredRequests = requests;
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filteredRequests = requests.filter(req => {
+          const parentName = `${req.parentName}`.toLowerCase();
+          const playerName = `${req.playerFirstName} ${req.playerLastName}`.toLowerCase();
+          return parentName.includes(searchLower) || playerName.includes(searchLower);
+        });
+      }
+      
+      return res.json(filteredRequests);
+    } catch (error) {
+      console.error("Error fetching connection requests:", error);
+      return res.status(500).json({ message: "Error fetching connection requests" });
+    }
+  });
+
+  // Admin - Update connection request status
+  app.put(`${apiPrefix}/admin/connection-requests/:requestId`, async (req, res) => {
+    if (!req.isAuthenticated() || !['admin', 'coach'].includes(req.user.role)) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const requestId = parseInt(req.params.requestId, 10);
+      const { status } = req.body;
+      
+      if (!requestId || isNaN(requestId)) {
+        return res.status(400).json({ message: "Invalid request ID" });
+      }
+      
+      if (!status || !['approved', 'rejected', 'pending'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      // Get the connection request
+      const request = await storage.getConnectionRequestById(requestId);
+      if (!request) {
+        return res.status(404).json({ message: "Connection request not found" });
+      }
+      
+      // If approving, update the player's parentId
+      if (status === 'approved') {
+        // Update the player's parentId to the parent who requested the connection
+        await storage.updatePlayer(request.playerId, { parentId: request.parentId });
+      }
+      
+      // Update the connection request status
+      const updatedRequest = await storage.updateConnectionRequest(requestId, { 
+        status,
+        updatedAt: new Date()
+      });
+      
+      return res.json(updatedRequest);
+    } catch (error) {
+      console.error("Error updating connection request:", error);
+      return res.status(500).json({ message: "Error updating connection request" });
     }
   });
 
