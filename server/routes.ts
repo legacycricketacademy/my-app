@@ -421,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create verification link
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const verificationLink = `${baseUrl}/auth/verify-email?token=${token}`;
+      const verificationLink = `${baseUrl}/api/verify-email?token=${token}`;
       
       // Generate email content
       const { text, html } = generateVerificationEmail(user.fullName, verificationLink);
