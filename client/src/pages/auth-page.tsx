@@ -23,6 +23,10 @@ const registerSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   fullName: z.string().min(2, "Full name is required"),
   email: z.string().email("Invalid email address"),
+  phone: z.string()
+    .min(10, "Phone number must be at least 10 characters")
+    .optional()
+    .refine(val => !val || /^[0-9+\-\s()]*$/.test(val), "Phone number can only contain digits, +, -, spaces, and parentheses"),
   role: z.enum(["parent", "coach", "admin"]),
 });
 
