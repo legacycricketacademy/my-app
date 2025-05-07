@@ -137,6 +137,17 @@ export const payments = pgTable("payments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Parent-Child Connection Requests
+export const connectionRequests = pgTable("connection_requests", {
+  id: serial("id").primaryKey(),
+  parentId: integer("parent_id").references(() => users.id).notNull(),
+  playerId: integer("player_id").references(() => players.id).notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Define relationships
 export const usersRelations = relations(users, ({ many }) => ({
   players: many(players),
@@ -144,6 +155,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   announcementViews: many(announcementViews),
   announcements: many(announcements, { relationName: "created_by" }),
   mealPlans: many(mealPlans, { relationName: "created_by" }),
+  connectionRequests: many(connectionRequests),
 }));
 
 export const playersRelations = relations(players, ({ one, many }) => ({
