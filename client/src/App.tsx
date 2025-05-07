@@ -24,6 +24,8 @@ import NotFound from "@/pages/not-found";
 import ParentDashboard from "@/pages/parent-dashboard";
 import ParentSchedulePage from "@/pages/parent/parent-schedule";
 import ParentTest from "@/pages/parent-test";
+import ConnectChildPage from "@/pages/parent/connect-child";
+import ManageParentConnectionsPage from "@/pages/manage-parent-connections";
 
 function RouterContent() {
   const { user } = useAuth();
