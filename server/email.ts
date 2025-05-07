@@ -101,3 +101,63 @@ ${ACADEMY_NAME} Team
 
   return { text, html };
 }
+
+export function generateVerificationEmail(
+  fullName: string,
+  verificationLink: string
+): { text: string; html: string } {
+  // Plain text version
+  const text = `
+Hello ${fullName},
+
+Thank you for registering with ${ACADEMY_NAME}. Please verify your email address by clicking the link below:
+
+${verificationLink}
+
+This link will expire in 24 hours.
+
+Thanks,
+${ACADEMY_NAME} Team
+`;
+
+  // HTML version (more visually appealing)
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
+    .content { padding: 20px; }
+    .button { display: inline-block; padding: 10px 20px; color: white; background-color: #4f46e5; 
+              text-decoration: none; border-radius: 4px; margin: 20px 0; }
+    .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${ACADEMY_NAME}</h1>
+    </div>
+    <div class="content">
+      <p>Hello ${fullName},</p>
+      <p>Thank you for registering with ${ACADEMY_NAME}.</p>
+      <p>Please verify your email address by clicking the button below:</p>
+      <a href="${verificationLink}" class="button">Verify Email Address</a>
+      <p><em>This verification link will expire in 24 hours.</em></p>
+      <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+      <p>${verificationLink}</p>
+      <p>Thanks,<br>${ACADEMY_NAME} Team</p>
+    </div>
+    <div class="footer">
+      <p>This is an automated message, please do not reply to this email.</p>
+      <p>&copy; ${new Date().getFullYear()} ${ACADEMY_NAME}</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  return { text, html };
+}
