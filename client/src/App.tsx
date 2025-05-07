@@ -18,6 +18,7 @@ import AnnouncementsPage from "@/pages/announcements-page";
 import PaymentsPage from "@/pages/payments-page";
 import SettingsPage from "@/pages/settings-page";
 import ImportDataPage from "@/pages/import-data-page";
+import ProfilePage from "@/pages/profile-page";
 import NotFound from "@/pages/not-found";
 
 // Parent Pages
@@ -153,6 +154,9 @@ function RouterContent() {
         allowedRoles={["admin", "coach"]}
         redirectTo="/parent"
       />
+      
+      {/* Profile page - accessible to all authenticated users */}
+      <ProtectedRoute path="/profile" component={ProfilePage} />
       
       {/* Special testing route - accessible to everyone */}
       <Route path="/parent-test" component={ParentTest} />
