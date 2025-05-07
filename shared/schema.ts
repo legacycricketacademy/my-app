@@ -15,6 +15,8 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   fullName: text("full_name").notNull(),
   role: text("role", { enum: userRoles }).notNull().default("parent"),
+  status: text("status").default("active"),  // active, pending, inactive
+  isActive: boolean("is_active").default(true),
   phone: text("phone"),
   address: text("address"),
   profileImage: text("profile_image"),
