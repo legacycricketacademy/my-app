@@ -53,6 +53,7 @@ export function Sidebar() {
   // Admin/Coach specific items
   const adminItems = [
     { label: "Import Data", icon: <Upload className="h-5 w-5" />, path: "/import-data" },
+    { label: "Manage Connections", icon: <UserPlus className="h-5 w-5" />, path: "/manage-connections" },
   ];
   
   // Final nav items based on user role
@@ -74,7 +75,9 @@ export function Sidebar() {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <Avatar>
-            <AvatarImage src={user?.profileImage} alt={user?.fullName || "User"} />
+            {user?.profileImage ? (
+              <AvatarImage src={user.profileImage} alt={user?.fullName || "User"} />
+            ) : null}
             <AvatarFallback>{user?.fullName ? getInitials(user.fullName) : "U"}</AvatarFallback>
           </Avatar>
           <div>

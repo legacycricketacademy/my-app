@@ -1,10 +1,33 @@
 import { db } from "@db";
-import { users, players, sessions, sessionAttendances, fitnessRecords, mealPlans, mealItems, announcements, announcementViews, payments } from "@shared/schema";
+import { 
+  users, 
+  players, 
+  sessions, 
+  sessionAttendances, 
+  fitnessRecords, 
+  mealPlans, 
+  mealItems, 
+  announcements, 
+  announcementViews, 
+  payments,
+  connectionRequests
+} from "@shared/schema";
 import { eq, and, or, gte, lte, desc, sql, count } from "drizzle-orm";
 import { Pool } from "@neondatabase/serverless";
 import connectPg from "connect-pg-simple";
 import session from "express-session";
-import { InsertUser, User, InsertPlayer, InsertSession, InsertFitnessRecord, InsertMealPlan, InsertMealItem, InsertAnnouncement, InsertPayment } from "@shared/schema";
+import { 
+  InsertUser, 
+  User, 
+  InsertPlayer, 
+  InsertSession, 
+  InsertFitnessRecord, 
+  InsertMealPlan, 
+  InsertMealItem, 
+  InsertAnnouncement, 
+  InsertPayment,
+  InsertConnectionRequest
+} from "@shared/schema";
 
 export interface IStorage {
   // User methods
