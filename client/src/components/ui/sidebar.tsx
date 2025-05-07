@@ -73,7 +73,7 @@ export function Sidebar() {
       
       {/* Coach Profile */}
       <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
+        <Link href="/profile" className="flex items-center space-x-3 hover:bg-gray-50 p-2 rounded-lg transition-colors">
           <Avatar>
             {user?.profileImage ? (
               <AvatarImage src={user.profileImage} alt={user?.fullName || "User"} />
@@ -84,7 +84,7 @@ export function Sidebar() {
             <h4 className="text-sm font-semibold">{user?.fullName || "User"}</h4>
             <p className="text-xs text-gray-600">{user?.role === "coach" ? "Head Coach" : user?.role === "admin" ? "Administrator" : "Parent"}</p>
           </div>
-        </div>
+        </Link>
       </div>
       
       {/* Navigation */}

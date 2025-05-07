@@ -359,6 +359,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Base API prefix
   const apiPrefix = "/api";
   
+  // User profile routes
+  app.patch(`${apiPrefix}/user/:id`, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = parseInt(req.params.id);
+      
+      // Only allow users to update their own profile
+      if (req.user.id !== userId) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+      
+      const userData = req.body;
+      const updatedUser = await storage.updateUser(userId, userData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't send password back to client
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating user profile" });
+    }
+  });
+
   // Dashboard stats
   app.get(`${apiPrefix}/dashboard/stats`, async (req, res) => {
     try {
