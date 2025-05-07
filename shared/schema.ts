@@ -163,6 +163,7 @@ export const playersRelations = relations(players, ({ one, many }) => ({
   fitnessRecords: many(fitnessRecords),
   payments: many(payments),
   sessionAttendances: many(sessionAttendances),
+  connectionRequests: many(connectionRequests),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
@@ -202,6 +203,11 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
   player: one(players, { fields: [payments.playerId], references: [players.id] }),
 }));
 
+export const connectionRequestsRelations = relations(connectionRequests, ({ one }) => ({
+  parent: one(users, { fields: [connectionRequests.parentId], references: [users.id] }),
+  player: one(players, { fields: [connectionRequests.playerId], references: [players.id] }),
+}));
+
 // Zod Schemas for validation
 export const insertUserSchema = createInsertSchema(users);
 export const insertPlayerSchema = createInsertSchema(players, {
@@ -219,6 +225,7 @@ export const insertMealPlanSchema = createInsertSchema(mealPlans);
 export const insertMealItemSchema = createInsertSchema(mealItems);
 export const insertAnnouncementSchema = createInsertSchema(announcements);
 export const insertPaymentSchema = createInsertSchema(payments);
+export const insertConnectionRequestSchema = createInsertSchema(connectionRequests);
 
 // Create select schemas
 export const userSchema = createSelectSchema(users);
@@ -229,6 +236,7 @@ export const mealPlanSchema = createSelectSchema(mealPlans);
 export const mealItemSchema = createSelectSchema(mealItems);
 export const announcementSchema = createSelectSchema(announcements);
 export const paymentSchema = createSelectSchema(payments);
+export const connectionRequestSchema = createSelectSchema(connectionRequests);
 
 // Types for the schemas
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -254,3 +262,6 @@ export type Announcement = z.infer<typeof announcementSchema>;
 
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type Payment = z.infer<typeof paymentSchema>;
+
+export type InsertConnectionRequest = z.infer<typeof insertConnectionRequestSchema>;
+export type ConnectionRequest = z.infer<typeof connectionRequestSchema>;
