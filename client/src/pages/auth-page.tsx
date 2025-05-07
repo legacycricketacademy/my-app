@@ -232,10 +232,15 @@ export default function AuthPage() {
                       name="fullName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel>Your Full Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter your full name" {...field} />
+                            <Input placeholder="Enter your full name (parent name if registering as parent)" {...field} />
                           </FormControl>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {registerForm.watch("role") === "parent" 
+                              ? "Enter your name as a parent. You'll add your child's details later." 
+                              : "Enter your full name as it will appear in the system."}
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
