@@ -14,7 +14,7 @@ import {
   insertConnectionRequestSchema,
   connectionRequests
 } from "@shared/schema";
-import { sendEmail, generateInvitationEmail } from "./email";
+import { sendEmail, generateInvitationEmail, generateVerificationEmail } from "./email";
 
 // Helper function to parse CSV data
 function parseCsvData(csvData: string) {
@@ -51,22 +51,21 @@ function parseJsonData(jsonData: string) {
   }
 }
 
-// Function to generate a secure invitation token
-function generateInvitationToken(playerId: number, parentEmail: string): string {
-  // Create token payload
-  const payload = {
-    playerId,
-    email: parentEmail,
-    expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days expiration
+// Function to generate a secure token
+function generateToken(payload: any, expiresInMs: number): string {
+  // Create token with payload and expiration
+  const tokenPayload = {
+    ...payload,
+    expires: Date.now() + expiresInMs,
   };
   
   // Convert to base64
-  const token = Buffer.from(JSON.stringify(payload)).toString('base64');
+  const token = Buffer.from(JSON.stringify(tokenPayload)).toString('base64');
   return token;
 }
 
-// Function to verify an invitation token
-function verifyInvitationToken(token: string): { valid: boolean; playerId?: number; email?: string; } {
+// Function to verify a token
+function verifyToken(token: string): { valid: boolean; payload?: any } {
   try {
     // Decode token
     const payload = JSON.parse(Buffer.from(token, 'base64').toString());
@@ -76,14 +75,54 @@ function verifyInvitationToken(token: string): { valid: boolean; playerId?: numb
       return { valid: false };
     }
     
-    return {
-      valid: true,
-      playerId: payload.playerId,
-      email: payload.email
-    };
+    return { valid: true, payload };
   } catch (error) {
     return { valid: false };
   }
+}
+
+// Function to generate a secure invitation token
+function generateInvitationToken(playerId: number, parentEmail: string): string {
+  return generateToken(
+    { playerId, email: parentEmail },
+    7 * 24 * 60 * 60 * 1000 // 7 days expiration
+  );
+}
+
+// Function to verify an invitation token
+function verifyInvitationToken(token: string): { valid: boolean; playerId?: number; email?: string; } {
+  const result = verifyToken(token);
+  if (!result.valid || !result.payload) {
+    return { valid: false };
+  }
+  
+  return {
+    valid: true,
+    playerId: result.payload.playerId,
+    email: result.payload.email
+  };
+}
+
+// Function to generate a secure email verification token
+function generateVerificationToken(userId: number, email: string): string {
+  return generateToken(
+    { userId, email },
+    24 * 60 * 60 * 1000 // 24 hours expiration
+  );
+}
+
+// Function to verify an email verification token
+function verifyVerificationToken(token: string): { valid: boolean; userId?: number; email?: string; } {
+  const result = verifyToken(token);
+  if (!result.valid || !result.payload) {
+    return { valid: false };
+  }
+  
+  return {
+    valid: true,
+    userId: result.payload.userId,
+    email: result.payload.email
+  };
 }
 
 // Process and import player data
@@ -358,6 +397,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Base API prefix
   const apiPrefix = "/api";
+  
+  // Email verification endpoints
+  app.post(`${apiPrefix}/verify-email/send`, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.isEmailVerified) {
+        return res.status(400).json({ message: "Email already verified" });
+      }
+      
+      // Generate verification token
+      const token = generateVerificationToken(userId, user.email);
+      
+      // Create verification link
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const verificationLink = `${baseUrl}/auth/verify-email?token=${token}`;
+      
+      // Generate email content
+      const { text, html } = generateVerificationEmail(user.fullName, verificationLink);
+      
+      // Send verification email
+      const emailSent = await sendEmail({
+        to: user.email,
+        subject: "Verify Your Email Address",
+        text,
+        html
+      });
+      
+      if (!emailSent) {
+        return res.status(500).json({ message: "Failed to send verification email" });
+      }
+      
+      res.status(200).json({ message: "Verification email sent" });
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.get(`${apiPrefix}/verify-email`, async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: "Invalid verification token" });
+      }
+      
+      const { valid, userId, email } = verifyVerificationToken(token);
+      
+      if (!valid || !userId) {
+        return res.status(400).json({ message: "Invalid or expired verification token" });
+      }
+      
+      // Update user's email verification status
+      const updatedUser = await storage.updateUser(userId, { isEmailVerified: true });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Redirect to login page with success message
+      res.redirect('/auth?verified=true');
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
   
   // User profile routes
   app.patch(`${apiPrefix}/user/:id`, async (req, res) => {
