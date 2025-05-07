@@ -87,17 +87,17 @@ export interface IStorage {
   getDashboardStats(): Promise<any>;
   
   // Session store for authentication
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Using any type to avoid SessionStore type issues
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Using any type to avoid SessionStore type issues
   
   constructor() {
     const pool = new Pool({ connectionString: process.env.DATABASE_URL });
     const PostgresSessionStore = connectPg(session);
     this.sessionStore = new PostgresSessionStore({
-      pool, 
+      pool,
       createTableIfMissing: true
     });
   }
