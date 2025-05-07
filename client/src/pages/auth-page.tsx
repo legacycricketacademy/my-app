@@ -62,6 +62,7 @@ export default function AuthPage() {
       password: "",
       fullName: "",
       email: "",
+      phone: "",
       role: "parent",
     },
   });
@@ -257,6 +258,19 @@ export default function AuthPage() {
                           <FormLabel>Email</FormLabel>
                           <FormControl>
                             <Input type="email" placeholder="Enter your email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter your phone number" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
