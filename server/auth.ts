@@ -49,9 +49,18 @@ export function setupAuth(app: Express) {
     new LocalStrategy(async (username, password, done) => {
       try {
         const user = await storage.getUserByUsername(username);
+        
+        // Check if user exists and password is correct
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false, { message: "Incorrect username or password" });
         }
+        
+        // Check if the user account is active
+        if (user.role === "coach" && user.status === "pending") {
+          return done(null, false, { message: "Your coach account is pending approval. Please contact an administrator." });
+        }
+        
+        // If all checks pass, allow login
         return done(null, user);
       } catch (error) {
         return done(error);
@@ -84,10 +93,25 @@ export function setupAuth(app: Express) {
 
       // Create new user with hashed password
       const hashedPassword = await hashPassword(req.body.password);
-      const userData = {
+      let userData = {
         ...req.body,
         password: hashedPassword,
       };
+      
+      // Set default status for coach accounts to pending approval
+      if (userData.role === "coach") {
+        userData = {
+          ...userData,
+          status: "pending", // Coaches need admin approval
+          isActive: false    // Inactive until approved
+        };
+      } else if (userData.role === "parent") {
+        userData = {
+          ...userData,
+          status: "active", // Parents are automatically approved
+          isActive: true
+        };
+      }
 
       const user = await storage.createUser(userData);
       

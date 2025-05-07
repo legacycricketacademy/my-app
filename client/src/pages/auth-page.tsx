@@ -179,10 +179,9 @@ export default function AuthPage() {
             )}
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
-                <TabsTrigger value="parent">Parent Registration</TabsTrigger>
               </TabsList>
               
               <TabsContent value="login">
@@ -294,10 +293,12 @@ export default function AuthPage() {
                                 {...field}
                               >
                                 <option value="parent">Parent</option>
-                                <option value="coach">Coach</option>
-                                <option value="admin">Admin</option>
+                                <option value="coach">Coach (Requires Approval)</option>
                               </select>
                             </FormControl>
+                            <div className="text-xs text-gray-500 mt-1">
+                              Admin accounts can only be created by existing administrators for security reasons.
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -314,122 +315,16 @@ export default function AuthPage() {
                 </Form>
               </TabsContent>
               
-              <TabsContent value="parent">
-                <div className="space-y-4">
-                  <Alert className="bg-primary/5 border-primary/20">
-                    <Users className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-primary">Parent Portal Registration</AlertTitle>
-                    <AlertDescription>
-                      Register as a parent to connect with your child's profile. After registration, you'll be able to search for your child and request access.
-                    </AlertDescription>
-                  </Alert>
 
-                  <Form {...registerForm}>
-                    <form onSubmit={registerForm.handleSubmit((data) => {
-                      // Set role to parent automatically
-                      registerMutation.mutate({...data, role: "parent"});
-                    })} className="space-y-4">
-                      <FormField
-                        control={registerForm.control}
-                        name="fullName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter your full name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" placeholder="Enter your email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Choose a username" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="Choose a password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="pt-4">
-                        <h4 className="text-sm font-medium mb-2">Child Information (Optional)</h4>
-                        <p className="text-sm text-gray-500 mb-4">
-                          You can also provide your child's information to help us connect you faster:
-                        </p>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-sm font-medium">Child's First Name</label>
-                            <Input 
-                              placeholder="First name" 
-                              className="mt-1"
-                              id="childFirstName"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium">Child's Last Name</label>
-                            <Input 
-                              placeholder="Last name" 
-                              className="mt-1"
-                              id="childLastName"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        type="submit" 
-                        className="w-full mt-4" 
-                        disabled={registerMutation.isPending}
-                      >
-                        {registerMutation.isPending ? "Registering..." : "Register as Parent"}
-                      </Button>
-                    </form>
-                  </Form>
-                </div>
-              </TabsContent>
             </Tabs>
           </CardContent>
           
           <CardFooter className="text-center text-sm text-gray-500">
             <p className="w-full">
               {activeTab === "login" ? (
-                "Don't have an account? Click Register or Parent Registration above."
-              ) : activeTab === "register" ? (
-                "Already have an account? Click Login above."
+                "Don't have an account? Click Register above to create a new account."
               ) : (
-                "Already have an account? Click Login above. Want to register as coach/admin? Click Register."
+                "Already have an account? Click Login above to sign in."
               )}
             </p>
           </CardFooter>
