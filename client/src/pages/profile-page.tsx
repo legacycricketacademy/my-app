@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [verificationEmailSent, setVerificationEmailSent] = useState(false);
 
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -59,6 +60,28 @@ export default function ProfilePage() {
     onError: (error: Error) => {
       toast({
         title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Email verification mutation
+  const sendVerificationEmailMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/verify-email/send");
+      return await res.json();
+    },
+    onSuccess: () => {
+      setVerificationEmailSent(true);
+      toast({
+        title: "Verification Email Sent",
+        description: "Please check your email for the verification link.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Send Verification Email",
         description: error.message,
         variant: "destructive",
       });
@@ -206,11 +229,26 @@ export default function ProfilePage() {
                 </div>
                 <div className="border-b pb-4">
                   <dt className="text-muted-foreground font-medium text-sm">Email Verification</dt>
-                  <dd className="mt-2">
+                  <dd className="mt-2 flex items-center gap-3">
                     {user.isEmailVerified ? (
                       <span className="text-green-600 font-medium bg-green-50 px-3 py-1 rounded-full text-sm">Verified</span>
                     ) : (
-                      <span className="text-amber-600 font-medium bg-amber-50 px-3 py-1 rounded-full text-sm">Pending verification</span>
+                      <>
+                        <span className="text-amber-600 font-medium bg-amber-50 px-3 py-1 rounded-full text-sm">Pending verification</span>
+                        {!verificationEmailSent ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => sendVerificationEmailMutation.mutate()}
+                            disabled={sendVerificationEmailMutation.isPending}
+                            className="text-xs h-7 border-primary/20 hover:bg-primary/5 text-primary"
+                          >
+                            {sendVerificationEmailMutation.isPending ? "Sending..." : "Send Verification Email"}
+                          </Button>
+                        ) : (
+                          <span className="text-green-600 text-xs">Verification email sent!</span>
+                        )}
+                      </>
                     )}
                   </dd>
                 </div>

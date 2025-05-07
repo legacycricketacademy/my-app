@@ -67,10 +67,19 @@ export default function AuthPage() {
     },
   });
   
-  // Parse URL for invitation token
+  // State for email verification success message
+  const [emailVerified, setEmailVerified] = useState<boolean>(false);
+  
+  // Parse URL for invitation token and verification success
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get('token');
+    const verifiedParam = params.get('verified');
+    
+    // Check if the user has just verified their email
+    if (verifiedParam === 'true') {
+      setEmailVerified(true);
+    }
     
     if (tokenParam) {
       try {
@@ -179,6 +188,16 @@ export default function AuthPage() {
                 <AlertTitle className="text-destructive">Invitation Link Expired</AlertTitle>
                 <AlertDescription>
                   This invitation link has expired. Please contact the academy for a new invitation.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {emailVerified && (
+              <Alert className="mb-4 border-green-600/20 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertTitle className="text-green-600">Email Verified Successfully</AlertTitle>
+                <AlertDescription>
+                  Your email has been verified. You can now log in to your account.
                 </AlertDescription>
               </Alert>
             )}
