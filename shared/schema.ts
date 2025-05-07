@@ -15,8 +15,11 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   fullName: text("full_name").notNull(),
   role: text("role", { enum: userRoles }).notNull().default("parent"),
-  status: text("status").default("active"),  // active, pending, inactive
+  status: text("status").default("pending_verification"),  // active, pending_verification, pending_approval, inactive
   isActive: boolean("is_active").default(true),
+  isEmailVerified: boolean("is_email_verified").default(false),
+  emailVerificationToken: text("email_verification_token"),
+  emailVerificationExpires: timestamp("email_verification_expires"),
   phone: text("phone").unique(),
   address: text("address"),
   profileImage: text("profile_image"),
