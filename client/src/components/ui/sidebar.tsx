@@ -11,7 +11,9 @@ import {
   DollarSign, 
   Settings, 
   LogOut,
-  Upload
+  Upload,
+  Link2,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CricketIcon } from "@/components/ui/cricket-icon";

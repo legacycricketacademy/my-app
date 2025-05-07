@@ -140,6 +140,20 @@ function RouterContent() {
         redirectTo="/schedule"
       />
       
+      <RoleBasedRoute 
+        path="/parent/connect-child" 
+        component={ConnectChildPage} 
+        allowedRoles={["parent"]}
+        redirectTo="/"
+      />
+      
+      <RoleBasedRoute 
+        path="/manage-connections" 
+        component={ManageParentConnectionsPage} 
+        allowedRoles={["admin", "coach"]}
+        redirectTo="/parent"
+      />
+      
       {/* Special testing route - accessible to everyone */}
       <Route path="/parent-test" component={ParentTest} />
       

@@ -10,7 +10,9 @@ import {
   LogOut, 
   Menu, 
   X, 
-  User
+  User,
+  Users,
+  Link as LinkIcon
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -39,6 +41,7 @@ export function ParentLayout({
     { name: "Dashboard", href: "/parent", icon: Home },
     { name: "Schedule", href: "/parent/schedule", icon: Calendar },
     { name: "Announcements", href: "/parent/announcements", icon: Bell },
+    { name: "Connect Child", href: "/parent/connect-child", icon: Users },
   ];
   
   const Logo = () => (
