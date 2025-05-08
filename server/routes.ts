@@ -1614,6 +1614,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Parent - Get players (children)
+  app.get(`${apiPrefix}/parent/players`, async (req, res) => {
+    console.log("Parent players API called", {
+      isAuth: req.isAuthenticated(),
+      userRole: req.user?.role
+    });
+    
+    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      console.log(`Getting players for parent ${req.user.id}`);
+      const players = await storage.getPlayersByParentId(req.user.id);
+      console.log(`Found ${players?.length || 0} players for parent ${req.user.id}`);
+      return res.json(players);
+    } catch (error) {
+      console.error("Error fetching parent's players:", error);
+      return res.status(500).json({ message: "Error fetching players" });
+    }
+  });
+  
   // Parent - Fetch payments for all children
   app.get(`${apiPrefix}/parent/payments`, async (req, res) => {
     console.log("Parent payments API called", {
@@ -1807,7 +1829,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         playerId: playerId,
         amount: amount,
         paymentType: paymentType,
-        dueDate: new Date(),
+        dueDate: new Date().toISOString(),
         status: "pending",
         notes: description || `Payment for ${paymentType}`
       });
