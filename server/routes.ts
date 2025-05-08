@@ -745,10 +745,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Players routes
   app.get(`${apiPrefix}/players`, async (req, res) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
       const ageGroup = req.query.ageGroup as string | undefined;
+      const pendingReview = req.query.pendingReview === 'true';
+      
+      // If pendingReview flag is set, return only players pending coach review
+      if (pendingReview && (req.user.role === 'admin' || req.user.role === 'coach')) {
+        const pendingPlayers = await storage.getPlayersPendingReview();
+        return res.json(pendingPlayers);
+      }
+      
       const players = await storage.getAllPlayers(ageGroup);
       res.json(players);
     } catch (error) {
+      console.error("Error fetching players:", error);
       res.status(500).json({ message: "Error fetching players" });
     }
   });

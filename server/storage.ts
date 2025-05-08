@@ -41,6 +41,7 @@ export interface IStorage {
   getPlayerById(id: number): Promise<any>;
   getPlayersByParentId(parentId: number): Promise<any[]>;
   getAllPlayers(ageGroup?: string): Promise<any[]>;
+  getPlayersPendingReview(): Promise<any[]>;
   createPlayer(playerData: InsertPlayer): Promise<any>;
   updatePlayer(id: number, playerData: Partial<InsertPlayer>): Promise<any | undefined>;
   
@@ -154,6 +155,19 @@ export class DatabaseStorage implements IStorage {
     if (ageGroup && ageGroup !== 'all') {
       query = query.where(eq(players.ageGroup, ageGroup));
     }
+    
+    return await query;
+  }
+  
+  async getPlayersPendingReview(): Promise<any[]> {
+    const query = db.select({
+      ...players,
+      parentName: users.fullName,
+      parentEmail: users.email,
+    }).from(players)
+      .leftJoin(users, eq(players.parentId, users.id))
+      .where(eq(players.pendingCoachReview, true))
+      .orderBy(desc(players.createdAt));
     
     return await query;
   }
