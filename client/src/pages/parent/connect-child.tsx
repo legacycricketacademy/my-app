@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Search, UserRound, AlertCircle, CheckCircle2, Loader2, PlusCircle, Calendar } from "lucide-react";
+import { Search, UserRound, AlertCircle, CheckCircle2, Loader2, PlusCircle, Calendar, X } from "lucide-react";
 import { 
   Table,
   TableBody,
@@ -181,13 +181,38 @@ export default function ConnectChildPage() {
   // Create a new connection request
   const createRequestMutation = useMutation({
     mutationFn: async (playerId: number) => {
-      const res = await apiRequest("POST", "/api/parent/connection-requests", { playerId });
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", "/api/parent/connection-requests", { playerId });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          
+          if (res.status === 400) {
+            if (errorData.message?.includes("already exists")) {
+              throw new Error("You already have a pending or approved connection request for this player.");
+            } else {
+              throw new Error(errorData.message || "Please check the information and try again.");
+            }
+          } else if (res.status === 403) {
+            throw new Error("You don't have permission to connect with this player.");
+          } else if (res.status === 404) {
+            throw new Error("Player not found. They may have been removed from the system.");
+          } else {
+            throw new Error("Unable to send connection request at this time. Please try again later.");
+          }
+        }
+        
+        return await res.json();
+      } catch (error: any) {
+        // Re-throw the error to be handled by onError
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
         title: "Connection Request Sent",
-        description: "Your request has been sent and is awaiting approval.",
+        description: "Your request has been sent and is awaiting approval by a coach or administrator.",
+        duration: 5000, // Show for 5 seconds
       });
       queryClient.invalidateQueries({ queryKey: ["/api/parent/connection-requests"] });
       setSearchResults([]);
@@ -198,13 +223,27 @@ export default function ConnectChildPage() {
         title: "Failed to Send Request",
         description: error.message,
         variant: "destructive",
+        duration: 5000, // Show for 5 seconds
       });
     },
   });
   
-  // Search for players
+  // Search for players with improved error handling
   const handleSearch = async () => {
-    if (!searchQuery || searchQuery.length < 2) {
+    // Reset results before each search
+    setSearchResults([]);
+    
+    // Validate search query
+    if (!searchQuery || searchQuery.trim() === '') {
+      toast({
+        title: "Empty Search",
+        description: "Please enter a name to search for players.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (searchQuery.length < 2) {
       toast({
         title: "Search Query Too Short",
         description: "Please enter at least 2 characters to search.",
@@ -215,21 +254,38 @@ export default function ConnectChildPage() {
     
     setSearching(true);
     try {
-      const res = await apiRequest("GET", `/api/parent/search-players?query=${encodeURIComponent(searchQuery)}`);
+      const res = await apiRequest("GET", `/api/parent/search-players?query=${encodeURIComponent(searchQuery.trim())}`);
+      
+      if (!res.ok) {
+        if (res.status === 429) {
+          throw new Error("Too many search requests. Please wait a moment and try again.");
+        } else {
+          throw new Error("An error occurred while searching. Please try again later.");
+        }
+      }
+      
       const data = await res.json();
       setSearchResults(data);
       
       if (data.length === 0) {
         toast({
           title: "No Results Found",
-          description: "No players match your search query.",
+          description: "No players match your search criteria. Try using a different name or add your child manually.",
+          duration: 5000,
+        });
+      } else if (data.length > 0) {
+        toast({
+          title: "Players Found",
+          description: `Found ${data.length} player${data.length === 1 ? '' : 's'} matching your search.`,
+          duration: 3000,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Search Failed",
-        description: "Failed to search for players. Please try again.",
+        description: error.message || "Failed to search for players. Please try again.",
         variant: "destructive",
+        duration: 5000,
       });
     } finally {
       setSearching(false);
@@ -496,17 +552,31 @@ export default function ConnectChildPage() {
             </div>
             
             <div className="flex gap-2">
-              <div className="flex-1">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by child's name"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="pl-9 pr-9"
                 />
+                {searchQuery && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0 rounded-full"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <X className="h-3 w-3" />
+                    <span className="sr-only">Clear search</span>
+                  </Button>
+                )}
               </div>
               <Button 
                 onClick={handleSearch} 
-                disabled={searching || searchQuery.length < 2}
+                disabled={searching || !searchQuery.trim() || searchQuery.length < 2}
+                className="min-w-[100px]"
               >
                 {searching ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -516,6 +586,10 @@ export default function ConnectChildPage() {
                 Search
               </Button>
             </div>
+            
+            <p className="text-xs text-muted-foreground mt-2 mb-4">
+              Enter your child's name to search. If your child is not found, you can add them using the "Add New Child" button.
+            </p>
             
             {searchResults.length > 0 && (
               <div className="mt-4">
