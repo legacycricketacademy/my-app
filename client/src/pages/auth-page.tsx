@@ -84,6 +84,20 @@ export default function AuthPage() {
     },
   });
   
+  const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+  
+  const forgotUsernameForm = useForm<ForgotUsernameFormValues>({
+    resolver: zodResolver(forgotUsernameSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+  
   // State for email verification success message
   const [emailVerified, setEmailVerified] = useState<boolean>(false);
   
@@ -171,6 +185,64 @@ export default function AuthPage() {
   
   function onRegisterSubmit(data: RegisterFormValues) {
     registerMutation.mutate(data);
+  }
+  
+  function onForgotPasswordSubmit(data: ForgotPasswordFormValues) {
+    // Send password reset request
+    fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+      .then(res => {
+        if (res.ok) {
+          toast({
+            title: "Password Reset Email Sent",
+            description: "If an account with that email exists, we've sent instructions to reset your password.",
+            variant: "default",
+          });
+          setIsForgotPasswordOpen(false);
+          forgotPasswordForm.reset();
+        } else {
+          throw new Error("Failed to send password reset email");
+        }
+      })
+      .catch(err => {
+        toast({
+          title: "Error",
+          description: "There was a problem sending the password reset email. Please try again.",
+          variant: "destructive",
+        });
+      });
+  }
+  
+  function onForgotUsernameSubmit(data: ForgotUsernameFormValues) {
+    // Send username recovery request
+    fetch('/api/auth/forgot-username', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+      .then(res => {
+        if (res.ok) {
+          toast({
+            title: "Username Recovery Email Sent",
+            description: "If an account with that email exists, we've sent your username to that email address.",
+            variant: "default",
+          });
+          setIsForgotUsernameOpen(false);
+          forgotUsernameForm.reset();
+        } else {
+          throw new Error("Failed to send username recovery email");
+        }
+      })
+      .catch(err => {
+        toast({
+          title: "Error",
+          description: "There was a problem sending the username recovery email. Please try again.",
+          variant: "destructive",
+        });
+      });
   }
 
   return (
@@ -261,6 +333,86 @@ export default function AuthPage() {
                     >
                       {loginMutation.isPending ? "Logging in..." : "Login"}
                     </Button>
+                    
+                    <div className="flex justify-between mt-4 text-sm text-muted-foreground">
+                      <Dialog open={isForgotUsernameOpen} onOpenChange={setIsForgotUsernameOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="link" className="p-0 h-auto" type="button">
+                            <User className="h-3.5 w-3.5 mr-1" />
+                            Forgot Username?
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Recover Your Username</DialogTitle>
+                            <DialogDescription>
+                              Enter your email address and we'll send you your username.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <Form {...forgotUsernameForm}>
+                            <form onSubmit={forgotUsernameForm.handleSubmit(onForgotUsernameSubmit)} className="space-y-4">
+                              <FormField
+                                control={forgotUsernameForm.control}
+                                name="email"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="Enter your email address" type="email" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <DialogFooter>
+                                <Button type="submit" className="w-full">
+                                  Send Username Recovery Email
+                                </Button>
+                              </DialogFooter>
+                            </form>
+                          </Form>
+                        </DialogContent>
+                      </Dialog>
+                      
+                      <Dialog open={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="link" className="p-0 h-auto" type="button">
+                            <Key className="h-3.5 w-3.5 mr-1" />
+                            Forgot Password?
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Reset Your Password</DialogTitle>
+                            <DialogDescription>
+                              Enter your email address and we'll send you a password reset link.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <Form {...forgotPasswordForm}>
+                            <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
+                              <FormField
+                                control={forgotPasswordForm.control}
+                                name="email"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="Enter your email address" type="email" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <DialogFooter>
+                                <Button type="submit" className="w-full">
+                                  Send Password Reset Email
+                                </Button>
+                              </DialogFooter>
+                            </form>
+                          </Form>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </form>
                 </Form>
               </TabsContent>

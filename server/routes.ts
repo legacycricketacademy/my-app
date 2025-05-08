@@ -125,6 +125,28 @@ function verifyVerificationToken(token: string): { valid: boolean; userId?: numb
   };
 }
 
+// Function to generate a password reset token
+function generatePasswordResetToken(userId: number, email: string): string {
+  return generateToken(
+    { userId, email },
+    60 * 60 * 1000 // 1 hour expiration
+  );
+}
+
+// Function to verify a password reset token
+function verifyPasswordResetToken(token: string): { valid: boolean; userId?: number; email?: string; } {
+  const result = verifyToken(token);
+  if (!result.valid || !result.payload) {
+    return { valid: false };
+  }
+  
+  return {
+    valid: true,
+    userId: result.payload.userId,
+    email: result.payload.email
+  };
+}
+
 // Process and import player data
 async function processPlayersData(playersData: any[]) {
   const results = {
