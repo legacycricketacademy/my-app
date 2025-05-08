@@ -1616,13 +1616,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Parent - Fetch payments for all children
   app.get(`${apiPrefix}/parent/payments`, async (req, res) => {
+    console.log("Parent payments API called", {
+      isAuth: req.isAuthenticated(),
+      userRole: req.user?.role
+    });
+    
     if (!req.isAuthenticated() || req.user.role !== 'parent') {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
     try {
       // Get parent's players
+      console.log("Getting players for parent", req.user.id);
       const players = await storage.getPlayersByParentId(req.user.id);
+      console.log("Found players:", players?.length || 0);
       
       if (!players || players.length === 0) {
         return res.json([]);
@@ -1631,7 +1638,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get payments for all players
       const allPayments = [];
       for (const player of players) {
+        console.log(`Getting payments for player ${player.id}`);
         const playerPayments = await storage.getPaymentsByPlayerId(player.id);
+        console.log(`Found ${playerPayments?.length || 0} payments for player ${player.id}`);
         
         // Add player name to each payment
         const paymentsWithPlayerName = playerPayments.map(payment => ({

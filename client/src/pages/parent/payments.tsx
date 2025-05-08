@@ -104,22 +104,21 @@ export default function PaymentsPage() {
   // Fetch payments for all children
   const paymentsQuery = useQuery({
     queryKey: ['/api/parent/payments'],
-    enabled: !!user,
-    onError: (error) => {
-      console.error("Error fetching payments:", error);
-    }
+    enabled: !!user
   });
   
   const isLoading = playersQuery.isLoading || paymentsQuery.isLoading;
   
   // Filter payments based on active tab
-  const filteredPayments = paymentsQuery.data?.filter((payment: any) => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'pending') return payment.status === 'pending';
-    if (activeTab === 'paid') return payment.status === 'paid';
-    if (activeTab === 'overdue') return payment.status === 'overdue';
-    return true;
-  }) || [];
+  const filteredPayments = Array.isArray(paymentsQuery.data) 
+    ? paymentsQuery.data.filter((payment: any) => {
+        if (activeTab === 'all') return true;
+        if (activeTab === 'pending') return payment.status === 'pending';
+        if (activeTab === 'paid') return payment.status === 'paid';
+        if (activeTab === 'overdue') return payment.status === 'overdue';
+        return true;
+      }) 
+    : [];
   
   const handleMakePayment = (paymentId: number, playerId: number) => {
     navigate(`/parent/make-payment/${playerId}?payment=${paymentId}`);
