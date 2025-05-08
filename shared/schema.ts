@@ -39,6 +39,9 @@ export const players = pgTable("players", {
   emergencyContact: text("emergency_contact"),
   medicalInformation: text("medical_information"),
   profileImage: text("profile_image"),
+  pendingCoachReview: boolean("pending_coach_review").default(false),
+  healthNotes: text("health_notes"),
+  parentNotes: text("parent_notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
