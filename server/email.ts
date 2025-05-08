@@ -20,13 +20,27 @@ interface SendEmailParams {
   html: string;
 }
 
+// Use this flag to bypass email sending for testing
+const DEV_MODE_NO_EMAIL = process.env.NODE_ENV === 'development' && process.env.BYPASS_EMAIL_SENDING === 'true';
+
 export async function sendEmail(params: SendEmailParams): Promise<boolean> {
+  // In development, log email but don't send if bypass flag is set
+  if (DEV_MODE_NO_EMAIL) {
+    console.log('DEV MODE: Email would have been sent:');
+    console.log('  To:', params.to);
+    console.log('  From:', ACADEMY_EMAIL);
+    console.log('  Subject:', params.subject);
+    console.log('  Text:', params.text.substring(0, 100) + '...');
+    return true; // Return true to simulate successful sending
+  }
+  
   if (!process.env.SENDGRID_API_KEY) {
     console.error('Cannot send email: SENDGRID_API_KEY not set');
     return false;
   }
 
   try {
+    console.log('Attempting to send email to:', params.to);
     await sgMail.send({
       to: params.to,
       from: ACADEMY_EMAIL,
@@ -34,6 +48,7 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
       text: params.text,
       html: params.html,
     });
+    console.log('Email sent successfully to:', params.to);
     return true;
   } catch (error: any) {
     console.error('Email sending error:', error?.response?.body || error);

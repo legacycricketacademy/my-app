@@ -445,6 +445,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         </html>
       `;
       
+      // Toggle this for testing
+      const skipActualEmailSending = false;
+      
+      if (skipActualEmailSending) {
+        return res.status(200).json({ 
+          message: "Test email skipped but simulation successful!", 
+          status: "success",
+          note: "Email sending was bypassed for testing" 
+        });
+      }
+      
       // Try to send test email
       try {
         const emailSent = await sendEmail({
@@ -475,6 +486,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Error sending test email:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // SendGrid diagnostic endpoint (for troubleshooting)
+  app.get(`${apiPrefix}/email-diagnostic`, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Only allow admin users to access this diagnostic
+      if (req.user.role !== 'admin' && req.user.role !== 'coach') {
+        return res.status(403).json({ message: "Forbidden - Admin access required" });
+      }
+      
+      const diagnosticInfo = {
+        sendgridApiKey: process.env.SENDGRID_API_KEY ? 'Present (first 8 chars: ' + process.env.SENDGRID_API_KEY.substring(0, 8) + '...)' : 'Missing',
+        senderEmail: {
+          email: process.env.SENDGRID_SENDER_EMAIL || 'Not set (using default)',
+          default: 'madhukar.kcc@gmail.com' // Current hardcoded value
+        },
+        environmentVars: {
+          NODE_ENV: process.env.NODE_ENV || 'Not set',
+          BYPASS_EMAIL_SENDING: process.env.BYPASS_EMAIL_SENDING || 'Not set'
+        }
+      };
+      
+      res.status(200).json({
+        message: "SendGrid diagnostic information",
+        diagnosticInfo,
+        instructions: "If having issues with SendGrid, please verify that the API key is correct and has Mail Send permissions, and that the sender email is verified in your SendGrid account."
+      });
+    } catch (error) {
+      console.error("Error generating email diagnostic:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
