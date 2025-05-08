@@ -28,6 +28,9 @@ import ParentSchedulePage from "@/pages/parent/parent-schedule";
 import ParentTest from "@/pages/parent-test";
 import ConnectChildPage from "@/pages/parent/connect-child";
 import ManageParentConnectionsPage from "@/pages/manage-parent-connections";
+import ParentPaymentsPage from "@/pages/parent/payments";
+import MakePaymentPage from "@/pages/parent/make-payment";
+import PaymentSuccessPage from "@/pages/parent/payment-success";
 
 function RouterContent() {
   const { user } = useAuth();
@@ -61,7 +64,10 @@ function RouterContent() {
         window.location.pathname === "/parent/schedule" ||
         window.location.pathname === "/parent/fitness" ||
         window.location.pathname === "/parent/meal-plans" ||
-        window.location.pathname === "/parent/announcements"
+        window.location.pathname === "/parent/announcements" ||
+        window.location.pathname === "/parent/payments" ||
+        window.location.pathname === "/parent/payment-success" ||
+        window.location.pathname.startsWith("/parent/make-payment/")
       ) {
         return <Redirect to="/" />;
       }
@@ -147,6 +153,27 @@ function RouterContent() {
         component={ConnectChildPage} 
         allowedRoles={["parent"]}
         redirectTo="/"
+      />
+
+      <RoleBasedRoute 
+        path="/parent/payments" 
+        component={ParentPaymentsPage} 
+        allowedRoles={["parent"]}
+        redirectTo="/payments"
+      />
+
+      <RoleBasedRoute 
+        path="/parent/make-payment/:playerId" 
+        component={MakePaymentPage} 
+        allowedRoles={["parent"]}
+        redirectTo="/payments"
+      />
+
+      <RoleBasedRoute 
+        path="/parent/payment-success" 
+        component={PaymentSuccessPage} 
+        allowedRoles={["parent"]}
+        redirectTo="/payments"
       />
       
       <RoleBasedRoute 

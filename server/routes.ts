@@ -1609,6 +1609,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Error fetching connection requests" });
     }
   });
+  
+  // Parent - Fetch payments for all children
+  app.get(`${apiPrefix}/parent/payments`, async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      // Get parent's players
+      const players = await storage.getPlayersByParentId(req.user.id);
+      
+      if (!players || players.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get payments for all players
+      const allPayments = [];
+      for (const player of players) {
+        const playerPayments = await storage.getPaymentsByPlayerId(player.id);
+        
+        // Add player name to each payment
+        const paymentsWithPlayerName = playerPayments.map(payment => ({
+          ...payment,
+          playerName: `${player.firstName} ${player.lastName}`
+        }));
+        
+        allPayments.push(...paymentsWithPlayerName);
+      }
+      
+      // Sort by due date descending (most recent first)
+      allPayments.sort((a, b) => {
+        return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+      });
+      
+      return res.json(allPayments);
+    } catch (error) {
+      console.error("Error fetching parent payments:", error);
+      return res.status(500).json({ message: "Error fetching payments" });
+    }
+  });
 
   // Parent - Create connection request
   app.post(`${apiPrefix}/parent/connection-requests`, async (req, res) => {
