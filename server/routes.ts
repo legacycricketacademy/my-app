@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
+import Stripe from "stripe";
 import { 
   insertPlayerSchema, 
   insertSessionSchema, 
@@ -16,6 +17,14 @@ import {
 } from "@shared/schema";
 import { sendEmail, generateInvitationEmail, generateVerificationEmail, generateForgotPasswordEmail, generateForgotUsernameEmail } from "./email";
 import { hashPassword } from "./auth";
+
+// Initialize Stripe
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing Stripe secret key. Please set STRIPE_SECRET_KEY environment variable.');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2023-10-16',
+});
 
 // Helper function to parse CSV data
 function parseCsvData(csvData: string) {
@@ -648,25 +657,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email is required" });
       }
       
+      console.log(`Processing forgot password request for: ${email}`);
+      
       // Find the user by email
       const user = await storage.getUserByEmail(email);
       
       // If no user found with this email, still return success (for security)
       if (!user) {
+        console.log(`No user found with email: ${email}`);
+        // For testing purposes, provide more information in development
+        if (process.env.NODE_ENV === 'development') {
+          return res.status(200).json({ 
+            message: "If an account with that email exists, we've sent password reset instructions.",
+            debug: "No user found with this email address."
+          });
+        }
         return res.status(200).json({ message: "If an account with that email exists, we've sent password reset instructions." });
       }
+      
+      console.log(`User found: ${user.username} (${user.id}), generating reset token...`);
       
       // Generate password reset token
       const resetToken = generatePasswordResetToken(user.id, user.email);
       
       // Create reset link
       const resetLink = `${req.protocol}://${req.get('host')}${apiPrefix}/reset-password?token=${resetToken}`;
+      console.log(`Reset link generated: ${resetLink}`);
       
       // Generate email content
       const { text, html } = generateForgotPasswordEmail(user.fullName, resetLink);
       
       // Send password reset email
       try {
+        console.log(`Attempting to send password reset email to: ${user.email}`);
         const emailSent = await sendEmail({
           to: user.email,
           subject: "Reset Your Password",
@@ -675,11 +698,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         if (!emailSent) {
-          // Still return success but with the direct link for fallback
+          console.log('Email sending returned false');
+          // Always return the reset link in development mode for testing
           return res.status(200).json({ 
             message: "Password reset email could not be sent, but reset link is valid",
             resetLink, // Return the link for direct use
-            status: "warning"
+            status: "warning",
+            userId: user.id,
+            username: user.username
+          });
+        }
+        
+        console.log(`Password reset email sent successfully to: ${user.email}`);
+        // Always include the link for testing in development
+        if (process.env.NODE_ENV === 'development') {
+          return res.status(200).json({ 
+            message: "Password reset email sent", 
+            resetLink, // Include link for development testing
+            status: "success",
+            userId: user.id,
+            username: user.username
           });
         }
         
@@ -692,7 +730,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(200).json({ 
           message: "Email service unavailable, but here's your reset link",
           resetLink, // Return the link so the user can still reset
-          status: "warning"
+          status: "warning",
+          userId: user.id,
+          username: user.username
         });
       }
     } catch (error) {
