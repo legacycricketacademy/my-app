@@ -422,6 +422,10 @@ async function processPlayersData(playersData: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Simple test endpoint to check connectivity
+  app.get('/api/ping', (req, res) => {
+    res.json({ status: 'ok', message: 'Server is running' });
+  });
   // Setup authentication routes and middleware
   setupAuth(app);
   
