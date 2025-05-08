@@ -12,7 +12,8 @@ import {
   X, 
   User,
   Users,
-  Link as LinkIcon
+  Link as LinkIcon,
+  DollarSign
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -42,6 +43,7 @@ export function ParentLayout({
     { name: "Schedule", href: "/parent/schedule", icon: Calendar },
     { name: "Announcements", href: "/parent/announcements", icon: Bell },
     { name: "Connect Child", href: "/parent/connect-child", icon: Users },
+    { name: "Payments", href: "/parent/payments", icon: DollarSign },
     { name: "My Profile", href: "/profile", icon: User },
   ];
   

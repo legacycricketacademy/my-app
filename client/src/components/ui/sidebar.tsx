@@ -60,6 +60,7 @@ export function Sidebar() {
     { label: "Announcements", icon: <Send className="h-5 w-5" />, path: "/parent/announcements" },
     { label: "Connect Child", icon: <Link2 className="h-5 w-5" />, path: "/parent/connect-child" },
     { label: "Payments", icon: <DollarSign className="h-5 w-5" />, path: "/parent/payments" },
+    { label: "My Profile", icon: <UserPlus className="h-5 w-5" />, path: "/profile" },
   ];
   
   // Admin/Coach specific items
