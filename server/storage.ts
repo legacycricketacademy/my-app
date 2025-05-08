@@ -77,6 +77,11 @@ export interface IStorage {
   createPayment(paymentData: InsertPayment): Promise<any>;
   updatePaymentStatus(id: number, status: string, paidDate?: Date): Promise<any | undefined>;
   
+  // Stripe methods
+  updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
+  updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined>;
+  updateUserStripeInfo(userId: number, data: { stripeCustomerId: string; stripeSubscriptionId: string }): Promise<User | undefined>;
+  
   // Connection request methods
   getConnectionRequestById(id: number): Promise<any>;
   getConnectionRequestsByParentId(parentId: number): Promise<any[]>;

@@ -22,9 +22,7 @@ import { hashPassword } from "./auth";
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing Stripe secret key. Please set STRIPE_SECRET_KEY environment variable.');
 }
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Helper function to parse CSV data
 function parseCsvData(csvData: string) {
