@@ -1175,11 +1175,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user.role === "parent") {
         // Parent adding their own child
         try {
+          // Get the academyId from the user's context or default to the first academy
+          const academyId = multiTenantStorage.getAcademyContext() || 1;
+          
+          // Make sure date of birth is properly formatted
+          let { dateOfBirth, ...restOfData } = req.body;
+          
+          // Ensure dateOfBirth is a valid date
+          if (!dateOfBirth) {
+            return res.status(400).json({ 
+              message: "Date of birth is required",
+              field: "dateOfBirth"
+            });
+          }
+          
+          // Attempt to parse the date
+          try {
+            const parsedDate = new Date(dateOfBirth);
+            if (isNaN(parsedDate.getTime())) {
+              throw new Error("Invalid date format");
+            }
+            
+            // Use ISO format for the date
+            dateOfBirth = parsedDate.toISOString().split('T')[0];
+          } catch (dateError) {
+            return res.status(400).json({ 
+              message: "Invalid date format for date of birth", 
+              field: "dateOfBirth" 
+            });
+          }
+          
           const playerData = {
-            ...req.body,
+            ...restOfData,
+            dateOfBirth,
             parentId: req.user.id,
+            academyId,
             pendingCoachReview: true // Flag for coach to review
           };
+          
+          console.log("Creating player with data:", playerData);
           
           const newPlayer = await storage.createPlayer(playerData);
           return res.status(201).json(newPlayer);
