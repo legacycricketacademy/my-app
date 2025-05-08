@@ -26,6 +26,7 @@ import PlayersPendingReviewPage from "@/pages/admin/players-pending-review";
 import ParentDashboard from "@/pages/parent-dashboard";
 import ParentSchedulePage from "@/pages/parent/parent-schedule";
 import ParentTest from "@/pages/parent-test";
+import StripeDebugPage from "@/pages/stripe-debug";
 import ConnectChildPage from "@/pages/parent/connect-child";
 import ConnectChildSimplePage from "@/pages/parent/connect-child-simple";
 import ManageParentConnectionsPage from "@/pages/manage-parent-connections";
@@ -212,6 +213,9 @@ function RouterContent() {
       
       {/* Special testing route - accessible to everyone */}
       <Route path="/parent-test" component={ParentTest} />
+      
+      {/* Public diagnostic routes */}
+      <Route path="/stripe-debug" component={StripeDebugPage} />
       
       <Route component={NotFound} />
     </Switch>
