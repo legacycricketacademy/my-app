@@ -380,113 +380,147 @@ export default function ConnectChildPage() {
                   </DialogHeader>
                   
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="firstName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>First Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="First name" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="firstName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-base">First Name <span className="text-red-500">*</span></FormLabel>
+                                <FormControl>
+                                  <Input placeholder="First name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="lastName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-base">Last Name <span className="text-red-500">*</span></FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Last name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="dateOfBirth"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-base">Date of Birth <span className="text-red-500">*</span></FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                      type="date"
+                                      className="pl-9"
+                                      {...field}
+                                    />
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="ageGroup"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-base">Age Group <span className="text-red-500">*</span></FormLabel>
+                                <Select 
+                                  onValueChange={field.onChange} 
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select age group" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="U11">Under 11</SelectItem>
+                                    <SelectItem value="U13">Under 13</SelectItem>
+                                    <SelectItem value="U15">Under 15</SelectItem>
+                                    <SelectItem value="U17">Under 17</SelectItem>
+                                    <SelectItem value="U19">Under 19</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="position"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-base">Position (Optional)</FormLabel>
+                                <Select 
+                                  onValueChange={field.onChange} 
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select position" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="batsman">Batsman</SelectItem>
+                                    <SelectItem value="bowler">Bowler</SelectItem>
+                                    <SelectItem value="all_rounder">All-Rounder</SelectItem>
+                                    <SelectItem value="wicket_keeper">Wicket-Keeper</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormDescription>
+                                  Your child's primary cricket position
+                                </FormDescription>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="jerseyNumber"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-base">Jersey Number (Optional)</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Jersey number" {...field} />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                         
                         <FormField
                           control={form.control}
-                          name="lastName"
+                          name="healthNotes"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Last Name</FormLabel>
+                              <FormLabel className="text-base">Health Notes (Optional)</FormLabel>
                               <FormControl>
-                                <Input placeholder="Last name" {...field} />
+                                <Textarea 
+                                  placeholder="Any allergies, medical conditions, or health concerns"
+                                  className="resize-none min-h-[80px]"
+                                  {...field}
+                                />
                               </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="dateOfBirth"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Date of Birth</FormLabel>
-                              <FormControl>
-                                <div className="relative">
-                                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                  <Input
-                                    type="date"
-                                    className="pl-9"
-                                    {...field}
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="ageGroup"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Age Group</FormLabel>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select age group" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="U11">Under 11</SelectItem>
-                                  <SelectItem value="U13">Under 13</SelectItem>
-                                  <SelectItem value="U15">Under 15</SelectItem>
-                                  <SelectItem value="U17">Under 17</SelectItem>
-                                  <SelectItem value="U19">Under 19</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="position"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Position (Optional)</FormLabel>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select position" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="batsman">Batsman</SelectItem>
-                                  <SelectItem value="bowler">Bowler</SelectItem>
-                                  <SelectItem value="all_rounder">All-Rounder</SelectItem>
-                                  <SelectItem value="wicket_keeper">Wicket-Keeper</SelectItem>
-                                </SelectContent>
-                              </Select>
                               <FormDescription>
-                                Your child's primary cricket position
+                                Important health information coaches should know about
                               </FormDescription>
                             </FormItem>
                           )}
@@ -494,54 +528,21 @@ export default function ConnectChildPage() {
                         
                         <FormField
                           control={form.control}
-                          name="jerseyNumber"
+                          name="additionalNotes"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Jersey Number (Optional)</FormLabel>
+                              <FormLabel className="text-base">Additional Notes (Optional)</FormLabel>
                               <FormControl>
-                                <Input placeholder="Jersey number" {...field} />
+                                <Textarea 
+                                  placeholder="Any other information about your child you'd like to share"
+                                  className="resize-none min-h-[80px]"
+                                  {...field}
+                                />
                               </FormControl>
                             </FormItem>
                           )}
                         />
                       </div>
-                      
-                      <FormField
-                        control={form.control}
-                        name="healthNotes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Health Notes (Optional)</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Any allergies, medical conditions, or health concerns"
-                                className="resize-none min-h-[80px]"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Important health information coaches should know about
-                            </FormDescription>
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="additionalNotes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Additional Notes (Optional)</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Any other information about your child you'd like to share"
-                                className="resize-none min-h-[80px]"
-                                {...field}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
                       
                       <DialogFooter>
                         <Button

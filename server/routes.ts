@@ -1185,7 +1185,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!dateOfBirth) {
             return res.status(400).json({ 
               message: "Date of birth is required",
-              field: "dateOfBirth"
+              field: "dateOfBirth",
+              fieldErrors: {
+                dateOfBirth: "Date of birth is required"
+              }
             });
           }
           
@@ -1201,7 +1204,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (dateError) {
             return res.status(400).json({ 
               message: "Invalid date format for date of birth", 
-              field: "dateOfBirth" 
+              field: "dateOfBirth",
+              fieldErrors: {
+                dateOfBirth: "Please select a valid date using the date picker"
+              }
             });
           }
           
@@ -1220,7 +1226,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
           console.error("Error creating player by parent:", error);
           if (error instanceof z.ZodError) {
-            return res.status(400).json({ errors: error.errors });
+            // Convert ZodError to a more user-friendly format
+            const fieldErrors: Record<string, string> = {};
+            error.errors.forEach(err => {
+              const fieldName = err.path[err.path.length - 1] as string;
+              fieldErrors[fieldName] = err.message;
+            });
+            
+            return res.status(400).json({ 
+              message: "Please fix the validation errors",
+              fieldErrors
+            });
           }
           return res.status(500).json({ message: "Error creating player" });
         }
