@@ -47,6 +47,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
+      if (!res.ok) {
+        // Handle specific status codes
+        if (res.status === 401) {
+          throw new Error("Incorrect username or password");
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || "Login failed. Please try again.");
+        }
+      }
       return await res.json();
     },
     onSuccess: (user: User) => {
@@ -67,9 +76,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
-      const validatedData = insertUserSchema.parse(data);
-      const res = await apiRequest("POST", "/api/register", validatedData);
-      return await res.json();
+      try {
+        const validatedData = insertUserSchema.parse(data);
+        const res = await apiRequest("POST", "/api/register", validatedData);
+        
+        if (!res.ok) {
+          if (res.status === 400) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.message || "Username already exists");
+          } else {
+            throw new Error("Registration failed. Please try again.");
+          }
+        }
+        
+        return await res.json();
+      } catch (error: any) {
+        // Handle Zod validation errors
+        if (error.name === "ZodError") {
+          throw new Error("Invalid registration data: " + error.errors[0]?.message);
+        }
+        throw error;
+      }
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
