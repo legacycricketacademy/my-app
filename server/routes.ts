@@ -1893,12 +1893,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const publicKey = process.env.VITE_STRIPE_PUBLIC_KEY || '';
       
       // Only get the prefixes for security - don't expose full keys
-      const secretKeyPrefix = secretKey.substring(0, 3);
-      const publicKeyPrefix = publicKey.substring(0, 3);
+      const secretKeyKeyType = secretKey.startsWith('sk_') ? 'secret' : secretKey.startsWith('pk_') ? 'publishable' : 'unknown';
+      const publicKeyKeyType = publicKey.startsWith('pk_') ? 'publishable' : publicKey.startsWith('sk_') ? 'secret' : 'unknown';
+      
+      // Is VITE_STRIPE_PUBLIC_KEY correctly a publishable key?
+      const isPublicKeyCorrect = publicKey.startsWith('pk_');
+      // Is STRIPE_SECRET_KEY correctly a secret key?
+      const isSecretKeyCorrect = secretKey.startsWith('sk_');
+      
+      // Are the keys swapped?
+      const areKeysSwapped = secretKey.startsWith('pk_') && publicKey.startsWith('sk_');
+      
+      const secretKeyPrefix = secretKey.substring(0, 4) + '...';
+      const publicKeyPrefix = publicKey.substring(0, 4) + '...';
       
       res.json({
+        secret_key_type: secretKeyKeyType,
+        public_key_type: publicKeyKeyType,
         secret_key_prefix: secretKeyPrefix,
         public_key_prefix: publicKeyPrefix,
+        diagnoses: {
+          is_public_key_correct: isPublicKeyCorrect,
+          is_secret_key_correct: isSecretKeyCorrect,
+          are_keys_swapped: areKeysSwapped
+        },
         message: "Check if your secret key starts with 'sk_' and public key starts with 'pk_'"
       });
     } catch (error: any) {

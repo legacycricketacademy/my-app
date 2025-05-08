@@ -10,8 +10,21 @@ import { ParentLayout } from '@/layout/parent-layout';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY as string);
+// Initialize Stripe with proper error handling
+import { Stripe } from '@stripe/stripe-js';
+let stripePromise: Promise<Stripe | null> | null = null;
+try {
+  const publicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY as string;
+  if (!publicKey) {
+    console.error('VITE_STRIPE_PUBLIC_KEY is not defined');
+  } else if (publicKey.startsWith('sk_')) {
+    console.error('VITE_STRIPE_PUBLIC_KEY is a secret key, not a publishable key');
+  } else {
+    stripePromise = loadStripe(publicKey);
+  }
+} catch (error) {
+  console.error('Error initializing Stripe:', error);
+}
 
 // Payment form component
 function CheckoutForm({ paymentId, amount }: { paymentId: number, amount: number }) {
@@ -327,10 +340,19 @@ export default function MakePaymentPage() {
                 <h3 className="text-lg font-medium text-red-800">Payment Setup Failed</h3>
                 <p className="mt-2 text-red-600">{error}</p>
               </div>
-            ) : clientSecret ? (
+            ) : clientSecret && stripePromise ? (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
                 <CheckoutForm paymentId={paymentId || 0} amount={paymentDetails.amount} />
               </Elements>
+            ) : clientSecret && !stripePromise ? (
+              <div className="py-8 text-center">
+                <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-red-800">Stripe Configuration Error</h3>
+                <p className="mt-2 text-red-600">
+                  There appears to be an issue with your Stripe API key configuration.
+                  The public key might be missing or incorrect.
+                </p>
+              </div>
             ) : selectedPlayerId ? (
               <div className="py-8 text-center text-gray-500">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
