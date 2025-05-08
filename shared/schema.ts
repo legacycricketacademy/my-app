@@ -23,6 +23,8 @@ export const users = pgTable("users", {
   phone: text("phone").unique(),
   address: text("address"),
   profileImage: text("profile_image"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
