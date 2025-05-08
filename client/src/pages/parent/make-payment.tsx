@@ -110,8 +110,11 @@ export default function MakePaymentPage() {
   const params = useParams<{ playerId: string }>();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentId, setPaymentId] = useState<number | null>(null);
+  const [isLoadingPlayers, setIsLoadingPlayers] = useState(false);
+  const [players, setPlayers] = useState<any[]>([]);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(params.playerId ? parseInt(params.playerId) : null);
   const [paymentDetails, setPaymentDetails] = useState({
-    playerId: parseInt(params.playerId || '0'),
+    playerId: params.playerId ? parseInt(params.playerId) : 0,
     amount: 50, // Default amount
     paymentType: 'monthly_fee', // Default payment type
     description: 'Monthly cricket academy fee'
@@ -119,9 +122,60 @@ export default function MakePaymentPage() {
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState('');
+  const [, navigate] = useLocation();
+
+  // Fetch all parent's players when coming from the "New Payment" button
+  useEffect(() => {
+    if (!params.playerId) {
+      const fetchParentPlayers = async () => {
+        setIsLoadingPlayers(true);
+        try {
+          const response = await apiRequest('GET', '/api/parent/players');
+          if (response.ok) {
+            const playersData = await response.json();
+            setPlayers(playersData);
+            
+            // Select the first player by default if there are any
+            if (playersData.length > 0) {
+              setSelectedPlayerId(playersData[0].id);
+              setPaymentDetails(prev => ({
+                ...prev,
+                playerId: playersData[0].id
+              }));
+              setPlayerName(`${playersData[0].firstName} ${playersData[0].lastName}`);
+            } else {
+              toast({
+                title: 'No players found',
+                description: 'You need to add or connect with a player first before making a payment.',
+                variant: 'destructive',
+              });
+              // Redirect to connect player page if no players are found
+              setTimeout(() => {
+                navigate('/parent/connect-child');
+              }, 2000);
+            }
+          } else {
+            throw new Error('Failed to fetch players');
+          }
+        } catch (error) {
+          console.error('Error fetching parent players:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to load your players. Please try again.',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsLoadingPlayers(false);
+        }
+      };
+      
+      fetchParentPlayers();
+    }
+  }, []);
 
   const createPaymentIntent = useMutation({
     mutationFn: async (data: typeof paymentDetails) => {
+      console.log('Creating payment intent with data:', data);
       const response = await apiRequest('POST', '/api/create-payment-intent', data);
       if (!response.ok) {
         const errorData = await response.json();
@@ -143,7 +197,36 @@ export default function MakePaymentPage() {
     }
   });
 
-  // Fetch player details when component mounts
+  // Handle player selection when using the dropdown
+  const handlePlayerChange = (playerId: number) => {
+    setSelectedPlayerId(playerId);
+    const player = players.find(p => p.id === playerId);
+    if (player) {
+      setPlayerName(`${player.firstName} ${player.lastName}`);
+      setPaymentDetails(prev => ({
+        ...prev,
+        playerId
+      }));
+    }
+  };
+
+  // Handle amount change
+  const handleAmountChange = (amount: number) => {
+    setPaymentDetails(prev => ({
+      ...prev,
+      amount
+    }));
+  };
+
+  // Handle payment type change
+  const handlePaymentTypeChange = (paymentType: string) => {
+    setPaymentDetails(prev => ({
+      ...prev,
+      paymentType
+    }));
+  };
+
+  // Fetch player details when component mounts if playerId is provided
   useEffect(() => {
     const fetchPlayerDetails = async () => {
       try {
@@ -159,11 +242,15 @@ export default function MakePaymentPage() {
 
     if (params.playerId) {
       fetchPlayerDetails();
-      
-      // Create payment intent
-      createPaymentIntent.mutate(paymentDetails);
     }
   }, [params.playerId]);
+
+  // Create payment intent when player is selected
+  useEffect(() => {
+    if (selectedPlayerId && paymentDetails.playerId > 0) {
+      createPaymentIntent.mutate(paymentDetails);
+    }
+  }, [selectedPlayerId, paymentDetails.playerId]);
 
   return (
     <ParentLayout title="Make Payment">
@@ -176,9 +263,63 @@ export default function MakePaymentPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {!params.playerId && isLoadingPlayers ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Loading your players...</span>
+              </div>
+            ) : !params.playerId && players.length > 0 ? (
+              <div className="mb-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Select Player</label>
+                    <select 
+                      className="w-full p-2 border rounded-md"
+                      value={selectedPlayerId || ''}
+                      onChange={(e) => handlePlayerChange(Number(e.target.value))}
+                    >
+                      {players.map(player => (
+                        <option key={player.id} value={player.id}>
+                          {player.firstName} {player.lastName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Payment Type</label>
+                    <select 
+                      className="w-full p-2 border rounded-md"
+                      value={paymentDetails.paymentType}
+                      onChange={(e) => handlePaymentTypeChange(e.target.value)}
+                    >
+                      <option value="monthly_fee">Monthly Fees</option>
+                      <option value="equipment_fee">Equipment Fees</option>
+                      <option value="tournament_fee">Tournament Fees</option>
+                      <option value="special_training">Special Training</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Amount (USD)</label>
+                    <input 
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      className="w-full p-2 border rounded-md"
+                      value={paymentDetails.amount}
+                      onChange={(e) => handleAmountChange(Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            
             {createPaymentIntent.isPending ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Setting up payment...</span>
               </div>
             ) : error ? (
               <div className="py-8 text-center">
@@ -190,11 +331,12 @@ export default function MakePaymentPage() {
               <Elements stripe={stripePromise} options={{ clientSecret }}>
                 <CheckoutForm paymentId={paymentId || 0} amount={paymentDetails.amount} />
               </Elements>
-            ) : (
+            ) : selectedPlayerId ? (
               <div className="py-8 text-center text-gray-500">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
                 <p>Initializing payment system...</p>
               </div>
-            )}
+            ) : null}
           </CardContent>
           <CardFooter className="bg-gray-50 border-t px-6 py-4">
             <p className="text-sm text-gray-500">

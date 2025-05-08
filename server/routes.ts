@@ -1825,14 +1825,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create a payment record in our database
-      const paymentRecord = await storage.createPayment({
-        playerId: playerId,
-        amount: amount,
-        paymentType: paymentType,
-        dueDate: new Date().toISOString(),
+      const dueDate = new Date(); // Current date as due date
+      const paymentData = {
+        playerId,
+        amount,
+        paymentType,
+        dueDate: dueDate.toISOString().split('T')[0], // format as YYYY-MM-DD for SQL date
         status: "pending",
         notes: description || `Payment for ${paymentType}`
-      });
+      };
+      
+      console.log("Creating payment with data:", paymentData);
+      const paymentRecord = await storage.createPayment(paymentData);
 
       // Create payment intent with Stripe
       const paymentIntent = await stripe.paymentIntents.create({
