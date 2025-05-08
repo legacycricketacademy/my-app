@@ -10,7 +10,7 @@ if (process.env.SENDGRID_API_KEY) {
 // Academy info - replace with your actual data
 const ACADEMY_NAME = 'Legacy Cricket Academy';
 // Important: This MUST be an email address that is verified in your SendGrid account
-const ACADEMY_EMAIL = 'parentkite459@gmail.com'; // Verified sender email
+const ACADEMY_EMAIL = 'madhukar.kcc@gmail.com'; // Verified sender email
 const ACADEMY_WEBSITE = 'https://legacycricketacademy.com';
 
 interface SendEmailParams {
