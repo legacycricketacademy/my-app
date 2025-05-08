@@ -1731,6 +1731,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stripe payment endpoints
+  app.post(`${apiPrefix}/create-payment-intent`, async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { amount, paymentType, playerId, description } = req.body;
+      
+      if (!amount || !playerId || !paymentType) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const player = await storage.getPlayerById(playerId);
+      if (!player) {
+        return res.status(404).json({ message: "Player not found" });
+      }
+
+      // Create a payment record in our database
+      const paymentRecord = await storage.createPayment({
+        playerId: playerId,
+        amount: amount,
+        paymentType: paymentType,
+        dueDate: new Date(),
+        status: "pending",
+        notes: description || `Payment for ${paymentType}`
+      });
+
+      // Create payment intent with Stripe
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // convert to cents
+        currency: "usd",
+        description: description || `Cricket Academy payment for ${paymentType}`,
+        metadata: {
+          paymentId: paymentRecord.id.toString(),
+          playerId: playerId.toString(),
+          paymentType
+        }
+      });
+
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        paymentId: paymentRecord.id
+      });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ message: error.message || "Error creating payment" });
+    }
+  });
+
+  // Payment webhook (for handling successful payments)
+  app.post(`${apiPrefix}/payment-webhook`, async (req, res) => {
+    const event = req.body;
+
+    // Handle payment_intent.succeeded event
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object;
+      const paymentId = paymentIntent.metadata.paymentId;
+
+      if (paymentId) {
+        try {
+          await storage.updatePaymentStatus(parseInt(paymentId), "paid");
+          console.log(`Payment ${paymentId} marked as paid`);
+        } catch (error) {
+          console.error(`Error updating payment status for payment ${paymentId}:`, error);
+        }
+      }
+    }
+
+    res.sendStatus(200);
+  });
+
+  // Update payment status (for admin/coach to mark payments as paid manually)
+  app.post(`${apiPrefix}/payments/:id/update-status`, async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Check if user is admin or coach
+    if (req.user.role !== 'admin' && req.user.role !== 'coach') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const paymentId = parseInt(req.params.id);
+      const { status } = req.body;
+
+      if (!status) {
+        return res.status(400).json({ message: "Status is required" });
+      }
+
+      const updatedPayment = await storage.updatePaymentStatus(paymentId, status);
+      if (!updatedPayment) {
+        return res.status(404).json({ message: "Payment not found" });
+      }
+
+      res.json(updatedPayment);
+    } catch (error: any) {
+      console.error("Error updating payment status:", error);
+      res.status(500).json({ message: error.message || "Error updating payment" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
