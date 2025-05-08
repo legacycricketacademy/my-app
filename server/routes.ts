@@ -14,7 +14,8 @@ import {
   insertConnectionRequestSchema,
   connectionRequests
 } from "@shared/schema";
-import { sendEmail, generateInvitationEmail, generateVerificationEmail } from "./email";
+import { sendEmail, generateInvitationEmail, generateVerificationEmail, generateForgotPasswordEmail, generateForgotUsernameEmail } from "./email";
+import { hashPassword } from "./auth";
 
 // Helper function to parse CSV data
 function parseCsvData(csvData: string) {
@@ -630,10 +631,179 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Redirect to login page with success message
-      res.redirect('/auth?verified=true');
+      // Return success response
+      return res.status(200).json({ message: "Email verified successfully" });
     } catch (error) {
       console.error("Error verifying email:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Forgot password and username endpoints
+  app.post(`${apiPrefix}/auth/forgot-password`, async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // Find the user by email
+      const user = await storage.getUserByEmail(email);
+      
+      // If no user found with this email, still return success (for security)
+      if (!user) {
+        return res.status(200).json({ message: "If an account with that email exists, we've sent password reset instructions." });
+      }
+      
+      // Generate password reset token
+      const resetToken = generatePasswordResetToken(user.id, user.email);
+      
+      // Create reset link
+      const resetLink = `${req.protocol}://${req.get('host')}${apiPrefix}/reset-password?token=${resetToken}`;
+      
+      // Generate email content
+      const { text, html } = generateForgotPasswordEmail(user.fullName, resetLink);
+      
+      // Send password reset email
+      try {
+        const emailSent = await sendEmail({
+          to: user.email,
+          subject: "Reset Your Password",
+          text,
+          html
+        });
+        
+        if (!emailSent) {
+          // Still return success but with the direct link for fallback
+          return res.status(200).json({ 
+            message: "Password reset email could not be sent, but reset link is valid",
+            resetLink, // Return the link for direct use
+            status: "warning"
+          });
+        }
+        
+        res.status(200).json({ 
+          message: "Password reset email sent", 
+          status: "success" 
+        });
+      } catch (emailError) {
+        console.error("Email sending error:", emailError);
+        return res.status(200).json({ 
+          message: "Email service unavailable, but here's your reset link",
+          resetLink, // Return the link so the user can still reset
+          status: "warning"
+        });
+      }
+    } catch (error) {
+      console.error("Error processing forgot password:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.post(`${apiPrefix}/auth/forgot-username`, async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // Find the user by email
+      const user = await storage.getUserByEmail(email);
+      
+      // If no user found with this email, still return success (for security)
+      if (!user) {
+        return res.status(200).json({ message: "If an account with that email exists, we've sent the username to that email." });
+      }
+      
+      // Generate email content
+      const { text, html } = generateForgotUsernameEmail(user.fullName, user.username);
+      
+      // Send username recovery email
+      try {
+        const emailSent = await sendEmail({
+          to: user.email,
+          subject: "Your Username Recovery",
+          text,
+          html
+        });
+        
+        if (!emailSent) {
+          // For username recovery, direct fallback in UI since we can't return username in response (security risk)
+          return res.status(200).json({ 
+            message: "Username recovery email could not be sent",
+            status: "warning"
+          });
+        }
+        
+        res.status(200).json({ 
+          message: "Username recovery email sent", 
+          status: "success" 
+        });
+      } catch (emailError) {
+        console.error("Email sending error:", emailError);
+        return res.status(200).json({ 
+          message: "Email service unavailable",
+          status: "warning"
+        });
+      }
+    } catch (error) {
+      console.error("Error processing forgot username:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.get(`${apiPrefix}/reset-password`, async (req, res) => {
+    // This endpoint just checks if the token is valid and redirects to the frontend reset page
+    const { token } = req.query;
+    
+    if (!token || typeof token !== 'string') {
+      return res.status(400).send("Invalid password reset token");
+    }
+    
+    const { valid } = verifyPasswordResetToken(token);
+    
+    if (!valid) {
+      return res.status(400).send("Invalid or expired password reset token");
+    }
+    
+    // Redirect to the frontend reset password page with the token
+    res.redirect(`/reset-password?token=${token}`);
+  });
+  
+  app.post(`${apiPrefix}/reset-password`, async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: "Invalid password reset token" });
+      }
+      
+      if (!password || typeof password !== 'string' || password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+      
+      const { valid, userId } = verifyPasswordResetToken(token);
+      
+      if (!valid || !userId) {
+        return res.status(400).json({ message: "Invalid or expired password reset token" });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(password);
+      
+      // Update user's password
+      const updatedUser = await storage.updateUser(userId, { password: hashedPassword });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return success message
+      res.status(200).json({ message: "Password has been reset successfully" });
+    } catch (error) {
+      console.error("Error resetting password:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
