@@ -204,34 +204,21 @@ function RouterContent() {
 function Router() {
   const { isLoading, user } = useAuth();
   
-  console.log("Router rendering, isLoading:", isLoading, "user:", user);
-  
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading authentication state...</div>;
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  if (!user) {
-    console.log("No user logged in, automatically redirecting to auth page");
-    // Just show the router content which will handle the auth page
-    return <RouterContent />;
-  }
-  
   return <RouterContent />;
 }
 
 function App() {
   return (
-    <div>
-      <div style={{ position: 'fixed', bottom: 0, right: 0, padding: '10px', background: 'rgba(0,0,0,0.7)', color: 'white', zIndex: 9999 }}>
-        App Loading
-      </div>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router />
-          <Toaster />
-        </AuthProvider>
-      </QueryClientProvider>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router />
+        <Toaster />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -35,7 +35,6 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  console.log("AuthProvider initializing");
   const {
     data: user,
     error,
@@ -44,8 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
-  
-  console.log("AuthProvider state:", { user, isLoading, error });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
