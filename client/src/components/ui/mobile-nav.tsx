@@ -93,7 +93,8 @@ export function MobileNav() {
             isActive('/meal-plans') || 
             isActive('/announcements') || 
             isActive('/settings') ||
-            isActive('/profile') ? 'text-primary' : 'text-gray-600'
+            isActive('/profile') ||
+            isActive('/players-pending-review') ? 'text-primary' : 'text-gray-600'
           }`}>
             <MoreHorizontal className="h-5 w-5" />
             <span className="text-xs mt-1">More</span>

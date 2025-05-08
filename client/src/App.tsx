@@ -20,6 +20,7 @@ import SettingsPage from "@/pages/settings-page";
 import ImportDataPage from "@/pages/import-data-page";
 import ProfilePage from "@/pages/profile-page";
 import NotFound from "@/pages/not-found";
+import PlayersPendingReviewPage from "@/pages/admin/players-pending-review";
 
 // Parent Pages
 import ParentDashboard from "@/pages/parent-dashboard";
@@ -151,6 +152,13 @@ function RouterContent() {
       <RoleBasedRoute 
         path="/manage-connections" 
         component={ManageParentConnectionsPage} 
+        allowedRoles={["admin", "coach"]}
+        redirectTo="/parent"
+      />
+
+      <RoleBasedRoute 
+        path="/players-pending-review" 
+        component={PlayersPendingReviewPage} 
         allowedRoles={["admin", "coach"]}
         redirectTo="/parent"
       />

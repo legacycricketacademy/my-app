@@ -13,7 +13,8 @@ import {
   LogOut,
   Upload,
   Link2,
-  UserPlus
+  UserPlus,
+  ClipboardCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CricketIcon } from "@/components/ui/cricket-icon";
@@ -54,6 +55,7 @@ export function Sidebar() {
   const adminItems = [
     { label: "Import Data", icon: <Upload className="h-5 w-5" />, path: "/import-data" },
     { label: "Manage Connections", icon: <UserPlus className="h-5 w-5" />, path: "/manage-connections" },
+    { label: "Pending Players", icon: <ClipboardCheck className="h-5 w-5" />, path: "/players-pending-review" },
   ];
   
   // Final nav items based on user role
