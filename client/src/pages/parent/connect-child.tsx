@@ -119,11 +119,33 @@ export default function ConnectChildPage() {
           const errorData = await res.json().catch(() => ({}));
           
           if (res.status === 400) {
-            if (errorData.message?.includes("already exists")) {
+            // Check for specific field errors
+            if (errorData.fieldErrors) {
+              // Get all the field errors and join them into a user-friendly message
+              const errorMessages = Object.entries(errorData.fieldErrors)
+                .map(([field, message]) => {
+                  // Convert camelCase field names to proper field labels
+                  const fieldLabel = field === 'dateOfBirth' ? 'Date of Birth' : 
+                                    field === 'firstName' ? 'First Name' :
+                                    field === 'lastName' ? 'Last Name' :
+                                    field === 'ageGroup' ? 'Age Group' : field;
+                  
+                  return `${fieldLabel}: ${message}`;
+                })
+                .join(', ');
+              
+              throw new Error(`Please fix the following fields: ${errorMessages}`);
+            } 
+            else if (errorData.message?.includes("already exists")) {
               throw new Error("A player with this name and date of birth already exists. Please check your information.");
-            } else if (errorData.message?.includes("dateOfBirth")) {
-              throw new Error("There was an issue with the date of birth. Please make sure it's a valid date.");
-            } else {
+            } 
+            else if (errorData.message?.includes("dateOfBirth")) {
+              throw new Error("Date of Birth is required. Please select a valid date.");
+            } 
+            else if (errorData.message?.includes("ageGroup")) {
+              throw new Error("Age Group is required. Please select an age group from the dropdown.");
+            }
+            else {
               throw new Error(errorData.message || "Please check the information and try again.");
             }
           } else {
@@ -342,7 +364,7 @@ export default function ConnectChildPage() {
                 }}
               >
                 <DialogContent 
-                  className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto"
+                  className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto w-[94vw] md:w-auto"
                   onInteractOutside={(e) => {
                     // Prevent closing if a form is being submitted
                     if (addChildMutation.isPending) {
