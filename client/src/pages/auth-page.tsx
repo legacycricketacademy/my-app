@@ -10,8 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CricketIcon } from "@/components/ui/cricket-icon";
-import { Users, Heart, Bell, DollarSign, LinkIcon, CheckCircle } from "lucide-react";
+import { Users, Heart, Bell, DollarSign, LinkIcon, CheckCircle, Key, User, Mail } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -30,8 +32,18 @@ const registerSchema = z.object({
   role: z.enum(["parent", "coach", "admin"]),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
+const forgotUsernameSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+type ForgotUsernameFormValues = z.infer<typeof forgotUsernameSchema>;
 
 // Interface for the decoded invitation token
 interface InvitationToken {
@@ -46,6 +58,11 @@ export default function AuthPage() {
   const [invitationExpired, setInvitationExpired] = useState<boolean>(false);
   const { user, loginMutation, registerMutation } = useAuth();
   const [location, navigate] = useLocation();
+  const { toast } = useToast();
+  
+  // State for forgot modals
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [isForgotUsernameOpen, setIsForgotUsernameOpen] = useState(false);
   
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
