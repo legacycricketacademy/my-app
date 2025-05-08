@@ -39,8 +39,8 @@ export function Sidebar() {
     logoutMutation.mutate();
   };
   
-  // Base nav items for all roles
-  const baseNavItems = [
+  // Base nav items for admins/coaches
+  const adminNavItems = [
     { label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" />, path: "/" },
     { label: "Team Management", icon: <Users className="h-5 w-5" />, path: "/players" },
     { label: "Schedule", icon: <Calendar className="h-5 w-5" />, path: "/schedule" },
@@ -49,6 +49,17 @@ export function Sidebar() {
     { label: "Announcements", icon: <Send className="h-5 w-5" />, path: "/announcements" },
     { label: "Payments", icon: <DollarSign className="h-5 w-5" />, path: "/payments" },
     { label: "Settings", icon: <Settings className="h-5 w-5" />, path: "/settings" },
+  ];
+
+  // Parent nav items
+  const parentNavItems = [
+    { label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" />, path: "/parent" },
+    { label: "Schedule", icon: <Calendar className="h-5 w-5" />, path: "/parent/schedule" },
+    { label: "Fitness Tracking", icon: <Heart className="h-5 w-5" />, path: "/parent/fitness" },
+    { label: "Meal Plans", icon: <Utensils className="h-5 w-5" />, path: "/parent/meal-plans" },
+    { label: "Announcements", icon: <Send className="h-5 w-5" />, path: "/parent/announcements" },
+    { label: "Connect Child", icon: <Link2 className="h-5 w-5" />, path: "/parent/connect-child" },
+    { label: "Payments", icon: <DollarSign className="h-5 w-5" />, path: "/parent/payments" },
   ];
   
   // Admin/Coach specific items
@@ -60,8 +71,8 @@ export function Sidebar() {
   
   // Final nav items based on user role
   const navItems = user?.role === "parent" 
-    ? baseNavItems 
-    : [...baseNavItems, ...adminItems];
+    ? parentNavItems 
+    : [...adminNavItems, ...adminItems];
   
   return (
     <aside className="flex flex-col h-full bg-white shadow-md z-10 w-64">
@@ -70,7 +81,9 @@ export function Sidebar() {
           <span className="text-2xl font-bold text-primary heading">Legacy Cricket</span>
           <CricketIcon className="h-6 w-6 text-accent" />
         </div>
-        <p className="text-gray-600 text-sm mt-1">Coach Dashboard</p>
+        <p className="text-gray-600 text-sm mt-1">
+          {user?.role === "parent" ? "Parent Portal" : "Coach Dashboard"}
+        </p>
       </div>
       
       {/* Coach Profile */}
