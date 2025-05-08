@@ -105,6 +105,9 @@ export default function PaymentsPage() {
   const paymentsQuery = useQuery({
     queryKey: ['/api/parent/payments'],
     enabled: !!user,
+    onError: (error) => {
+      console.error("Error fetching payments:", error);
+    }
   });
   
   const isLoading = playersQuery.isLoading || paymentsQuery.isLoading;
