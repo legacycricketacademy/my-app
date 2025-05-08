@@ -176,3 +176,122 @@ ${ACADEMY_NAME} Team
 
   return { text, html };
 }
+
+export function generateForgotPasswordEmail(
+  fullName: string,
+  resetLink: string
+): { text: string; html: string } {
+  // Plain text version
+  const text = `
+Hello ${fullName},
+
+We received a request to reset your password for your ${ACADEMY_NAME} account. Please click the link below to reset your password:
+
+${resetLink}
+
+This link will expire in 1 hour. If you did not request a password reset, please ignore this email.
+
+Thanks,
+${ACADEMY_NAME} Team
+`;
+
+  // HTML version
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
+    .content { padding: 20px; }
+    .button { display: inline-block; padding: 10px 20px; color: white; background-color: #4f46e5; 
+              text-decoration: none; border-radius: 4px; margin: 20px 0; }
+    .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${ACADEMY_NAME}</h1>
+    </div>
+    <div class="content">
+      <p>Hello ${fullName},</p>
+      <p>We received a request to reset your password for your ${ACADEMY_NAME} account.</p>
+      <p>Click the button below to reset your password:</p>
+      <a href="${resetLink}" class="button">Reset Password</a>
+      <p><em>This reset link will expire in 1 hour.</em></p>
+      <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+      <p>${resetLink}</p>
+      <p>If you did not request a password reset, please ignore this email.</p>
+      <p>Thanks,<br>${ACADEMY_NAME} Team</p>
+    </div>
+    <div class="footer">
+      <p>This is an automated message, please do not reply to this email.</p>
+      <p>&copy; ${new Date().getFullYear()} ${ACADEMY_NAME}</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  return { text, html };
+}
+
+export function generateForgotUsernameEmail(
+  fullName: string,
+  username: string
+): { text: string; html: string } {
+  // Plain text version
+  const text = `
+Hello ${fullName},
+
+You (or someone else) requested your username for ${ACADEMY_NAME}.
+
+Your username is: ${username}
+
+If you did not make this request, please ignore this email.
+
+Thanks,
+${ACADEMY_NAME} Team
+`;
+
+  // HTML version
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
+    .content { padding: 20px; }
+    .username-box { padding: 15px; background-color: #f0f0f0; border-radius: 4px; font-size: 18px; 
+                   margin: 20px 0; text-align: center; font-weight: bold; }
+    .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${ACADEMY_NAME}</h1>
+    </div>
+    <div class="content">
+      <p>Hello ${fullName},</p>
+      <p>You (or someone else) requested your username for ${ACADEMY_NAME}.</p>
+      <p>Your username is:</p>
+      <div class="username-box">${username}</div>
+      <p>If you did not make this request, please ignore this email.</p>
+      <p>Thanks,<br>${ACADEMY_NAME} Team</p>
+    </div>
+    <div class="footer">
+      <p>This is an automated message, please do not reply to this email.</p>
+      <p>&copy; ${new Date().getFullYear()} ${ACADEMY_NAME}</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  return { text, html };
+}
