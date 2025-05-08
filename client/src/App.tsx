@@ -211,18 +211,9 @@ function Router() {
   }
 
   if (!user) {
-    console.log("No user logged in, should redirect to auth page");
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="mb-4 text-xl">Not logged in</div>
-        <a 
-          href="/auth" 
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Go to login page
-        </a>
-      </div>
-    );
+    console.log("No user logged in, automatically redirecting to auth page");
+    // Just show the router content which will handle the auth page
+    return <RouterContent />;
   }
   
   return <RouterContent />;
