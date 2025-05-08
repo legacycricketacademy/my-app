@@ -844,48 +844,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post(`${apiPrefix}/players`, async (req, res) => {
     try {
-      const { parentEmail, parentName, ...playerData } = req.body;
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
       
-      // First, check if a parent with this email exists
-      let parentUser = await storage.getUserByEmail(parentEmail);
-      
-      // If parent doesn't exist, create a new parent user
-      if (!parentUser) {
-        // Generate a username based on the parent's name (first part of email)
-        const username = parentEmail.split('@')[0];
-        // Generate a random password
-        const password = Math.random().toString(36).slice(-8);
+      // Handle different scenarios based on user role
+      if (req.user.role === "parent") {
+        // Parent adding their own child
+        try {
+          const playerData = {
+            ...req.body,
+            parentId: req.user.id,
+            pendingCoachReview: true // Flag for coach to review
+          };
+          
+          const newPlayer = await storage.createPlayer(playerData);
+          return res.status(201).json(newPlayer);
+        } catch (error) {
+          console.error("Error creating player by parent:", error);
+          if (error instanceof z.ZodError) {
+            return res.status(400).json({ errors: error.errors });
+          }
+          return res.status(500).json({ message: "Error creating player" });
+        }
+      } else {
+        // Admin/Coach adding a player with potential parent creation
+        const { parentEmail, parentName, ...playerData } = req.body;
+        
+        // First, check if a parent with this email exists
+        let parentUser = await storage.getUserByEmail(parentEmail);
+        
+        // If parent doesn't exist, create a new parent user
+        if (!parentUser) {
+          try {
+            // Generate a username based on the parent's name (first part of email)
+            const username = parentEmail.split('@')[0];
+            // Generate a random password
+            const password = Math.random().toString(36).slice(-8);
+            
+            parentUser = await storage.createUser({
+              username,
+              password,
+              email: parentEmail,
+              fullName: parentName,
+              role: "parent"
+            });
+            
+            console.log(`Created new parent user: ${parentUser.id} (${username})`);
+          } catch (createError) {
+            console.error("Error creating parent user:", createError);
+            return res.status(400).json({ message: "Failed to create parent user account" });
+          }
+        }
         
         try {
-          parentUser = await storage.createUser({
-            username,
-            password,
-            email: parentEmail,
-            fullName: parentName,
-            role: "parent"
+          // Now create the player with the parent ID
+          const validatedPlayerData = insertPlayerSchema.parse({
+            ...playerData,
+            parentId: parentUser.id
           });
           
-          console.log(`Created new parent user: ${parentUser.id} (${username})`);
-        } catch (createError) {
-          console.error("Error creating parent user:", createError);
-          return res.status(400).json({ message: "Failed to create parent user account" });
+          const player = await storage.createPlayer(validatedPlayerData);
+          res.status(201).json(player);
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            return res.status(400).json({ errors: error.errors });
+          }
+          console.error("Error creating player:", error);
+          res.status(500).json({ message: "Error creating player" });
         }
       }
-      
-      // Now create the player with the parent ID
-      const validatedPlayerData = insertPlayerSchema.parse({
-        ...playerData,
-        parentId: parentUser.id
-      });
-      
-      const player = await storage.createPlayer(validatedPlayerData);
-      res.status(201).json(player);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ errors: error.errors });
-      }
-      console.error("Error creating player:", error);
-      res.status(500).json({ message: "Error creating player" });
+      console.error("Unexpected error in player creation:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
   
