@@ -122,6 +122,7 @@ export const fitnessRecords = pgTable("fitness_records", {
 // Meal Plans
 export const mealPlans = pgTable("meal_plans", {
   id: serial("id").primaryKey(),
+  academyId: integer("academy_id").references(() => academies.id),
   ageGroup: text("age_group").notNull(),
   title: text("title").notNull(),
   weekStartDate: date("week_start_date").notNull(),
@@ -146,6 +147,7 @@ export const mealItems = pgTable("meal_items", {
 // Announcements
 export const announcements = pgTable("announcements", {
   id: serial("id").primaryKey(),
+  academyId: integer("academy_id").references(() => academies.id),
   title: text("title").notNull(),
   content: text("content").notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
@@ -165,6 +167,7 @@ export const announcementViews = pgTable("announcement_views", {
 // Payments
 export const payments = pgTable("payments", {
   id: serial("id").primaryKey(),
+  academyId: integer("academy_id").references(() => academies.id),
   playerId: integer("player_id").references(() => players.id).notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   paymentType: text("payment_type").notNull(), // monthly_fee, equipment_fee, tournament_fee, etc.
@@ -179,6 +182,7 @@ export const payments = pgTable("payments", {
 // Parent-Child Connection Requests
 export const connectionRequests = pgTable("connection_requests", {
   id: serial("id").primaryKey(),
+  academyId: integer("academy_id").references(() => academies.id),
   parentId: integer("parent_id").references(() => users.id).notNull(),
   playerId: integer("player_id").references(() => players.id).notNull(),
   status: text("status").notNull().default("pending"), // pending, approved, rejected
@@ -188,16 +192,30 @@ export const connectionRequests = pgTable("connection_requests", {
 });
 
 // Define relationships
-export const usersRelations = relations(users, ({ many }) => ({
+export const academiesRelations = relations(academies, ({ many, one }) => ({
+  users: many(users),
+  players: many(players),
+  sessions: many(sessions),
+  mealPlans: many(mealPlans),
+  announcements: many(announcements),
+  payments: many(payments),
+  connectionRequests: many(connectionRequests),
+  owner: one(users, { fields: [academies.ownerId], references: [users.id] }),
+}));
+
+export const usersRelations = relations(users, ({ many, one }) => ({
+  academy: one(academies, { fields: [users.academyId], references: [academies.id] }),
   players: many(players),
   sessions: many(sessions),
   announcementViews: many(announcementViews),
   announcements: many(announcements, { relationName: "created_by" }),
   mealPlans: many(mealPlans, { relationName: "created_by" }),
   connectionRequests: many(connectionRequests),
+  ownedAcademies: many(academies, { relationName: "owner" }),
 }));
 
 export const playersRelations = relations(players, ({ one, many }) => ({
+  academy: one(academies, { fields: [players.academyId], references: [academies.id] }),
   parent: one(users, { fields: [players.parentId], references: [users.id] }),
   fitnessRecords: many(fitnessRecords),
   payments: many(payments),
@@ -206,6 +224,7 @@ export const playersRelations = relations(players, ({ one, many }) => ({
 }));
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
+  academy: one(academies, { fields: [sessions.academyId], references: [academies.id] }),
   coach: one(users, { fields: [sessions.coachId], references: [users.id] }),
   attendances: many(sessionAttendances),
 }));
@@ -220,6 +239,7 @@ export const fitnessRecordsRelations = relations(fitnessRecords, ({ one }) => ({
 }));
 
 export const mealPlansRelations = relations(mealPlans, ({ one, many }) => ({
+  academy: one(academies, { fields: [mealPlans.academyId], references: [academies.id] }),
   createdByUser: one(users, { fields: [mealPlans.createdBy], references: [users.id] }),
   mealItems: many(mealItems),
 }));
@@ -229,6 +249,7 @@ export const mealItemsRelations = relations(mealItems, ({ one }) => ({
 }));
 
 export const announcementsRelations = relations(announcements, ({ one, many }) => ({
+  academy: one(academies, { fields: [announcements.academyId], references: [academies.id] }),
   createdByUser: one(users, { fields: [announcements.createdBy], references: [users.id] }),
   views: many(announcementViews),
 }));
