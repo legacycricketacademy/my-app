@@ -29,6 +29,7 @@ import ParentTest from "@/pages/parent-test";
 import StripeDebugPage from "@/pages/stripe-debug";
 import ConnectChildPage from "@/pages/parent/connect-child";
 import ConnectChildSimplePage from "@/pages/parent/connect-child-simple";
+import ConnectChildNewPage from "@/pages/parent/connect-child-new";
 import ManageParentConnectionsPage from "@/pages/manage-parent-connections";
 import ParentPaymentsPage from "@/pages/parent/payments";
 import MakePaymentPage from "@/pages/parent/make-payment";
@@ -153,7 +154,7 @@ function RouterContent() {
       
       <RoleBasedRoute 
         path="/parent/connect-child" 
-        component={ConnectChildSimplePage} 
+        component={ConnectChildNewPage} 
         allowedRoles={["parent"]}
         redirectTo="/"
       />
