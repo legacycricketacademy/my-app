@@ -500,6 +500,44 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedPayment;
   }
+
+  // Stripe methods
+  async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        stripeCustomerId: customerId,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+  
+  async updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        stripeSubscriptionId: subscriptionId,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+  
+  async updateUserStripeInfo(userId: number, data: { stripeCustomerId: string; stripeSubscriptionId: string }): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        stripeCustomerId: data.stripeCustomerId,
+        stripeSubscriptionId: data.stripeSubscriptionId,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
   
   // Stats methods
   async getDashboardStats(): Promise<any> {
