@@ -352,6 +352,14 @@ export default function MakePaymentPage() {
                   There appears to be an issue with your Stripe API key configuration.
                   The public key might be missing or incorrect.
                 </p>
+                <div className="mt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/parent/payment-debug')}
+                  >
+                    Go to Diagnostic Page
+                  </Button>
+                </div>
               </div>
             ) : selectedPlayerId ? (
               <div className="py-8 text-center text-gray-500">
