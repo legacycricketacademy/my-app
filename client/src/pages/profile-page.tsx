@@ -14,6 +14,13 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { User } from "@shared/schema";
 import { useState } from "react";
 
+// Schema for test email form
+const testEmailSchema = z.object({
+  email: z.string().email("Please enter a valid email address")
+});
+
+type TestEmailValues = z.infer<typeof testEmailSchema>;
+
 const profileSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
@@ -33,6 +40,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [verificationEmailSent, setVerificationEmailSent] = useState(false);
+  const [showTestEmailForm, setShowTestEmailForm] = useState(false);
 
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),

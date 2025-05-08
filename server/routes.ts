@@ -398,6 +398,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Base API prefix
   const apiPrefix = "/api";
   
+  // Test email endpoint
+  app.post(`${apiPrefix}/test-email`, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { email } = req.body;
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ message: "Email address is required" });
+      }
+      
+      // Create test email content
+      const testEmailSubject = "Test Email from Legacy Cricket Academy";
+      const testEmailText = "This is a test email from Legacy Cricket Academy. If you received this email, it means your email configuration is working correctly.";
+      const testEmailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
+            .content { padding: 20px; }
+            .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Legacy Cricket Academy</h1>
+            </div>
+            <div class="content">
+              <h2>Test Email</h2>
+              <p>This is a test email from Legacy Cricket Academy.</p>
+              <p>If you received this email, it means your email configuration is working correctly.</p>
+              <p>No further action is required.</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated message, please do not reply to this email.</p>
+              <p>&copy; ${new Date().getFullYear()} Legacy Cricket Academy</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      // Try to send test email
+      try {
+        const emailSent = await sendEmail({
+          to: email,
+          subject: testEmailSubject,
+          text: testEmailText,
+          html: testEmailHtml
+        });
+        
+        if (!emailSent) {
+          return res.status(500).json({
+            message: "Failed to send test email. Check server logs for details.",
+            status: "error"
+          });
+        }
+        
+        res.status(200).json({ 
+          message: "Test email sent successfully!", 
+          status: "success" 
+        });
+      } catch (emailError) {
+        console.error("Email sending error:", emailError);
+        return res.status(500).json({ 
+          message: "Email service error. Check server logs for details.",
+          status: "error",
+          error: String(emailError)
+        });
+      }
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Email verification endpoints
   app.post(`${apiPrefix}/verify-email/send`, async (req, res) => {
     try {
