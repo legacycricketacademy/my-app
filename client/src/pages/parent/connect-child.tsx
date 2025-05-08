@@ -86,7 +86,7 @@ export default function ConnectChildPage() {
   // Mutation for adding a new child
   const addChildMutation = useMutation({
     mutationFn: async (data: AddChildFormValues) => {
-      const res = await apiRequest("POST", "/api/parent/players", data);
+      const res = await apiRequest("POST", "/api/players", data);
       return await res.json();
     },
     onSuccess: (data) => {
@@ -94,8 +94,11 @@ export default function ConnectChildPage() {
         title: "Child Added Successfully",
         description: "Your child has been added and is now pending coach review.",
       });
+      // Force dialog to close
       setDialogOpen(false);
+      // Reset form fields
       form.reset();
+      // Refresh the lists of players and connection requests
       queryClient.invalidateQueries({ queryKey: ["/api/parent/players"] });
       queryClient.invalidateQueries({ queryKey: ["/api/parent/connection-requests"] });
     },
@@ -221,8 +224,22 @@ export default function ConnectChildPage() {
                 Add New Child
               </Button>
               
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+              <Dialog 
+                open={dialogOpen} 
+                onOpenChange={(open) => {
+                  setDialogOpen(open);
+                  if (!open) form.reset();
+                }}
+              >
+                <DialogContent 
+                  className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto"
+                  onInteractOutside={(e) => {
+                    // Prevent closing if a form is being submitted
+                    if (addChildMutation.isPending) {
+                      e.preventDefault();
+                    }
+                  }}
+                >
                   <DialogHeader>
                     <DialogTitle>Add New Child</DialogTitle>
                     <DialogDescription>
