@@ -1,15 +1,42 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, primaryKey, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, primaryKey, date, json, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
 
 // User roles
-export const userRoles = ["admin", "coach", "parent"] as const;
+export const userRoles = ["superadmin", "admin", "coach", "parent"] as const;
 export type UserRole = (typeof userRoles)[number];
+
+// Subscription plan types
+export const subscriptionPlans = ["free", "basic", "pro", "enterprise"] as const;
+export type SubscriptionPlan = (typeof subscriptionPlans)[number];
+
+// Academies table
+export const academies = pgTable("academies", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  logo: text("logo"),
+  ownerId: integer("owner_id"),
+  subscriptionPlan: text("subscription_plan", { enum: subscriptionPlans }).notNull().default("free"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  settings: json("settings").$type<{
+    colors?: { primary?: string; secondary?: string; accent?: string };
+    features?: { fitness?: boolean; mealPlans?: boolean; payments?: boolean; };
+    maxUsers?: number;
+    maxPlayers?: number;
+  }>(),
+  status: text("status").notNull().default("active"), // active, inactive, suspended
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  academyId: integer("academy_id").references(() => academies.id),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
@@ -32,6 +59,7 @@ export const users = pgTable("users", {
 // Players table
 export const players = pgTable("players", {
   id: serial("id").primaryKey(),
+  academyId: integer("academy_id").references(() => academies.id),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   dateOfBirth: date("date_of_birth").notNull(),
@@ -51,6 +79,7 @@ export const players = pgTable("players", {
 // Sessions table
 export const sessions = pgTable("sessions", {
   id: serial("id").primaryKey(),
+  academyId: integer("academy_id").references(() => academies.id),
   title: text("title").notNull(),
   description: text("description"),
   sessionType: text("session_type").notNull(),
