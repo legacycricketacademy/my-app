@@ -1882,7 +1882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendStatus(200);
   });
 
-  // Debug Stripe keys endpoint
+  // Debug Stripe keys endpoint with authentication
   app.get(`${apiPrefix}/debug-stripe-keys`, async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -1922,6 +1922,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error checking Stripe keys:", error);
       res.status(500).json({ error: error.message || "Error checking Stripe keys" });
+    }
+  });
+  
+  // Simple public diagnostic endpoint (no auth required)
+  app.get(`${apiPrefix}/simple-key-check`, async (_, res) => {
+    try {
+      const secretKey = process.env.STRIPE_SECRET_KEY || '';
+      const publicKey = process.env.VITE_STRIPE_PUBLIC_KEY || '';
+      
+      // Only get key types for security
+      const secretKeyType = secretKey.startsWith('sk_') ? 'secret' : secretKey.startsWith('pk_') ? 'publishable' : 'unknown';
+      const publicKeyType = publicKey.startsWith('pk_') ? 'publishable' : publicKey.startsWith('sk_') ? 'secret' : 'unknown';
+      
+      // Are the keys swapped?
+      const areKeysSwapped = secretKey.startsWith('pk_') && publicKey.startsWith('sk_');
+      
+      res.json({
+        diagnosis: {
+          secret_key_type: secretKeyType,
+          public_key_type: publicKeyType,
+          keys_look_swapped: areKeysSwapped
+        },
+        message: "This is a simplified key type check that doesn't require authentication"
+      });
+    } catch (error: any) {
+      console.error("Error in simple key check:", error);
+      res.status(500).json({ error: error.message || "Error checking keys" });
     }
   });
 
