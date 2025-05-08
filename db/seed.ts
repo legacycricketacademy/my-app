@@ -4,6 +4,38 @@ import { hashSync, genSaltSync } from "bcrypt";
 
 async function seed() {
   try {
+    // Create default academy if it doesn't exist
+    let defaultAcademy;
+    const academyExists = await db.query.academies.findFirst({
+      where: (academies, { eq }) => eq(academies.name, "Legacy Cricket Academy")
+    });
+
+    if (!academyExists) {
+      const [academy] = await db.insert(schema.academies).values({
+        name: "Legacy Cricket Academy",
+        description: "The main cricket academy for player development",
+        address: "123 Cricket Lane, Sports City",
+        phone: "+1234567890",
+        email: "info@legacycricket.com",
+        logoUrl: "/assets/logo.png",
+        primaryColor: "#1e40af", // Blue
+        secondaryColor: "#60a5fa", // Light blue
+        stripeAccountId: null,
+        subscriptionTier: "pro",
+        maxPlayers: 200,
+        maxCoaches: 10,
+        status: "active",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      defaultAcademy = academy;
+      console.log("Default academy created with ID:", academy.id);
+    } else {
+      defaultAcademy = academyExists;
+      console.log("Default academy already exists with ID:", academyExists.id);
+    }
+
+    const academyId = defaultAcademy.id;
     // Create admin user
     const adminExists = await db.query.users.findFirst({
       where: (users, { eq }) => eq(users.username, "admin")

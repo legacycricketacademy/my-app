@@ -260,10 +260,12 @@ export const announcementViewsRelations = relations(announcementViews, ({ one })
 }));
 
 export const paymentsRelations = relations(payments, ({ one }) => ({
+  academy: one(academies, { fields: [payments.academyId], references: [academies.id] }),
   player: one(players, { fields: [payments.playerId], references: [players.id] }),
 }));
 
 export const connectionRequestsRelations = relations(connectionRequests, ({ one }) => ({
+  academy: one(academies, { fields: [connectionRequests.academyId], references: [academies.id] }),
   parent: one(users, { fields: [connectionRequests.parentId], references: [users.id] }),
   player: one(players, { fields: [connectionRequests.playerId], references: [players.id] }),
 }));
