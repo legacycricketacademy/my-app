@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Search, UserRound, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Search, UserRound, AlertCircle, CheckCircle2, Loader2, PlusCircle, Calendar } from "lucide-react";
 import { 
   Table,
   TableBody,
@@ -18,6 +18,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 type PlayerSearchResult = {
   id: number;
@@ -38,12 +46,67 @@ type ConnectionRequest = {
   updatedAt: string;
 };
 
+// Schema for the new child form
+const addChildFormSchema = z.object({
+  firstName: z.string().min(2, { message: "First name must be at least 2 characters" }),
+  lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }),
+  dateOfBirth: z.string({ required_error: "Date of birth is required" }),
+  ageGroup: z.string({ required_error: "Age group is required" }),
+  position: z.string().optional(),
+  jerseyNumber: z.string().optional(),
+  healthNotes: z.string().max(500, { message: "Health notes must be less than 500 characters" }).optional(),
+  additionalNotes: z.string().max(500, { message: "Additional notes must be less than 500 characters" }).optional(),
+});
+
+type AddChildFormValues = z.infer<typeof addChildFormSchema>;
+
 export default function ConnectChildPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PlayerSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  
+  // Initialize form for adding a new child
+  const form = useForm<AddChildFormValues>({
+    resolver: zodResolver(addChildFormSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      dateOfBirth: "",
+      ageGroup: "",
+      position: "",
+      jerseyNumber: "",
+      healthNotes: "",
+      additionalNotes: "",
+    },
+  });
+  
+  // Mutation for adding a new child
+  const addChildMutation = useMutation({
+    mutationFn: async (data: AddChildFormValues) => {
+      const res = await apiRequest("POST", "/api/parent/players", data);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Child Added Successfully",
+        description: "Your child has been added and is now pending coach review.",
+      });
+      setDialogOpen(false);
+      form.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/parent/players"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/parent/connection-requests"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Add Child",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
   
   // Get existing connection requests
   const { 
@@ -120,6 +183,11 @@ export default function ConnectChildPage() {
     createRequestMutation.mutate(playerId);
   };
   
+  // Submit handler for the add child form
+  const onSubmit = (data: AddChildFormValues) => {
+    addChildMutation.mutate(data);
+  };
+  
   // Get status badge color
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -144,6 +212,218 @@ export default function ConnectChildPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="flex flex-col md:flex-row gap-4 mb-4">
+              <Button 
+                className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => setDialogOpen(true)}
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add New Child
+              </Button>
+              
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Add New Child</DialogTitle>
+                    <DialogDescription>
+                      Fill in your child's details below. Once added, a coach will review and approve the connection.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="firstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>First Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="First name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="lastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Last Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Last name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="dateOfBirth"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Date of Birth</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    type="date"
+                                    className="pl-9"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="ageGroup"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Age Group</FormLabel>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select age group" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="U11">Under 11</SelectItem>
+                                  <SelectItem value="U13">Under 13</SelectItem>
+                                  <SelectItem value="U15">Under 15</SelectItem>
+                                  <SelectItem value="U17">Under 17</SelectItem>
+                                  <SelectItem value="U19">Under 19</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="position"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Position (Optional)</FormLabel>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select position" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="batsman">Batsman</SelectItem>
+                                  <SelectItem value="bowler">Bowler</SelectItem>
+                                  <SelectItem value="all_rounder">All-Rounder</SelectItem>
+                                  <SelectItem value="wicket_keeper">Wicket-Keeper</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription>
+                                Your child's primary cricket position
+                              </FormDescription>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="jerseyNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Jersey Number (Optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Jersey number" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={form.control}
+                        name="healthNotes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Health Notes (Optional)</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Any allergies, medical conditions, or health concerns"
+                                className="resize-none min-h-[80px]"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Important health information coaches should know about
+                            </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="additionalNotes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Additional Notes (Optional)</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Any other information about your child you'd like to share"
+                                className="resize-none min-h-[80px]"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <DialogFooter>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setDialogOpen(false)}
+                          className="mt-2"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          type="submit"
+                          disabled={addChildMutation.isPending}
+                          className="mt-2"
+                        >
+                          {addChildMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Submitting...
+                            </>
+                          ) : (
+                            "Add Child"
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </div>
+            
             <div className="flex gap-2">
               <div className="flex-1">
                 <Input
