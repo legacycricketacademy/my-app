@@ -32,6 +32,7 @@ import ManageParentConnectionsPage from "@/pages/manage-parent-connections";
 import ParentPaymentsPage from "@/pages/parent/payments";
 import MakePaymentPage from "@/pages/parent/make-payment";
 import PaymentSuccessPage from "@/pages/parent/payment-success";
+import PaymentDebugPage from "@/pages/parent/payment-debug";
 
 function RouterContent() {
   const { user } = useAuth();
@@ -181,6 +182,13 @@ function RouterContent() {
       <RoleBasedRoute 
         path="/parent/payment-success" 
         component={PaymentSuccessPage} 
+        allowedRoles={["parent"]}
+        redirectTo="/payments"
+      />
+
+      <RoleBasedRoute 
+        path="/parent/payment-debug" 
+        component={PaymentDebugPage} 
         allowedRoles={["parent"]}
         redirectTo="/payments"
       />

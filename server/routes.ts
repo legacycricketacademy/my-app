@@ -1882,6 +1882,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendStatus(200);
   });
 
+  // Debug Stripe keys endpoint
+  app.get(`${apiPrefix}/debug-stripe-keys`, async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const secretKey = process.env.STRIPE_SECRET_KEY || '';
+      const publicKey = process.env.VITE_STRIPE_PUBLIC_KEY || '';
+      
+      // Only get the prefixes for security - don't expose full keys
+      const secretKeyPrefix = secretKey.substring(0, 3);
+      const publicKeyPrefix = publicKey.substring(0, 3);
+      
+      res.json({
+        secret_key_prefix: secretKeyPrefix,
+        public_key_prefix: publicKeyPrefix,
+        message: "Check if your secret key starts with 'sk_' and public key starts with 'pk_'"
+      });
+    } catch (error: any) {
+      console.error("Error checking Stripe keys:", error);
+      res.status(500).json({ error: error.message || "Error checking Stripe keys" });
+    }
+  });
+
   // Update payment status (for admin/coach to mark payments as paid manually)
   app.post(`${apiPrefix}/payments/:id/update-status`, async (req, res) => {
     if (!req.isAuthenticated()) {
