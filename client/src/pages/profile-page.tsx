@@ -74,6 +74,40 @@ export default function ProfilePage() {
     },
   });
   
+  // Test email form
+  const testEmailForm = useForm<TestEmailValues>({
+    resolver: zodResolver(testEmailSchema),
+    defaultValues: {
+      email: user?.email || ""
+    }
+  });
+
+  // Test email mutation
+  const sendTestEmailMutation = useMutation({
+    mutationFn: async (data: TestEmailValues) => {
+      const res = await apiRequest("POST", "/api/test-email", data);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Test Email Sent",
+        description: "A test email has been sent to the provided address.",
+      });
+      setShowTestEmailForm(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Send Test Email",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  function onSubmitTestEmail(data: TestEmailValues) {
+    sendTestEmailMutation.mutate(data);
+  }
+
   // Email verification mutation
   const [verificationLink, setVerificationLink] = useState<string | null>(null);
   const sendVerificationEmailMutation = useMutation({
@@ -307,6 +341,69 @@ export default function ProfilePage() {
                   <dt className="text-muted-foreground font-medium text-sm">Account Status</dt>
                   <dd className="mt-2">
                     <span className="bg-primary-50 text-primary px-3 py-1 rounded-full text-sm font-medium capitalize">{user.status}</span>
+                  </dd>
+                </div>
+                
+                {/* Email Testing Section */}
+                <div className="col-span-1 md:col-span-2 border-b pb-4">
+                  <dt className="text-muted-foreground font-medium text-sm flex justify-between items-center">
+                    <span>Email Testing</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowTestEmailForm(!showTestEmailForm)}
+                      className="text-xs h-7 border-primary/20 hover:bg-primary/5 text-primary"
+                    >
+                      {showTestEmailForm ? "Cancel" : "Test Email Service"}
+                    </Button>
+                  </dt>
+                  <dd className="mt-2">
+                    {showTestEmailForm ? (
+                      <div className="bg-gray-50/70 p-4 rounded-md border border-gray-100">
+                        <h3 className="text-md font-medium mb-2">Send Test Email</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          This will send a test email to verify that the email service is working correctly.
+                        </p>
+                        <Form {...testEmailForm}>
+                          <form onSubmit={testEmailForm.handleSubmit(onSubmitTestEmail)} className="space-y-4">
+                            <FormField
+                              control={testEmailForm.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-sm font-medium">Email Address</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} className="bg-white" placeholder="Enter email address" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShowTestEmailForm(false)}
+                                className="border-gray-300"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="submit"
+                                disabled={sendTestEmailMutation.isPending}
+                                className="bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary"
+                              >
+                                {sendTestEmailMutation.isPending ? "Sending..." : "Send Test Email"}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        You can verify the email configuration by sending a test email.
+                      </p>
+                    )}
                   </dd>
                 </div>
               </dl>
