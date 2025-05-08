@@ -202,10 +202,27 @@ function RouterContent() {
 }
 
 function Router() {
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
+  
+  console.log("Router rendering, isLoading:", isLoading, "user:", user);
   
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen">Loading authentication state...</div>;
+  }
+
+  if (!user) {
+    console.log("No user logged in, should redirect to auth page");
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="mb-4 text-xl">Not logged in</div>
+        <a 
+          href="/auth" 
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Go to login page
+        </a>
+      </div>
+    );
   }
   
   return <RouterContent />;
@@ -213,12 +230,17 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-      </AuthProvider>
-    </QueryClientProvider>
+    <div>
+      <div style={{ position: 'fixed', bottom: 0, right: 0, padding: '10px', background: 'rgba(0,0,0,0.7)', color: 'white', zIndex: 9999 }}>
+        App Loading
+      </div>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Router />
+          <Toaster />
+        </AuthProvider>
+      </QueryClientProvider>
+    </div>
   );
 }
 
