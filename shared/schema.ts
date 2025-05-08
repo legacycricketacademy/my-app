@@ -17,17 +17,16 @@ export const academies = pgTable("academies", {
   name: varchar("name", { length: 255 }).notNull(),
   slug: varchar("slug", { length: 100 }).notNull().unique(),
   description: text("description"),
-  logo: text("logo"),
-  ownerId: integer("owner_id"),
-  subscriptionPlan: text("subscription_plan", { enum: subscriptionPlans }).notNull().default("free"),
-  stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
-  settings: json("settings").$type<{
-    colors?: { primary?: string; secondary?: string; accent?: string };
-    features?: { fitness?: boolean; mealPlans?: boolean; payments?: boolean; };
-    maxUsers?: number;
-    maxPlayers?: number;
-  }>(),
+  address: text("address"),
+  phone: text("phone"),
+  email: text("email"),
+  logoUrl: text("logo_url"),
+  primaryColor: text("primary_color").default("#1e40af"),
+  secondaryColor: text("secondary_color").default("#60a5fa"),
+  stripeAccountId: text("stripe_account_id"),
+  subscriptionTier: text("subscription_tier", { enum: subscriptionPlans }).notNull().default("free"),
+  maxPlayers: integer("max_players").default(200),
+  maxCoaches: integer("max_coaches").default(10),
   status: text("status").notNull().default("active"), // active, inactive, suspended
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -96,6 +95,7 @@ export const sessions = pgTable("sessions", {
 // Session Attendances
 export const sessionAttendances = pgTable("session_attendances", {
   id: serial("id").primaryKey(),
+  academyId: integer("academy_id").references(() => academies.id),
   sessionId: integer("session_id").references(() => sessions.id).notNull(),
   playerId: integer("player_id").references(() => players.id).notNull(),
   attended: boolean("attended").default(false),
@@ -107,6 +107,7 @@ export const sessionAttendances = pgTable("session_attendances", {
 // Fitness Records
 export const fitnessRecords = pgTable("fitness_records", {
   id: serial("id").primaryKey(),
+  academyId: integer("academy_id").references(() => academies.id),
   playerId: integer("player_id").references(() => players.id).notNull(),
   recordDate: date("record_date").notNull(),
   runningSpeed: decimal("running_speed", { precision: 5, scale: 2 }),
@@ -192,7 +193,7 @@ export const connectionRequests = pgTable("connection_requests", {
 });
 
 // Define relationships
-export const academiesRelations = relations(academies, ({ many, one }) => ({
+export const academiesRelations = relations(academies, ({ many }) => ({
   users: many(users),
   players: many(players),
   sessions: many(sessions),
@@ -200,7 +201,6 @@ export const academiesRelations = relations(academies, ({ many, one }) => ({
   announcements: many(announcements),
   payments: many(payments),
   connectionRequests: many(connectionRequests),
-  owner: one(users, { fields: [academies.ownerId], references: [users.id] }),
 }));
 
 export const usersRelations = relations(users, ({ many, one }) => ({
@@ -211,7 +211,6 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   announcements: many(announcements, { relationName: "created_by" }),
   mealPlans: many(mealPlans, { relationName: "created_by" }),
   connectionRequests: many(connectionRequests),
-  ownedAcademies: many(academies, { relationName: "owner" }),
 }));
 
 export const playersRelations = relations(players, ({ one, many }) => ({
@@ -232,10 +231,12 @@ export const sessionsRelations = relations(sessions, ({ one, many }) => ({
 export const sessionAttendancesRelations = relations(sessionAttendances, ({ one }) => ({
   session: one(sessions, { fields: [sessionAttendances.sessionId], references: [sessions.id] }),
   player: one(players, { fields: [sessionAttendances.playerId], references: [players.id] }),
+  academy: one(academies, { fields: [sessionAttendances.academyId], references: [academies.id] }),
 }));
 
 export const fitnessRecordsRelations = relations(fitnessRecords, ({ one }) => ({
   player: one(players, { fields: [fitnessRecords.playerId], references: [players.id] }),
+  academy: one(academies, { fields: [fitnessRecords.academyId], references: [academies.id] }),
 }));
 
 export const mealPlansRelations = relations(mealPlans, ({ one, many }) => ({
