@@ -16,28 +16,49 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
+  username: z.string()
+    .min(1, "Username is required")
+    .min(3, "Username must be at least 3 characters long"),
+  password: z.string()
+    .min(1, "Password is required")
+    .min(6, "Password must be at least 6 characters long"),
 });
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  fullName: z.string().min(2, "Full name is required"),
-  email: z.string().email("Invalid email address"),
+  username: z.string()
+    .min(1, "Username is required")
+    .min(3, "Username must be at least 3 characters long")
+    .regex(/^[a-zA-Z0-9._-]+$/, "Username can only contain letters, numbers, periods, underscores, and hyphens"),
+  password: z.string()
+    .min(1, "Password is required")
+    .min(6, "Password must be at least 6 characters long")
+    .max(100, "Password is too long (maximum 100 characters)"),
+  fullName: z.string()
+    .min(1, "Full name is required")
+    .min(2, "Please enter your complete name")
+    .max(100, "Name is too long (maximum 100 characters)"),
+  email: z.string()
+    .min(1, "Email address is required")
+    .email("Please enter a valid email address (example: name@example.com)"),
   phone: z.string()
-    .min(10, "Phone number must be at least 10 characters")
     .optional()
+    .refine(val => !val || val.length >= 10, "Phone number must be at least 10 digits")
     .refine(val => !val || /^[0-9+\-\s()]*$/.test(val), "Phone number can only contain digits, +, -, spaces, and parentheses"),
-  role: z.enum(["parent", "coach", "admin"]),
+  role: z.enum(["parent", "coach", "admin"], {
+    errorMap: () => ({ message: "Please select a valid role" }),
+  }),
 });
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string()
+    .min(1, "Email address is required")
+    .email("Please enter a valid email address (example: name@example.com)"),
 });
 
 const forgotUsernameSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string()
+    .min(1, "Email address is required")
+    .email("Please enter a valid email address (example: name@example.com)"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
