@@ -5,9 +5,10 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
+import { multiTenantStorage } from "./multi-tenant-storage";
 import { User as SelectUser, users } from "@shared/schema";
 import { db } from "@db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 declare global {
   namespace Express {
@@ -50,7 +51,20 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
+        // Try to find user with multi-tenant storage first
+        let user = await multiTenantStorage.getUserByUsername(username);
+        
+        // If user not found with current academy context, check without context
+        if (!user) {
+          // Reset academy context to null to search across all academies
+          const currentContext = multiTenantStorage.getAcademyContext();
+          multiTenantStorage.setAcademyContext(null);
+          
+          user = await multiTenantStorage.getUserByUsername(username);
+          
+          // Restore original context
+          multiTenantStorage.setAcademyContext(currentContext);
+        }
         
         // Check if user exists and password is correct
         if (!user || !(await comparePasswords(password, user.password))) {
@@ -63,6 +77,11 @@ export function setupAuth(app: Express) {
         }
         
         // If all checks pass, allow login
+        // Set the academy context for this user
+        if (user.academyId) {
+          multiTenantStorage.setAcademyContext(user.academyId);
+        }
+        
         return done(null, user);
       } catch (error) {
         return done(error);
@@ -70,10 +89,23 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
-  passport.deserializeUser(async (id: number, done) => {
+  passport.serializeUser((user, done) => {
+    // Store both user ID and academy ID in the session
+    done(null, { 
+      userId: user.id, 
+      academyId: user.academyId || multiTenantStorage.getAcademyContext() 
+    });
+  });
+  
+  passport.deserializeUser(async (data: { userId: number, academyId?: number }, done) => {
     try {
-      const user = await storage.getUser(id);
+      // Set academy context if available
+      if (data.academyId) {
+        multiTenantStorage.setAcademyContext(data.academyId);
+      }
+      
+      // Get user from storage with academy context
+      const user = await multiTenantStorage.getUser(data.userId);
       done(null, user);
     } catch (error) {
       done(error);
@@ -82,23 +114,37 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      // Check for existing user
-      const existingUser = await storage.getUserByUsername(req.body.username);
+      // If no academyId was provided in the request but we have it in the context, add it
+      if (!req.body.academyId && req.academyId) {
+        req.body.academyId = req.academyId;
+      } else if (!req.body.academyId) {
+        // Default to academy ID 1 if not specified
+        req.body.academyId = 1;
+      }
+      
+      // Check for existing user in the current academy context
+      const existingUser = await multiTenantStorage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
+        return res.status(400).json({ message: "Username already exists in this academy" });
       }
 
-      const existingEmail = await storage.getUserByEmail(req.body.email);
+      const existingEmail = await multiTenantStorage.getUserByEmail(req.body.email);
       if (existingEmail) {
-        return res.status(400).json({ message: "Email already in use" });
+        return res.status(400).json({ message: "Email already in use in this academy" });
       }
 
       // Check if phone number is provided and if it's already in use
       if (req.body.phone) {
         try {
-          const existingUsers = await db.select().from(users).where(eq(users.phone, req.body.phone));
+          const existingUsers = await db.select().from(users)
+            .where(and(
+              eq(users.phone, req.body.phone),
+              req.body.academyId ? eq(users.academyId, req.body.academyId) : undefined
+            ))
+            .limit(1);
+            
           if (existingUsers.length > 0) {
-            return res.status(400).json({ message: "Phone number already registered" });
+            return res.status(400).json({ message: "Phone number already registered in this academy" });
           }
         } catch (err) {
           console.error("Error checking phone number:", err);
@@ -128,7 +174,10 @@ export function setupAuth(app: Express) {
         };
       }
 
-      const user = await storage.createUser(userData);
+      // Set academy context before creating user
+      multiTenantStorage.setAcademyContext(userData.academyId);
+      
+      const user = await multiTenantStorage.createUser(userData);
       
       // Log in the new user
       req.login(user, (err) => {
