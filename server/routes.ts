@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { multiTenantStorage } from "./multi-tenant-storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
 import Stripe from "stripe";
@@ -13,10 +14,12 @@ import {
   insertAnnouncementSchema, 
   insertPaymentSchema,
   insertConnectionRequestSchema,
-  connectionRequests
+  connectionRequests,
+  academies
 } from "@shared/schema";
 import { sendEmail, generateInvitationEmail, generateVerificationEmail, generateForgotPasswordEmail, generateForgotUsernameEmail } from "./email";
 import { hashPassword } from "./auth";
+import { eq } from "drizzle-orm";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -431,6 +434,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Base API prefix
   const apiPrefix = "/api";
+  
+  // Academy routes
+  app.get(`${apiPrefix}/academies`, async (req, res) => {
+    try {
+      const academiesList = await multiTenantStorage.getAllAcademies();
+      res.json(academiesList);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get(`${apiPrefix}/academies/:id`, async (req, res) => {
+    try {
+      const academyId = parseInt(req.params.id);
+      if (isNaN(academyId)) {
+        return res.status(400).json({ message: "Invalid academy ID" });
+      }
+      
+      const academy = await multiTenantStorage.getAcademyById(academyId);
+      if (!academy) {
+        return res.status(404).json({ message: "Academy not found" });
+      }
+      
+      res.json(academy);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get(`${apiPrefix}/academies/slug/:slug`, async (req, res) => {
+    try {
+      const slug = req.params.slug;
+      
+      const academy = await multiTenantStorage.getAcademyBySlug(slug);
+      if (!academy) {
+        return res.status(404).json({ message: "Academy not found" });
+      }
+      
+      res.json(academy);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Get current academy context
+  app.get(`${apiPrefix}/current-academy`, (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const academyId = multiTenantStorage.getAcademyContext();
+    if (!academyId) {
+      return res.json({ 
+        academyId: null, 
+        message: "No academy context set" 
+      });
+    }
+    
+    multiTenantStorage.getAcademyById(academyId)
+      .then(academy => {
+        if (!academy) {
+          return res.status(404).json({ message: "Academy not found" });
+        }
+        
+        res.json({
+          ...academy,
+          isCurrentContext: true
+        });
+      })
+      .catch(error => {
+        res.status(500).json({ message: error.message });
+      });
+  });
   
   // Test email endpoint
   app.post(`${apiPrefix}/test-email`, async (req, res) => {
