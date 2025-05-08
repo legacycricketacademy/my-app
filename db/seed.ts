@@ -49,6 +49,7 @@ async function seed() {
         email: "admin@cricketacademy.com",
         fullName: "Admin User",
         role: "admin",
+        academyId: academyId,
       });
       console.log("Admin user created");
     }
@@ -66,6 +67,7 @@ async function seed() {
         email: "coach@cricketacademy.com",
         fullName: "Robert Johnson",
         role: "coach",
+        academyId: academyId,
         profileImage: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80"
       });
       console.log("Coach user created");
@@ -78,28 +80,32 @@ async function seed() {
         password: hashSync("password", genSaltSync(10)),
         email: "parent1@example.com",
         fullName: "John Williams",
-        role: "parent"
+        role: "parent",
+        academyId: academyId
       },
       {
         username: "parent2",
         password: hashSync("password", genSaltSync(10)),
         email: "parent2@example.com",
         fullName: "Sarah Chen",
-        role: "parent"
+        role: "parent",
+        academyId: academyId
       },
       {
         username: "parent3",
         password: hashSync("password", genSaltSync(10)),
         email: "parent3@example.com",
         fullName: "Michael Harrison",
-        role: "parent"
+        role: "parent",
+        academyId: academyId
       },
       {
         username: "parent4",
         password: hashSync("password", genSaltSync(10)),
         email: "parent4@example.com",
         fullName: "Lisa Rodriguez",
-        role: "parent"
+        role: "parent",
+        academyId: academyId
       }
     ];
 
@@ -132,6 +138,7 @@ async function seed() {
         ageGroup: "Under 12s",
         playerType: "Batsman",
         parentId: parents[0].id,
+        academyId: academyId,
         profileImage: "https://images.unsplash.com/photo-1531251445707-1f000e1e87d0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80"
       },
       {
@@ -141,6 +148,7 @@ async function seed() {
         ageGroup: "Under 14s",
         playerType: "All-rounder",
         parentId: parents[0].id,
+        academyId: academyId,
         profileImage: "https://images.unsplash.com/photo-1534614971-6be99a7a3ffd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80"
       },
       {
@@ -150,6 +158,7 @@ async function seed() {
         ageGroup: "Under 12s",
         playerType: "Bowler",
         parentId: parents[1].id,
+        academyId: academyId,
         profileImage: "https://images.unsplash.com/photo-1610088441520-4352457e7095?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80"
       },
       {
@@ -159,6 +168,7 @@ async function seed() {
         ageGroup: "Under 14s",
         playerType: "Wicket Keeper",
         parentId: parents[2].id,
+        academyId: academyId,
         profileImage: "https://images.unsplash.com/photo-1601412436009-d964bd02edbc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80"
       },
       {
@@ -168,6 +178,7 @@ async function seed() {
         ageGroup: "Under 16s",
         playerType: "All-rounder",
         parentId: parents[3].id,
+        academyId: academyId,
         profileImage: "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80"
       }
     ];
@@ -209,7 +220,8 @@ async function seed() {
         startTime: new Date(today.getTime() + 16 * 60 * 60 * 1000), // 4:00 PM today
         endTime: new Date(today.getTime() + 17.5 * 60 * 60 * 1000), // 5:30 PM today
         coachId: coach.id,
-        maxPlayers: 20
+        maxPlayers: 20,
+        academyId: academyId
       },
       {
         title: "Under 14s Fitness",
@@ -220,7 +232,8 @@ async function seed() {
         startTime: new Date(today.getTime() + 18 * 60 * 60 * 1000), // 6:00 PM today
         endTime: new Date(today.getTime() + 19 * 60 * 60 * 1000), // 7:00 PM today
         coachId: coach.id,
-        maxPlayers: 20
+        maxPlayers: 20,
+        academyId: academyId
       },
       {
         title: "Parent Meeting",
@@ -230,7 +243,8 @@ async function seed() {
         location: "Club House",
         startTime: new Date(today.getTime() + 19.5 * 60 * 60 * 1000), // 7:30 PM today
         endTime: new Date(today.getTime() + 20.5 * 60 * 60 * 1000), // 8:30 PM today
-        coachId: coach.id
+        coachId: coach.id,
+        academyId: academyId
       },
       {
         title: "Under 16s Match Practice",
@@ -241,7 +255,8 @@ async function seed() {
         startTime: new Date(today.getTime() + 24 * 60 * 60 * 1000 + 15 * 60 * 60 * 1000), // 3:00 PM tomorrow
         endTime: new Date(today.getTime() + 24 * 60 * 60 * 1000 + 17 * 60 * 60 * 1000), // 5:00 PM tomorrow
         coachId: coach.id,
-        maxPlayers: 22
+        maxPlayers: 22,
+        academyId: academyId
       }
     ];
 
@@ -308,7 +323,8 @@ async function seed() {
       title: "Weekly Nutrition Plan",
       weekStartDate: new Date(),
       weekEndDate: new Date(new Date().setDate(new Date().getDate() + 6)),
-      createdBy: coach.id
+      createdBy: coach.id,
+      academyId: academyId
     };
 
     let mealPlanId;
@@ -374,6 +390,7 @@ async function seed() {
         content: "Registration for the Summer Inter-Club Tournament is now open. Please register your interest by Friday. Limited spots available!",
         createdBy: coach.id,
         targetGroups: ["All"],
+        academyId: academyId,
         createdAt: new Date(new Date().setDate(new Date().getDate() - 2)) // 2 days ago
       },
       {
@@ -381,6 +398,7 @@ async function seed() {
         content: "Due to maintenance work, this weekend's practice session will be held at Memorial Park instead of our usual grounds. Same timing applies.",
         createdBy: coach.id,
         targetGroups: ["Under 12s", "Under 14s"],
+        academyId: academyId,
         createdAt: new Date(new Date().setDate(new Date().getDate() - 4)) // 4 days ago
       },
       {
@@ -388,6 +406,7 @@ async function seed() {
         content: "We've updated the nutrition plans for all age groups. Please check the meal plan section for detailed information. Nutritionist Q&A session next Tuesday.",
         createdBy: coach.id,
         targetGroups: ["All"],
+        academyId: academyId,
         createdAt: new Date(new Date().setDate(new Date().getDate() - 7)) // 1 week ago
       }
     ];
@@ -414,7 +433,8 @@ async function seed() {
           paymentType: "Monthly Fee",
           dueDate: new Date(new Date().setDate(new Date().getDate() - 3)), // 3 days ago
           status: "pending",
-          notes: "Monthly training fee"
+          notes: "Monthly training fee",
+          academyId: academyId
         },
         {
           playerId: players[3].id, // Jake Harrison
@@ -422,7 +442,8 @@ async function seed() {
           paymentType: "Equipment Fee",
           dueDate: new Date(), // Today
           status: "pending",
-          notes: "Cricket gear purchase"
+          notes: "Cricket gear purchase",
+          academyId: academyId
         },
         {
           playerId: players[2].id, // Ethan Chen
@@ -430,7 +451,8 @@ async function seed() {
           paymentType: "Tournament Fee",
           dueDate: new Date(new Date().setDate(new Date().getDate() + 5)), // 5 days from now
           status: "pending",
-          notes: "Summer tournament registration"
+          notes: "Summer tournament registration",
+          academyId: academyId
         }
       ];
 

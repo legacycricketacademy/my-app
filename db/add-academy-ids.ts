@@ -26,6 +26,7 @@ async function addAcademyIdsToTables() {
       console.log("Creating default academy...");
       const [newAcademy] = await db.insert(academies).values({
         name: "Legacy Cricket Academy",
+        slug: "legacy-cricket-academy",
         description: "The main cricket academy for player development",
         address: "123 Cricket Lane, Sports City",
         phone: "+1234567890",
