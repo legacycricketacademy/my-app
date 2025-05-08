@@ -168,6 +168,14 @@ function RouterContent() {
         allowedRoles={["parent"]}
         redirectTo="/payments"
       />
+      
+      {/* Adding this route since parent/payments/new button currently links here */}
+      <RoleBasedRoute
+        path="/parent/payments/new"
+        component={MakePaymentPage}
+        allowedRoles={["parent"]}
+        redirectTo="/payments"
+      />
 
       <RoleBasedRoute 
         path="/parent/payment-success" 
