@@ -234,15 +234,7 @@ export const insertFitnessRecordSchema = createInsertSchema(fitnessRecords);
 export const insertMealPlanSchema = createInsertSchema(mealPlans);
 export const insertMealItemSchema = createInsertSchema(mealItems);
 export const insertAnnouncementSchema = createInsertSchema(announcements);
-export const insertPaymentSchema = createInsertSchema(payments, {
-  // Override dueDate to accept both Date objects and ISO string dates
-  dueDate: (schema) => z.union([
-    z.date(),
-    z.string().refine((val) => !isNaN(new Date(val).getTime()), {
-      message: "Invalid date string format, must be ISO 8601"
-    }).transform(val => new Date(val))
-  ]),
-});
+export const insertPaymentSchema = createInsertSchema(payments);
 export const insertConnectionRequestSchema = createInsertSchema(connectionRequests);
 
 // Create select schemas
