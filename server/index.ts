@@ -1,11 +1,56 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { multiTenantStorage } from "./multi-tenant-storage";
+
+// Add academy context to the request object
+declare global {
+  namespace Express {
+    interface Request {
+      academyId?: number;
+      academySlug?: string;
+    }
+  }
+}
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Academy context middleware
+app.use(async (req, res, next) => {
+  // Parse academy context from URL path
+  // Format: /academy/{slug or id}/...
+  const academyPathRegex = /^\/academy\/([^\/]+)/;
+  const match = req.path.match(academyPathRegex);
+  
+  if (match) {
+    const academyIdentifier = match[1];
+    
+    // Check if it's a numeric ID or a slug
+    if (/^\d+$/.test(academyIdentifier)) {
+      const academyId = parseInt(academyIdentifier, 10);
+      req.academyId = academyId;
+      multiTenantStorage.setAcademyContext(academyId);
+    } else {
+      // It's a slug, need to look up the ID
+      const academy = await multiTenantStorage.getAcademyBySlug(academyIdentifier);
+      if (academy) {
+        req.academyId = academy.id;
+        req.academySlug = academyIdentifier;
+        multiTenantStorage.setAcademyContext(academy.id);
+      }
+    }
+  } else {
+    // No academy in path, use default academy (ID 1) for backward compatibility
+    req.academyId = 1;
+    multiTenantStorage.setAcademyContext(1);
+  }
+  
+  next();
+});
+
+// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

@@ -284,13 +284,23 @@ export class MultiTenantStorage extends DatabaseStorage {
   }
 
   async getRecentAnnouncements(limit: number = 5): Promise<any[]> {
-    let query = db.select().from(announcements);
-    
+    const conditions = [];
     if (this.currentAcademyId) {
-      query = query.where(eq(announcements.academyId, this.currentAcademyId));
+      conditions.push(eq(announcements.academyId, this.currentAcademyId));
     }
     
-    return await query.orderBy(announcements.createdAt).limit(limit);
+    if (conditions.length === 0) {
+      return await db.select()
+        .from(announcements)
+        .orderBy(announcements.createdAt)
+        .limit(limit);
+    }
+    
+    return await db.select()
+      .from(announcements)
+      .where(and(...conditions))
+      .orderBy(announcements.createdAt)
+      .limit(limit);
   }
 
   async createAnnouncement(announcementData: any): Promise<any> {
