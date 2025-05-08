@@ -48,12 +48,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
       if (!res.ok) {
-        // Handle specific status codes
+        // Handle specific status codes with user-friendly messages
         if (res.status === 401) {
-          throw new Error("Incorrect username or password");
+          throw new Error("The username or password you entered is incorrect. Please try again.");
+        } else if (res.status === 403) {
+          throw new Error("Your account has been locked or deactivated. Please contact support.");
+        } else if (res.status === 429) {
+          throw new Error("Too many login attempts. Please try again later.");
         } else {
           const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.message || "Login failed. Please try again.");
+          throw new Error(errorData.message || "Unable to log in at this time. Please try again later.");
         }
       }
       return await res.json();
@@ -81,19 +85,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const res = await apiRequest("POST", "/api/register", validatedData);
         
         if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          
           if (res.status === 400) {
-            const errorData = await res.json().catch(() => ({}));
-            throw new Error(errorData.message || "Username already exists");
+            if (errorData.message?.includes("Username already exists")) {
+              throw new Error("This username is already taken. Please choose a different username.");
+            } else if (errorData.message?.includes("Email already exists")) {
+              throw new Error("An account with this email already exists. Please use a different email or try logging in.");
+            } else {
+              throw new Error(errorData.message || "Please check your information and try again.");
+            }
+          } else if (res.status === 429) {
+            throw new Error("Too many registration attempts. Please try again later.");
           } else {
-            throw new Error("Registration failed. Please try again.");
+            throw new Error("We couldn't complete your registration at this time. Please try again later.");
           }
         }
         
         return await res.json();
       } catch (error: any) {
-        // Handle Zod validation errors
+        // Handle Zod validation errors with user-friendly messages
         if (error.name === "ZodError") {
-          throw new Error("Invalid registration data: " + error.errors[0]?.message);
+          const fieldName = error.errors[0]?.path?.join('.') || "";
+          let errorMessage = error.errors[0]?.message || "Please check your information and try again.";
+          
+          // Make the error message more user-friendly
+          if (fieldName === "username") {
+            errorMessage = errorMessage.replace("String", "Username");
+          } else if (fieldName === "password") {
+            errorMessage = errorMessage.replace("String", "Password");
+          } else if (fieldName === "email") {
+            errorMessage = errorMessage.replace("String", "Email");
+          } else if (fieldName === "fullName") {
+            errorMessage = errorMessage.replace("String", "Full name");
+          }
+          
+          throw new Error(errorMessage);
         }
         throw error;
       }

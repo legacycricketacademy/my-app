@@ -48,14 +48,34 @@ type ConnectionRequest = {
 
 // Schema for the new child form
 const addChildFormSchema = z.object({
-  firstName: z.string().min(2, { message: "First name must be at least 2 characters" }),
-  lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }),
-  dateOfBirth: z.string({ required_error: "Date of birth is required" }),
-  ageGroup: z.string({ required_error: "Age group is required" }),
+  firstName: z.string()
+    .min(1, { message: "First name is required" })
+    .min(2, { message: "First name must be at least 2 characters" })
+    .max(50, { message: "First name must be less than 50 characters" }),
+  lastName: z.string()
+    .min(1, { message: "Last name is required" })
+    .min(2, { message: "Last name must be at least 2 characters" })
+    .max(50, { message: "Last name must be less than 50 characters" }),
+  dateOfBirth: z.string({ required_error: "Date of birth is required" })
+    .min(1, { message: "Date of birth is required" })
+    .refine(val => {
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    }, { message: "Please enter a valid date" }),
+  ageGroup: z.string({ required_error: "Age group is required" })
+    .min(1, { message: "Please select an age group" }),
   position: z.string().optional(),
-  jerseyNumber: z.string().optional(),
-  healthNotes: z.string().max(500, { message: "Health notes must be less than 500 characters" }).optional(),
-  additionalNotes: z.string().max(500, { message: "Additional notes must be less than 500 characters" }).optional(),
+  jerseyNumber: z.string()
+    .optional()
+    .refine(val => !val || /^\d+$/.test(val), { 
+      message: "Jersey number must contain only digits" 
+    }),
+  healthNotes: z.string()
+    .max(500, { message: "Health notes must be less than 500 characters" })
+    .optional(),
+  additionalNotes: z.string()
+    .max(500, { message: "Additional notes must be less than 500 characters" })
+    .optional(),
 });
 
 type AddChildFormValues = z.infer<typeof addChildFormSchema>;
@@ -86,8 +106,40 @@ export default function ConnectChildPage() {
   // Mutation for adding a new child
   const addChildMutation = useMutation({
     mutationFn: async (data: AddChildFormValues) => {
-      const res = await apiRequest("POST", "/api/players", data);
-      return await res.json();
+      try {
+        // Format dateOfBirth if needed
+        const formattedData = {
+          ...data,
+          dateOfBirth: data.dateOfBirth // The field is already properly formatted as YYYY-MM-DD from the date input
+        };
+        
+        const res = await apiRequest("POST", "/api/players", formattedData);
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          
+          if (res.status === 400) {
+            if (errorData.message?.includes("already exists")) {
+              throw new Error("A player with this name and date of birth already exists. Please check your information.");
+            } else if (errorData.message?.includes("dateOfBirth")) {
+              throw new Error("There was an issue with the date of birth. Please make sure it's a valid date.");
+            } else {
+              throw new Error(errorData.message || "Please check the information and try again.");
+            }
+          } else {
+            throw new Error("Unable to add child at this time. Please try again later.");
+          }
+        }
+        
+        return await res.json();
+      } catch (error: any) {
+        // Handle any unexpected errors during the process
+        if (error.name === "ZodError") {
+          const errorMessage = error.errors?.[0]?.message || "Invalid form data";
+          throw new Error(`Validation error: ${errorMessage}`);
+        }
+        throw error;
+      }
     },
     onSuccess: (data) => {
       toast({
@@ -108,6 +160,8 @@ export default function ConnectChildPage() {
         description: error.message,
         variant: "destructive",
       });
+      // Keep the dialog open so the user can correct the information
+      // but don't reset the form so they don't lose their input
     },
   });
   
