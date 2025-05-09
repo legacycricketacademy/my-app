@@ -100,6 +100,12 @@ function RouterContent() {
         redirectTo="/parent"
       />
       <RoleBasedRoute 
+        path="/players/add" 
+        component={PlayersPage} 
+        allowedRoles={["admin", "coach"]}
+        redirectTo="/parent"
+      />
+      <RoleBasedRoute 
         path="/schedule" 
         component={SchedulePage} 
         allowedRoles={["admin", "coach"]}
