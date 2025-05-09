@@ -2014,8 +2014,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a payment record in our database
       const paymentData = {
         playerId: parseInt(playerId),
-        amount: parseFloat(amount),
+        amount: amount.toString(), // Convert to string as required by schema
         paymentType,
+        dueDate: new Date().toISOString().slice(0, 10), // Use today's date as the due date (YYYY-MM-DD)
         status: "pending", // All manual payments start as pending until reviewed by admin
         paymentMethod: method,
         notes: notes || `${method.charAt(0).toUpperCase() + method.slice(1)} payment for ${paymentType}`
