@@ -364,13 +364,41 @@ function ManualPaymentForm({
   const manualPaymentMutation = useMutation({
     mutationFn: async (data: ManualPaymentValues) => {
       const response = await apiRequest('POST', '/api/record-manual-payment', data);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to record payment');
+      
+      // Create a clone of the response for potential error parsing
+      let errorResponse;
+      try {
+        errorResponse = response.clone();
+      } catch (err) {
+        console.warn('Could not clone response', err);
       }
-      return response.json();
+      
+      if (!response.ok) {
+        let errorMessage = 'Failed to record payment';
+        try {
+          if (errorResponse) {
+            const errorData = await errorResponse.json();
+            errorMessage = errorData.message || errorMessage;
+          }
+        } catch (jsonError) {
+          console.warn('Error parsing error response', jsonError);
+        }
+        throw new Error(errorMessage);
+      }
+      
+      try {
+        return await response.json();
+      } catch (jsonError) {
+        console.error('Error parsing payment response', jsonError);
+        throw new Error('Error processing payment data from server');
+      }
     },
     onSuccess: (data) => {
+      if (!data) {
+        console.error('No data received from manual payment creation');
+        return;
+      }
+      
       toast({
         title: 'Payment Recorded',
         description: `Your ${data.method} payment has been recorded and is pending approval.`,
@@ -380,7 +408,7 @@ function ManualPaymentForm({
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
+        title: 'Payment Recording Failed',
         description: error.message,
         variant: 'destructive',
       });
@@ -576,24 +604,57 @@ export default function MakePaymentPage() {
       try {
         const response = await apiRequest('GET', '/api/parent/players');
         
+        // Create a clone of the response for potential error parsing
+        // This prevents "body stream already read" errors
+        let errorResponse;
+        try {
+          errorResponse = response.clone();
+        } catch (err) {
+          // If cloning fails, we'll handle it gracefully
+          console.warn('Could not clone response', err);
+        }
+        
         if (!response.ok) {
-          // Handle non-200 responses
+          // Handle non-200 responses with appropriate user-friendly messages
           if (response.status === 403) {
-            throw new Error('Access denied. You may need to log in again.');
+            throw new Error('You need to log in as a parent to access this page.');
           } else if (response.status === 404) {
-            throw new Error('No players found. Please connect with your child first.');
+            setPlayers([]);
+            return; // Return early instead of throwing
           } else {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Failed to fetch players');
+            // Try to parse error message from the cloned response
+            let errorMessage = 'Failed to fetch players';
+            try {
+              if (errorResponse) {
+                const errorData = await errorResponse.json();
+                errorMessage = errorData.message || errorMessage;
+              }
+            } catch (jsonError) {
+              console.warn('Error parsing error response', jsonError);
+            }
+            throw new Error(errorMessage);
           }
         }
         
-        // Parse the response data
-        const playersData = await response.json();
+        // Parse the response data safely
+        let playersData;
+        try {
+          playersData = await response.json();
+        } catch (jsonError) {
+          console.error('Error parsing players data', jsonError);
+          throw new Error('Error processing player data from server');
+        }
+        
+        if (!Array.isArray(playersData)) {
+          console.error('Expected array of players but got', typeof playersData);
+          setPlayers([]);
+          return;
+        }
+        
         setPlayers(playersData);
         
         // Select the first player by default if there are any
-        if (playersData && playersData.length > 0) {
+        if (playersData.length > 0) {
           const playerId = params.playerId ? parseInt(params.playerId) : playersData[0].id;
           setSelectedPlayerId(playerId);
           setPaymentDetails(prev => ({
@@ -631,20 +692,48 @@ export default function MakePaymentPage() {
     mutationFn: async (data: typeof paymentDetails) => {
       console.log('Creating payment intent with data:', data);
       const response = await apiRequest('POST', '/api/create-payment-intent', data);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create payment intent');
+      
+      // Create a clone of the response for potential error parsing
+      let errorResponse;
+      try {
+        errorResponse = response.clone();
+      } catch (err) {
+        console.warn('Could not clone response', err);
       }
-      return response.json();
+      
+      if (!response.ok) {
+        let errorMessage = 'Failed to create payment intent';
+        try {
+          if (errorResponse) {
+            const errorData = await errorResponse.json();
+            errorMessage = errorData.message || errorMessage;
+          }
+        } catch (jsonError) {
+          console.warn('Error parsing error response', jsonError);
+        }
+        throw new Error(errorMessage);
+      }
+      
+      try {
+        return await response.json();
+      } catch (jsonError) {
+        console.error('Error parsing payment intent response', jsonError);
+        throw new Error('Error processing payment data from server');
+      }
     },
     onSuccess: (data) => {
+      if (!data) {
+        console.error('No data received from payment intent creation');
+        return;
+      }
+      
       setClientSecret(data.clientSecret);
       setPaymentId(data.paymentId);
     },
     onError: (error: Error) => {
       setError(error.message);
       toast({
-        title: 'Error',
+        title: 'Payment Setup Failed',
         description: error.message,
         variant: 'destructive',
       });
