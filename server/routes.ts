@@ -1617,6 +1617,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get all payments (for the enhanced payment management interface)
+  app.get(`${apiPrefix}/payments/all`, async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      let payments = [];
+      
+      if (req.user.role === 'parent') {
+        // Parents only see payments for their connected players
+        const playerIds = await storage.getPlayersIdsByParentId(req.user.id);
+        if (playerIds.length === 0) {
+          return res.json([]);
+        }
+        payments = await storage.getPaymentsByPlayerIds(playerIds);
+      } else if (['admin', 'coach', 'superadmin'].includes(req.user.role)) {
+        // Admins see all payments
+        payments = await storage.getAllPayments();
+      } else {
+        return res.status(403).json({ message: "Unauthorized role" });
+      }
+      
+      return res.json(payments);
+    } catch (error) {
+      console.error("Error fetching all payments:", error);
+      return res.status(500).json({ message: "Error fetching payments" });
+    }
+  });
+  
   app.get(`${apiPrefix}/payments/player/:playerId`, async (req, res) => {
     try {
       const playerId = parseInt(req.params.playerId);
