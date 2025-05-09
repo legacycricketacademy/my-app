@@ -13,6 +13,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
+import { CustomDatePicker } from "@/components/ui/custom-date-picker";
 
 // Player form schema
 const playerSchema = z.object({
@@ -55,7 +56,7 @@ export default function AddPlayerPage() {
     try {
       const dob = new Date(dateOfBirth);
       const today = new Date();
-      const age = today.getFullYear() - dob.getFullYear();
+      let age = today.getFullYear() - dob.getFullYear();
       
       // Adjust age if birthday hasn't occurred yet this year
       if (
@@ -77,22 +78,38 @@ export default function AddPlayerPage() {
     }
   };
   
-  // Handle date of birth change to auto-select age group
-  const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const dob = e.target.value;
-    form.setValue("dateOfBirth", dob);
-    
-    const ageGroup = calculateAgeGroup(dob);
-    if (ageGroup) {
-      form.setValue("ageGroup", ageGroup);
-    }
-  };
+  // No longer needed - handled in CustomDatePicker onChange
   
   // Add player mutation
   const addPlayerMutation = useMutation({
     mutationFn: async (data: PlayerFormValues) => {
-      const res = await apiRequest("POST", "/api/players", data);
-      return await res.json();
+      try {
+        // Make sure dateOfBirth is properly formatted as a string (YYYY-MM-DD)
+        if (data.dateOfBirth && data.dateOfBirth instanceof Date) {
+          data.dateOfBirth = data.dateOfBirth.toISOString().split('T')[0];
+        }
+
+        // Log the data being sent
+        console.log("Sending player data:", data);
+        
+        // Make the API request
+        const res = await apiRequest("POST", "/api/players", data);
+        
+        // Check if the response is ok
+        if (!res.ok) {
+          // Try to get detailed error message
+          const errorData = await res.json().catch(() => null);
+          if (errorData && errorData.error) {
+            throw new Error(errorData.error);
+          }
+          throw new Error(`Server returned ${res.status}: ${res.statusText}`);
+        }
+        
+        return await res.json();
+      } catch (err) {
+        console.error("Error creating player:", err);
+        throw err;
+      }
     },
     onSuccess: () => {
       toast({
@@ -107,9 +124,10 @@ export default function AddPlayerPage() {
       setLocation("/parent");
     },
     onError: (error: Error) => {
+      console.error("Player creation error:", error);
       toast({
         title: "Failed to Add Player",
-        description: error.message,
+        description: error.message || "There was an error creating the player. Please try again.",
         variant: "destructive",
       });
     },
@@ -169,10 +187,20 @@ export default function AddPlayerPage() {
                       <FormItem>
                         <FormLabel>Date of Birth</FormLabel>
                         <FormControl>
-                          <Input
-                            type="date"
-                            {...field}
-                            onChange={handleDobChange}
+                          <CustomDatePicker
+                            value={field.value ? new Date(field.value) : undefined}
+                            onChange={(date) => {
+                              if (date) {
+                                const formattedDate = date.toISOString().split('T')[0];
+                                field.onChange(formattedDate);
+                                
+                                // Also update age group
+                                const ageGroup = calculateAgeGroup(formattedDate);
+                                if (ageGroup) {
+                                  form.setValue("ageGroup", ageGroup);
+                                }
+                              }
+                            }}
                           />
                         </FormControl>
                         <FormMessage />
@@ -193,11 +221,8 @@ export default function AddPlayerPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Under 10s">Under 10s</SelectItem>
-                            <SelectItem value="Under 12s">Under 12s</SelectItem>
-                            <SelectItem value="Under 14s">Under 14s</SelectItem>
-                            <SelectItem value="Under 16s">Under 16s</SelectItem>
-                            <SelectItem value="Under 19s">Under 19s</SelectItem>
+                            <SelectItem value="5-8 years">5-8 years</SelectItem>
+                            <SelectItem value="8+ years">8+ years</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription>
