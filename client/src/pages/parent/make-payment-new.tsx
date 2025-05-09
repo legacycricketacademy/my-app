@@ -67,7 +67,7 @@ const manualPaymentSchema = z.object({
   playerId: z.number().positive("Please select a player"),
   amount: z.number().positive("Amount must be greater than zero"),
   paymentType: z.string().min(1, "Please select a payment type"),
-  sessionDuration: z.enum(sessionDurations as [string, ...string[]], {
+  sessionDuration: z.enum(['60min', '90min'], {
     required_error: "Please select a session duration",
   }),
   method: z.enum(['cash', 'zelle', 'venmo'], {
@@ -338,6 +338,8 @@ function ManualPaymentForm({
   defaultValues: Partial<ManualPaymentValues>
 }) {
   const { toast } = useToast();
+  const [selectedDuration, setSelectedDuration] = useState<string>(defaultValues.sessionDuration || '60min');
+  
   const form = useForm<ManualPaymentValues>({
     resolver: zodResolver(manualPaymentSchema),
     defaultValues: {
@@ -348,6 +350,16 @@ function ManualPaymentForm({
       notes: ''
     }
   });
+  
+  // Update amount when session duration changes
+  const handleDurationChange = (duration: string) => {
+    setSelectedDuration(duration);
+    form.setValue('sessionDuration', duration as '60min' | '90min');
+    
+    // Update amount based on duration
+    const amount = duration === '90min' ? 120 : 100;
+    form.setValue('amount', amount);
+  };
   
   const manualPaymentMutation = useMutation({
     mutationFn: async (data: ManualPaymentValues) => {
@@ -393,6 +405,38 @@ function ManualPaymentForm({
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Session Duration Dropdown */}
+              <FormField
+                control={form.control}
+                name="sessionDuration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Session Duration</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        handleDurationChange(value);
+                        field.onChange(value);
+                      }}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select session duration" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="60min">60 Minutes ($100)</SelectItem>
+                        <SelectItem value="90min">90 Minutes ($120)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Fees are based on session duration
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               {/* Payment Method Radio Buttons */}
               <FormField
                 control={form.control}
@@ -512,8 +556,9 @@ export default function MakePaymentPage() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(params.playerId ? parseInt(params.playerId) : null);
   const [paymentDetails, setPaymentDetails] = useState({
     playerId: params.playerId ? parseInt(params.playerId) : 0,
-    amount: 50, // Default amount
+    amount: 100, // Default amount for 60min sessions
     paymentType: 'monthly_fee', // Default payment type
+    sessionDuration: '60min' as '60min' | '90min', // Default session duration
     description: 'Monthly cricket academy fee'
   });
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -627,13 +672,23 @@ export default function MakePaymentPage() {
       paymentType
     }));
   };
+  
+  // Handle session duration change
+  const handleSessionDurationChange = (duration: string) => {
+    const amount = duration === '90min' ? 120 : 100;
+    setPaymentDetails(prev => ({
+      ...prev,
+      sessionDuration: duration as '60min' | '90min',
+      amount
+    }));
+  };
 
-  // Create payment intent when selected player or payment method changes
+  // Create payment intent when selected player, payment method, or session duration changes
   useEffect(() => {
     if (selectedPlayerId && paymentDetails.playerId > 0 && activeTab === 'stripe') {
       createPaymentIntent.mutate(paymentDetails);
     }
-  }, [selectedPlayerId, paymentDetails.playerId, activeTab]);
+  }, [selectedPlayerId, paymentDetails.playerId, paymentDetails.sessionDuration, paymentDetails.amount, activeTab]);
 
   // Handle tab change
   const handleTabChange = (value: string) => {
@@ -730,6 +785,25 @@ export default function MakePaymentPage() {
                   </div>
                   
                   <div>
+                    <Label className="block text-sm font-medium mb-1">Session Duration</Label>
+                    <Select 
+                      value={paymentDetails.sessionDuration}
+                      onValueChange={handleSessionDurationChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select session duration" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="60min">60 Minutes ($100)</SelectItem>
+                        <SelectItem value="90min">90 Minutes ($120)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Fee amount is calculated based on session duration
+                    </p>
+                  </div>
+                  
+                  <div>
                     <Label className="block text-sm font-medium mb-1">Amount (USD)</Label>
                     <Input 
                       type="number"
@@ -737,7 +811,12 @@ export default function MakePaymentPage() {
                       step="0.01"
                       value={paymentDetails.amount}
                       onChange={(e) => handleAmountChange(Number(e.target.value))}
+                      readOnly
+                      className="bg-gray-50"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      The amount is automatically set based on session duration
+                    </p>
                   </div>
                 </div>
                 
@@ -810,8 +889,9 @@ export default function MakePaymentPage() {
                         onSuccess={handleManualPaymentSuccess}
                         defaultValues={{
                           playerId: selectedPlayerId || 0,
-                          amount: paymentDetails.amount,
+                          amount: 100, // Default to 60min fee
                           paymentType: paymentDetails.paymentType,
+                          sessionDuration: '60min',
                           method: 'cash'
                         }}
                       />
@@ -823,8 +903,9 @@ export default function MakePaymentPage() {
                         onSuccess={handleManualPaymentSuccess}
                         defaultValues={{
                           playerId: selectedPlayerId || 0,
-                          amount: paymentDetails.amount,
+                          amount: 100, // Default to 60min fee
                           paymentType: paymentDetails.paymentType,
+                          sessionDuration: '60min',
                           method: 'zelle'
                         }}
                       />
@@ -836,8 +917,9 @@ export default function MakePaymentPage() {
                         onSuccess={handleManualPaymentSuccess}
                         defaultValues={{
                           playerId: selectedPlayerId || 0,
-                          amount: paymentDetails.amount,
+                          amount: 100, // Default to 60min fee
                           paymentType: paymentDetails.paymentType,
+                          sessionDuration: '60min',
                           method: 'venmo'
                         }}
                       />
