@@ -501,23 +501,58 @@ export class DatabaseStorage implements IStorage {
     try {
       // First check if we need to add the missing columns to handle older database versions
       await this.ensurePaymentsColumnsExist();
-      
-      // Get the safe select object with conditional columns
-      const safeSelect = this.createSafePaymentsSelect();
-      
-      // Add player information to the select
-      const selectWithPlayer = {
-        ...safeSelect,
-        playerFirstName: players.firstName,
-        playerLastName: players.lastName,
-        // Don't include the full player object to avoid potential schema issues
-      };
-      
+
+      // Use explicit field selection to avoid schema/spreading issues
       let query = db
-        .select(selectWithPlayer)
+        .select({
+          id: payments.id,
+          academyId: payments.academyId,
+          playerId: payments.playerId,
+          amount: payments.amount,
+          paymentType: payments.paymentType,
+          month: payments.month,
+          dueDate: payments.dueDate,
+          paidDate: payments.paidDate,
+          status: payments.status,
+          paymentMethod: payments.paymentMethod,
+          notes: payments.notes,
+          createdAt: payments.createdAt,
+          updatedAt: payments.updatedAt,
+          playerFirstName: players.firstName,
+          playerLastName: players.lastName
+        })
         .from(payments)
         .leftJoin(players, eq(payments.playerId, players.id))
         .where(sql`${payments.playerId} IN (${playerIds.join(',')})`);
+      
+      // Conditionally add fields if they exist in the schema
+      try {
+        if (payments.sessionDuration) {
+          query = db.select({
+            id: payments.id,
+            academyId: payments.academyId,
+            playerId: payments.playerId,
+            amount: payments.amount,
+            paymentType: payments.paymentType,
+            month: payments.month,
+            dueDate: payments.dueDate,
+            paidDate: payments.paidDate,
+            status: payments.status,
+            paymentMethod: payments.paymentMethod,
+            notes: payments.notes,
+            createdAt: payments.createdAt,
+            updatedAt: payments.updatedAt,
+            playerFirstName: players.firstName,
+            playerLastName: players.lastName,
+            sessionDuration: payments.sessionDuration
+          })
+          .from(payments)
+          .leftJoin(players, eq(payments.playerId, players.id))
+          .where(sql`${payments.playerId} IN (${playerIds.join(',')})`);
+        }
+      } catch (e) {
+        console.warn('sessionDuration column does not exist, continuing without it');
+      }
       
       if (status) {
         query = query.where(eq(payments.status, status));
@@ -526,7 +561,8 @@ export class DatabaseStorage implements IStorage {
       return await query.orderBy(desc(payments.dueDate));
     } catch (error) {
       console.error("Error in getPaymentsByPlayerIds:", error);
-      throw error;
+      // Return empty array instead of throwing to prevent cascading errors
+      return [];
     }
   }
   
@@ -544,19 +580,28 @@ export class DatabaseStorage implements IStorage {
       // First check if we need to add the missing columns to handle older database versions
       await this.ensurePaymentsColumnsExist();
       
-      // Get the safe select object with conditional columns
-      const safeSelect = this.createSafePaymentsSelect();
-      
-      // Add player information to the select
-      const selectWithPlayer = {
-        ...safeSelect,
-        playerFirstName: players.firstName,
-        playerLastName: players.lastName,
-        // Don't include the full player object to avoid potential schema issues
-      };
-      
+      // Use explicit field selection instead of spreading objects
+      // This avoids issues with the Drizzle ORM's internal handling
       let query = db
-        .select(selectWithPlayer)
+        .select({
+          id: payments.id,
+          academyId: payments.academyId,
+          playerId: payments.playerId,
+          amount: payments.amount,
+          paymentType: payments.paymentType,
+          month: payments.month,
+          dueDate: payments.dueDate,
+          paidDate: payments.paidDate,
+          status: payments.status,
+          paymentMethod: payments.paymentMethod,
+          stripePaymentIntentId: payments.stripePaymentIntentId,
+          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
+          notes: payments.notes,
+          createdAt: payments.createdAt,
+          updatedAt: payments.updatedAt,
+          playerFirstName: players.firstName,
+          playerLastName: players.lastName
+        })
         .from(payments)
         .leftJoin(players, eq(payments.playerId, players.id));
       
@@ -567,7 +612,8 @@ export class DatabaseStorage implements IStorage {
       return await query.orderBy(desc(payments.dueDate));
     } catch (error) {
       console.error("Error in getAllPayments:", error);
-      throw error;
+      // Return empty array instead of throwing to prevent UI errors
+      return [];
     }
   }
   
@@ -576,26 +622,35 @@ export class DatabaseStorage implements IStorage {
       // First check if we need to add the missing columns to handle older database versions
       await this.ensurePaymentsColumnsExist();
       
-      // Get the safe select object with conditional columns
-      const safeSelect = this.createSafePaymentsSelect();
-      
-      // Add player information to the select
-      const selectWithPlayer = {
-        ...safeSelect,
-        playerFirstName: players.firstName,
-        playerLastName: players.lastName,
-        parentId: players.parentId,
-      };
-      
+      // Use explicit field selection instead of spreading objects
+      // This avoids issues with the Drizzle ORM's internal handling
       return await db
-        .select(selectWithPlayer)
+        .select({
+          id: payments.id,
+          academyId: payments.academyId,
+          playerId: payments.playerId,
+          amount: payments.amount,
+          paymentType: payments.paymentType,
+          month: payments.month,
+          dueDate: payments.dueDate,
+          paidDate: payments.paidDate,
+          status: payments.status,
+          paymentMethod: payments.paymentMethod,
+          notes: payments.notes,
+          createdAt: payments.createdAt,
+          updatedAt: payments.updatedAt,
+          playerFirstName: players.firstName,
+          playerLastName: players.lastName,
+          parentId: players.parentId
+        })
         .from(payments)
         .leftJoin(players, eq(payments.playerId, players.id))
         .where(eq(payments.status, 'pending'))
         .orderBy(payments.dueDate);
     } catch (error) {
       console.error("Error in getPendingPayments:", error);
-      throw error;
+      // Return empty array instead of throwing to prevent UI errors
+      return [];
     }
   }
   

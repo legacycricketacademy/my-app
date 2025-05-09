@@ -2,24 +2,37 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // Clone the response before consuming it to avoid "body stream already read" errors
+    const clonedRes = res.clone();
+    
     // Try to parse as JSON first
-    const contentType = res.headers.get('content-type');
+    const contentType = clonedRes.headers.get('content-type');
     
     if (contentType && contentType.includes('application/json')) {
       try {
-        const errorData = await res.json();
+        const errorData = await clonedRes.json();
         if (errorData.message) {
           throw new Error(errorData.message);
         }
       } catch (jsonError) {
         // If JSON parsing fails, fall back to text
-        const text = await res.text() || res.statusText;
-        throw new Error(`${res.status}: ${text}`);
+        try {
+          const text = await clonedRes.text() || clonedRes.statusText;
+          throw new Error(`${clonedRes.status}: ${text}`);
+        } catch (textError) {
+          // If both JSON and text parsing fail, return a generic error
+          throw new Error(`Request failed with status ${clonedRes.status}`);
+        }
       }
     } else {
       // If not JSON, treat as text
-      const text = await res.text() || res.statusText;
-      throw new Error(`${res.status}: ${text}`);
+      try {
+        const text = await clonedRes.text() || clonedRes.statusText;
+        throw new Error(`${clonedRes.status}: ${text}`);
+      } catch (textError) {
+        // If text parsing fails, return a generic error
+        throw new Error(`Request failed with status ${clonedRes.status}`);
+      }
     }
   }
 }
@@ -59,8 +72,17 @@ export const getQueryFn: <T>(options: {
         return null;
       }
 
-      await throwIfResNotOk(res);
-      return await res.json();
+      // Clone the response before validating to ensure we can still read the body later
+      // This prevents "body stream already read" errors
+      const resForValidation = res.clone();
+      await throwIfResNotOk(resForValidation);
+      
+      try {
+        return await res.json();
+      } catch (jsonError) {
+        console.error('Error parsing JSON:', jsonError);
+        throw new Error(`Error parsing response: ${jsonError.message}`);
+      }
     } catch (error) {
       console.error(`Error fetching ${queryKey[0]}:`, error);
       throw error;
