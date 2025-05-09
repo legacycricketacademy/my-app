@@ -1627,6 +1627,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Parent-specific endpoint for pending payments (for the notification system)
+  app.get(`${apiPrefix}/parent/payments/pending`, async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      // Get all players associated with this parent
+      const playerIds = await storage.getPlayersIdsByParentId(req.user.id);
+      if (playerIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get pending payments for these players
+      const payments = await storage.getPaymentsByPlayerIds(playerIds, 'pending');
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching parent pending payments:", error);
+      res.status(500).json({ message: "Error fetching pending payments" });
+    }
+  });
+  
   app.post(`${apiPrefix}/payments`, async (req, res) => {
     try {
       const paymentData = insertPaymentSchema.parse(req.body);
