@@ -260,12 +260,12 @@ function ExternalPaymentInfo() {
                 <div className="flex flex-wrap items-center justify-between mb-2">
                   <span className="font-medium">Username:</span>
                   <div className="flex items-center">
-                    <span className="text-sm mr-2">$MadhukarLegacy</span>
+                    <span className="text-sm mr-2">$MadhukarAshok</span>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       className="h-8 w-8"
-                      onClick={() => copyToClipboard("$MadhukarLegacy", "cash-app")}
+                      onClick={() => copyToClipboard("$MadhukarAshok", "cash-app")}
                     >
                       {copied === "cash-app" ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
@@ -296,12 +296,12 @@ function ExternalPaymentInfo() {
                 <div className="flex flex-wrap items-center justify-between mb-2">
                   <span className="font-medium">Username:</span>
                   <div className="flex items-center">
-                    <span className="text-sm mr-2">@your-username</span>
+                    <span className="text-sm mr-2">Madhukar Ashok (2813205541814272673)</span>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       className="h-8 w-8"
-                      onClick={() => copyToClipboard("@your-username", "venmo")}
+                      onClick={() => copyToClipboard("https://venmo.com/code?user_id=2813205541814272673", "venmo")}
                     >
                       {copied === "venmo" ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
@@ -498,7 +498,8 @@ function ManualPaymentForm({
 // Parent page component
 export default function MakePaymentPage() {
   const params = useParams<{ playerId: string }>();
-  const [activeTab, setActiveTab] = useState<PaymentMethod>('stripe');
+  // Initialize to 'cash' to avoid duplicate Stripe payment intent creation
+  const [activeTab, setActiveTab] = useState<PaymentMethod>('cash');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentId, setPaymentId] = useState<number | null>(null);
   const [isLoadingPlayers, setIsLoadingPlayers] = useState(false);
@@ -737,7 +738,7 @@ export default function MakePaymentPage() {
                 
                 <div className="pt-4">
                   <Tabs 
-                    defaultValue="stripe" 
+                    defaultValue="cash" 
                     value={activeTab} 
                     onValueChange={handleTabChange}
                     className="w-full"
