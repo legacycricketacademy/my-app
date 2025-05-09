@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ParentLayout } from '@/layout/parent-layout';
 import { useToast } from '@/hooks/use-toast';
+import { sessionDurations, feeAmounts, SessionDuration } from '@shared/schema';
 import { 
   Loader2, 
   CheckCircle, 
@@ -66,6 +67,9 @@ const manualPaymentSchema = z.object({
   playerId: z.number().positive("Please select a player"),
   amount: z.number().positive("Amount must be greater than zero"),
   paymentType: z.string().min(1, "Please select a payment type"),
+  sessionDuration: z.enum(sessionDurations as [string, ...string[]], {
+    required_error: "Please select a session duration",
+  }),
   method: z.enum(['cash', 'zelle', 'venmo'], {
     required_error: "Please select a payment method",
   }),
@@ -338,6 +342,7 @@ function ManualPaymentForm({
     resolver: zodResolver(manualPaymentSchema),
     defaultValues: {
       ...defaultValues,
+      sessionDuration: defaultValues.sessionDuration || '60min',
       method: 'cash',
       transactionId: '',
       notes: ''
