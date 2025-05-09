@@ -1762,6 +1762,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Parent - Fetch announcements
+  app.get(`${apiPrefix}/parent/announcements`, async (req, res) => {
+    console.log("Parent announcements API called", {
+      isAuth: req.isAuthenticated(),
+      userRole: req.user?.role
+    });
+    
+    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      // Get parent's players to determine relevant age groups
+      const players = await storage.getPlayersByParentId(req.user.id);
+      const ageGroups = players.map(player => player.ageGroup).filter(Boolean);
+      
+      // Get recent announcements (last 20)
+      const allAnnouncements = await storage.getRecentAnnouncements(20);
+      
+      // Filter to only include announcements for "All" users or ones targeting user's players' age groups
+      const relevantAnnouncements = allAnnouncements.filter(announcement => {
+        if (!announcement.targetGroups) return true;
+        
+        // Include announcements targeting all parents
+        if (announcement.targetGroups.includes("All")) return true;
+        
+        // Include announcements targeted to player's age groups
+        return ageGroups.some(ageGroup => 
+          announcement.targetGroups.includes(ageGroup)
+        );
+      });
+      
+      res.json(relevantAnnouncements);
+    } catch (error) {
+      console.error("Error fetching parent announcements:", error);
+      return res.status(500).json({ message: "Error fetching announcements" });
+    }
+  });
+
   // Parent - Fetch payments for all children
   app.get(`${apiPrefix}/parent/payments`, async (req, res) => {
     console.log("Parent payments API called", {

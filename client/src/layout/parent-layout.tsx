@@ -145,6 +145,9 @@ export function ParentLayout({
           <div className="flex-1 md:flex items-center">
             <h1 className="text-lg font-semibold hidden md:block">{title}</h1>
           </div>
+
+          {/* Notification Dropdown */}
+          <NotificationDropdown />
           
           <Button variant="ghost" size="icon" asChild className="md:hidden">
             <Link href="/profile">
