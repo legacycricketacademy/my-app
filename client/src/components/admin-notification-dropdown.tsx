@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bell } from "lucide-react";
+import { Bell, CreditCard, UserPlus, Megaphone } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, formatDistance } from "date-fns";
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 interface NotificationItem {
   id: number;
@@ -185,17 +186,37 @@ export function AdminNotificationDropdown() {
                     className={`flex flex-col items-start p-3 cursor-pointer hover:bg-gray-100 border-b ${notification.read ? 'opacity-80' : 'bg-primary/5'}`}
                     onClick={() => handleClickNotification(notification)}
                   >
-                    <div className="flex w-full justify-between items-start mb-1">
-                      <span className={`font-medium ${!notification.read ? 'text-primary' : ''}`}>
-                        {notification.title}
-                      </span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {getRelativeDate(notification.createdAt)}
-                      </span>
+                    <div className="flex w-full items-start mb-1">
+                      <div className={cn(
+                        "mr-3 p-1.5 rounded-full",
+                        notification.type === "payment" 
+                          ? "bg-amber-100 text-amber-700" 
+                          : notification.type === "connection"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-blue-100 text-blue-700"
+                      )}>
+                        {notification.type === "payment" ? (
+                          <CreditCard className="h-4 w-4" />
+                        ) : notification.type === "connection" ? (
+                          <UserPlus className="h-4 w-4" />
+                        ) : (
+                          <Megaphone className="h-4 w-4" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between w-full">
+                          <span className={`font-medium ${!notification.read ? 'text-primary' : ''}`}>
+                            {notification.title}
+                          </span>
+                          <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
+                            {getRelativeDate(notification.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                          {notification.message}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {notification.message}
-                    </p>
                   </DropdownMenuItem>
                 ))
               ) : (
