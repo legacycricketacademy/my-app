@@ -1587,6 +1587,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get pending payments (for notifications, dashboards)
+  app.get(`${apiPrefix}/payments/pending`, async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      let payments = [];
+      
+      if (req.user.role === 'parent') {
+        // Parents only see payments for their connected players
+        const playerIds = await storage.getPlayersIdsByParentId(req.user.id);
+        if (playerIds.length === 0) {
+          return res.json([]);
+        }
+        payments = await storage.getPaymentsByPlayerIds(playerIds, 'pending');
+      } else if (['admin', 'coach', 'superadmin'].includes(req.user.role)) {
+        // Admins see all pending payments
+        payments = await storage.getAllPayments('pending');
+      } else {
+        return res.status(403).json({ message: "Unauthorized role" });
+      }
+      
+      return res.json(payments);
+    } catch (error) {
+      console.error("Error fetching pending payments:", error);
+      return res.status(500).json({ message: "Error fetching pending payments" });
+    }
+  });
+  
   app.get(`${apiPrefix}/payments/player/:playerId`, async (req, res) => {
     try {
       const playerId = parseInt(req.params.playerId);
@@ -1922,6 +1952,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       return res.json(filteredRequests);
+    } catch (error) {
+      console.error("Error fetching connection requests:", error);
+      return res.status(500).json({ message: "Error fetching connection requests" });
+    }
+  });
+  
+  // General API - Get connection requests (for notifications, etc.)
+  app.get(`${apiPrefix}/connection-requests`, async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const status = req.query.status as string | undefined;
+      
+      if (req.user.role === 'parent') {
+        // Parents only see their own connection requests
+        const requests = await storage.getConnectionRequestsByParentId(req.user.id);
+        return res.json(
+          status ? requests.filter(r => r.status === status) : requests
+        );
+      } else if (['admin', 'coach', 'superadmin'].includes(req.user.role)) {
+        // Admins, coaches, superadmins can see all connection requests
+        const requests = await storage.getAllConnectionRequests(status);
+        return res.json(requests);
+      } else {
+        return res.status(403).json({ message: "Unauthorized role" });
+      }
     } catch (error) {
       console.error("Error fetching connection requests:", error);
       return res.status(500).json({ message: "Error fetching connection requests" });
