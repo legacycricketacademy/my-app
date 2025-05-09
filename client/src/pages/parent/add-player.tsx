@@ -23,6 +23,7 @@ const playerSchema = z.object({
     return !isNaN(date.getTime());
   }, "Please enter a valid date"),
   ageGroup: z.string().min(1, "Please select an age group"),
+  location: z.string().min(1, "Please select a location"),
   playerType: z.string().optional(),
   healthNotes: z.string().optional(),
   parentNotes: z.string().optional(),
@@ -42,6 +43,7 @@ export default function AddPlayerPage() {
       lastName: "",
       dateOfBirth: "",
       ageGroup: "",
+      location: "",
       playerType: "",
       healthNotes: "",
       parentNotes: "",
@@ -204,6 +206,31 @@ export default function AddPlayerPage() {
                         </Select>
                         <FormDescription>
                           Will be auto-selected based on date of birth
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select location" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Strongsville">Strongsville</SelectItem>
+                            <SelectItem value="Solon">Solon</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Where your child will primarily attend sessions
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
