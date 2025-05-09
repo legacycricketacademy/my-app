@@ -73,6 +73,9 @@ export interface IStorage {
   // Payment methods
   getPaymentById(id: number): Promise<any>;
   getPaymentsByPlayerId(playerId: number): Promise<any[]>;
+  getPaymentsByPlayerIds(playerIds: number[], status?: string): Promise<any[]>;
+  getPlayersIdsByParentId(parentId: number): Promise<number[]>;
+  getAllPayments(status?: string): Promise<any[]>;
   getPendingPayments(): Promise<any[]>;
   createPayment(paymentData: InsertPayment): Promise<any>;
   updatePaymentStatus(id: number, status: string, paidDate?: Date): Promise<any | undefined>;
@@ -467,6 +470,52 @@ export class DatabaseStorage implements IStorage {
       .from(payments)
       .where(eq(payments.playerId, playerId))
       .orderBy(desc(payments.dueDate));
+  }
+  
+  async getPaymentsByPlayerIds(playerIds: number[], status?: string): Promise<any[]> {
+    let query = db
+      .select({
+        ...payments,
+        playerFirstName: players.firstName,
+        playerLastName: players.lastName,
+        player: players,
+      })
+      .from(payments)
+      .leftJoin(players, eq(payments.playerId, players.id))
+      .where(sql`${payments.playerId} IN (${playerIds.join(',')})`);
+    
+    if (status) {
+      query = query.where(eq(payments.status, status));
+    }
+    
+    return await query.orderBy(desc(payments.dueDate));
+  }
+  
+  async getPlayersIdsByParentId(parentId: number): Promise<number[]> {
+    const result = await db
+      .select({ id: players.id })
+      .from(players)
+      .where(eq(players.parentId, parentId));
+    
+    return result.map(row => row.id);
+  }
+  
+  async getAllPayments(status?: string): Promise<any[]> {
+    let query = db
+      .select({
+        ...payments,
+        playerFirstName: players.firstName,
+        playerLastName: players.lastName,
+        player: players,
+      })
+      .from(payments)
+      .leftJoin(players, eq(payments.playerId, players.id));
+    
+    if (status) {
+      query = query.where(eq(payments.status, status));
+    }
+    
+    return await query.orderBy(desc(payments.dueDate));
   }
   
   async getPendingPayments(): Promise<any[]> {
