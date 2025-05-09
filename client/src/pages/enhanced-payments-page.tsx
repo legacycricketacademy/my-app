@@ -60,7 +60,7 @@ export default function EnhancedPaymentsPage() {
   });
 
   // Filter payments based on current filters
-  const filteredPayments = allPayments?.filter(payment => {
+  const filteredPayments = Array.isArray(allPayments) ? allPayments.filter((payment: any) => {
     // Apply status filter
     if (statusFilter !== "all" && payment.status !== statusFilter) {
       return false;
@@ -106,28 +106,28 @@ export default function EnhancedPaymentsPage() {
     }
     
     return true;
-  });
+  }) : [];
   
   // Get only pending payments
-  const pendingPayments = filteredPayments?.filter(p => p.status === "pending" || p.status === "overdue");
+  const pendingPayments = Array.isArray(filteredPayments) ? filteredPayments.filter((p: any) => p.status === "pending" || p.status === "overdue") : [];
   
   // Get payments for history tab (paid ones)
-  const paidPayments = filteredPayments?.filter(p => p.status === "paid");
+  const paidPayments = Array.isArray(filteredPayments) ? filteredPayments.filter((p: any) => p.status === "paid") : [];
   
   // Get payments that are overdue
-  const overduePayments = filteredPayments?.filter(p => {
+  const overduePayments = Array.isArray(filteredPayments) ? filteredPayments.filter((p: any) => {
     const dueDate = new Date(p.dueDate);
     return p.status === "pending" && isAfter(new Date(), dueDate);
-  });
+  }) : [];
 
   // Calculate summary stats
-  const totalPendingAmount = pendingPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
-  const totalPaidAmount = paidPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
-  const totalDueThisWeek = pendingPayments?.filter(p => {
+  const totalPendingAmount = pendingPayments?.reduce((sum: number, payment: any) => sum + Number(payment.amount), 0) || 0;
+  const totalPaidAmount = paidPayments?.reduce((sum: number, payment: any) => sum + Number(payment.amount), 0) || 0;
+  const totalDueThisWeek = pendingPayments?.filter((p: any) => {
     const dueDate = new Date(p.dueDate);
     const daysUntilDue = differenceInDays(dueDate, new Date());
     return daysUntilDue >= 0 && daysUntilDue <= 7;
-  }).reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+  }).reduce((sum: number, payment: any) => sum + Number(payment.amount), 0) || 0;
   
   // Function to get player details
   const getPlayerDetails = (playerId: number) => {
