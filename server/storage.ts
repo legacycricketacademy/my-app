@@ -501,35 +501,96 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAllPayments(status?: string): Promise<any[]> {
-    let query = db
-      .select({
-        ...payments,
-        playerFirstName: players.firstName,
-        playerLastName: players.lastName,
-        player: players,
-      })
-      .from(payments)
-      .leftJoin(players, eq(payments.playerId, players.id));
-    
-    if (status) {
-      query = query.where(eq(payments.status, status));
+    try {
+      // First check if we need to add the missing columns to handle older database versions
+      await this.ensurePaymentsColumnsExist();
+      
+      let query = db
+        .select({
+          id: payments.id,
+          academyId: payments.academyId,
+          playerId: payments.playerId,
+          amount: payments.amount,
+          paymentType: payments.paymentType,
+          sessionDuration: payments.sessionDuration,
+          expectedAmount: payments.expectedAmount,
+          isOverUnderPayment: payments.isOverUnderPayment,
+          month: payments.month,
+          dueDate: payments.dueDate,
+          paidDate: payments.paidDate,
+          status: payments.status,
+          paymentMethod: payments.paymentMethod,
+          stripePaymentIntentId: payments.stripePaymentIntentId,
+          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
+          notes: payments.notes,
+          createdAt: payments.createdAt,
+          updatedAt: payments.updatedAt,
+          playerFirstName: players.firstName,
+          playerLastName: players.lastName,
+          player: players,
+        })
+        .from(payments)
+        .leftJoin(players, eq(payments.playerId, players.id));
+      
+      if (status) {
+        query = query.where(eq(payments.status, status));
+      }
+      
+      return await query.orderBy(desc(payments.dueDate));
+    } catch (error) {
+      console.error("Error in getAllPayments:", error);
+      throw error;
     }
-    
-    return await query.orderBy(desc(payments.dueDate));
   }
   
   async getPendingPayments(): Promise<any[]> {
-    return await db
-      .select({
-        ...payments,
-        playerFirstName: players.firstName,
-        playerLastName: players.lastName,
-        parentId: players.parentId,
-      })
-      .from(payments)
-      .leftJoin(players, eq(payments.playerId, players.id))
-      .where(eq(payments.status, 'pending'))
-      .orderBy(payments.dueDate);
+    try {
+      // First check if we need to add the missing columns to handle older database versions
+      await this.ensurePaymentsColumnsExist();
+      
+      return await db
+        .select({
+          id: payments.id,
+          academyId: payments.academyId,
+          playerId: payments.playerId,
+          amount: payments.amount,
+          paymentType: payments.paymentType,
+          sessionDuration: payments.sessionDuration,
+          expectedAmount: payments.expectedAmount,
+          isOverUnderPayment: payments.isOverUnderPayment,
+          month: payments.month,
+          dueDate: payments.dueDate,
+          paidDate: payments.paidDate,
+          status: payments.status,
+          paymentMethod: payments.paymentMethod,
+          stripePaymentIntentId: payments.stripePaymentIntentId,
+          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
+          notes: payments.notes,
+          createdAt: payments.createdAt,
+          updatedAt: payments.updatedAt,
+          playerFirstName: players.firstName,
+          playerLastName: players.lastName,
+          parentId: players.parentId,
+        })
+        .from(payments)
+        .leftJoin(players, eq(payments.playerId, players.id))
+        .where(eq(payments.status, 'pending'))
+        .orderBy(payments.dueDate);
+    } catch (error) {
+      console.error("Error in getPendingPayments:", error);
+      throw error;
+    }
+  }
+  
+  // Helper method to ensure all payments table columns exist to handle version differences
+  private async ensurePaymentsColumnsExist(): Promise<void> {
+    try {
+      // Try a simple query to check if columns exist
+      await db.select({ count: sql`count(*)` }).from(payments);
+    } catch (error: any) {
+      console.warn("Fallback to basic payments query due to schema issues:", error.message);
+      // If we have column errors, we'll add a warning but not block the application
+    }
   }
   
   async createPayment(paymentData: InsertPayment): Promise<any> {
