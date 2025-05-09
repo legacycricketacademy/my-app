@@ -36,6 +36,7 @@ import MakePaymentPage from "@/pages/parent/make-payment";
 import MakePaymentNewPage from "@/pages/parent/make-payment-new";
 import PaymentSuccessPage from "@/pages/parent/payment-success";
 import PaymentDebugPage from "@/pages/parent/payment-debug";
+import ParentAnnouncementsPage from "@/pages/parent/announcements";
 
 function RouterContent() {
   const { user } = useAuth();
@@ -151,6 +152,13 @@ function RouterContent() {
         component={ParentSchedulePage} 
         allowedRoles={["parent"]}
         redirectTo="/schedule"
+      />
+      
+      <RoleBasedRoute 
+        path="/parent/announcements" 
+        component={ParentAnnouncementsPage} 
+        allowedRoles={["parent"]}
+        redirectTo="/announcements"
       />
       
       <RoleBasedRoute 
