@@ -86,7 +86,11 @@ export function NotificationDropdown() {
           id: payment.id,
           type: "payment",
           title: `Payment Due: ${payment.playerFirstName} ${payment.playerLastName}`,
-          content: `Payment of $${payment.amount.toFixed(2)} is due by ${format(new Date(payment.dueDate), 'MMM dd, yyyy')}`,
+          content: `Payment of $${
+            typeof payment.amount === 'number' 
+              ? payment.amount.toFixed(2) 
+              : (isNaN(Number(payment.amount)) ? '0.00' : Number(payment.amount).toFixed(2))
+          } is due by ${format(new Date(payment.dueDate), 'MMM dd, yyyy')}`,
           createdAt: payment.dueDate,
           read: false,
           data: payment
