@@ -33,6 +33,7 @@ import ConnectChildNewPage from "@/pages/parent/connect-child-new";
 import ManageParentConnectionsPage from "@/pages/manage-parent-connections";
 import ParentPaymentsPage from "@/pages/parent/payments";
 import MakePaymentPage from "@/pages/parent/make-payment";
+import MakePaymentNewPage from "@/pages/parent/make-payment-new";
 import PaymentSuccessPage from "@/pages/parent/payment-success";
 import PaymentDebugPage from "@/pages/parent/payment-debug";
 
@@ -176,7 +177,7 @@ function RouterContent() {
       {/* Adding this route since parent/payments/new button currently links here */}
       <RoleBasedRoute
         path="/parent/payments/new"
-        component={MakePaymentPage}
+        component={MakePaymentNewPage}
         allowedRoles={["parent"]}
         redirectTo="/payments"
       />
