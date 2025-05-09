@@ -1809,7 +1809,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Parent - Get connection requests
   app.get(`${apiPrefix}/parent/connection-requests`, async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in" });
+    }
+    
+    // Allow both parents and admins
+    if (req.user.role !== 'parent' && req.user.role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
@@ -1829,7 +1834,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       userRole: req.user?.role
     });
     
-    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in" });
+    }
+    
+    // Allow both parents and admins
+    if (req.user.role !== 'parent' && req.user.role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
@@ -1851,7 +1861,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       userRole: req.user?.role
     });
     
-    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in" });
+    }
+    
+    // Allow both parents and admins
+    if (req.user.role !== 'parent' && req.user.role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
@@ -1890,7 +1905,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       userRole: req.user?.role
     });
     
-    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in" });
+    }
+    
+    // Allow both parents and admins
+    if (req.user.role !== 'parent' && req.user.role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
@@ -1934,7 +1954,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Parent - Create connection request
   app.post(`${apiPrefix}/parent/connection-requests`, async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in" });
+    }
+    
+    // Allow both parents and admins
+    if (req.user.role !== 'parent' && req.user.role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
