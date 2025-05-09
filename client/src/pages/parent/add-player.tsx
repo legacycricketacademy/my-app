@@ -62,21 +62,17 @@ export default function AddPlayerPage() {
         today.getMonth() < dob.getMonth() || 
         (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
       ) {
-        const adjustedAge = age - 1;
-        
-        if (adjustedAge < 10) {
-          return "Under 10s";
-        } else if (adjustedAge < 12) {
-          return "Under 12s";
-        } else if (adjustedAge < 14) {
-          return "Under 14s";
-        } else if (adjustedAge < 16) {
-          return "Under 16s";
-        } else {
-          return "Under 19s";
-        }
+        age--;
+      }
+      
+      // Use the proper age group values matching the schema
+      if (age < 8) {
+        return "5-8 years";
+      } else {
+        return "8+ years";
       }
     } catch (error) {
+      console.error("Error calculating age group:", error);
       return "";
     }
   };
