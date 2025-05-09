@@ -2088,10 +2088,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const { amount, paymentType, playerId, description } = req.body;
+      const { amount, paymentType, playerId, sessionDuration, description } = req.body;
       
       if (!amount || !playerId || !paymentType) {
         return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Validate session duration if provided
+      if (sessionDuration) {
+        const allowedDurations = ["60min", "90min"];
+        if (!allowedDurations.includes(sessionDuration)) {
+          return res.status(400).json({ 
+            message: "Invalid session duration. Must be one of: 60min, 90min" 
+          });
+        }
       }
 
       const player = await storage.getPlayerById(playerId);
@@ -2105,9 +2115,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         playerId,
         amount,
         paymentType,
+        sessionDuration, // Include session duration if provided
         dueDate: dueDate.toISOString().split('T')[0], // format as YYYY-MM-DD for SQL date
         status: "pending",
-        notes: description || `Payment for ${paymentType}`
+        notes: description || `Payment for ${paymentType}${sessionDuration ? ` (${sessionDuration})` : ''}`
       };
       
       console.log("Creating payment with data:", paymentData);
@@ -2143,12 +2154,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate required fields
-      const { playerId, amount, paymentType, method, transactionId, notes } = req.body;
+      const { playerId, amount, paymentType, sessionDuration, method, transactionId, notes } = req.body;
       
-      if (!playerId || !amount || !paymentType || !method) {
+      if (!playerId || !amount || !paymentType || !method || !sessionDuration) {
         return res.status(400).json({ 
           message: "Missing required fields",
-          requiredFields: ["playerId", "amount", "paymentType", "method"]
+          requiredFields: ["playerId", "amount", "paymentType", "sessionDuration", "method"]
         });
       }
       
@@ -2160,15 +2171,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Validate session duration
+      const allowedDurations = ["60min", "90min"];
+      if (!allowedDurations.includes(sessionDuration)) {
+        return res.status(400).json({ 
+          message: "Invalid session duration. Must be one of: 60min, 90min" 
+        });
+      }
+      
       // Create a payment record in our database
       const paymentData = {
         playerId: parseInt(playerId),
         amount: amount.toString(), // Convert to string as required by schema
         paymentType,
+        sessionDuration,
         dueDate: new Date().toISOString().slice(0, 10), // Use today's date as the due date (YYYY-MM-DD)
         status: "pending", // All manual payments start as pending until reviewed by admin
         paymentMethod: method,
-        notes: notes || `${method.charAt(0).toUpperCase() + method.slice(1)} payment for ${paymentType}`
+        notes: notes || `${method.charAt(0).toUpperCase() + method.slice(1)} payment for ${paymentType} (${sessionDuration})`
       };
       
       if (transactionId) {
