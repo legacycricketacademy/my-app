@@ -657,19 +657,12 @@ export class DatabaseStorage implements IStorage {
   
   async getPendingPayments(): Promise<any[]> {
     try {
-      // Use direct SQL query instead of Drizzle ORM to avoid schema/column issues
+      // Simplified query that doesn't reference the p.month column
       let query = `
         SELECT 
           p.id, p.academy_id AS "academyId", p.player_id AS "playerId", 
           p.amount, p.payment_type AS "paymentType",
-          CASE 
-            WHEN EXISTS (
-              SELECT 1 FROM information_schema.columns 
-              WHERE table_name = 'payments' AND column_name = 'month'
-            ) 
-            THEN p.month 
-            ELSE NULL 
-          END AS "month",
+          NULL AS "month",
           p.due_date AS "dueDate", p.paid_date AS "paidDate", 
           p.status, p.payment_method AS "paymentMethod", 
           p.stripe_payment_intent_id AS "stripePaymentIntentId",
@@ -680,33 +673,45 @@ export class DatabaseStorage implements IStorage {
           pl.parent_id AS "parentId"
       `;
       
-      // Try to add the new columns if they exist
-      query += `
-        , CASE 
-            WHEN EXISTS (
-              SELECT 1 FROM information_schema.columns 
-              WHERE table_name = 'payments' AND column_name = 'session_duration'
-            ) 
-            THEN p.session_duration 
-            ELSE NULL 
-          END AS "sessionDuration"
-        , CASE 
-            WHEN EXISTS (
-              SELECT 1 FROM information_schema.columns 
-              WHERE table_name = 'payments' AND column_name = 'expected_amount'
-            ) 
-            THEN p.expected_amount 
-            ELSE NULL 
-          END AS "expectedAmount"
-        , CASE 
-            WHEN EXISTS (
-              SELECT 1 FROM information_schema.columns 
-              WHERE table_name = 'payments' AND column_name = 'is_over_under_payment'
-            ) 
-            THEN p.is_over_under_payment 
-            ELSE FALSE 
-          END AS "isOverUnderPayment"
-      `;
+      // Check if the session_duration column exists
+      const sessionDurationResult = await db.execute(sql.raw(`
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name = 'payments' AND column_name = 'session_duration'
+      `));
+      const hasSessionDuration = sessionDurationResult.rows && sessionDurationResult.rows.length > 0;
+      
+      // Check if the expected_amount column exists
+      const expectedAmountResult = await db.execute(sql.raw(`
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name = 'payments' AND column_name = 'expected_amount'
+      `));
+      const hasExpectedAmount = expectedAmountResult.rows && expectedAmountResult.rows.length > 0;
+      
+      // Check if the is_over_under_payment column exists
+      const isOverUnderResult = await db.execute(sql.raw(`
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name = 'payments' AND column_name = 'is_over_under_payment'
+      `));
+      const hasIsOverUnder = isOverUnderResult.rows && isOverUnderResult.rows.length > 0;
+      
+      // Add optional columns if they exist
+      if (hasSessionDuration) {
+        query += `, p.session_duration AS "sessionDuration"`;
+      } else {
+        query += `, NULL AS "sessionDuration"`;
+      }
+      
+      if (hasExpectedAmount) {
+        query += `, p.expected_amount AS "expectedAmount"`;
+      } else {
+        query += `, NULL AS "expectedAmount"`;
+      }
+      
+      if (hasIsOverUnder) {
+        query += `, p.is_over_under_payment AS "isOverUnderPayment"`;
+      } else {
+        query += `, FALSE AS "isOverUnderPayment"`;
+      }
       
       query += `
         FROM payments p

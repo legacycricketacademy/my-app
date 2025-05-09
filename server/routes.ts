@@ -1659,20 +1659,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Parent-specific endpoint for pending payments (for the notification system)
   app.get(`${apiPrefix}/parent/payments/pending`, async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== 'parent') {
+    console.log("Parent pending payments API called", {
+      isAuth: req.isAuthenticated(),
+      userRole: req.user?.role
+    });
+    
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in" });
+    }
+    
+    // Allow both parents and admins
+    if (req.user.role !== 'parent' && req.user.role !== 'admin' && req.user.role !== 'coach') {
       return res.status(403).json({ message: "Unauthorized" });
     }
     
     try {
-      // Get all players associated with this parent
-      const playerIds = await storage.getPlayersIdsByParentId(req.user.id);
-      if (playerIds.length === 0) {
-        return res.json([]);
+      // For parents: Get all players associated with this parent
+      if (req.user.role === 'parent') {
+        const playerIds = await storage.getPlayersIdsByParentId(req.user.id);
+        if (playerIds.length === 0) {
+          return res.json([]);
+        }
+        
+        // Get pending payments for these players
+        const payments = await storage.getPaymentsByPlayerIds(playerIds, 'pending');
+        return res.json(payments);
+      } 
+      // For admins/coaches: return all pending payments
+      else {
+        const pendingPayments = await storage.getAllPayments('pending');
+        return res.json(pendingPayments);
       }
-      
-      // Get pending payments for these players
-      const payments = await storage.getPaymentsByPlayerIds(playerIds, 'pending');
-      res.json(payments);
     } catch (error) {
       console.error("Error fetching parent pending payments:", error);
       res.status(500).json({ message: "Error fetching pending payments" });
