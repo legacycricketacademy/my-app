@@ -16,6 +16,7 @@ import FitnessPage from "@/pages/fitness-page";
 import MealPlansPage from "@/pages/meal-plans-page";
 import AnnouncementsPage from "@/pages/announcements-page";
 import PaymentsPage from "@/pages/payments-page";
+import EnhancedPaymentsPage from "@/pages/enhanced-payments-page";
 import SettingsPage from "@/pages/settings-page";
 import ImportDataPage from "@/pages/import-data-page";
 import ProfilePage from "@/pages/profile-page";
@@ -123,6 +124,12 @@ function RouterContent() {
       />
       <RoleBasedRoute 
         path="/payments" 
+        component={EnhancedPaymentsPage} 
+        allowedRoles={["admin", "coach"]}
+        redirectTo="/parent"
+      />
+      <RoleBasedRoute 
+        path="/payments-legacy" 
         component={PaymentsPage} 
         allowedRoles={["admin", "coach"]}
         redirectTo="/parent"
