@@ -571,45 +571,52 @@ export default function MakePaymentPage() {
   useEffect(() => {
     const fetchParentPlayers = async () => {
       setIsLoadingPlayers(true);
+      setError(null);
+      
       try {
         const response = await apiRequest('GET', '/api/parent/players');
-        if (response.ok) {
-          const playersData = await response.json();
-          setPlayers(playersData);
-          
-          // Select the first player by default if there are any
-          if (playersData.length > 0) {
-            const playerId = params.playerId ? parseInt(params.playerId) : playersData[0].id;
-            setSelectedPlayerId(playerId);
-            setPaymentDetails(prev => ({
-              ...prev,
-              playerId
-            }));
-            
-            // Find the selected player and set their name
-            const player = playersData.find((p: any) => p.id === playerId);
-            if (player) {
-              setPlayerName(`${player.firstName} ${player.lastName}`);
-            }
+        
+        if (!response.ok) {
+          // Handle non-200 responses
+          if (response.status === 403) {
+            throw new Error('Access denied. You may need to log in again.');
+          } else if (response.status === 404) {
+            throw new Error('No players found. Please connect with your child first.');
           } else {
-            toast({
-              title: 'No players found',
-              description: 'You need to add or connect with a player first before making a payment.',
-              variant: 'destructive',
-            });
-            // Redirect to connect player page if no players are found
-            setTimeout(() => {
-              navigate('/parent/connect-child');
-            }, 2000);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to fetch players');
+          }
+        }
+        
+        // Parse the response data
+        const playersData = await response.json();
+        setPlayers(playersData);
+        
+        // Select the first player by default if there are any
+        if (playersData && playersData.length > 0) {
+          const playerId = params.playerId ? parseInt(params.playerId) : playersData[0].id;
+          setSelectedPlayerId(playerId);
+          setPaymentDetails(prev => ({
+            ...prev,
+            playerId
+          }));
+          
+          // Find the selected player and set their name
+          const player = playersData.find((p: any) => p.id === playerId);
+          if (player) {
+            setPlayerName(`${player.firstName} ${player.lastName}`);
           }
         } else {
-          throw new Error('Failed to fetch players');
+          // No players found - this is not an error, just an empty state
+          // We'll handle this in the UI rather than an automatic redirect
+          setPlayers([]);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching parent players:', error);
+        setError(error.message || 'Failed to load your players. Please try again.');
         toast({
-          title: 'Error',
-          description: 'Failed to load your players. Please try again.',
+          title: 'Error Loading Players',
+          description: error.message || 'Could not load your players. Please try again.',
           variant: 'destructive',
         });
       } finally {
@@ -742,6 +749,45 @@ export default function MakePaymentPage() {
               <div className="flex justify-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span className="ml-2">Loading your players...</span>
+              </div>
+            ) : error ? (
+              <div className="py-8 px-4">
+                <Alert variant="destructive" className="mb-6">
+                  <AlertTriangle className="h-5 w-5" />
+                  <AlertTitle>Error Loading Players</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+                <div className="text-center mt-6">
+                  <p className="text-gray-600 mb-6">Please try again or connect with a player first.</p>
+                  <Button
+                    onClick={() => navigate('/parent/connect-child')}
+                    className="mr-2"
+                  >
+                    Connect with a Player
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.reload()}
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              </div>
+            ) : players.length === 0 ? (
+              <div className="py-8 px-4 text-center">
+                <div className="rounded-full bg-amber-100 p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-amber-600" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">No Players Connected</h3>
+                <p className="text-gray-600 mb-6">
+                  You need to connect with a player before you can make a payment.
+                </p>
+                <Button
+                  onClick={() => navigate('/parent/connect-child')}
+                  className="mx-auto"
+                >
+                  Connect with a Player
+                </Button>
               </div>
             ) : players.length > 0 ? (
               <div className="space-y-6">
