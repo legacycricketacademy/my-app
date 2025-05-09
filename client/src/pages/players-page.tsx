@@ -47,7 +47,8 @@ import {
   Save,
   Copy,
   CheckCircle,
-  Link
+  Link,
+  Trash2
 } from "lucide-react";
 
 // Define the schema for player creation
@@ -72,9 +73,11 @@ export default function PlayersPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
   const [showEditPlayerDialog, setShowEditPlayerDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [copiedPlayerId, setCopiedPlayerId] = useState<number | null>(null);
   const [sendingEmailId, setSendingEmailId] = useState<number | null>(null);
+  const [playerToDelete, setPlayerToDelete] = useState<any>(null);
   const { toast } = useToast();
   
   // Reset the copied state after 3 seconds
@@ -168,6 +171,34 @@ export default function PlayersPage() {
     onError: (error: Error) => {
       toast({
         title: "Failed to update player",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const deletePlayerMutation = useMutation({
+    mutationFn: async (playerId: number) => {
+      const res = await apiRequest("DELETE", `/api/players/${playerId}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to delete player");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Player deleted successfully",
+        description: "The player and all associated records have been removed.",
+        variant: "default",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      setShowDeleteDialog(false);
+      setPlayerToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to delete player",
         description: error.message,
         variant: "destructive",
       });
