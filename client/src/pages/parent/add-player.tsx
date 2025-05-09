@@ -88,17 +88,44 @@ export default function AddPlayerPage() {
         if (data.dateOfBirth && data.dateOfBirth instanceof Date) {
           data.dateOfBirth = data.dateOfBirth.toISOString().split('T')[0];
         }
-
-        // Log the data being sent
-        console.log("Sending player data:", data);
         
-        // Make the API request
-        const res = await apiRequest("POST", "/api/players", data);
+        // IMPORTANT: Clean submission data to match database schema requirements
+        const cleanedData = {
+          ...data,
+          // Ensure ageGroup is one of the valid schema values
+          ageGroup: (data.ageGroup === "5-8 years" || data.ageGroup === "8+ years") 
+            ? data.ageGroup 
+            : calculateAgeGroup(data.dateOfBirth)
+        };
+        
+        // Remove any potentially invalid fields from form data
+        const validFields = [
+          "firstName", "lastName", "dateOfBirth", "ageGroup", 
+          "location", "playerType", "healthNotes", "parentNotes"
+        ];
+        
+        const validData = Object.fromEntries(
+          Object.entries(cleanedData).filter(([key]) => validFields.includes(key))
+        );
+        
+        // Log the cleaned data being sent
+        console.log("Sending cleaned player data:", validData);
+        
+        // Make the API request with cleaned data
+        const res = await apiRequest("POST", "/api/players", validData);
         
         // Check if the response is ok
         if (!res.ok) {
           // Try to get detailed error message
           const errorData = await res.json().catch(() => null);
+          console.error("Server returned error:", errorData);
+          if (errorData && errorData.errors) {
+            // Format validation errors
+            const errorMessages = errorData.errors.map((err: any) => 
+              `Field ${err.path}: ${err.message || 'Invalid value'}`
+            ).join("; ");
+            throw new Error(errorMessages);
+          }
           if (errorData && errorData.error) {
             throw new Error(errorData.error);
           }
@@ -135,6 +162,16 @@ export default function AddPlayerPage() {
   
   // Form submission handler
   function onSubmit(data: PlayerFormValues) {
+    // Log the data before submission to debug
+    console.log("Submitting player data:", data);
+    
+    // Make sure ageGroup is one of the valid values
+    if (data.ageGroup !== "5-8 years" && data.ageGroup !== "8+ years") {
+      // Force to a valid value based on date of birth
+      data.ageGroup = calculateAgeGroup(data.dateOfBirth);
+      console.log("Corrected ageGroup to:", data.ageGroup);
+    }
+    
     addPlayerMutation.mutate(data);
   }
   
