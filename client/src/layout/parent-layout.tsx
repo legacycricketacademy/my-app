@@ -20,6 +20,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { NotificationDropdown } from "@/components/notification-dropdown";
 
 interface ParentLayoutProps {
   children: ReactNode;
