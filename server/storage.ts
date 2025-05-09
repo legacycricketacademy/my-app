@@ -502,30 +502,19 @@ export class DatabaseStorage implements IStorage {
       // First check if we need to add the missing columns to handle older database versions
       await this.ensurePaymentsColumnsExist();
       
+      // Get the safe select object with conditional columns
+      const safeSelect = this.createSafePaymentsSelect();
+      
+      // Add player information to the select
+      const selectWithPlayer = {
+        ...safeSelect,
+        playerFirstName: players.firstName,
+        playerLastName: players.lastName,
+        // Don't include the full player object to avoid potential schema issues
+      };
+      
       let query = db
-        .select({
-          id: payments.id,
-          academyId: payments.academyId,
-          playerId: payments.playerId,
-          amount: payments.amount,
-          paymentType: payments.paymentType,
-          sessionDuration: payments.sessionDuration,
-          expectedAmount: payments.expectedAmount,
-          isOverUnderPayment: payments.isOverUnderPayment,
-          month: payments.month,
-          dueDate: payments.dueDate,
-          paidDate: payments.paidDate,
-          status: payments.status,
-          paymentMethod: payments.paymentMethod,
-          stripePaymentIntentId: payments.stripePaymentIntentId,
-          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
-          notes: payments.notes,
-          createdAt: payments.createdAt,
-          updatedAt: payments.updatedAt,
-          playerFirstName: players.firstName,
-          playerLastName: players.lastName,
-          player: players,
-        })
+        .select(selectWithPlayer)
         .from(payments)
         .leftJoin(players, eq(payments.playerId, players.id))
         .where(sql`${payments.playerId} IN (${playerIds.join(',')})`);
@@ -555,30 +544,19 @@ export class DatabaseStorage implements IStorage {
       // First check if we need to add the missing columns to handle older database versions
       await this.ensurePaymentsColumnsExist();
       
+      // Get the safe select object with conditional columns
+      const safeSelect = this.createSafePaymentsSelect();
+      
+      // Add player information to the select
+      const selectWithPlayer = {
+        ...safeSelect,
+        playerFirstName: players.firstName,
+        playerLastName: players.lastName,
+        // Don't include the full player object to avoid potential schema issues
+      };
+      
       let query = db
-        .select({
-          id: payments.id,
-          academyId: payments.academyId,
-          playerId: payments.playerId,
-          amount: payments.amount,
-          paymentType: payments.paymentType,
-          sessionDuration: payments.sessionDuration,
-          expectedAmount: payments.expectedAmount,
-          isOverUnderPayment: payments.isOverUnderPayment,
-          month: payments.month,
-          dueDate: payments.dueDate,
-          paidDate: payments.paidDate,
-          status: payments.status,
-          paymentMethod: payments.paymentMethod,
-          stripePaymentIntentId: payments.stripePaymentIntentId,
-          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
-          notes: payments.notes,
-          createdAt: payments.createdAt,
-          updatedAt: payments.updatedAt,
-          playerFirstName: players.firstName,
-          playerLastName: players.lastName,
-          player: players,
-        })
+        .select(selectWithPlayer)
         .from(payments)
         .leftJoin(players, eq(payments.playerId, players.id));
       
@@ -598,30 +576,19 @@ export class DatabaseStorage implements IStorage {
       // First check if we need to add the missing columns to handle older database versions
       await this.ensurePaymentsColumnsExist();
       
+      // Get the safe select object with conditional columns
+      const safeSelect = this.createSafePaymentsSelect();
+      
+      // Add player information to the select
+      const selectWithPlayer = {
+        ...safeSelect,
+        playerFirstName: players.firstName,
+        playerLastName: players.lastName,
+        parentId: players.parentId,
+      };
+      
       return await db
-        .select({
-          id: payments.id,
-          academyId: payments.academyId,
-          playerId: payments.playerId,
-          amount: payments.amount,
-          paymentType: payments.paymentType,
-          sessionDuration: payments.sessionDuration,
-          expectedAmount: payments.expectedAmount,
-          isOverUnderPayment: payments.isOverUnderPayment,
-          month: payments.month,
-          dueDate: payments.dueDate,
-          paidDate: payments.paidDate,
-          status: payments.status,
-          paymentMethod: payments.paymentMethod,
-          stripePaymentIntentId: payments.stripePaymentIntentId,
-          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
-          notes: payments.notes,
-          createdAt: payments.createdAt,
-          updatedAt: payments.updatedAt,
-          playerFirstName: players.firstName,
-          playerLastName: players.lastName,
-          parentId: players.parentId,
-        })
+        .select(selectWithPlayer)
         .from(payments)
         .leftJoin(players, eq(payments.playerId, players.id))
         .where(eq(payments.status, 'pending'))
