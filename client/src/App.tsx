@@ -74,6 +74,7 @@ function RouterContent() {
         window.location.pathname === "/parent/announcements" ||
         window.location.pathname === "/parent/payments" ||
         window.location.pathname === "/parent/payment-success" ||
+        window.location.pathname === "/parent/make-payment-new" ||
         window.location.pathname.startsWith("/parent/make-payment/")
       ) {
         return <Redirect to="/" />;
@@ -194,6 +195,14 @@ function RouterContent() {
         path="/parent/payments/new"
         component={MakePaymentNewPage}
         allowedRoles={["parent"]}
+        redirectTo="/payments"
+      />
+      
+      {/* Route for the new make payment page */}
+      <RoleBasedRoute
+        path="/parent/make-payment-new"
+        component={MakePaymentNewPage}
+        allowedRoles={["parent", "admin", "coach"]}
         redirectTo="/payments"
       />
 
