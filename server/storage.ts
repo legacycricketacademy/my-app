@@ -499,69 +499,73 @@ export class DatabaseStorage implements IStorage {
   
   async getPaymentsByPlayerIds(playerIds: number[], status?: string): Promise<any[]> {
     try {
-      // First check if we need to add the missing columns to handle older database versions
-      await this.ensurePaymentsColumnsExist();
-
-      // Use explicit field selection to avoid schema/spreading issues
-      let query = db
-        .select({
-          id: payments.id,
-          academyId: payments.academyId,
-          playerId: payments.playerId,
-          amount: payments.amount,
-          paymentType: payments.paymentType,
-          month: payments.month,
-          dueDate: payments.dueDate,
-          paidDate: payments.paidDate,
-          status: payments.status,
-          paymentMethod: payments.paymentMethod,
-          notes: payments.notes,
-          createdAt: payments.createdAt,
-          updatedAt: payments.updatedAt,
-          playerFirstName: players.firstName,
-          playerLastName: players.lastName
-        })
-        .from(payments)
-        .leftJoin(players, eq(payments.playerId, players.id))
-        .where(sql`${payments.playerId} IN (${playerIds.join(',')})`);
-      
-      // Conditionally add fields if they exist in the schema
-      try {
-        if (payments.sessionDuration) {
-          query = db.select({
-            id: payments.id,
-            academyId: payments.academyId,
-            playerId: payments.playerId,
-            amount: payments.amount,
-            paymentType: payments.paymentType,
-            month: payments.month,
-            dueDate: payments.dueDate,
-            paidDate: payments.paidDate,
-            status: payments.status,
-            paymentMethod: payments.paymentMethod,
-            notes: payments.notes,
-            createdAt: payments.createdAt,
-            updatedAt: payments.updatedAt,
-            playerFirstName: players.firstName,
-            playerLastName: players.lastName,
-            sessionDuration: payments.sessionDuration
-          })
-          .from(payments)
-          .leftJoin(players, eq(payments.playerId, players.id))
-          .where(sql`${payments.playerId} IN (${playerIds.join(',')})`);
-        }
-      } catch (e) {
-        console.warn('sessionDuration column does not exist, continuing without it');
+      if (!playerIds.length) {
+        return [];
       }
       
-      if (status) {
-        query = query.where(eq(payments.status, status));
+      // Use direct SQL query instead of Drizzle ORM to avoid schema/column issues
+      let query = `
+        SELECT 
+          p.id, p.academy_id AS "academyId", p.player_id AS "playerId", 
+          p.amount, p.payment_type AS "paymentType", p.month, 
+          p.due_date AS "dueDate", p.paid_date AS "paidDate", 
+          p.status, p.payment_method AS "paymentMethod", 
+          p.stripe_payment_intent_id AS "stripePaymentIntentId",
+          p.stripe_payment_intent_status AS "stripePaymentIntentStatus",
+          p.notes, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
+          pl.first_name AS "playerFirstName", pl.last_name AS "playerLastName",
+          pl.age_group AS "playerAgeGroup", pl.location AS "playerLocation"
+      `;
+      
+      // Try to add the new columns if they exist
+      // These SQL queries are designed to be resilient to missing columns using CASE
+      // WHEN EXISTS handling
+      query += `
+        , CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'payments' AND column_name = 'session_duration'
+            ) 
+            THEN p.session_duration 
+            ELSE NULL 
+          END AS "sessionDuration"
+        , CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'payments' AND column_name = 'expected_amount'
+            ) 
+            THEN p.expected_amount 
+            ELSE NULL 
+          END AS "expectedAmount"
+        , CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'payments' AND column_name = 'is_over_under_payment'
+            ) 
+            THEN p.is_over_under_payment 
+            ELSE FALSE 
+          END AS "isOverUnderPayment"
+      `;
+      
+      query += `
+        FROM payments p
+        LEFT JOIN players pl ON p.player_id = pl.id
+        WHERE p.player_id IN (${playerIds.join(',')})
+      `;
+      
+      if (status && status !== 'all') {
+        query += ` AND p.status = '${status}'`;
       }
       
-      return await query.orderBy(desc(payments.dueDate));
+      query += ` ORDER BY p.due_date DESC`;
+      
+      const result = await db.execute(sql.raw(query));
+      
+      // For raw SQL, the result requires an explicit return of rows
+      return result.rows || [];
     } catch (error) {
       console.error("Error in getPaymentsByPlayerIds:", error);
-      // Return empty array instead of throwing to prevent cascading errors
+      // Return empty array instead of throwing to prevent UI errors
       return [];
     }
   }
@@ -577,39 +581,65 @@ export class DatabaseStorage implements IStorage {
   
   async getAllPayments(status?: string): Promise<any[]> {
     try {
-      // First check if we need to add the missing columns to handle older database versions
-      await this.ensurePaymentsColumnsExist();
+      // Use direct SQL query instead of Drizzle ORM to avoid schema/column issues
+      let query = `
+        SELECT 
+          p.id, p.academy_id AS "academyId", p.player_id AS "playerId", 
+          p.amount, p.payment_type AS "paymentType", p.month, 
+          p.due_date AS "dueDate", p.paid_date AS "paidDate", 
+          p.status, p.payment_method AS "paymentMethod", 
+          p.stripe_payment_intent_id AS "stripePaymentIntentId",
+          p.stripe_payment_intent_status AS "stripePaymentIntentStatus",
+          p.notes, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
+          pl.first_name AS "playerFirstName", pl.last_name AS "playerLastName",
+          pl.age_group AS "playerAgeGroup", pl.location AS "playerLocation"
+      `;
       
-      // Use explicit field selection instead of spreading objects
-      // This avoids issues with the Drizzle ORM's internal handling
-      let query = db
-        .select({
-          id: payments.id,
-          academyId: payments.academyId,
-          playerId: payments.playerId,
-          amount: payments.amount,
-          paymentType: payments.paymentType,
-          month: payments.month,
-          dueDate: payments.dueDate,
-          paidDate: payments.paidDate,
-          status: payments.status,
-          paymentMethod: payments.paymentMethod,
-          stripePaymentIntentId: payments.stripePaymentIntentId,
-          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
-          notes: payments.notes,
-          createdAt: payments.createdAt,
-          updatedAt: payments.updatedAt,
-          playerFirstName: players.firstName,
-          playerLastName: players.lastName
-        })
-        .from(payments)
-        .leftJoin(players, eq(payments.playerId, players.id));
+      // Try to add the new columns if they exist
+      // These SQL queries are designed to be resilient to missing columns using CASE
+      // WHEN EXISTS handling
+      query += `
+        , CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'payments' AND column_name = 'session_duration'
+            ) 
+            THEN p.session_duration 
+            ELSE NULL 
+          END AS "sessionDuration"
+        , CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'payments' AND column_name = 'expected_amount'
+            ) 
+            THEN p.expected_amount 
+            ELSE NULL 
+          END AS "expectedAmount"
+        , CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'payments' AND column_name = 'is_over_under_payment'
+            ) 
+            THEN p.is_over_under_payment 
+            ELSE FALSE 
+          END AS "isOverUnderPayment"
+      `;
       
-      if (status) {
-        query = query.where(eq(payments.status, status));
+      query += `
+        FROM payments p
+        LEFT JOIN players pl ON p.player_id = pl.id
+      `;
+      
+      if (status && status !== 'all') {
+        query += ` WHERE p.status = '${status}'`;
       }
       
-      return await query.orderBy(desc(payments.dueDate));
+      query += ` ORDER BY p.due_date DESC`;
+      
+      const result = await db.execute(sql.raw(query));
+      
+      // For raw SQL, the result requires an explicit return of rows
+      return result.rows || [];
     } catch (error) {
       console.error("Error in getAllPayments:", error);
       // Return empty array instead of throwing to prevent UI errors
@@ -619,34 +649,60 @@ export class DatabaseStorage implements IStorage {
   
   async getPendingPayments(): Promise<any[]> {
     try {
-      // First check if we need to add the missing columns to handle older database versions
-      await this.ensurePaymentsColumnsExist();
+      // Use direct SQL query instead of Drizzle ORM to avoid schema/column issues
+      let query = `
+        SELECT 
+          p.id, p.academy_id AS "academyId", p.player_id AS "playerId", 
+          p.amount, p.payment_type AS "paymentType", p.month, 
+          p.due_date AS "dueDate", p.paid_date AS "paidDate", 
+          p.status, p.payment_method AS "paymentMethod", 
+          p.stripe_payment_intent_id AS "stripePaymentIntentId",
+          p.stripe_payment_intent_status AS "stripePaymentIntentStatus",
+          p.notes, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
+          pl.first_name AS "playerFirstName", pl.last_name AS "playerLastName",
+          pl.age_group AS "playerAgeGroup", pl.location AS "playerLocation",
+          pl.parent_id AS "parentId"
+      `;
       
-      // Use explicit field selection instead of spreading objects
-      // This avoids issues with the Drizzle ORM's internal handling
-      return await db
-        .select({
-          id: payments.id,
-          academyId: payments.academyId,
-          playerId: payments.playerId,
-          amount: payments.amount,
-          paymentType: payments.paymentType,
-          month: payments.month,
-          dueDate: payments.dueDate,
-          paidDate: payments.paidDate,
-          status: payments.status,
-          paymentMethod: payments.paymentMethod,
-          notes: payments.notes,
-          createdAt: payments.createdAt,
-          updatedAt: payments.updatedAt,
-          playerFirstName: players.firstName,
-          playerLastName: players.lastName,
-          parentId: players.parentId
-        })
-        .from(payments)
-        .leftJoin(players, eq(payments.playerId, players.id))
-        .where(eq(payments.status, 'pending'))
-        .orderBy(payments.dueDate);
+      // Try to add the new columns if they exist
+      query += `
+        , CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'payments' AND column_name = 'session_duration'
+            ) 
+            THEN p.session_duration 
+            ELSE NULL 
+          END AS "sessionDuration"
+        , CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'payments' AND column_name = 'expected_amount'
+            ) 
+            THEN p.expected_amount 
+            ELSE NULL 
+          END AS "expectedAmount"
+        , CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'payments' AND column_name = 'is_over_under_payment'
+            ) 
+            THEN p.is_over_under_payment 
+            ELSE FALSE 
+          END AS "isOverUnderPayment"
+      `;
+      
+      query += `
+        FROM payments p
+        LEFT JOIN players pl ON p.player_id = pl.id
+        WHERE p.status = 'pending'
+        ORDER BY p.due_date ASC
+      `;
+      
+      const result = await db.execute(sql.raw(query));
+      
+      // For raw SQL, the result requires an explicit return of rows
+      return result.rows || [];
     } catch (error) {
       console.error("Error in getPendingPayments:", error);
       // Return empty array instead of throwing to prevent UI errors
