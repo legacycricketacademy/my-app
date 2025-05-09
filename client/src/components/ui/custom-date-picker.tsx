@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,9 +23,28 @@ export function CustomDatePicker({
   disabled = false,
 }: CustomDatePickerProps) {
   const [open, setOpen] = useState(false);
+  const [tempSelectedDate, setTempSelectedDate] = useState<Date | undefined>(value);
+  
+  // Update the temporary date when the value prop changes
+  useEffect(() => {
+    setTempSelectedDate(value);
+  }, [value]);
 
   const handleCalendarSelect = (date: Date | undefined) => {
-    onChange(date);
+    // Instead of immediately triggering onChange, store the date temporarily
+    console.log("Selected date:", date);
+    setTempSelectedDate(date);
+  };
+
+  const handleConfirm = () => {
+    // Only when the user confirms, pass the date to the actual onChange handler
+    onChange(tempSelectedDate);
+    setOpen(false);
+  };
+
+  const handleCancel = () => {
+    // Reset temp selection to current value and close
+    setTempSelectedDate(value);
     setOpen(false);
   };
 
@@ -47,13 +66,31 @@ export function CustomDatePicker({
         </FormControl>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={value}
-          onSelect={handleCalendarSelect}
-          disabled={disabled}
-          initialFocus
-        />
+        <div className="space-y-2">
+          <Calendar
+            mode="single"
+            selected={tempSelectedDate}
+            onSelect={handleCalendarSelect}
+            disabled={disabled}
+            initialFocus
+          />
+          <div className="flex justify-end gap-2 p-3 pt-0">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleCancel}
+            >
+              Cancel
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={handleConfirm}
+              className="bg-primary text-white hover:bg-primary/90"
+            >
+              OK
+            </Button>
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
   );
