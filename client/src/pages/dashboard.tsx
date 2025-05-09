@@ -10,6 +10,8 @@ import { PaymentCard } from "@/components/dashboard/payment-card";
 import { AnnouncementsCard } from "@/components/dashboard/announcements-card";
 import { UserPlus, CalendarCheck2, Users, Heart, DollarSign, Megaphone, Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { ScheduleSessionDialog } from "@/components/sessions/schedule-session-dialog";
+import { Link } from "wouter";
 
 export default function Dashboard() {
   const currentDate = format(new Date(), "EEEE, MMMM d, yyyy");
@@ -28,14 +30,13 @@ export default function Dashboard() {
         </div>
         
         <div className="mt-4 md:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-          <Button className="flex items-center justify-center space-x-2">
-            <UserPlus className="h-4 w-4 mr-1" />
-            <span>Add New Player</span>
-          </Button>
-          <Button variant="outline" className="flex items-center justify-center space-x-2 border-primary text-primary">
-            <CalendarCheck2 className="h-4 w-4 mr-1" />
-            <span>Schedule Session</span>
-          </Button>
+          <Link href="/players/add">
+            <Button className="flex items-center justify-center space-x-2">
+              <UserPlus className="h-4 w-4 mr-1" />
+              <span>Add New Player</span>
+            </Button>
+          </Link>
+          <ScheduleSessionDialog />
         </div>
       </div>
       
