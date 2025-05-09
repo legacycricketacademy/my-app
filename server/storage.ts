@@ -451,44 +451,121 @@ export class DatabaseStorage implements IStorage {
   
   // Payment methods
   async getPaymentById(id: number): Promise<any> {
-    const result = await db
-      .select({
-        ...payments,
-        playerFirstName: players.firstName,
-        playerLastName: players.lastName,
-      })
-      .from(payments)
-      .leftJoin(players, eq(payments.playerId, players.id))
-      .where(eq(payments.id, id));
-    
-    return result[0];
+    try {
+      // First check if we need to add the missing columns to handle older database versions
+      await this.ensurePaymentsColumnsExist();
+      
+      const result = await db
+        .select({
+          id: payments.id,
+          academyId: payments.academyId,
+          playerId: payments.playerId,
+          amount: payments.amount,
+          paymentType: payments.paymentType,
+          sessionDuration: payments.sessionDuration,
+          expectedAmount: payments.expectedAmount,
+          isOverUnderPayment: payments.isOverUnderPayment,
+          month: payments.month,
+          dueDate: payments.dueDate,
+          paidDate: payments.paidDate,
+          status: payments.status,
+          paymentMethod: payments.paymentMethod,
+          stripePaymentIntentId: payments.stripePaymentIntentId,
+          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
+          notes: payments.notes,
+          createdAt: payments.createdAt,
+          updatedAt: payments.updatedAt,
+          playerFirstName: players.firstName,
+          playerLastName: players.lastName,
+        })
+        .from(payments)
+        .leftJoin(players, eq(payments.playerId, players.id))
+        .where(eq(payments.id, id));
+      
+      return result[0];
+    } catch (error) {
+      console.error("Error in getPaymentById:", error);
+      throw error;
+    }
   }
   
   async getPaymentsByPlayerId(playerId: number): Promise<any[]> {
-    return await db
-      .select()
-      .from(payments)
-      .where(eq(payments.playerId, playerId))
-      .orderBy(desc(payments.dueDate));
+    try {
+      // First check if we need to add the missing columns to handle older database versions
+      await this.ensurePaymentsColumnsExist();
+      
+      return await db
+        .select({
+          id: payments.id,
+          academyId: payments.academyId,
+          playerId: payments.playerId,
+          amount: payments.amount,
+          paymentType: payments.paymentType,
+          sessionDuration: payments.sessionDuration,
+          expectedAmount: payments.expectedAmount,
+          isOverUnderPayment: payments.isOverUnderPayment,
+          month: payments.month,
+          dueDate: payments.dueDate,
+          paidDate: payments.paidDate,
+          status: payments.status,
+          paymentMethod: payments.paymentMethod,
+          stripePaymentIntentId: payments.stripePaymentIntentId,
+          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
+          notes: payments.notes,
+          createdAt: payments.createdAt,
+          updatedAt: payments.updatedAt,
+        })
+        .from(payments)
+        .where(eq(payments.playerId, playerId))
+        .orderBy(desc(payments.dueDate));
+    } catch (error) {
+      console.error("Error in getPaymentsByPlayerId:", error);
+      throw error;
+    }
   }
   
   async getPaymentsByPlayerIds(playerIds: number[], status?: string): Promise<any[]> {
-    let query = db
-      .select({
-        ...payments,
-        playerFirstName: players.firstName,
-        playerLastName: players.lastName,
-        player: players,
-      })
-      .from(payments)
-      .leftJoin(players, eq(payments.playerId, players.id))
-      .where(sql`${payments.playerId} IN (${playerIds.join(',')})`);
-    
-    if (status) {
-      query = query.where(eq(payments.status, status));
+    try {
+      // First check if we need to add the missing columns to handle older database versions
+      await this.ensurePaymentsColumnsExist();
+      
+      let query = db
+        .select({
+          id: payments.id,
+          academyId: payments.academyId,
+          playerId: payments.playerId,
+          amount: payments.amount,
+          paymentType: payments.paymentType,
+          sessionDuration: payments.sessionDuration,
+          expectedAmount: payments.expectedAmount,
+          isOverUnderPayment: payments.isOverUnderPayment,
+          month: payments.month,
+          dueDate: payments.dueDate,
+          paidDate: payments.paidDate,
+          status: payments.status,
+          paymentMethod: payments.paymentMethod,
+          stripePaymentIntentId: payments.stripePaymentIntentId,
+          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
+          notes: payments.notes,
+          createdAt: payments.createdAt,
+          updatedAt: payments.updatedAt,
+          playerFirstName: players.firstName,
+          playerLastName: players.lastName,
+          player: players,
+        })
+        .from(payments)
+        .leftJoin(players, eq(payments.playerId, players.id))
+        .where(sql`${payments.playerId} IN (${playerIds.join(',')})`);
+      
+      if (status) {
+        query = query.where(eq(payments.status, status));
+      }
+      
+      return await query.orderBy(desc(payments.dueDate));
+    } catch (error) {
+      console.error("Error in getPaymentsByPlayerIds:", error);
+      throw error;
     }
-    
-    return await query.orderBy(desc(payments.dueDate));
   }
   
   async getPlayersIdsByParentId(parentId: number): Promise<number[]> {
