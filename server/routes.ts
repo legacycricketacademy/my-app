@@ -1397,6 +1397,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Delete player endpoint
+  app.delete(`${apiPrefix}/players/:id`, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "You must be logged in to delete players" });
+      }
+      
+      // Only admins, coaches, and parents (of their own children) can delete players
+      const playerId = parseInt(req.params.id);
+      
+      // Get the player to be deleted
+      const player = await storage.getPlayerById(playerId);
+      if (!player) {
+        return res.status(404).json({ message: "Player not found" });
+      }
+      
+      // Check permissions
+      const isAdminOrCoach = ['admin', 'coach', 'superadmin'].includes(req.user.role);
+      const isParent = req.user.role === 'parent';
+      const isParentOfPlayer = isParent && player.parentId === req.user.id;
+      
+      if (!isAdminOrCoach && !isParentOfPlayer) {
+        return res.status(403).json({ message: "You don't have permission to delete this player" });
+      }
+      
+      // Delete related records first
+      // These deletes should be in the correct order to prevent foreign key constraints
+      
+      // 1. Delete fitness records
+      await storage.deleteFitnessRecordsByPlayerId(playerId);
+      
+      // 2. Delete session attendances
+      await storage.deleteSessionAttendancesByPlayerId(playerId);
+      
+      // 3. Delete payments
+      await storage.deletePaymentsByPlayerId(playerId);
+      
+      // 4. Delete connection requests
+      await storage.deleteConnectionRequestsByPlayerId(playerId);
+      
+      // Finally delete the player
+      const deleted = await storage.deletePlayer(playerId);
+      
+      if (!deleted) {
+        return res.status(500).json({ message: "Failed to delete player" });
+      }
+      
+      return res.status(200).json({ 
+        message: "Player successfully deleted",
+        playerId
+      });
+    } catch (error) {
+      console.error("Error deleting player:", error);
+      res.status(500).json({ message: "Error deleting player" });
+    }
+  });
+
   app.patch(`${apiPrefix}/players/:id`, async (req, res) => {
     try {
       const playerId = parseInt(req.params.id);

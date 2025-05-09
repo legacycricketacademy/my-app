@@ -44,6 +44,11 @@ export interface IStorage {
   getPlayersPendingReview(): Promise<any[]>;
   createPlayer(playerData: InsertPlayer): Promise<any>;
   updatePlayer(id: number, playerData: Partial<InsertPlayer>): Promise<any | undefined>;
+  deletePlayer(id: number): Promise<boolean>;
+  deleteFitnessRecordsByPlayerId(playerId: number): Promise<boolean>;
+  deleteSessionAttendancesByPlayerId(playerId: number): Promise<boolean>;
+  deletePaymentsByPlayerId(playerId: number): Promise<boolean>;
+  deleteConnectionRequestsByPlayerId(playerId: number): Promise<boolean>;
   
   // Session methods
   getSessionById(id: number): Promise<any>;
@@ -219,6 +224,56 @@ export class DatabaseStorage implements IStorage {
       .where(eq(players.id, id))
       .returning();
     return updatedPlayer;
+  }
+  
+  async deletePlayer(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(players).where(eq(players.id, id)).returning({ id: players.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting player:", error);
+      return false;
+    }
+  }
+  
+  async deleteFitnessRecordsByPlayerId(playerId: number): Promise<boolean> {
+    try {
+      await db.delete(fitnessRecords).where(eq(fitnessRecords.playerId, playerId));
+      return true;
+    } catch (error) {
+      console.error("Error deleting fitness records:", error);
+      return false;
+    }
+  }
+  
+  async deleteSessionAttendancesByPlayerId(playerId: number): Promise<boolean> {
+    try {
+      await db.delete(sessionAttendances).where(eq(sessionAttendances.playerId, playerId));
+      return true;
+    } catch (error) {
+      console.error("Error deleting session attendances:", error);
+      return false;
+    }
+  }
+  
+  async deletePaymentsByPlayerId(playerId: number): Promise<boolean> {
+    try {
+      await db.delete(payments).where(eq(payments.playerId, playerId));
+      return true;
+    } catch (error) {
+      console.error("Error deleting payments:", error);
+      return false;
+    }
+  }
+  
+  async deleteConnectionRequestsByPlayerId(playerId: number): Promise<boolean> {
+    try {
+      await db.delete(connectionRequests).where(eq(connectionRequests.playerId, playerId));
+      return true;
+    } catch (error) {
+      console.error("Error deleting connection requests:", error);
+      return false;
+    }
   }
   
   // Session methods
