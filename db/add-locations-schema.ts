@@ -31,91 +31,153 @@ async function addLocationFields() {
       ADD COLUMN IF NOT EXISTS location text DEFAULT NULL;
     `);
 
-    // Validate enum values
+    console.log('Added new columns successfully');
+
+    // First, update players with default locations based on age group
     await pool.query(`
-      -- Set check constraints for location fields
-      ALTER TABLE players 
-      ADD CONSTRAINT players_location_check 
-      CHECK (location IS NULL OR location IN (${locations.map(l => `'${l}'`).join(', ')}));
-      
-      ALTER TABLE sessions 
-      ADD CONSTRAINT sessions_location_check 
-      CHECK (location IN (${locations.map(l => `'${l}'`).join(', ')}));
-      
-      ALTER TABLE meal_plans 
-      ADD CONSTRAINT meal_plans_location_check 
-      CHECK (location IS NULL OR location IN (${locations.map(l => `'${l}'`).join(', ')}));
-
-      -- Set check constraints for age_group fields
-      ALTER TABLE players 
-      ADD CONSTRAINT players_age_group_check 
-      CHECK (age_group IN (${ageGroups.map(a => `'${a}'`).join(', ')}));
-      
-      ALTER TABLE sessions 
-      ADD CONSTRAINT sessions_age_group_check 
-      CHECK (age_group IN (${ageGroups.map(a => `'${a}'`).join(', ')}));
-      
-      ALTER TABLE meal_plans 
-      ADD CONSTRAINT meal_plans_age_group_check 
-      CHECK (age_group IN (${ageGroups.map(a => `'${a}'`).join(', ')}));
-    `).catch(err => {
-      // Constraints might already exist, which is fine
-      console.log('Some constraints may already exist:', err.message);
-    });
-
-    // Update existing players with default location based on age group
-    await db.execute(sql`
       UPDATE players
       SET 
         location = CASE 
-          WHEN age_group = ${ageGroups[0]} THEN ${locations[0]}
-          WHEN age_group = ${ageGroups[1]} THEN ${locations[1]}
-          ELSE ${locations[0]}
-        END,
-        age_group = CASE
-          WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, date_of_birth)) < 8 THEN ${ageGroups[0]}
-          ELSE ${ageGroups[1]}
+          WHEN age_group LIKE '%5-8%' OR age_group LIKE '%Under 8%' THEN '${locations[0]}'
+          WHEN age_group LIKE '%8+%' OR age_group LIKE '%8 and above%' THEN '${locations[1]}'
+          ELSE '${locations[0]}'
         END
       WHERE location IS NULL;
     `);
 
-    // Update existing sessions with default location values
-    await db.execute(sql`
+    console.log('Updated player locations successfully');
+    
+    // Update player age groups to match the new enum values if needed
+    await pool.query(`
+      UPDATE players
+      SET age_group = CASE
+        WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, date_of_birth)) < 8 THEN '${ageGroups[0]}'
+        ELSE '${ageGroups[1]}'
+      END
+      WHERE age_group NOT IN ('${ageGroups[0]}', '${ageGroups[1]}');
+    `);
+
+    console.log('Updated player age groups successfully');
+
+    // Update sessions with default location values based on age group 
+    await pool.query(`
       UPDATE sessions
       SET 
         location = CASE 
-          WHEN age_group = ${ageGroups[0]} THEN ${locations[0]}
-          WHEN age_group = ${ageGroups[1]} THEN ${locations[1]}
-          ELSE ${locations[0]}
+          WHEN age_group LIKE '%5-8%' OR age_group LIKE '%Under 8%' THEN '${locations[0]}'
+          WHEN age_group LIKE '%8+%' OR age_group LIKE '%8 and above%' THEN '${locations[1]}'
+          ELSE '${locations[0]}'
         END
-      WHERE location NOT IN (${sql.join(locations.map(l => sql.literal(l)), sql`, `)});
+      WHERE location NOT IN ('${locations[0]}', '${locations[1]}');
     `);
 
-    // Update existing meal plans with default location values
-    await db.execute(sql`
+    console.log('Updated session locations successfully');
+    
+    // Update session age groups to match the new enum values
+    await pool.query(`
+      UPDATE sessions
+      SET age_group = CASE
+        WHEN age_group LIKE '%Under 8%' OR age_group LIKE '%5-8%' THEN '${ageGroups[0]}'
+        WHEN age_group LIKE '%8+%' OR age_group LIKE '%8 and above%' THEN '${ageGroups[1]}'
+        ELSE '${ageGroups[0]}'
+      END
+      WHERE age_group NOT IN ('${ageGroups[0]}', '${ageGroups[1]}');
+    `);
+
+    console.log('Updated session age groups successfully');
+
+    // Update meal plans with default location values based on age group
+    await pool.query(`
       UPDATE meal_plans
       SET 
         location = CASE 
-          WHEN age_group = ${ageGroups[0]} THEN ${locations[0]}
-          WHEN age_group = ${ageGroups[1]} THEN ${locations[1]}
-          ELSE NULL
-        END,
-        age_group = CASE
-          WHEN age_group NOT IN (${sql.join(ageGroups.map(a => sql.literal(a)), sql`, `)}) 
-          THEN ${ageGroups[0]}
-          ELSE age_group
+          WHEN age_group LIKE '%5-8%' OR age_group LIKE '%Under 8%' THEN '${locations[0]}'
+          WHEN age_group LIKE '%8+%' OR age_group LIKE '%8 and above%' THEN '${locations[1]}'
+          ELSE '${locations[0]}'
         END
       WHERE location IS NULL;
     `);
 
+    console.log('Updated meal plan locations successfully');
+    
+    // Update meal plan age groups to match the new enum values
+    await pool.query(`
+      UPDATE meal_plans
+      SET age_group = CASE
+        WHEN age_group LIKE '%Under 8%' OR age_group LIKE '%5-8%' THEN '${ageGroups[0]}'
+        WHEN age_group LIKE '%8+%' OR age_group LIKE '%8 and above%' THEN '${ageGroups[1]}'
+        ELSE '${ageGroups[0]}'
+      END
+      WHERE age_group NOT IN ('${ageGroups[0]}', '${ageGroups[1]}');
+    `);
+
+    console.log('Updated meal plan age groups successfully');
+
     // Update existing announcements with default targeting
-    await db.execute(sql`
+    await pool.query(`
       UPDATE announcements
       SET 
-        target_age_groups = ARRAY['5-8 years', '8+ years']::text[],
-        target_locations = ARRAY['Strongsville', 'Solon']::text[]
+        target_age_groups = ARRAY['${ageGroups[0]}', '${ageGroups[1]}']::text[],
+        target_locations = ARRAY['${locations[0]}', '${locations[1]}']::text[]
       WHERE target_age_groups IS NULL OR target_locations IS NULL;
     `);
+
+    console.log('Updated announcement targeting successfully');
+
+    // Validate enum values with careful check constraint additions
+    try {
+      await pool.query(`
+        -- Set check constraints for location and age_group fields
+        DO $$
+        BEGIN
+          BEGIN
+            ALTER TABLE players ADD CONSTRAINT players_location_check 
+            CHECK (location IS NULL OR location IN ('${locations[0]}', '${locations[1]}'));
+          EXCEPTION
+            WHEN duplicate_object THEN NULL;
+          END;
+          
+          BEGIN
+            ALTER TABLE sessions ADD CONSTRAINT sessions_location_check 
+            CHECK (location IN ('${locations[0]}', '${locations[1]}'));
+          EXCEPTION
+            WHEN duplicate_object THEN NULL;
+          END;
+          
+          BEGIN
+            ALTER TABLE meal_plans ADD CONSTRAINT meal_plans_location_check 
+            CHECK (location IS NULL OR location IN ('${locations[0]}', '${locations[1]}'));
+          EXCEPTION
+            WHEN duplicate_object THEN NULL;
+          END;
+          
+          BEGIN
+            ALTER TABLE players ADD CONSTRAINT players_age_group_check 
+            CHECK (age_group IN ('${ageGroups[0]}', '${ageGroups[1]}'));
+          EXCEPTION
+            WHEN duplicate_object THEN NULL;
+          END;
+          
+          BEGIN
+            ALTER TABLE sessions ADD CONSTRAINT sessions_age_group_check 
+            CHECK (age_group IN ('${ageGroups[0]}', '${ageGroups[1]}'));
+          EXCEPTION
+            WHEN duplicate_object THEN NULL;
+          END;
+          
+          BEGIN
+            ALTER TABLE meal_plans ADD CONSTRAINT meal_plans_age_group_check 
+            CHECK (age_group IN ('${ageGroups[0]}', '${ageGroups[1]}'));
+          EXCEPTION
+            WHEN duplicate_object THEN NULL;
+          END;
+        END
+        $$;
+      `);
+      console.log('Added constraints successfully');
+    } catch (err) {
+      console.log('Some constraints may already exist or data may not conform to constraints yet');
+    }
 
     console.log('Location field migration completed successfully');
   } catch (error) {

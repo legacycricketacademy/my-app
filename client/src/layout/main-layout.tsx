@@ -2,11 +2,12 @@ import { ReactNode, useState } from "react";
 import { Sidebar } from "@/components/ui/sidebar";
 import { MobileNav } from "@/components/ui/mobile-nav";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, Bell, Menu } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useMobile } from "@/hooks/use-mobile";
+import { AdminNotificationDropdown } from "@/components/admin-notification-dropdown";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -71,14 +72,11 @@ export function MainLayout({ children, title }: MainLayoutProps) {
             
             {/* Right side actions */}
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-6 w-6" />
-                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-accent text-white text-xs flex items-center justify-center">3</span>
-              </Button>
+              <AdminNotificationDropdown />
               
               <div className="relative md:hidden">
                 <Avatar>
-                  <AvatarImage src={user?.profileImage} alt={user?.fullName || "User"} />
+                  <AvatarImage src={user?.profileImage || undefined} alt={user?.fullName || "User"} />
                   <AvatarFallback>{user?.fullName ? getInitials(user.fullName) : "U"}</AvatarFallback>
                 </Avatar>
               </div>
