@@ -85,8 +85,12 @@ export default function AddPlayerPage() {
     mutationFn: async (data: PlayerFormValues) => {
       try {
         // Make sure dateOfBirth is properly formatted as a string (YYYY-MM-DD)
-        if (data.dateOfBirth && data.dateOfBirth instanceof Date) {
-          data.dateOfBirth = data.dateOfBirth.toISOString().split('T')[0];
+        if (data.dateOfBirth) {
+          // The dateOfBirth should already be a string at this point
+          // Just make sure it's in the right format if needed
+          if (data.dateOfBirth.includes('T')) {
+            data.dateOfBirth = data.dateOfBirth.split('T')[0];
+          }
         }
         
         // IMPORTANT: Clean submission data to match database schema requirements
