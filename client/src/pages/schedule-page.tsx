@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarPlus, Clock, MapPin, Users, User } from "lucide-react";
 import { format, isToday, isTomorrow, addDays, startOfDay, endOfDay } from "date-fns";
+import { ScheduleSessionDialog } from "@/components/sessions/schedule-session-dialog";
 
 export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -66,10 +67,7 @@ export default function SchedulePage() {
             <p className="text-gray-600">Manage practice sessions and events</p>
           </div>
           
-          <Button className="flex items-center gap-2">
-            <CalendarPlus className="h-4 w-4" />
-            <span>Schedule New Session</span>
-          </Button>
+          <ScheduleSessionDialog />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -170,10 +168,7 @@ export default function SchedulePage() {
               ) : (
                 <div className="p-8 text-center text-gray-500">
                   <p>No sessions scheduled for this date</p>
-                  <Button variant="outline" className="mt-4">
-                    <CalendarPlus className="h-4 w-4 mr-2" />
-                    Create New Session
-                  </Button>
+                  <ScheduleSessionDialog />
                 </div>
               )}
             </CardContent>
