@@ -19,6 +19,16 @@ export type Location = (typeof locations)[number];
 export const ageGroups = ["5-8 years", "8+ years"] as const;
 export type AgeGroup = (typeof ageGroups)[number];
 
+// Session durations
+export const sessionDurations = ["60min", "90min"] as const;
+export type SessionDuration = (typeof sessionDurations)[number];
+
+// Fee amounts for each session duration
+export const feeAmounts = {
+  "60min": "100",
+  "90min": "120"
+} as const;
+
 // Academies table
 export const academies = pgTable("academies", {
   id: serial("id").primaryKey(),
@@ -183,6 +193,10 @@ export const payments = pgTable("payments", {
   playerId: integer("player_id").references(() => players.id).notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   paymentType: text("payment_type").notNull(), // monthly_fee, equipment_fee, tournament_fee, etc.
+  sessionDuration: text("session_duration", { enum: sessionDurations }),
+  expectedAmount: decimal("expected_amount", { precision: 10, scale: 2 }),
+  isOverUnderPayment: boolean("is_over_under_payment").default(false),
+  month: text("month"), // Format: YYYY-MM
   dueDate: date("due_date").notNull(),
   paidDate: timestamp("paid_date"),
   status: text("status").notNull().default("pending"), // pending, paid, overdue
