@@ -25,6 +25,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { format, isAfter, isBefore, parseISO, differenceInDays } from "date-fns";
+import { useLocation } from "wouter";
 import {
   Select,
   SelectContent,
@@ -46,6 +47,7 @@ export default function EnhancedPaymentsPage() {
   const [ageGroupFilter, setAgeGroupFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), "yyyy-MM"));
+  const [_, navigate] = useLocation();
   
   // Fetch all payments
   const { data: allPayments, isLoading: isLoadingPayments } = useQuery<any[]>({
@@ -254,7 +256,10 @@ export default function EnhancedPaymentsPage() {
             <p className="text-gray-600">Manage payments and track dues</p>
           </div>
           
-          <Button className="flex items-center gap-2">
+          <Button 
+            className="flex items-center gap-2"
+            onClick={() => navigate("/parent/make-payment-new")}
+          >
             <Plus className="h-4 w-4" />
             <span>Create Payment</span>
           </Button>
@@ -466,7 +471,7 @@ export default function EnhancedPaymentsPage() {
                               ? "No payments match your search/filter criteria." 
                               : "There are no payment records yet."}
                           </p>
-                          <Button>
+                          <Button onClick={() => navigate("/parent/make-payment-new")}>
                             <Plus className="h-4 w-4 mr-1" />
                             Create Payment
                           </Button>
