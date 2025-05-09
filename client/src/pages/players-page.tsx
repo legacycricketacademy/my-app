@@ -600,6 +600,18 @@ export default function PlayersPage() {
                               </svg>
                             )}
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Delete Player"
+                            onClick={() => {
+                              setPlayerToDelete(player);
+                              setShowDeleteDialog(true);
+                            }}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -997,6 +1009,63 @@ export default function PlayersPage() {
                 </DialogFooter>
               </form>
             </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Player</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this player? This action cannot be undone and will remove all associated data including fitness records, payments, and attendance history.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              {playerToDelete && (
+                <div className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">
+                  <Avatar>
+                    <AvatarFallback>{getInitials(playerToDelete.firstName, playerToDelete.lastName)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{playerToDelete.firstName} {playerToDelete.lastName}</p>
+                    <p className="text-sm text-gray-500">{playerToDelete.ageGroup}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setPlayerToDelete(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                variant="destructive"
+                onClick={() => playerToDelete && deletePlayerMutation.mutate(playerToDelete.id)}
+                disabled={deletePlayerMutation.isPending}
+              >
+                {deletePlayerMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Delete Player</span>
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
