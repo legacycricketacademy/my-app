@@ -1179,7 +1179,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const academyId = multiTenantStorage.getAcademyContext() || 1;
           
           // Make sure date of birth is properly formatted
-          let { dateOfBirth, ...restOfData } = req.body;
+          let { dateOfBirth, ageGroup, ...restOfData } = req.body;
+          
+          // Log the data we received for debugging
+          console.log("Received player data:", { dateOfBirth, ageGroup, ...restOfData });
           
           // Ensure dateOfBirth is a valid date
           if (!dateOfBirth) {
@@ -1211,9 +1214,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
           
+          // Validate age group against the schema requirements
+          if (ageGroup !== "5-8 years" && ageGroup !== "8+ years") {
+            console.log("Invalid age group:", ageGroup);
+            // Calculate the correct age group based on date of birth
+            const dob = new Date(dateOfBirth);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            
+            // Adjust age if birthday hasn't occurred yet this year
+            if (
+              today.getMonth() < dob.getMonth() || 
+              (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
+            ) {
+              age--;
+            }
+            
+            // Use the proper age group values matching the schema
+            ageGroup = age < 8 ? "5-8 years" : "8+ years";
+            console.log("Corrected age group to:", ageGroup);
+          }
+          
           const playerData = {
             ...restOfData,
             dateOfBirth,
+            ageGroup,
             parentId: req.user.id,
             academyId,
             pendingCoachReview: true // Flag for coach to review
@@ -1225,12 +1250,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(201).json(newPlayer);
         } catch (error) {
           console.error("Error creating player by parent:", error);
+          
+          // Log more details about the error
+          if (error instanceof Error) {
+            console.error("Error details:", error.message, error.stack);
+          } else {
+            console.error("Unknown error type:", typeof error);
+          }
+          
           if (error instanceof z.ZodError) {
             // Convert ZodError to a more user-friendly format
             const fieldErrors: Record<string, string> = {};
             error.errors.forEach(err => {
               const fieldName = err.path[err.path.length - 1] as string;
               fieldErrors[fieldName] = err.message;
+              console.log(`Validation error for field "${fieldName}": ${err.message}`);
             });
             
             return res.status(400).json({ 
@@ -1238,7 +1272,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               fieldErrors
             });
           }
-          return res.status(500).json({ message: "Error creating player" });
+          
+          // Return more detailed error message if available
+          const errorMessage = error instanceof Error ? error.message : "Error creating player";
+          return res.status(500).json({ 
+            message: errorMessage,
+            details: error instanceof Error ? error.stack : undefined
+          });
         }
       } else {
         // Admin/Coach adding a player with potential parent creation
@@ -1271,20 +1311,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         try {
-          // Now create the player with the parent ID
-          const validatedPlayerData = insertPlayerSchema.parse({
-            ...playerData,
-            parentId: parentUser.id
-          });
+          // Get a reference to playerData to make modifications if needed
+          let modifiedPlayerData = { ...playerData };
           
+          // Extract and validate dateOfBirth
+          if (modifiedPlayerData.dateOfBirth) {
+            // Ensure date is formatted correctly
+            try {
+              const parsedDate = new Date(modifiedPlayerData.dateOfBirth);
+              if (!isNaN(parsedDate.getTime())) {
+                modifiedPlayerData.dateOfBirth = parsedDate.toISOString().split('T')[0];
+              }
+            } catch (dateError) {
+              console.error("Error parsing date of birth:", dateError);
+              // Don't throw - let validation handle it
+            }
+          }
+          
+          // Check and correct age group if needed
+          if (modifiedPlayerData.ageGroup && (modifiedPlayerData.ageGroup !== "5-8 years" && modifiedPlayerData.ageGroup !== "8+ years")) {
+            console.log("Invalid age group in admin flow:", modifiedPlayerData.ageGroup);
+            
+            // If we have a date of birth, calculate the correct age group
+            if (modifiedPlayerData.dateOfBirth) {
+              const dob = new Date(modifiedPlayerData.dateOfBirth);
+              const today = new Date();
+              let age = today.getFullYear() - dob.getFullYear();
+              
+              // Adjust age if birthday hasn't occurred yet this year
+              if (
+                today.getMonth() < dob.getMonth() || 
+                (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
+              ) {
+                age--;
+              }
+              
+              // Use the proper age group values matching the schema
+              modifiedPlayerData.ageGroup = age < 8 ? "5-8 years" : "8+ years";
+              console.log("Corrected age group to:", modifiedPlayerData.ageGroup);
+            } else {
+              // Default to 8+ if we can't calculate
+              modifiedPlayerData.ageGroup = "8+ years";
+              console.log("Defaulting age group to:", modifiedPlayerData.ageGroup);
+            }
+          }
+          
+          // Add parent ID
+          modifiedPlayerData.parentId = parentUser.id;
+          
+          // Log the data being sent to validation
+          console.log("Admin flow - validating player data:", modifiedPlayerData);
+          
+          // Validate and create player
+          const validatedPlayerData = insertPlayerSchema.parse(modifiedPlayerData);
           const player = await storage.createPlayer(validatedPlayerData);
           res.status(201).json(player);
         } catch (error) {
-          if (error instanceof z.ZodError) {
-            return res.status(400).json({ errors: error.errors });
+          console.error("Error creating player by admin:", error);
+          
+          // Log more details about the error
+          if (error instanceof Error) {
+            console.error("Error details:", error.message, error.stack);
+          } else {
+            console.error("Unknown error type:", typeof error);
           }
-          console.error("Error creating player:", error);
-          res.status(500).json({ message: "Error creating player" });
+          
+          if (error instanceof z.ZodError) {
+            return res.status(400).json({ 
+              errors: error.errors,
+              message: "Data validation failed"
+            });
+          }
+          
+          // Return more detailed error message if available
+          const errorMessage = error instanceof Error ? error.message : "Error creating player";
+          res.status(500).json({ 
+            message: errorMessage,
+            details: error instanceof Error ? error.stack : undefined
+          });
         }
       }
     } catch (error) {
