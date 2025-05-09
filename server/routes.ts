@@ -2128,11 +2128,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // convert to cents
         currency: "usd",
-        description: description || `Cricket Academy payment for ${paymentType}`,
+        description: description || `Cricket Academy payment for ${paymentType}${sessionDuration ? ` (${sessionDuration})` : ''}`,
         metadata: {
           paymentId: paymentRecord.id.toString(),
           playerId: playerId.toString(),
-          paymentType
+          paymentType,
+          sessionDuration: sessionDuration || ''
         }
       });
 
