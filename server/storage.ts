@@ -455,29 +455,18 @@ export class DatabaseStorage implements IStorage {
       // First check if we need to add the missing columns to handle older database versions
       await this.ensurePaymentsColumnsExist();
       
+      // Get the safe select object with conditional columns
+      const safeSelect = this.createSafePaymentsSelect();
+      
+      // Add player information to the select
+      const selectWithPlayer = {
+        ...safeSelect,
+        playerFirstName: players.firstName,
+        playerLastName: players.lastName,
+      };
+      
       const result = await db
-        .select({
-          id: payments.id,
-          academyId: payments.academyId,
-          playerId: payments.playerId,
-          amount: payments.amount,
-          paymentType: payments.paymentType,
-          sessionDuration: payments.sessionDuration,
-          expectedAmount: payments.expectedAmount,
-          isOverUnderPayment: payments.isOverUnderPayment,
-          month: payments.month,
-          dueDate: payments.dueDate,
-          paidDate: payments.paidDate,
-          status: payments.status,
-          paymentMethod: payments.paymentMethod,
-          stripePaymentIntentId: payments.stripePaymentIntentId,
-          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
-          notes: payments.notes,
-          createdAt: payments.createdAt,
-          updatedAt: payments.updatedAt,
-          playerFirstName: players.firstName,
-          playerLastName: players.lastName,
-        })
+        .select(selectWithPlayer)
         .from(payments)
         .leftJoin(players, eq(payments.playerId, players.id))
         .where(eq(payments.id, id));
@@ -494,27 +483,11 @@ export class DatabaseStorage implements IStorage {
       // First check if we need to add the missing columns to handle older database versions
       await this.ensurePaymentsColumnsExist();
       
+      // Get the safe select object with conditional columns
+      const safeSelect = this.createSafePaymentsSelect();
+      
       return await db
-        .select({
-          id: payments.id,
-          academyId: payments.academyId,
-          playerId: payments.playerId,
-          amount: payments.amount,
-          paymentType: payments.paymentType,
-          sessionDuration: payments.sessionDuration,
-          expectedAmount: payments.expectedAmount,
-          isOverUnderPayment: payments.isOverUnderPayment,
-          month: payments.month,
-          dueDate: payments.dueDate,
-          paidDate: payments.paidDate,
-          status: payments.status,
-          paymentMethod: payments.paymentMethod,
-          stripePaymentIntentId: payments.stripePaymentIntentId,
-          stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
-          notes: payments.notes,
-          createdAt: payments.createdAt,
-          updatedAt: payments.updatedAt,
-        })
+        .select(safeSelect)
         .from(payments)
         .where(eq(payments.playerId, playerId))
         .orderBy(desc(payments.dueDate));
@@ -659,15 +632,69 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // Helper method to ensure all payments table columns exist to handle version differences
+  // Helper method to check if the session_duration and expected_amount columns exist
   private async ensurePaymentsColumnsExist(): Promise<void> {
     try {
-      // Try a simple query to check if columns exist
+      // Just check that the payments table exists - we'll handle missing columns in queries
       await db.select({ count: sql`count(*)` }).from(payments);
     } catch (error: any) {
-      console.warn("Fallback to basic payments query due to schema issues:", error.message);
-      // If we have column errors, we'll add a warning but not block the application
+      console.error("Error accessing payments table:", error.message);
+      throw error;
     }
+  }
+  
+  // Helper to create a safe select object for payments table queries
+  // This helps prevent errors when columns don't exist in older database versions
+  private createSafePaymentsSelect() {
+    // Start with required fields that are always present
+    const selectObj: Record<string, any> = {
+      id: payments.id,
+      academyId: payments.academyId,
+      playerId: payments.playerId,
+      amount: payments.amount,
+      paymentType: payments.paymentType,
+      month: payments.month,
+      dueDate: payments.dueDate,
+      paidDate: payments.paidDate,
+      status: payments.status,
+      paymentMethod: payments.paymentMethod,
+      stripePaymentIntentId: payments.stripePaymentIntentId,
+      stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
+      notes: payments.notes,
+      createdAt: payments.createdAt,
+      updatedAt: payments.updatedAt
+    };
+    
+    // Conditionally add newer fields if they exist in the schema
+    // These will be null if not in database, which is better than causing a query error
+    try {
+      if (payments.sessionDuration) {
+        selectObj.sessionDuration = payments.sessionDuration;
+      }
+    } catch (e) {
+      console.warn('sessionDuration column does not exist, setting to null');
+      selectObj.sessionDuration = sql`NULL`;
+    }
+    
+    try {
+      if (payments.expectedAmount) {
+        selectObj.expectedAmount = payments.expectedAmount;
+      }
+    } catch (e) {
+      console.warn('expectedAmount column does not exist, setting to null');
+      selectObj.expectedAmount = sql`NULL`;
+    }
+    
+    try {
+      if (payments.isOverUnderPayment) {
+        selectObj.isOverUnderPayment = payments.isOverUnderPayment;
+      }
+    } catch (e) {
+      console.warn('isOverUnderPayment column does not exist, setting to null');
+      selectObj.isOverUnderPayment = sql`NULL`;
+    }
+    
+    return selectObj;
   }
   
   async createPayment(paymentData: InsertPayment): Promise<any> {
