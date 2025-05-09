@@ -11,6 +11,14 @@ export type UserRole = (typeof userRoles)[number];
 export const subscriptionPlans = ["free", "basic", "pro", "enterprise"] as const;
 export type SubscriptionPlan = (typeof subscriptionPlans)[number];
 
+// Locations
+export const locations = ["Strongsville", "Solon"] as const;
+export type Location = (typeof locations)[number];
+
+// Age groups
+export const ageGroups = ["5-8 years", "8+ years"] as const;
+export type AgeGroup = (typeof ageGroups)[number];
+
 // Academies table
 export const academies = pgTable("academies", {
   id: serial("id").primaryKey(),
@@ -62,7 +70,8 @@ export const players = pgTable("players", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   dateOfBirth: date("date_of_birth").notNull(),
-  ageGroup: text("age_group").notNull(),
+  ageGroup: text("age_group", { enum: ageGroups }).notNull(),
+  location: text("location", { enum: locations }),
   playerType: text("player_type"),
   parentId: integer("parent_id").references(() => users.id).notNull(),
   emergencyContact: text("emergency_contact"),
@@ -82,8 +91,8 @@ export const sessions = pgTable("sessions", {
   title: text("title").notNull(),
   description: text("description"),
   sessionType: text("session_type").notNull(),
-  ageGroup: text("age_group").notNull(),
-  location: text("location").notNull(),
+  ageGroup: text("age_group", { enum: ageGroups }).notNull(),
+  location: text("location", { enum: locations }).notNull(),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time").notNull(),
   coachId: integer("coach_id").references(() => users.id).notNull(),
@@ -124,7 +133,8 @@ export const fitnessRecords = pgTable("fitness_records", {
 export const mealPlans = pgTable("meal_plans", {
   id: serial("id").primaryKey(),
   academyId: integer("academy_id").references(() => academies.id),
-  ageGroup: text("age_group").notNull(),
+  ageGroup: text("age_group", { enum: ageGroups }).notNull(),
+  location: text("location", { enum: locations }),
   title: text("title").notNull(),
   weekStartDate: date("week_start_date").notNull(),
   weekEndDate: date("week_end_date").notNull(),
@@ -152,7 +162,8 @@ export const announcements = pgTable("announcements", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
-  targetGroups: text("target_groups").array(), // array of age groups or 'all'
+  targetAgeGroups: text("target_age_groups").array(), // array of age groups or 'all'
+  targetLocations: text("target_locations").array(), // array of locations or 'all'
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
