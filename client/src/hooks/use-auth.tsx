@@ -46,9 +46,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
+      // Direct fetch instead of apiRequest to avoid double body reading
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+        credentials: "include",
+      });
+      
+      // Handle specific status codes with user-friendly messages
       if (!res.ok) {
-        // Handle specific status codes with user-friendly messages
         if (res.status === 401) {
           throw new Error("The username or password you entered is incorrect. Please try again.");
         } else if (res.status === 403) {
@@ -56,10 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else if (res.status === 429) {
           throw new Error("Too many login attempts. Please try again later.");
         } else {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.message || "Unable to log in at this time. Please try again later.");
+          throw new Error("Unable to log in at this time. Please try again later.");
         }
       }
+      
       return await res.json();
     },
     onSuccess: (user: User) => {
@@ -82,24 +89,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (data: RegisterData) => {
       try {
         const validatedData = insertUserSchema.parse(data);
-        const res = await apiRequest("POST", "/api/register", validatedData);
+        
+        // Direct fetch instead of apiRequest to avoid double body reading
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(validatedData),
+          credentials: "include",
+        });
         
         if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
+          // Clone the response before reading
+          const clonedRes = res.clone();
+          let errorMessage = "Please check your information and try again.";
           
-          if (res.status === 400) {
-            if (errorData.message?.includes("Username already exists")) {
-              throw new Error("This username is already taken. Please choose a different username.");
-            } else if (errorData.message?.includes("Email already exists")) {
-              throw new Error("An account with this email already exists. Please use a different email or try logging in.");
+          try {
+            const errorData = await clonedRes.json();
+            
+            if (res.status === 400) {
+              if (errorData.message?.includes("Username already exists")) {
+                errorMessage = "This username is already taken. Please choose a different username.";
+              } else if (errorData.message?.includes("Email already exists")) {
+                errorMessage = "An account with this email already exists. Please use a different email or try logging in.";
+              } else if (errorData.message) {
+                errorMessage = errorData.message;
+              }
+            } else if (res.status === 429) {
+              errorMessage = "Too many registration attempts. Please try again later.";
             } else {
-              throw new Error(errorData.message || "Please check your information and try again.");
+              errorMessage = "We couldn't complete your registration at this time. Please try again later.";
             }
-          } else if (res.status === 429) {
-            throw new Error("Too many registration attempts. Please try again later.");
-          } else {
-            throw new Error("We couldn't complete your registration at this time. Please try again later.");
+          } catch (e) {
+            // If JSON parsing fails, use generic error message
+            if (res.status === 400) {
+              errorMessage = "Please check your information and try again.";
+            } else if (res.status === 429) {
+              errorMessage = "Too many registration attempts. Please try again later.";
+            } else {
+              errorMessage = "We couldn't complete your registration at this time. Please try again later.";
+            }
           }
+          
+          throw new Error(errorMessage);
         }
         
         return await res.json();
@@ -143,7 +174,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      // Direct fetch instead of apiRequest to avoid any body reading issues
+      const res = await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        throw new Error("Logout failed. Please try again.");
+      }
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
