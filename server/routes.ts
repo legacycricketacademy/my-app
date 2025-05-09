@@ -1986,6 +1986,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Record a manual payment (cash, Zelle, Venmo)
+  app.post(`${apiPrefix}/record-manual-payment`, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "You must be logged in to record a payment" });
+      }
+      
+      // Validate required fields
+      const { playerId, amount, paymentType, method, transactionId, notes } = req.body;
+      
+      if (!playerId || !amount || !paymentType || !method) {
+        return res.status(400).json({ 
+          message: "Missing required fields",
+          requiredFields: ["playerId", "amount", "paymentType", "method"]
+        });
+      }
+      
+      // Validate method is one of the allowed manual payment methods
+      const allowedMethods = ["cash", "zelle", "venmo"];
+      if (!allowedMethods.includes(method)) {
+        return res.status(400).json({ 
+          message: "Invalid payment method. Must be one of: cash, zelle, venmo" 
+        });
+      }
+      
+      // Create a payment record in our database
+      const paymentData = {
+        playerId: parseInt(playerId),
+        amount: parseFloat(amount),
+        paymentType,
+        status: "pending", // All manual payments start as pending until reviewed by admin
+        paymentMethod: method,
+        notes: notes || `${method.charAt(0).toUpperCase() + method.slice(1)} payment for ${paymentType}`
+      };
+      
+      if (transactionId) {
+        paymentData.notes = `Transaction ID: ${transactionId}\n${paymentData.notes}`;
+      }
+      
+      console.log("Creating manual payment with data:", paymentData);
+      const paymentRecord = await storage.createPayment(paymentData);
+      
+      res.status(201).json({
+        ...paymentRecord,
+        method
+      });
+    } catch (error: any) {
+      console.error("Error recording manual payment:", error);
+      res.status(500).json({ message: error.message || "Error recording payment" });
+    }
+  });
+
   // Payment webhook (for handling successful payments)
   app.post(`${apiPrefix}/payment-webhook`, async (req, res) => {
     const event = req.body;
