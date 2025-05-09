@@ -166,17 +166,31 @@ export default function AddPlayerPage() {
   
   // Form submission handler
   function onSubmit(data: PlayerFormValues) {
-    // Log the data before submission to debug
-    console.log("Submitting player data:", data);
+    // Create a new copy of the data for submission
+    const submissionData = { ...data };
     
-    // Make sure ageGroup is one of the valid values
-    if (data.ageGroup !== "5-8 years" && data.ageGroup !== "8+ years") {
-      // Force to a valid value based on date of birth
-      data.ageGroup = calculateAgeGroup(data.dateOfBirth);
-      console.log("Corrected ageGroup to:", data.ageGroup);
+    // Log the original data before any modifications
+    console.log("Original player data:", submissionData);
+    
+    // Fix the dateOfBirth format - ensure it's just YYYY-MM-DD with no time component
+    if (submissionData.dateOfBirth && submissionData.dateOfBirth.includes('T')) {
+      submissionData.dateOfBirth = submissionData.dateOfBirth.split('T')[0];
+      console.log("Fixed dateOfBirth format:", submissionData.dateOfBirth);
     }
     
-    addPlayerMutation.mutate(data);
+    // Always calculate the correct age group (enforcing valid values)
+    // This is critical - we see "Under 12s" is being used despite our checks
+    const calculatedAgeGroup = calculateAgeGroup(submissionData.dateOfBirth);
+    submissionData.ageGroup = calculatedAgeGroup;
+    
+    // Make sure we're using the valid values for our schema
+    if (submissionData.ageGroup !== "5-8 years" && submissionData.ageGroup !== "8+ years") {
+      // Force to a valid value as a fallback (should never happen with our calculation)
+      submissionData.ageGroup = submissionData.ageGroup === "Under 12s" ? "8+ years" : "5-8 years";
+    }
+    
+    console.log("Submitting with corrected ageGroup:", submissionData.ageGroup);
+    addPlayerMutation.mutate(submissionData);
   }
   
   return (
