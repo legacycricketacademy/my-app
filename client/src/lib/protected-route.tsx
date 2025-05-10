@@ -29,5 +29,30 @@ export function ProtectedRoute({
     );
   }
 
+  // Check if the user is active and approved (for coach/admin roles)
+  if ((user.role === 'coach' || user.role === 'admin') && 
+      (user.status !== 'active' || user.isActive === false)) {
+    return (
+      <Route path={path}>
+        <div className="flex flex-col items-center justify-center min-h-screen max-w-md mx-auto text-center px-4">
+          <h1 className="text-2xl font-bold mb-4">Account Pending Approval</h1>
+          <p className="mb-4">
+            Your {user.role} account is pending approval by an administrator. 
+            You'll receive an email once your account has been approved.
+          </p>
+          <p className="text-sm text-gray-500">
+            If you have any questions, please contact the system administrator.
+          </p>
+          <button 
+            onClick={() => window.location.href = '/api/logout'}
+            className="mt-6 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+          >
+            Logout
+          </button>
+        </div>
+      </Route>
+    );
+  }
+
   return <Route path={path} component={Component} />;
 }

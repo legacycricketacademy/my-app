@@ -460,6 +460,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes and middleware
   setupAuth(app);
   
+  // Get all pending coach accounts that need admin approval
+  app.get("/api/users/pending-coaches", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    // Only allow admins and superadmins to view pending coaches
+    if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+      return res.status(403).json({ error: "Not authorized to view pending coaches" });
+    }
+    
+    try {
+      const pendingCoaches = await db.query.users.findMany({
+        where: (users, { and, eq }) => and(
+          eq(users.role, 'coach'),
+          eq(users.status, 'pending'),
+          eq(users.isActive, false)
+        ),
+        orderBy: (users, { desc }) => [desc(users.createdAt)]
+      });
+      
+      // Remove password from results
+      const safeCoaches = pendingCoaches.map(coach => {
+        const { password, ...coachWithoutPassword } = coach;
+        return coachWithoutPassword;
+      });
+      
+      res.json(safeCoaches);
+    } catch (error) {
+      console.error("Error fetching pending coaches:", error);
+      res.status(500).json({ error: "Failed to fetch pending coaches" });
+    }
+  });
+  
+  // Approve or reject a coach account
+  app.patch("/api/users/:id/approval", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    // Only allow admins and superadmins to approve/reject coaches
+    if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+      return res.status(403).json({ error: "Not authorized to approve/reject coaches" });
+    }
+    
+    const { id } = req.params;
+    const { approved } = req.body;
+    
+    if (typeof approved !== 'boolean') {
+      return res.status(400).json({ error: "The 'approved' field must be a boolean" });
+    }
+    
+    try {
+      const userId = parseInt(id);
+      const userData = await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.id, userId)
+      });
+      
+      if (!userData) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      if (userData.role !== 'coach') {
+        return res.status(400).json({ error: "This user is not a coach" });
+      }
+      
+      // Update the user status based on approval
+      const updatedUser = await db.update(users)
+        .set({
+          status: approved ? 'active' : 'rejected',
+          isActive: approved,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      // Send email notification to the coach about their account status
+      if (approved) {
+        // Here you would call your email service to send an approval notification
+        try {
+          await sendEmail({
+            to: userData.email,
+            subject: "Your Coach Account Has Been Approved",
+            text: `Dear ${userData.fullName},\n\nYour coach account at Legacy Cricket Academy has been approved. You can now log in and access the coaching dashboard.\n\nThank you,\nLegacy Cricket Academy Team`,
+            html: `<p>Dear ${userData.fullName},</p><p>Your coach account at Legacy Cricket Academy has been approved. You can now log in and access the coaching dashboard.</p><p>Thank you,<br>Legacy Cricket Academy Team</p>`
+          });
+        } catch (emailError) {
+          console.error("Error sending approval email:", emailError);
+          // Continue even if email fails
+        }
+      } else {
+        // Send rejection email
+        try {
+          await sendEmail({
+            to: userData.email,
+            subject: "Your Coach Account Application Status",
+            text: `Dear ${userData.fullName},\n\nWe regret to inform you that your coach account application at Legacy Cricket Academy has not been approved at this time. If you have any questions, please contact the academy administrator.\n\nThank you,\nLegacy Cricket Academy Team`,
+            html: `<p>Dear ${userData.fullName},</p><p>We regret to inform you that your coach account application at Legacy Cricket Academy has not been approved at this time. If you have any questions, please contact the academy administrator.</p><p>Thank you,<br>Legacy Cricket Academy Team</p>`
+          });
+        } catch (emailError) {
+          console.error("Error sending rejection email:", emailError);
+          // Continue even if email fails
+        }
+      }
+      
+      // Log the approval action
+      await db.insert(userAuditLogs).values({
+        academyId: req.academyId || userData.academyId,
+        userId: req.user.id,
+        actionType: approved ? 'approve_coach' : 'reject_coach',
+        actionDetails: {
+          coachId: userId,
+          coachEmail: userData.email
+        },
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+      
+      // Remove password from result
+      const { password, ...userWithoutPassword } = updatedUser[0];
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating coach approval status:", error);
+      res.status(500).json({ error: "Failed to update coach approval status" });
+    }
+  });
+  
   // Base API prefix
   const apiPrefix = "/api";
   
