@@ -64,6 +64,8 @@ export function ScheduleSessionDialog() {
   const [open, setOpen] = useState(false);
   const [tempStartDate, setTempStartDate] = useState<Date | null>(null);
   const [tempEndDate, setTempEndDate] = useState<Date | null>(null);
+  const [isCustomLocation, setIsCustomLocation] = useState(false);
+  const [customLocation, setCustomLocation] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -481,17 +483,61 @@ export function ScheduleSessionDialog() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Location</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select location" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Strongsville">Strongsville</SelectItem>
-                        <SelectItem value="Solon">Solon</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {!isCustomLocation ? (
+                      <>
+                        <Select 
+                          onValueChange={(value) => {
+                            if (value === "_custom") {
+                              setIsCustomLocation(true);
+                            } else {
+                              field.onChange(value);
+                            }
+                          }} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select location" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Strongsville">Strongsville</SelectItem>
+                            <SelectItem value="Solon">Solon</SelectItem>
+                            <SelectItem value="Cleveland">Cleveland</SelectItem>
+                            <SelectItem value="Westlake">Westlake</SelectItem>
+                            <SelectItem value="Parma">Parma</SelectItem>
+                            <SelectItem value="_custom">+ Add custom location</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <FormControl>
+                            <Input
+                              placeholder="Enter custom location"
+                              value={customLocation}
+                              onChange={(e) => {
+                                setCustomLocation(e.target.value);
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-1 text-xs"
+                            onClick={() => {
+                              setIsCustomLocation(false);
+                              setCustomLocation("");
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
