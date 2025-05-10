@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,6 +62,8 @@ type SessionFormValues = z.infer<typeof sessionFormSchema>;
 
 export function ScheduleSessionDialog() {
   const [open, setOpen] = useState(false);
+  const [tempStartDate, setTempStartDate] = useState<Date | null>(null);
+  const [tempEndDate, setTempEndDate] = useState<Date | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -231,13 +233,17 @@ export function ScheduleSessionDialog() {
                                   if (field.value) {
                                     newDate.setHours(field.value.getHours());
                                     newDate.setMinutes(field.value.getMinutes());
-                                  } else if (form.getValues('startTime')) {
-                                    // Default to start time + 1 hour if no previous time
-                                    const startTime = form.getValues('startTime');
-                                    newDate.setHours(startTime.getHours() + 1);
-                                    newDate.setMinutes(startTime.getMinutes());
+                                  } else {
+                                    // Default to current time
+                                    const now = new Date();
+                                    newDate.setHours(now.getHours());
+                                    newDate.setMinutes(now.getMinutes());
                                   }
+                                  // Save to both temp state and field
+                                  setTempStartDate(newDate);
                                   field.onChange(newDate);
+                                  
+                                  // Auto-close on mobile after selection
                                   if (window.innerWidth < 640) {
                                     const buttonElement = document.activeElement as HTMLElement;
                                     buttonElement?.blur();
@@ -343,7 +349,10 @@ export function ScheduleSessionDialog() {
                                     newDate.setHours(startTime.getHours() + 1);
                                     newDate.setMinutes(startTime.getMinutes());
                                   }
+                                  // Save to both temp state and field
+                                  setTempEndDate(newDate);
                                   field.onChange(newDate);
+                                  
                                   // Auto-close on mobile after selection
                                   if (window.innerWidth < 640) {
                                     const buttonElement = document.activeElement as HTMLElement;
