@@ -39,7 +39,19 @@ type RegisterData = {
   academyId?: number; 
 };
 
-export const AuthContext = createContext<AuthContextType | null>(null);
+// Create the auth context with default values
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: true,
+  error: null,
+  loginMutation: {} as any,
+  logoutMutation: {} as any,
+  registerMutation: {} as any,
+  firebaseLoginMutation: {} as any,
+  firebaseRegisterMutation: {} as any,
+  googleSignInMutation: {} as any,
+  resetPasswordMutation: {} as any
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
