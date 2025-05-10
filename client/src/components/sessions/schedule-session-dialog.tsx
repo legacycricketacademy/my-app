@@ -176,7 +176,50 @@ export function ScheduleSessionDialog() {
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-[90vw] sm:w-auto p-0 relative z-50 max-h-[60vh] overflow-auto" align="center" side="bottom" sideOffset={5}>
-                        <div className="space-y-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 p-2 pb-0">
+                            <Input
+                              type="time"
+                              size={10}
+                              className="w-24"
+                              value={field.value ? format(field.value, "HH:mm") : ""}
+                              onChange={(e) => {
+                                const timeString = e.target.value;
+                                if (timeString && field.value) {
+                                  const [hours, minutes] = timeString.split(':').map(Number);
+                                  const newDate = new Date(field.value);
+                                  newDate.setHours(hours);
+                                  newDate.setMinutes(minutes);
+                                  field.onChange(newDate);
+                                }
+                              }}
+                            />
+                            <div className="flex items-center ml-auto space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // Close the popover without confirmation
+                                  const buttonElement = document.activeElement as HTMLElement;
+                                  buttonElement?.blur();
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => {
+                                  // Close the popover with confirmation
+                                  const buttonElement = document.activeElement as HTMLElement;
+                                  buttonElement?.blur();
+                                }}
+                              >
+                                OK
+                              </Button>
+                            </div>
+                          </div>
                           <Calendar
                             mode="single"
                             selected={field.value}
@@ -194,53 +237,16 @@ export function ScheduleSessionDialog() {
                                   newDate.setMinutes(now.getMinutes());
                                 }
                                 field.onChange(newDate);
+                                // Auto-close on mobile after selection
+                                if (window.innerWidth < 640) {
+                                  const buttonElement = document.activeElement as HTMLElement;
+                                  buttonElement?.blur();
+                                }
                               }
                             }}
                             initialFocus
+                            className="rounded-md border scale-[0.9]"
                           />
-                          <div className="p-3 border-t border-border">
-                            <div className="grid gap-2">
-                              <Input
-                                type="time"
-                                value={field.value ? format(field.value, "HH:mm") : ""}
-                                onChange={(e) => {
-                                  const timeString = e.target.value;
-                                  if (timeString && field.value) {
-                                    const [hours, minutes] = timeString.split(':').map(Number);
-                                    const newDate = new Date(field.value);
-                                    newDate.setHours(hours);
-                                    newDate.setMinutes(minutes);
-                                    field.onChange(newDate);
-                                  }
-                                }}
-                              />
-                              <div className="flex justify-end space-x-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    // Close the popover without confirmation
-                                    const buttonElement = document.activeElement as HTMLElement;
-                                    buttonElement?.blur();
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onClick={() => {
-                                    // Close the popover with confirmation
-                                    const buttonElement = document.activeElement as HTMLElement;
-                                    buttonElement?.blur();
-                                  }}
-                                >
-                                  OK
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
                         </div>
                       </PopoverContent>
                     </Popover>
@@ -275,7 +281,50 @@ export function ScheduleSessionDialog() {
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-[90vw] sm:w-auto p-0 relative z-50 max-h-[60vh] overflow-auto" align="center" side="bottom" sideOffset={5}>
-                        <div className="space-y-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 p-2 pb-0">
+                            <Input
+                              type="time"
+                              size={10}
+                              className="w-24"
+                              value={field.value ? format(field.value, "HH:mm") : ""}
+                              onChange={(e) => {
+                                const timeString = e.target.value;
+                                if (timeString && field.value) {
+                                  const [hours, minutes] = timeString.split(':').map(Number);
+                                  const newDate = new Date(field.value);
+                                  newDate.setHours(hours);
+                                  newDate.setMinutes(minutes);
+                                  field.onChange(newDate);
+                                }
+                              }}
+                            />
+                            <div className="flex items-center ml-auto space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // Close the popover without confirmation
+                                  const buttonElement = document.activeElement as HTMLElement;
+                                  buttonElement?.blur();
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => {
+                                  // Close the popover with confirmation
+                                  const buttonElement = document.activeElement as HTMLElement;
+                                  buttonElement?.blur();
+                                }}
+                              >
+                                OK
+                              </Button>
+                            </div>
+                          </div>
                           <Calendar
                             mode="single"
                             selected={field.value}
@@ -293,53 +342,16 @@ export function ScheduleSessionDialog() {
                                   newDate.setMinutes(startTime.getMinutes());
                                 }
                                 field.onChange(newDate);
+                                // Auto-close on mobile after selection
+                                if (window.innerWidth < 640) {
+                                  const buttonElement = document.activeElement as HTMLElement;
+                                  buttonElement?.blur();
+                                }
                               }
                             }}
                             initialFocus
+                            className="rounded-md border scale-[0.9]"
                           />
-                          <div className="p-3 border-t border-border">
-                            <div className="grid gap-2">
-                              <Input
-                                type="time"
-                                value={field.value ? format(field.value, "HH:mm") : ""}
-                                onChange={(e) => {
-                                  const timeString = e.target.value;
-                                  if (timeString && field.value) {
-                                    const [hours, minutes] = timeString.split(':').map(Number);
-                                    const newDate = new Date(field.value);
-                                    newDate.setHours(hours);
-                                    newDate.setMinutes(minutes);
-                                    field.onChange(newDate);
-                                  }
-                                }}
-                              />
-                              <div className="flex justify-end space-x-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    // Close the popover without confirmation
-                                    const buttonElement = document.activeElement as HTMLElement;
-                                    buttonElement?.blur();
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onClick={() => {
-                                    // Close the popover with confirmation
-                                    const buttonElement = document.activeElement as HTMLElement;
-                                    buttonElement?.blur();
-                                  }}
-                                >
-                                  OK
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
                         </div>
                       </PopoverContent>
                     </Popover>
