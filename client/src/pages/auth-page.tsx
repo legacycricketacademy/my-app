@@ -81,7 +81,7 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const [invitationToken, setInvitationToken] = useState<InvitationToken | null>(null);
   const [invitationExpired, setInvitationExpired] = useState<boolean>(false);
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, loginMutation, registerMutation, firebaseRegisterMutation } = useAuth();
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const { 
@@ -217,7 +217,8 @@ export default function AuthPage() {
   }
   
   function onRegisterSubmit(data: RegisterFormValues) {
-    registerMutation.mutate(data);
+    // Use Firebase registration for all new users
+    firebaseRegisterMutation.mutate(data);
   }
   
   function onForgotPasswordSubmit(data: ForgotPasswordFormValues) {
