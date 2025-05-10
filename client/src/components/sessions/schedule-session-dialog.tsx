@@ -179,24 +179,51 @@ export function ScheduleSessionDialog() {
                       </PopoverTrigger>
                       <PopoverContent className="w-[95vw] sm:w-[350px] p-0 relative z-50" align="center" side="bottom" sideOffset={5}>
                         <div className="flex flex-col">
-                          <div className="sticky top-0 z-10 bg-background p-2 border-b flex items-center justify-between">
-                            <Input
-                              type="time"
-                              size={10}
-                              className="w-24"
-                              value={field.value ? format(field.value, "HH:mm") : ""}
-                              onChange={(e) => {
-                                const timeString = e.target.value;
-                                if (timeString) {
-                                  const [hours, minutes] = timeString.split(':').map(Number);
-                                  const newDate = field.value ? new Date(field.value) : new Date();
-                                  newDate.setHours(hours);
-                                  newDate.setMinutes(minutes);
-                                  setTempStartDate(newDate);
-                                }
-                              }}
-                            />
-                            <div className="flex items-center space-x-2">
+                          <div className="sticky top-0 z-10 bg-background p-3 border-b">
+                            <div className="mb-2">
+                              <div className="text-sm font-medium mb-1">Select Time:</div>
+                              <div className="flex items-center gap-2">
+                                <select 
+                                  className="startTime-hour-select flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                  value={field.value ? field.value.getHours() : new Date().getHours()}
+                                  onChange={(e) => {
+                                    const hours = parseInt(e.target.value);
+                                    const newDate = field.value ? new Date(field.value) : new Date();
+                                    newDate.setHours(hours);
+                                    setTempStartDate(newDate);
+                                  }}
+                                >
+                                  {Array.from({ length: 24 }, (_, i) => (
+                                    <option key={i} value={i}>
+                                      {i.toString().padStart(2, '0')}
+                                    </option>
+                                  ))}
+                                </select>
+                                <span className="text-lg font-medium">:</span>
+                                <select 
+                                  className="startTime-minute-select flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                  value={field.value ? field.value.getMinutes() : new Date().getMinutes()}
+                                  onChange={(e) => {
+                                    const minutes = parseInt(e.target.value);
+                                    const newDate = field.value ? new Date(field.value) : new Date();
+                                    newDate.setMinutes(minutes);
+                                    setTempStartDate(newDate);
+                                  }}
+                                >
+                                  {Array.from({ length: 60 }, (_, i) => (
+                                    <option key={i} value={i}>
+                                      {i.toString().padStart(2, '0')}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              {field.value && (
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  Current: {field.value ? format(field.value, "h:mm a") : "Not set"}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-end space-x-2">
                               <Button
                                 type="button"
                                 variant="outline"
@@ -213,10 +240,29 @@ export function ScheduleSessionDialog() {
                                 type="button"
                                 size="sm"
                                 onClick={() => {
-                                  // Make sure we commit any temporary selection
+                                  // If we have a temporary date, commit it
                                   if (tempStartDate) {
-                                    field.onChange(tempStartDate);
+                                    // For date changes, always update hour/minute from the dropdown selectors
+                                    const hourElement = document.querySelector('.startTime-hour-select') as HTMLSelectElement;
+                                    const minuteElement = document.querySelector('.startTime-minute-select') as HTMLSelectElement;
+                                    
+                                    if (hourElement && minuteElement) {
+                                      const hour = parseInt(hourElement.value);
+                                      const minute = parseInt(minuteElement.value);
+                                      
+                                      // Create new date to avoid mutations
+                                      const updatedDate = new Date(tempStartDate);
+                                      updatedDate.setHours(hour);
+                                      updatedDate.setMinutes(minute);
+                                      
+                                      // Update the form field
+                                      field.onChange(updatedDate);
+                                    } else {
+                                      // Fallback if selectors aren't found
+                                      field.onChange(tempStartDate);
+                                    }
                                   }
+                                  
                                   // Close the popover
                                   const buttonElement = document.activeElement as HTMLElement;
                                   buttonElement?.blur();
@@ -232,26 +278,19 @@ export function ScheduleSessionDialog() {
                               selected={field.value}
                               onSelect={(date) => {
                                 if (date) {
-                                  // Preserve the time if a date was already selected
+                                  // Create a new date object
                                   const newDate = new Date(date);
-                                  if (field.value) {
-                                    newDate.setHours(field.value.getHours());
-                                    newDate.setMinutes(field.value.getMinutes());
-                                  } else {
-                                    // Default to current time
-                                    const now = new Date();
-                                    newDate.setHours(now.getHours());
-                                    newDate.setMinutes(now.getMinutes());
-                                  }
-                                  // Only save to temp state, wait for OK button to commit
-                                  setTempStartDate(newDate);
                                   
-                                  // Auto-close on mobile after selection
-                                  if (window.innerWidth < 640) {
-                                    field.onChange(newDate); // On mobile, commit directly
-                                    const buttonElement = document.activeElement as HTMLElement;
-                                    buttonElement?.blur();
-                                  }
+                                  // Set time from existing value or dropdown selections
+                                  const hour = field.value ? field.value.getHours() : new Date().getHours();
+                                  const minute = field.value ? field.value.getMinutes() : new Date().getMinutes();
+                                  
+                                  newDate.setHours(hour);
+                                  newDate.setMinutes(minute);
+                                  
+                                  // Update both the temporary state AND the field value
+                                  setTempStartDate(newDate);
+                                  field.onChange(newDate);
                                 }
                               }}
                               initialFocus
@@ -293,24 +332,51 @@ export function ScheduleSessionDialog() {
                       </PopoverTrigger>
                       <PopoverContent className="w-[95vw] sm:w-[350px] p-0 relative z-50" align="center" side="bottom" sideOffset={5}>
                         <div className="flex flex-col">
-                          <div className="sticky top-0 z-10 bg-background p-2 border-b flex items-center justify-between">
-                            <Input
-                              type="time"
-                              size={10}
-                              className="w-24"
-                              value={field.value ? format(field.value, "HH:mm") : ""}
-                              onChange={(e) => {
-                                const timeString = e.target.value;
-                                if (timeString) {
-                                  const [hours, minutes] = timeString.split(':').map(Number);
-                                  const newDate = field.value ? new Date(field.value) : new Date();
-                                  newDate.setHours(hours);
-                                  newDate.setMinutes(minutes);
-                                  setTempEndDate(newDate);
-                                }
-                              }}
-                            />
-                            <div className="flex items-center space-x-2">
+                          <div className="sticky top-0 z-10 bg-background p-3 border-b">
+                            <div className="mb-2">
+                              <div className="text-sm font-medium mb-1">Select Time:</div>
+                              <div className="flex items-center gap-2">
+                                <select 
+                                  className="endTime-hour-select flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                  value={field.value ? field.value.getHours() : new Date().getHours()+1}
+                                  onChange={(e) => {
+                                    const hours = parseInt(e.target.value);
+                                    const newDate = field.value ? new Date(field.value) : new Date();
+                                    newDate.setHours(hours);
+                                    setTempEndDate(newDate);
+                                  }}
+                                >
+                                  {Array.from({ length: 24 }, (_, i) => (
+                                    <option key={i} value={i}>
+                                      {i.toString().padStart(2, '0')}
+                                    </option>
+                                  ))}
+                                </select>
+                                <span className="text-lg font-medium">:</span>
+                                <select 
+                                  className="endTime-minute-select flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                  value={field.value ? field.value.getMinutes() : new Date().getMinutes()}
+                                  onChange={(e) => {
+                                    const minutes = parseInt(e.target.value);
+                                    const newDate = field.value ? new Date(field.value) : new Date();
+                                    newDate.setMinutes(minutes);
+                                    setTempEndDate(newDate);
+                                  }}
+                                >
+                                  {Array.from({ length: 60 }, (_, i) => (
+                                    <option key={i} value={i}>
+                                      {i.toString().padStart(2, '0')}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              {field.value && (
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  Current: {field.value ? format(field.value, "h:mm a") : "Not set"}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-end space-x-2">
                               <Button
                                 type="button"
                                 variant="outline"
@@ -327,10 +393,29 @@ export function ScheduleSessionDialog() {
                                 type="button"
                                 size="sm"
                                 onClick={() => {
-                                  // Make sure we commit any temporary selection
+                                  // If we have a temporary date, commit it
                                   if (tempEndDate) {
-                                    field.onChange(tempEndDate);
+                                    // For date changes, always update hour/minute from the dropdown selectors
+                                    const hourElement = document.querySelector('.endTime-hour-select') as HTMLSelectElement;
+                                    const minuteElement = document.querySelector('.endTime-minute-select') as HTMLSelectElement;
+                                    
+                                    if (hourElement && minuteElement) {
+                                      const hour = parseInt(hourElement.value);
+                                      const minute = parseInt(minuteElement.value);
+                                      
+                                      // Create new date to avoid mutations
+                                      const updatedDate = new Date(tempEndDate);
+                                      updatedDate.setHours(hour);
+                                      updatedDate.setMinutes(minute);
+                                      
+                                      // Update the form field
+                                      field.onChange(updatedDate);
+                                    } else {
+                                      // Fallback if selectors aren't found
+                                      field.onChange(tempEndDate);
+                                    }
                                   }
+                                  
                                   // Close the popover
                                   const buttonElement = document.activeElement as HTMLElement;
                                   buttonElement?.blur();
@@ -346,26 +431,34 @@ export function ScheduleSessionDialog() {
                               selected={field.value}
                               onSelect={(date) => {
                                 if (date) {
-                                  // Preserve the time if a date was already selected
+                                  // Create a new date object
                                   const newDate = new Date(date);
-                                  if (field.value) {
-                                    newDate.setHours(field.value.getHours());
-                                    newDate.setMinutes(field.value.getMinutes());
-                                  } else if (form.getValues('startTime')) {
-                                    // Default to start time + 1 hour if no previous time
-                                    const startTime = form.getValues('startTime');
-                                    newDate.setHours(startTime.getHours() + 1);
-                                    newDate.setMinutes(startTime.getMinutes());
-                                  }
-                                  // Only save to temp state, wait for OK button to commit
-                                  setTempEndDate(newDate);
                                   
-                                  // Auto-close on mobile after selection
-                                  if (window.innerWidth < 640) {
-                                    field.onChange(newDate); // On mobile, commit directly
-                                    const buttonElement = document.activeElement as HTMLElement;
-                                    buttonElement?.blur();
+                                  // Set time from existing value or dropdown selections
+                                  let hour, minute;
+                                  
+                                  if (field.value) {
+                                    // Use current end time if available
+                                    hour = field.value.getHours();
+                                    minute = field.value.getMinutes(); 
+                                  } else if (form.getValues('startTime')) {
+                                    // Default to start time + 1 hour
+                                    const startTime = form.getValues('startTime');
+                                    hour = startTime.getHours() + 1;
+                                    minute = startTime.getMinutes();
+                                  } else {
+                                    // Fallback to current time + 1 hour
+                                    const now = new Date();
+                                    hour = now.getHours() + 1;
+                                    minute = now.getMinutes();
                                   }
+                                  
+                                  newDate.setHours(hour);
+                                  newDate.setMinutes(minute);
+                                  
+                                  // Update both temp state AND the field value directly
+                                  setTempEndDate(newDate);
+                                  field.onChange(newDate);
                                 }
                               }}
                               initialFocus
