@@ -14,8 +14,8 @@ export default function SchedulePage() {
   const [ageGroupFilter, setAgeGroupFilter] = useState<string>("all");
   
   const { data: upcomingSessions, isLoading } = useQuery<any[]>({
-    queryKey: ["/api/sessions/upcoming", 100], // Fetch up to 100 upcoming sessions
-    queryFn: () => fetch("/api/sessions/upcoming?limit=100").then(res => res.json())
+    queryKey: ["/api/sessions/all"], // Fetch ALL sessions regardless of date
+    queryFn: () => fetch("/api/sessions/all").then(res => res.json())
   });
   
   // Filter sessions for the selected date

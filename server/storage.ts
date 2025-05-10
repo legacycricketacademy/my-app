@@ -54,6 +54,7 @@ export interface IStorage {
   getSessionById(id: number): Promise<any>;
   getTodaySessions(): Promise<any[]>;
   getUpcomingSessions(limit?: number): Promise<any[]>;
+  getAllSessions(): Promise<any[]>;
   createSession(sessionData: InsertSession): Promise<any>;
   updateSession(id: number, sessionData: Partial<InsertSession>): Promise<any | undefined>;
   
@@ -325,6 +326,17 @@ export class DatabaseStorage implements IStorage {
       .where(gte(sessions.startTime, now))
       .orderBy(sessions.startTime)
       .limit(limit);
+  }
+  
+  async getAllSessions(): Promise<any[]> {
+    return await db
+      .select({
+        ...sessions,
+        coachName: users.fullName,
+      })
+      .from(sessions)
+      .leftJoin(users, eq(sessions.coachId, users.id))
+      .orderBy(sessions.startTime);
   }
   
   async createSession(sessionData: InsertSession): Promise<any> {
