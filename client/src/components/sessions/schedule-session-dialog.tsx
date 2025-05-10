@@ -126,7 +126,7 @@ export function ScheduleSessionDialog() {
           <span>Schedule New Session</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[550px]">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Schedule New Training Session</DialogTitle>
           <DialogDescription>
@@ -175,7 +175,7 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 relative z-50 max-h-[95vh] overflow-auto" align="start" side="bottom" sideOffset={5}>
+                      <PopoverContent className="w-[90vw] sm:w-auto p-0 relative z-50 max-h-[60vh] overflow-auto" align="center" side="bottom" sideOffset={5}>
                         <div className="space-y-3">
                           <Calendar
                             mode="single"
@@ -274,7 +274,7 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 relative z-50 max-h-[95vh] overflow-auto" align="start" side="bottom" sideOffset={5}>
+                      <PopoverContent className="w-[90vw] sm:w-auto p-0 relative z-50 max-h-[60vh] overflow-auto" align="center" side="bottom" sideOffset={5}>
                         <div className="space-y-3">
                           <Calendar
                             mode="single"
