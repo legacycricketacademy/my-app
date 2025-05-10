@@ -13,8 +13,28 @@ const firebaseConfig = {
   measurementId: "G-X6C1JRHE20",
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase - ensure we only initialize once
+console.log("Firebase configuration:", {
+  apiKey: firebaseConfig.apiKey,
+  projectId: firebaseConfig.projectId,
+  appId: firebaseConfig.appId
+});
+
+let app;
+try {
+  app = initializeApp(firebaseConfig);
+  console.log("Firebase initialized successfully");
+} catch (error: any) {
+  // If already initialized, use the existing app
+  if (error.code === 'app/duplicate-app') {
+    console.log("Firebase app already initialized, getting existing app");
+    app = initializeApp();
+  } else {
+    console.error("Firebase initialization error:", error);
+    throw error;
+  }
+}
+
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 

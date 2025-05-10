@@ -213,12 +213,72 @@ export default function AuthPage() {
   }
   
   function onLoginSubmit(data: LoginFormValues) {
-    loginMutation.mutate(data);
+    try {
+      loginMutation.mutate(data, {
+        onError: (error) => {
+          console.error("Login error:", error);
+          
+          // Show a more user-friendly error message
+          let errorMessage = "Login failed. Please check your credentials and try again.";
+          
+          if (error.message?.includes("auth/configuration-not-found")) {
+            errorMessage = "Authentication system is not properly configured. Please contact support.";
+          } else if (error.message?.includes("auth/invalid-api-key")) {
+            errorMessage = "Authentication system configuration error. Please contact support.";
+          } else if (error.message?.includes("auth/user-not-found") || error.message?.includes("auth/wrong-password")) {
+            errorMessage = "Invalid username or password. Please try again.";
+          }
+          
+          toast({
+            title: "Login Failed",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
+      });
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login Failed",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   }
   
   function onRegisterSubmit(data: RegisterFormValues) {
     // Use Firebase registration for all new users
-    firebaseRegisterMutation.mutate(data);
+    try {
+      firebaseRegisterMutation.mutate(data, {
+        onError: (error) => {
+          console.error("Firebase registration error:", error);
+          
+          // Show a more user-friendly error message
+          let errorMessage = "Registration failed. Please try again.";
+          
+          if (error.message?.includes("auth/configuration-not-found")) {
+            errorMessage = "Firebase authentication is not properly configured. Please contact support.";
+          } else if (error.message?.includes("auth/invalid-api-key")) {
+            errorMessage = "Authentication system configuration error. Please contact support.";
+          } else if (error.message?.includes("auth/email-already-in-use")) {
+            errorMessage = "This email is already registered. Try logging in instead.";
+          }
+          
+          toast({
+            title: "Registration Failed",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
+      });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      toast({
+        title: "Registration Failed",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   }
   
   function onForgotPasswordSubmit(data: ForgotPasswordFormValues) {
