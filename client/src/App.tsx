@@ -11,6 +11,7 @@ import { Redirect } from "wouter";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
 import PlayersPage from "@/pages/players-page";
+import PlayerDetailPage from "@/pages/player-detail-page";
 import SchedulePage from "@/pages/schedule-page";
 import FitnessPage from "@/pages/fitness-page";
 import MealPlansPage from "@/pages/meal-plans-page";
@@ -102,6 +103,12 @@ function RouterContent() {
       <RoleBasedRoute 
         path="/players/add" 
         component={PlayersPage} 
+        allowedRoles={["admin", "coach"]}
+        redirectTo="/parent"
+      />
+      <RoleBasedRoute 
+        path="/player/:id" 
+        component={PlayerDetailPage} 
         allowedRoles={["admin", "coach"]}
         redirectTo="/parent"
       />
