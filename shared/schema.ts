@@ -264,6 +264,8 @@ export const academiesRelations = relations(academies, ({ many }) => ({
   announcements: many(announcements),
   payments: many(payments),
   connectionRequests: many(connectionRequests),
+  adminInvitations: many(adminInvitations),
+  auditLogs: many(userAuditLogs),
 }));
 
 export const usersRelations = relations(users, ({ many, one }) => ({
@@ -274,6 +276,8 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   announcements: many(announcements, { relationName: "created_by" }),
   mealPlans: many(mealPlans, { relationName: "created_by" }),
   connectionRequests: many(connectionRequests),
+  invitationsCreated: many(adminInvitations, { relationName: "created_by" }),
+  auditLogs: many(userAuditLogs),
 }));
 
 export const playersRelations = relations(players, ({ one, many }) => ({
@@ -332,6 +336,20 @@ export const connectionRequestsRelations = relations(connectionRequests, ({ one 
   academy: one(academies, { fields: [connectionRequests.academyId], references: [academies.id] }),
   parent: one(users, { fields: [connectionRequests.parentId], references: [users.id] }),
   player: one(players, { fields: [connectionRequests.playerId], references: [players.id] }),
+}));
+
+export const adminInvitationsRelations = relations(adminInvitations, ({ one }) => ({
+  academy: one(academies, { fields: [adminInvitations.academyId], references: [academies.id] }),
+  createdBy: one(users, { 
+    fields: [adminInvitations.createdById], 
+    references: [users.id],
+    relationName: "created_by"
+  }),
+}));
+
+export const userAuditLogsRelations = relations(userAuditLogs, ({ one }) => ({
+  academy: one(academies, { fields: [userAuditLogs.academyId], references: [academies.id] }),
+  user: one(users, { fields: [userAuditLogs.userId], references: [users.id] }),
 }));
 
 // Zod Schemas for validation
