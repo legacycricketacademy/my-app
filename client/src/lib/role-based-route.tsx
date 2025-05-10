@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route, RouteComponentProps } from "wouter";
 import { UserRole } from "@shared/schema";
+import { Button } from "@/components/ui/button";
 
 type RoleBasedRouteProps = {
   path: string;
@@ -16,7 +17,7 @@ export function RoleBasedRoute({
   allowedRoles,
   redirectTo = "/dashboard",
 }: RoleBasedRouteProps) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logoutMutation } = useAuth();
   
   // For testing only - will allow access to parent or admin views
   const urlParams = new URLSearchParams(window.location.search);
@@ -68,12 +69,13 @@ export function RoleBasedRoute({
               <p className="text-sm text-gray-500">
                 If you have any questions, please contact the system administrator.
               </p>
-              <button 
-                onClick={() => window.location.href = '/api/logout'}
-                className="mt-6 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+              <Button
+                onClick={() => logoutMutation.mutate()}
+                className="mt-6"
+                disabled={logoutMutation.isPending}
               >
-                Logout
-              </button>
+                {logoutMutation.isPending ? "Logging out..." : "Logout"}
+              </Button>
             </div>
           );
         }
