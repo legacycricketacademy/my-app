@@ -92,10 +92,8 @@ export default function SchedulePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Age Groups</SelectItem>
-                    <SelectItem value="Under 12s">Under 12s</SelectItem>
-                    <SelectItem value="Under 14s">Under 14s</SelectItem>
-                    <SelectItem value="Under 16s">Under 16s</SelectItem>
-                    <SelectItem value="All">Parent Meetings</SelectItem>
+                    <SelectItem value="5-8 years">5-8 years</SelectItem>
+                    <SelectItem value="8+ years">8+ years</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

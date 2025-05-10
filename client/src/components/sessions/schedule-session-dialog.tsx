@@ -103,6 +103,7 @@ export function ScheduleSessionDialog() {
       // Invalidate related queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/sessions/upcoming"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sessions/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions/all"] });
       
       toast({
         title: "Session Scheduled",
