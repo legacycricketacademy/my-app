@@ -724,73 +724,37 @@ export class DatabaseStorage implements IStorage {
   
   async getPendingPayments(): Promise<any[]> {
     try {
-      // Simplified query that doesn't reference the p.month column
-      let query = `
-        SELECT 
-          p.id, p.academy_id AS "academyId", p.player_id AS "playerId", 
-          p.amount, p.payment_type AS "paymentType",
-          NULL AS "month",
-          p.due_date AS "dueDate", p.paid_date AS "paidDate", 
-          p.status, p.payment_method AS "paymentMethod", 
-          p.stripe_payment_intent_id AS "stripePaymentIntentId",
-          p.stripe_payment_intent_status AS "stripePaymentIntentStatus",
-          p.notes, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
-          pl.first_name AS "playerFirstName", pl.last_name AS "playerLastName",
-          pl.age_group AS "playerAgeGroup", pl.location AS "playerLocation",
-          pl.parent_id AS "parentId"
-      `;
-      
-      // Check if the session_duration column exists
-      const sessionDurationResult = await db.execute(sql.raw(`
-        SELECT column_name FROM information_schema.columns 
-        WHERE table_name = 'payments' AND column_name = 'session_duration'
-      `));
-      const hasSessionDuration = sessionDurationResult.rows && sessionDurationResult.rows.length > 0;
-      
-      // Check if the expected_amount column exists
-      const expectedAmountResult = await db.execute(sql.raw(`
-        SELECT column_name FROM information_schema.columns 
-        WHERE table_name = 'payments' AND column_name = 'expected_amount'
-      `));
-      const hasExpectedAmount = expectedAmountResult.rows && expectedAmountResult.rows.length > 0;
-      
-      // Check if the is_over_under_payment column exists
-      const isOverUnderResult = await db.execute(sql.raw(`
-        SELECT column_name FROM information_schema.columns 
-        WHERE table_name = 'payments' AND column_name = 'is_over_under_payment'
-      `));
-      const hasIsOverUnder = isOverUnderResult.rows && isOverUnderResult.rows.length > 0;
-      
-      // Add optional columns if they exist
-      if (hasSessionDuration) {
-        query += `, p.session_duration AS "sessionDuration"`;
-      } else {
-        query += `, NULL AS "sessionDuration"`;
-      }
-      
-      if (hasExpectedAmount) {
-        query += `, p.expected_amount AS "expectedAmount"`;
-      } else {
-        query += `, NULL AS "expectedAmount"`;
-      }
-      
-      if (hasIsOverUnder) {
-        query += `, p.is_over_under_payment AS "isOverUnderPayment"`;
-      } else {
-        query += `, FALSE AS "isOverUnderPayment"`;
-      }
-      
-      query += `
-        FROM payments p
-        LEFT JOIN players pl ON p.player_id = pl.id
-        WHERE p.status = 'pending'
-        ORDER BY p.due_date ASC
-      `;
-      
-      const result = await db.execute(sql.raw(query));
-      
-      // For raw SQL, the result requires an explicit return of rows
-      return result.rows || [];
+      return await db
+        .select({
+          id: payments.id,
+          academyId: payments.academyId,
+          playerId: payments.playerId,
+          amount: payments.amount,
+          paymentType: payments.paymentType,
+          dueDate: payments.dueDate,
+          paidDate: payments.paidDate,
+          status: payments.status,
+          notes: payments.notes,
+          createdAt: payments.createdAt,
+          updatedAt: payments.updatedAt,
+          
+          // Use safe selection for optional columns
+          sessionDuration: sql<string | null>`payments.session_duration`.as('sessionDuration'),
+          expectedAmount: sql<string | null>`payments.expected_amount`.as('expectedAmount'),
+          isOverUnderPayment: sql<boolean | null>`payments.is_over_under_payment`.as('isOverUnderPayment'),
+          paymentMethod: sql<string | null>`payments.payment_method`.as('paymentMethod'),
+          stripePaymentIntentId: sql<string | null>`payments.stripe_payment_intent_id`.as('stripePaymentIntentId'),
+          
+          // Player information
+          playerFirstName: players.firstName,
+          playerLastName: players.lastName,
+          playerAgeGroup: players.ageGroup,
+          playerLocation: players.location,
+        })
+        .from(payments)
+        .leftJoin(players, eq(payments.playerId, players.id))
+        .where(eq(payments.status, "pending"))
+        .orderBy(payments.dueDate);
     } catch (error) {
       console.error("Error in getPendingPayments:", error);
       // Return empty array instead of throwing to prevent UI errors
