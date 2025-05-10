@@ -11,8 +11,8 @@ try {
 } catch (e) {
   // Initialize Firebase Admin SDK with service account
   const serviceAccount = {
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    projectId: "legacy-cricket-academy",
+    clientEmail: "firebase-adminsdk-fbsvc@legacy-cricket-academy.iam.gserviceaccount.com",
     privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
   };
 
