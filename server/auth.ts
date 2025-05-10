@@ -8,6 +8,7 @@ import { storage } from "./storage";
 import { multiTenantStorage } from "./multi-tenant-storage";
 import { User as SelectUser, users, userAuditLogs } from "@shared/schema";
 import { db } from "@db";
+import { generateVerificationEmail, sendEmail } from "./email";
 
 // Define global types for token functions
 declare global {
@@ -202,9 +203,6 @@ export function setupAuth(app: Express) {
       multiTenantStorage.setAcademyContext(userData.academyId);
       
       const user = await multiTenantStorage.createUser(userData);
-      
-      // Import necessary functions
-      const { generateVerificationEmail, sendEmail } = require('./email');
       
       // Generate a verification token directly
       let verificationLink = '';
