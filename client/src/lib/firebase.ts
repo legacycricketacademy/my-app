@@ -2,7 +2,8 @@ import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useEffect, useState } from "react";
 
-// Firebase configuration
+// Firebase configuration using hardcoded values for development
+// In a production environment, these would come from environment variables
 const firebaseConfig = {
   apiKey: "AIzaSyD2agq-FmwzlRdRqTr_6-wsWZJzoUmDyts",
   authDomain: "legacy-cricket-academy.firebaseapp.com",
@@ -20,19 +21,21 @@ console.log("Firebase configuration:", {
   appId: firebaseConfig.appId
 });
 
+// Helper to get existing app or initialize a new one
 let app;
 try {
-  app = initializeApp(firebaseConfig);
-  console.log("Firebase initialized successfully");
-} catch (error: any) {
-  // If already initialized, use the existing app
-  if (error.code === 'app/duplicate-app') {
-    console.log("Firebase app already initialized, getting existing app");
+  // Check if Firebase is already initialized
+  try {
     app = initializeApp();
-  } else {
-    console.error("Firebase initialization error:", error);
-    throw error;
+    console.log("Using existing Firebase app");
+  } catch (e) {
+    // Initialize Firebase with config
+    app = initializeApp(firebaseConfig);
+    console.log("Firebase initialized successfully");
   }
+} catch (error: any) {
+  console.error("Firebase initialization error:", error);
+  throw error;
 }
 
 export const auth = getAuth(app);

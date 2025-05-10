@@ -7,7 +7,7 @@ import {
 import { insertUserSchema, User } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useFirebaseAuth } from "@/lib/firebase";
+import { useFirebaseAuth, auth } from "@/lib/firebase";
 
 type AuthContextType = {
   user: User | null;
@@ -289,24 +289,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Firebase login with email/password
   const firebaseLoginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      // Since Firebase uses email for login but our app uses username,
-      // we need to look up the user by username first or use email if it looks like an email
-      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(credentials.username);
-      if (isEmail) {
-        return await firebaseLoginFn(credentials.username, credentials.password);
-      } else {
-        try {
-          // Try to get the user's email from our database using their username
-          const res = await fetch(`/api/auth/get-email-by-username?username=${encodeURIComponent(credentials.username)}`);
-          if (res.ok) {
-            const { email } = await res.json();
-            return await firebaseLoginFn(email, credentials.password);
-          } else {
+      try {
+        // Validate Firebase configuration first
+        if (!auth) {
+          throw new Error("Firebase auth is not configured properly. Please contact support.");
+        }
+        
+        // Since Firebase uses email for login but our app uses username,
+        // we need to look up the user by username first or use email if it looks like an email
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(credentials.username);
+        
+        let email = credentials.username;
+        
+        if (!isEmail) {
+          try {
+            // Try to get the user's email from our database using their username
+            const res = await fetch(`/api/auth/get-email-by-username?username=${encodeURIComponent(credentials.username)}`);
+            if (res.ok) {
+              const data = await res.json();
+              email = data.email;
+            } else {
+              throw new Error("Invalid username or password");
+            }
+          } catch (error) {
             throw new Error("Invalid username or password");
           }
-        } catch (error) {
-          throw new Error("Invalid username or password");
         }
+        
+        // Attempt to log in with Firebase
+        try {
+          return await firebaseLoginFn(email, credentials.password);
+        } catch (error: any) {
+          console.error("Firebase login error:", error);
+          
+          // Map Firebase error codes to user-friendly messages
+          if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            throw new Error("Invalid email/username or password");
+          } else if (error.code === 'auth/invalid-email') {
+            throw new Error("Invalid email format");
+          } else if (error.code === 'auth/user-disabled') {
+            throw new Error("This account has been disabled. Please contact support.");
+          } else if (error.code === 'auth/too-many-requests') {
+            throw new Error("Too many failed login attempts. Please try again later or reset your password.");
+          } else if (error.code === 'auth/network-request-failed') {
+            throw new Error("Network error. Please check your internet connection and try again.");
+          } else {
+            throw new Error(error.message || "An error occurred during login. Please try again.");
+          }
+        }
+      } catch (error: any) {
+        console.error("Login process error:", error);
+        throw error;
       }
     },
     onError: (error: Error) => {
@@ -335,37 +368,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Firebase registration + backend registration
   const firebaseRegisterMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
-      // First, create Firebase user
-      const firebaseUser = await firebaseSignupFn(
-        userData.email, 
-        userData.password,
-        userData.fullName
-      );
-      
-      // Then create or link with backend user
-      const res = await fetch("/api/auth/register-firebase", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firebaseUid: firebaseUser.uid,
-          username: userData.username,
-          email: userData.email,
-          fullName: userData.fullName,
-          role: userData.role,
-          phone: userData.phone,
-          academyId: userData.academyId
-        }),
-        credentials: "include",
-      });
+      try {
+        // Validate Firebase configuration first
+        if (!auth) {
+          throw new Error("Firebase auth is not configured properly. Please contact support.");
+        }
+        
+        // First, create Firebase user
+        let firebaseUser;
+        try {
+          firebaseUser = await firebaseSignupFn(
+            userData.email, 
+            userData.password,
+            userData.fullName
+          );
+          
+          if (!firebaseUser || !firebaseUser.uid) {
+            throw new Error("Failed to create Firebase user. Please try again later.");
+          }
+        } catch (error: any) {
+          console.error("Firebase user creation error:", error);
+          // Map Firebase error codes to user-friendly messages
+          if (error.code === 'auth/email-already-in-use') {
+            throw new Error("This email is already registered. Please use a different email or try logging in.");
+          } else if (error.code === 'auth/invalid-email') {
+            throw new Error("Please enter a valid email address.");
+          } else if (error.code === 'auth/weak-password') {
+            throw new Error("Password is too weak. Please use a stronger password.");
+          } else if (error.code === 'auth/network-request-failed') {
+            throw new Error("Network error. Please check your internet connection and try again.");
+          } else {
+            throw new Error(`Firebase registration error: ${error.message || "Unknown error"}`);
+          }
+        }
+        
+        // Then create or link with backend user
+        try {
+          const res = await fetch("/api/auth/register-firebase", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              firebaseUid: firebaseUser.uid,
+              username: userData.username,
+              email: userData.email,
+              fullName: userData.fullName,
+              role: userData.role,
+              phone: userData.phone,
+              academyId: userData.academyId
+            }),
+            credentials: "include",
+          });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Backend registration failed");
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.message || "Backend registration failed. Please try again.");
+          }
+
+          return await res.json();
+        } catch (error: any) {
+          console.error("Backend registration error:", error);
+          throw new Error(error.message || "Failed to register with the server. Please try again later.");
+        }
+      } catch (error: any) {
+        console.error("Registration process error:", error);
+        throw error;
       }
-
-      return await res.json();
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -375,6 +444,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Firebase registration error:", error);
       toast({
         title: "Registration failed",
         description: error.message,
