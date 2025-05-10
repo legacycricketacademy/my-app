@@ -82,8 +82,8 @@ export function PlayersCard() {
             ))
           ) : filteredPlayers && filteredPlayers.length > 0 ? (
             filteredPlayers.map((player) => (
-              <div key={player.id} className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <div className="flex items-center space-x-3">
+              <div key={player.id} className="flex items-center justify-between border-b border-gray-100 pb-3 group">
+                <Link href={`/player/${player.id}`} className="flex items-center space-x-3 flex-1 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors">
                   <Avatar className={player.id % 5 === 0 ? "border-2 border-primary" : ""}>
                     <AvatarImage src={player.profileImage} alt={`${player.firstName} ${player.lastName}`} />
                     <AvatarFallback>{getInitials(player.firstName, player.lastName)}</AvatarFallback>
@@ -92,14 +92,18 @@ export function PlayersCard() {
                     <h4 className="text-sm font-medium">{player.firstName} {player.lastName}</h4>
                     <p className="text-xs text-gray-600">{player.ageGroup} • {player.playerType || "Player"}</p>
                   </div>
-                </div>
+                </Link>
                 <div className="flex space-x-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-gray-500 hover:text-primary hover:bg-gray-100" title="View Profile">
-                    <User className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-gray-500 hover:text-primary hover:bg-gray-100" title="Fitness Data">
-                    <Heart className="h-4 w-4" />
-                  </Button>
+                  <Link href={`/player/${player.id}`}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-gray-500 hover:text-primary hover:bg-gray-100" title="View Profile">
+                      <User className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Link href={`/player/${player.id}?tab=fitness`}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-gray-500 hover:text-primary hover:bg-gray-100" title="Fitness Data">
+                      <Heart className="h-4 w-4" />
+                    </Button>
+                  </Link>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-gray-500 hover:text-primary hover:bg-gray-100" title="Contact Parents">
                     <Mail className="h-4 w-4" />
                   </Button>
