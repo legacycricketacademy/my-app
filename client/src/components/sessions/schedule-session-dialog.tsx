@@ -175,9 +175,9 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[90vw] sm:w-auto p-0 relative z-50 max-h-[60vh] overflow-auto" align="center" side="bottom" sideOffset={5}>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 p-2 pb-0">
+                      <PopoverContent className="w-[85vw] sm:w-auto p-0 relative z-50" align="center" side="bottom" sideOffset={5}>
+                        <div className="flex flex-col">
+                          <div className="sticky top-0 z-10 bg-background p-2 border-b flex items-center justify-between">
                             <Input
                               type="time"
                               size={10}
@@ -194,7 +194,7 @@ export function ScheduleSessionDialog() {
                                 }
                               }}
                             />
-                            <div className="flex items-center ml-auto space-x-2">
+                            <div className="flex items-center space-x-2">
                               <Button
                                 type="button"
                                 variant="outline"
@@ -220,33 +220,34 @@ export function ScheduleSessionDialog() {
                               </Button>
                             </div>
                           </div>
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={(date) => {
-                              if (date) {
-                                // Preserve the time if a date was already selected
-                                const newDate = new Date(date);
-                                if (field.value) {
-                                  newDate.setHours(field.value.getHours());
-                                  newDate.setMinutes(field.value.getMinutes());
-                                } else {
-                                  // Default to current time if no previous time
-                                  const now = new Date();
-                                  newDate.setHours(now.getHours());
-                                  newDate.setMinutes(now.getMinutes());
+                          <div className="overflow-auto p-1" style={{ maxHeight: '60vh' }}>
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={(date) => {
+                                if (date) {
+                                  // Preserve the time if a date was already selected
+                                  const newDate = new Date(date);
+                                  if (field.value) {
+                                    newDate.setHours(field.value.getHours());
+                                    newDate.setMinutes(field.value.getMinutes());
+                                  } else if (form.getValues('startTime')) {
+                                    // Default to start time + 1 hour if no previous time
+                                    const startTime = form.getValues('startTime');
+                                    newDate.setHours(startTime.getHours() + 1);
+                                    newDate.setMinutes(startTime.getMinutes());
+                                  }
+                                  field.onChange(newDate);
+                                  if (window.innerWidth < 640) {
+                                    const buttonElement = document.activeElement as HTMLElement;
+                                    buttonElement?.blur();
+                                  }
                                 }
-                                field.onChange(newDate);
-                                // Auto-close on mobile after selection
-                                if (window.innerWidth < 640) {
-                                  const buttonElement = document.activeElement as HTMLElement;
-                                  buttonElement?.blur();
-                                }
-                              }
-                            }}
-                            initialFocus
-                            className="rounded-md border scale-[0.9]"
-                          />
+                              }}
+                              initialFocus
+                              className="rounded-md border"
+                            />
+                          </div>
                         </div>
                       </PopoverContent>
                     </Popover>
@@ -280,9 +281,9 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[90vw] sm:w-auto p-0 relative z-50 max-h-[60vh] overflow-auto" align="center" side="bottom" sideOffset={5}>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 p-2 pb-0">
+                      <PopoverContent className="w-[85vw] sm:w-auto p-0 relative z-50" align="center" side="bottom" sideOffset={5}>
+                        <div className="flex flex-col">
+                          <div className="sticky top-0 z-10 bg-background p-2 border-b flex items-center justify-between">
                             <Input
                               type="time"
                               size={10}
@@ -299,7 +300,7 @@ export function ScheduleSessionDialog() {
                                 }
                               }}
                             />
-                            <div className="flex items-center ml-auto space-x-2">
+                            <div className="flex items-center space-x-2">
                               <Button
                                 type="button"
                                 variant="outline"
@@ -325,33 +326,35 @@ export function ScheduleSessionDialog() {
                               </Button>
                             </div>
                           </div>
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={(date) => {
-                              if (date) {
-                                // Preserve the time if a date was already selected
-                                const newDate = new Date(date);
-                                if (field.value) {
-                                  newDate.setHours(field.value.getHours());
-                                  newDate.setMinutes(field.value.getMinutes());
-                                } else if (form.getValues('startTime')) {
-                                  // Default to start time + 1 hour if no previous time
-                                  const startTime = form.getValues('startTime');
-                                  newDate.setHours(startTime.getHours() + 1);
-                                  newDate.setMinutes(startTime.getMinutes());
+                          <div className="overflow-auto p-1" style={{ maxHeight: '60vh' }}>
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={(date) => {
+                                if (date) {
+                                  // Preserve the time if a date was already selected
+                                  const newDate = new Date(date);
+                                  if (field.value) {
+                                    newDate.setHours(field.value.getHours());
+                                    newDate.setMinutes(field.value.getMinutes());
+                                  } else if (form.getValues('startTime')) {
+                                    // Default to start time + 1 hour if no previous time
+                                    const startTime = form.getValues('startTime');
+                                    newDate.setHours(startTime.getHours() + 1);
+                                    newDate.setMinutes(startTime.getMinutes());
+                                  }
+                                  field.onChange(newDate);
+                                  // Auto-close on mobile after selection
+                                  if (window.innerWidth < 640) {
+                                    const buttonElement = document.activeElement as HTMLElement;
+                                    buttonElement?.blur();
+                                  }
                                 }
-                                field.onChange(newDate);
-                                // Auto-close on mobile after selection
-                                if (window.innerWidth < 640) {
-                                  const buttonElement = document.activeElement as HTMLElement;
-                                  buttonElement?.blur();
-                                }
-                              }
-                            }}
-                            initialFocus
-                            className="rounded-md border scale-[0.9]"
-                          />
+                              }}
+                              initialFocus
+                              className="rounded-md border"
+                            />
+                          </div>
                         </div>
                       </PopoverContent>
                     </Popover>
