@@ -158,6 +158,32 @@ function verifyPasswordResetToken(token: string): { valid: boolean; userId?: num
   };
 }
 
+// Make token functions available globally for use in other modules
+declare global {
+  namespace NodeJS {
+    interface Global {
+      generateToken: (payload: any, expiresInMs: number) => string;
+      verifyToken: (token: string) => { valid: boolean; payload?: any };
+      generateVerificationToken: (userId: number, email: string) => string;
+      verifyVerificationToken: (token: string) => { valid: boolean; userId?: number; email?: string };
+      generateInvitationToken: (playerId: number, parentEmail: string) => string;
+      verifyInvitationToken: (token: string) => { valid: boolean; playerId?: number; email?: string };
+      generatePasswordResetToken: (userId: number, email: string) => string;
+      verifyPasswordResetToken: (token: string) => { valid: boolean; userId?: number; email?: string };
+    }
+  }
+}
+
+// Assign functions to global scope
+global.generateToken = generateToken;
+global.verifyToken = verifyToken;
+global.generateVerificationToken = generateVerificationToken;
+global.verifyVerificationToken = verifyVerificationToken;
+global.generateInvitationToken = generateInvitationToken;
+global.verifyInvitationToken = verifyInvitationToken;
+global.generatePasswordResetToken = generatePasswordResetToken;
+global.verifyPasswordResetToken = verifyPasswordResetToken;
+
 // Process and import player data
 async function processPlayersData(playersData: any[]) {
   const results = {
