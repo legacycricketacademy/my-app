@@ -6,8 +6,24 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { multiTenantStorage } from "./multi-tenant-storage";
-import { User as SelectUser, users } from "@shared/schema";
+import { User as SelectUser, users, userAuditLogs } from "@shared/schema";
 import { db } from "@db";
+
+// Define global types for token functions
+declare global {
+  namespace NodeJS {
+    interface Global {
+      generateToken: (payload: any, expiresInMs: number) => string;
+      verifyToken: (token: string) => { valid: boolean; payload?: any };
+      generateVerificationToken: (userId: number, email: string) => string;
+      verifyVerificationToken: (token: string) => { valid: boolean; userId?: number; email?: string };
+      generateInvitationToken: (playerId: number, parentEmail: string) => string;
+      verifyInvitationToken: (token: string) => { valid: boolean; playerId?: number; email?: string };
+      generatePasswordResetToken: (userId: number, email: string) => string;
+      verifyPasswordResetToken: (token: string) => { valid: boolean; userId?: number; email?: string };
+    }
+  }
+}
 import { eq, and } from "drizzle-orm";
 
 declare global {
@@ -187,45 +203,58 @@ export function setupAuth(app: Express) {
       
       const user = await multiTenantStorage.createUser(userData);
       
-      // Import necessary email-related functions
+      // Import necessary functions
       const { generateVerificationEmail, sendEmail } = require('./email');
       
-      // Generate a verification token if we have the appropriate helper function
+      // Generate a verification token directly
       let verificationLink = '';
       try {
-        // Check if we have required functions from routes.ts
-        if (typeof global.generateVerificationToken === 'function') {
-          const token = global.generateVerificationToken(user.id, user.email);
-          const baseUrl = `${req.protocol}://${req.get('host')}`;
-          verificationLink = `${baseUrl}/api/verify-email?token=${token}`;
-          
-          // Generate email content
-          const { text, html } = generateVerificationEmail(user.fullName, verificationLink);
-          
-          // Send verification email
-          const emailSent = await sendEmail({
-            to: user.email,
-            subject: "Verify Your Email Address for Legacy Cricket Academy",
-            text,
-            html
-          });
-          
-          // Log email status but continue with registration regardless
-          if (emailSent) {
-            console.log(`Verification email sent to ${user.email}`);
-          } else {
-            console.warn(`Failed to send verification email to ${user.email}`);
-          }
+        // Generate token for email verification
+        // This is the same implementation as in routes.ts
+        const generateToken = (payload: any, expiresInMs: number): string => {
+          const tokenPayload = {
+            ...payload,
+            expires: Date.now() + expiresInMs
+          };
+          return Buffer.from(JSON.stringify(tokenPayload)).toString('base64');
+        };
+        
+        // Generate verification token (24 hour expiration)
+        const token = generateToken(
+          { userId: user.id, email: user.email },
+          24 * 60 * 60 * 1000
+        );
+        
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        verificationLink = `${baseUrl}/api/verify-email?token=${token}`;
+        
+        // Generate email content
+        const { text, html } = generateVerificationEmail(user.fullName, verificationLink);
+        
+        // Send verification email
+        console.log(`Attempting to send verification email to ${user.email}...`);
+        const emailSent = await sendEmail({
+          to: user.email,
+          subject: "Verify Your Email Address for Legacy Cricket Academy",
+          text,
+          html
+        });
+        
+        // Log email status but continue with registration regardless
+        if (emailSent) {
+          console.log(`✓ Verification email successfully sent to ${user.email}`);
         } else {
-          console.warn('generateVerificationToken function not available, skipping email verification');
+          console.warn(`⚠️ Failed to send verification email to ${user.email}`);
         }
       } catch (emailError) {
-        console.error('Error sending verification email:', emailError);
+        console.error('Error in verification email process:', emailError);
         // Continue with registration even if email fails
       }
       
       // Log the user activity
       try {
+        // Import userAuditLogs directly to avoid TypeScript issues
+        const { userAuditLogs } = require("@shared/schema");
         await db.insert(userAuditLogs).values({
           userId: user.id,
           academyId: user.academyId,
