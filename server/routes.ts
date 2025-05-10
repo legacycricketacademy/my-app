@@ -1,9 +1,11 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { multiTenantStorage } from "./multi-tenant-storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
+import { db } from "@db";
+import { desc, and, or } from "drizzle-orm";
 import Stripe from "stripe";
 import { 
   insertPlayerSchema, 
@@ -175,14 +177,14 @@ declare global {
 }
 
 // Assign functions to global scope
-global.generateToken = generateToken;
-global.verifyToken = verifyToken;
-global.generateVerificationToken = generateVerificationToken;
-global.verifyVerificationToken = verifyVerificationToken;
-global.generateInvitationToken = generateInvitationToken;
-global.verifyInvitationToken = verifyInvitationToken;
-global.generatePasswordResetToken = generatePasswordResetToken;
-global.verifyPasswordResetToken = verifyPasswordResetToken;
+(global as any).generateToken = generateToken;
+(global as any).verifyToken = verifyToken;
+(global as any).generateVerificationToken = generateVerificationToken;
+(global as any).verifyVerificationToken = verifyVerificationToken;
+(global as any).generateInvitationToken = generateInvitationToken;
+(global as any).verifyInvitationToken = verifyInvitationToken;
+(global as any).generatePasswordResetToken = generatePasswordResetToken;
+(global as any).verifyPasswordResetToken = verifyPasswordResetToken;
 
 // Process and import player data
 async function processPlayersData(playersData: any[]) {
@@ -2727,6 +2729,88 @@ ${ACADEMY_NAME} Team
     } catch (error) {
       console.error("Error creating admin invitation:", error);
       res.status(500).json({ message: "An error occurred while creating the invitation" });
+    }
+  });
+  
+  // Firebase Authentication endpoints
+  app.post(`${apiPrefix}/auth/firebase-auth`, async (req, res) => {
+    try {
+      if (!req.body.idToken) {
+        return res.status(400).json({ message: "Firebase ID token is required" });
+      }
+      
+      // Verify Firebase token
+      const { verifyFirebaseToken, getUserFromFirebaseAuth } = require("./firebase-admin");
+      const decodedToken = await verifyFirebaseToken(req.body.idToken);
+      
+      if (!decodedToken) {
+        return res.status(401).json({ message: "Invalid Firebase token" });
+      }
+      
+      // Get or create user in our database
+      const user = await getUserFromFirebaseAuth(decodedToken, {
+        fullName: req.body.displayName || decodedToken.name,
+        academyId: req.query.academyId ? parseInt(req.query.academyId as string) : undefined,
+        role: 'parent' // Default role for auto-created users
+      });
+      
+      // Log the user in (create session)
+      if (user) {
+        req.login(user, (err) => {
+          if (err) {
+            console.error("Session login error:", err);
+            return res.status(500).json({ message: "Failed to create session" });
+          }
+          return res.status(200).json(user);
+        });
+      } else {
+        return res.status(400).json({ message: "Could not retrieve or create user" });
+      }
+    } catch (error: any) {
+      console.error("Firebase auth error:", error);
+      res.status(500).json({ message: error.message || "Authentication error" });
+    }
+  });
+  
+  // Register with Firebase
+  app.post(`${apiPrefix}/auth/register-firebase`, async (req, res) => {
+    try {
+      const { firebaseUid, username, email, fullName, role, phone, academyId } = req.body;
+      
+      if (!firebaseUid || !username || !email || !fullName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      // Create user in our database
+      const user = await storage.createUser({
+        username,
+        email,
+        fullName,
+        role: role || "parent",
+        phone,
+        firebaseUid,
+        academyId: academyId || null,
+        isEmailVerified: false, // Firebase will verify the email
+        status: "active", // Auto-activate users from Firebase
+      });
+      
+      // Log user in
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Session login error:", err);
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        return res.status(201).json(user);
+      });
+    } catch (error: any) {
+      console.error("Firebase register error:", error);
+      res.status(500).json({ message: error.message || "Registration error" });
     }
   });
   

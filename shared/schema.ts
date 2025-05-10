@@ -62,8 +62,9 @@ export const academies = pgTable("academies", {
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   academyId: integer("academy_id").references(() => academies.id),
+  firebaseUid: text("firebase_uid").unique(), // Firebase User ID
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"), // Made optional as Firebase will handle auth
   email: text("email").notNull().unique(),
   fullName: text("full_name").notNull(),
   role: text("role", { enum: userRoles }).notNull().default("parent"),
@@ -77,6 +78,8 @@ export const users = pgTable("users", {
   profileImage: text("profile_image"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  lastSignInAt: timestamp("last_sign_in_at"),
+  lastSignInIp: text("last_sign_in_ip"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

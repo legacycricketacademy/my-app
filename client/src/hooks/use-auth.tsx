@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useEffect } from "react";
 import {
   useQuery,
   useMutation,
@@ -7,18 +7,25 @@ import {
 import { insertUserSchema, User } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useFirebaseAuth } from "@/lib/firebase";
 
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
+  firebaseUser: any;
+  firebaseLoading: boolean;
   loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<User, Error, RegisterData>;
+  firebaseLoginMutation: UseMutationResult<any, Error, LoginData>;
+  firebaseRegisterMutation: UseMutationResult<any, Error, RegisterData>;
+  googleSignInMutation: UseMutationResult<any, Error, void>;
+  resetPasswordMutation: UseMutationResult<boolean, Error, {email: string}>;
 };
 
 type LoginData = {
-  username: string;
+  email: string;
   password: string;
 };
 
@@ -29,12 +36,26 @@ type RegisterData = {
   fullName: string;
   phone?: string;
   role: string;
+  academyId?: number; 
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  
+  // Firebase auth hook
+  const {
+    currentUser: firebaseUser,
+    loading: firebaseLoading,
+    login: firebaseLoginFn,
+    signup: firebaseSignupFn,
+    signInWithGoogle: firebaseGoogleSignIn,
+    resetPassword: firebaseResetPassword,
+    logout: firebaseLogoutFn
+  } = useFirebaseAuth();
+  
+  // Backend user data
   const {
     data: user,
     error,
@@ -43,6 +64,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
+  
+  // Link Firebase with our backend when Firebase auth state changes
+  useEffect(() => {
+    if (firebaseUser && !isLoading && !user) {
+      // If we have a Firebase user but no backend user, try to link them
+      linkFirebaseUser(firebaseUser);
+    }
+  }, [firebaseUser, isLoading, user]);
+  
+  // Function to link Firebase user with our backend
+  const linkFirebaseUser = async (fbUser: any) => {
+    try {
+      // Get Firebase ID token
+      const idToken = await fbUser.getIdToken();
+      
+      // Send to backend to verify and retrieve or create user
+      const res = await fetch("/api/auth/firebase-auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          idToken,
+          email: fbUser.email,
+          displayName: fbUser.displayName,
+          photoURL: fbUser.photoURL,
+        }),
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const userData = await res.json();
+        queryClient.setQueryData(["/api/user"], userData);
+      } else {
+        // If linking fails, log out of Firebase
+        await firebaseLogoutFn();
+      }
+    } catch (error) {
+      console.error("Error linking Firebase user:", error);
+    }
+  };
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
@@ -174,14 +236,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      // Direct fetch instead of apiRequest to avoid any body reading issues
-      const res = await fetch("/api/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-      
-      if (!res.ok) {
-        throw new Error("Logout failed. Please try again.");
+      try {
+        // First logout from backend
+        const res = await fetch("/api/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+        
+        if (!res.ok) {
+          throw new Error("Logout failed. Please try again.");
+        }
+        
+        // Then logout from Firebase
+        if (firebaseUser) {
+          await firebaseLogoutFn();
+        }
+      } catch (error) {
+        console.error("Logout error:", error);
+        throw error;
       }
     },
     onSuccess: () => {
@@ -200,15 +272,120 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Firebase login with email/password
+  const firebaseLoginMutation = useMutation({
+    mutationFn: async (credentials: LoginData) => {
+      return await firebaseLoginFn(credentials.email, credentials.password);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Login failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Firebase sign-in with Google 
+  const googleSignInMutation = useMutation({
+    mutationFn: async () => {
+      return await firebaseGoogleSignIn();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Google Sign-In failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Firebase registration + backend registration
+  const firebaseRegisterMutation = useMutation({
+    mutationFn: async (userData: RegisterData) => {
+      // First, create Firebase user
+      const firebaseUser = await firebaseSignupFn(
+        userData.email, 
+        userData.password,
+        userData.fullName
+      );
+      
+      // Then create or link with backend user
+      const res = await fetch("/api/auth/register-firebase", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firebaseUid: firebaseUser.uid,
+          username: userData.username,
+          email: userData.email,
+          fullName: userData.fullName,
+          role: userData.role,
+          phone: userData.phone,
+          academyId: userData.academyId
+        }),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Backend registration failed");
+      }
+
+      return await res.json();
+    },
+    onSuccess: (user: User) => {
+      queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Registration successful",
+        description: "Please check your email to verify your account",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Registration failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reset password with Firebase
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ email }: { email: string }) => {
+      return await firebaseResetPassword(email);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password reset email sent",
+        description: "Check your inbox for instructions to reset your password",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Password reset failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   return (
     <AuthContext.Provider
       value={{
         user: user ?? null,
         isLoading,
         error,
+        firebaseUser,
+        firebaseLoading,
         loginMutation,
         logoutMutation,
         registerMutation,
+        firebaseLoginMutation,
+        firebaseRegisterMutation,
+        googleSignInMutation,
+        resetPasswordMutation,
       }}
     >
       {children}

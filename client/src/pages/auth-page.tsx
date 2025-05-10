@@ -10,15 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CricketIcon } from "@/components/ui/cricket-icon";
-import { Users, Heart, Bell, DollarSign, LinkIcon, CheckCircle, Key, User, Mail } from "lucide-react";
+import { Users, Heart, Bell, DollarSign, LinkIcon, CheckCircle, Key, User, Mail, LogIn } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useFirebaseAuth } from "@/lib/firebase";
 
 const loginSchema = z.object({
-  username: z.string()
-    .min(1, "Username is required")
-    .min(3, "Username must be at least 3 characters long"),
+  email: z.string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
   password: z.string()
     .min(1, "Password is required")
     .min(6, "Password must be at least 6 characters long"),
@@ -69,8 +70,11 @@ type ForgotUsernameFormValues = z.infer<typeof forgotUsernameSchema>;
 // Interface for the decoded invitation token
 interface InvitationToken {
   email: string;
-  playerId: number;
+  playerId?: number;
+  role?: string;
+  academyId?: number;
   expires: number;
+  isAdminInvitation?: boolean;
 }
 
 export default function AuthPage() {
@@ -80,6 +84,14 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [location, navigate] = useLocation();
   const { toast } = useToast();
+  const { 
+    currentUser: firebaseUser, 
+    loading: firebaseLoading, 
+    login: firebaseLogin,
+    signup: firebaseSignup,
+    signInWithGoogle,
+    resetPassword
+  } = useFirebaseAuth();
   
   // State for forgot modals
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
