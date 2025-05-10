@@ -157,10 +157,18 @@ export function setupAuth(app: Express) {
       let userData = {
         ...req.body,
         password: hashedPassword,
+        isEmailVerified: false,
       };
       
-      // Set default status for coach accounts to pending approval
-      if (userData.role === "coach") {
+      // Check role and set appropriate status
+      if (userData.role === "admin") {
+        // Admin accounts should be pending until approved by superadmin
+        userData = {
+          ...userData,
+          status: "pending", 
+          isActive: false
+        };
+      } else if (userData.role === "coach") {
         userData = {
           ...userData,
           status: "pending", // Coaches need admin approval
@@ -179,12 +187,68 @@ export function setupAuth(app: Express) {
       
       const user = await multiTenantStorage.createUser(userData);
       
+      // Import necessary email-related functions
+      const { generateVerificationEmail, sendEmail } = require('./email');
+      
+      // Generate a verification token if we have the appropriate helper function
+      let verificationLink = '';
+      try {
+        // Check if we have required functions from routes.ts
+        if (typeof global.generateVerificationToken === 'function') {
+          const token = global.generateVerificationToken(user.id, user.email);
+          const baseUrl = `${req.protocol}://${req.get('host')}`;
+          verificationLink = `${baseUrl}/api/verify-email?token=${token}`;
+          
+          // Generate email content
+          const { text, html } = generateVerificationEmail(user.fullName, verificationLink);
+          
+          // Send verification email
+          const emailSent = await sendEmail({
+            to: user.email,
+            subject: "Verify Your Email Address for Legacy Cricket Academy",
+            text,
+            html
+          });
+          
+          // Log email status but continue with registration regardless
+          if (emailSent) {
+            console.log(`Verification email sent to ${user.email}`);
+          } else {
+            console.warn(`Failed to send verification email to ${user.email}`);
+          }
+        } else {
+          console.warn('generateVerificationToken function not available, skipping email verification');
+        }
+      } catch (emailError) {
+        console.error('Error sending verification email:', emailError);
+        // Continue with registration even if email fails
+      }
+      
+      // Log the user activity
+      try {
+        await db.insert(userAuditLogs).values({
+          userId: user.id,
+          academyId: user.academyId,
+          actionType: 'register',
+          actionDetails: { role: user.role, status: user.status },
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent']
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+        // Non-critical, continue with registration
+      }
+      
       // Log in the new user
       req.login(user, (err) => {
         if (err) return next(err);
         // Don't send password back to client
         const { password, ...userWithoutPassword } = user;
-        return res.status(201).json(userWithoutPassword);
+        return res.status(201).json({
+          ...userWithoutPassword,
+          verificationLink: verificationLink || undefined,
+          emailSent: !!verificationLink
+        });
       });
     } catch (error) {
       next(error);
