@@ -14,7 +14,8 @@ import {
   Upload,
   Link2,
   UserPlus,
-  ClipboardCheck
+  ClipboardCheck,
+  UserCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CricketIcon } from "@/components/ui/cricket-icon";
@@ -70,10 +71,15 @@ export function Sidebar() {
     { label: "Pending Players", icon: <ClipboardCheck className="h-5 w-5" />, path: "/players-pending-review" },
   ];
   
+  // Admin-only items
+  const adminOnlyItems = [
+    { label: "Coach Approvals", icon: <UserCheck className="h-5 w-5" />, path: "/coaches-pending-approval" },
+  ];
+  
   // Final nav items based on user role
   const navItems = user?.role === "parent" 
     ? parentNavItems 
-    : [...adminNavItems, ...adminItems];
+    : [...adminNavItems, ...adminItems, ...(user?.role === "admin" ? adminOnlyItems : [])];
   
   return (
     <aside className="flex flex-col h-full bg-white shadow-md z-10 w-64">
