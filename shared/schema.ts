@@ -7,6 +7,14 @@ import { z } from "zod";
 export const userRoles = ["superadmin", "admin", "coach", "parent"] as const;
 export type UserRole = (typeof userRoles)[number];
 
+// User statuses for account approval flow
+export const userStatuses = ["active", "pending", "rejected", "suspended"] as const;
+export type UserStatus = (typeof userStatuses)[number];
+
+// Admin invitation statuses
+export const invitationStatuses = ["pending", "used", "expired", "revoked"] as const;
+export type InvitationStatus = (typeof invitationStatuses)[number];
+
 // Subscription plan types
 export const subscriptionPlans = ["free", "basic", "pro", "enterprise"] as const;
 export type SubscriptionPlan = (typeof subscriptionPlans)[number];
@@ -217,6 +225,34 @@ export const connectionRequests = pgTable("connection_requests", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Admin Registration Invitations 
+export const adminInvitations = pgTable("admin_invitations", {
+  id: serial("id").primaryKey(),
+  academyId: integer("academy_id").references(() => academies.id),
+  token: text("token").notNull().unique(),
+  email: text("email").notNull(),
+  role: text("role", { enum: userRoles }).notNull().default("admin"),
+  status: text("status", { enum: invitationStatuses }).notNull().default("pending"),
+  createdById: integer("created_by_id").references(() => users.id).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  usedByIp: text("used_by_ip"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User Action Audit Logs
+export const userAuditLogs = pgTable("user_audit_logs", {
+  id: serial("id").primaryKey(),
+  academyId: integer("academy_id").references(() => academies.id),
+  userId: integer("user_id").references(() => users.id),
+  actionType: text("action_type").notNull(), // login, logout, register, update, delete, approve, reject, etc.
+  actionDetails: json("action_details"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
 // Define relationships
