@@ -200,6 +200,8 @@ export const payments = pgTable("payments", {
   dueDate: date("due_date").notNull(),
   paidDate: timestamp("paid_date"),
   status: text("status").notNull().default("pending"), // pending, paid, overdue
+  paymentMethod: text("payment_method"), // cash, credit card, zelle, venmo, cashapp 
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
