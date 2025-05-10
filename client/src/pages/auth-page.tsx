@@ -17,9 +17,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/lib/firebase";
 
 const loginSchema = z.object({
-  email: z.string()
-    .min(1, "Email is required")
-    .email("Please enter a valid email address"),
+  username: z.string()
+    .min(1, "Username is required")
+    .min(3, "Username must be at least 3 characters long"),
   password: z.string()
     .min(1, "Password is required")
     .min(6, "Password must be at least 6 characters long"),
@@ -100,7 +100,7 @@ export default function AuthPage() {
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -396,12 +396,12 @@ export default function AuthPage() {
                   <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                     <FormField
                       control={loginForm.control}
-                      name="username"
+                      name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter your username" {...field} />
+                            <Input placeholder="Enter your email" type="email" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
