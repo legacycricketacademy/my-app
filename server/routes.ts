@@ -1552,6 +1552,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get all sessions regardless of date
+  app.get(`${apiPrefix}/sessions/all`, async (req, res) => {
+    try {
+      // Use storage method which already has access to the needed imports
+      const allSessions = await storage.getAllSessions();
+      res.json(allSessions);
+    } catch (error) {
+      console.error("Error fetching all sessions:", error);
+      res.status(500).json({ message: "Error fetching all sessions" });
+    }
+  });
+  
   app.get(`${apiPrefix}/sessions/:id`, async (req, res) => {
     try {
       const sessionId = parseInt(req.params.id);
