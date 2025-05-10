@@ -25,7 +25,7 @@ type AuthContextType = {
 };
 
 type LoginData = {
-  email: string;
+  username: string;
   password: string;
 };
 
@@ -44,6 +44,8 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   error: null,
+  firebaseUser: null,
+  firebaseLoading: true,
   loginMutation: {} as any,
   logoutMutation: {} as any,
   registerMutation: {} as any,
@@ -287,7 +289,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Firebase login with email/password
   const firebaseLoginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      return await firebaseLoginFn(credentials.email, credentials.password);
+      // Since Firebase uses email for login but our app uses username,
+      // we need to look up the user by username first or use email if it looks like an email
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(credentials.username);
+      if (isEmail) {
+        return await firebaseLoginFn(credentials.username, credentials.password);
+      } else {
+        try {
+          // Try to get the user's email from our database using their username
+          const res = await fetch(`/api/auth/get-email-by-username?username=${encodeURIComponent(credentials.username)}`);
+          if (res.ok) {
+            const { email } = await res.json();
+            return await firebaseLoginFn(email, credentials.password);
+          } else {
+            throw new Error("Invalid username or password");
+          }
+        } catch (error) {
+          throw new Error("Invalid username or password");
+        }
+      }
     },
     onError: (error: Error) => {
       toast({
