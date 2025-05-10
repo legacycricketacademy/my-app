@@ -787,42 +787,25 @@ export class DatabaseStorage implements IStorage {
       dueDate: payments.dueDate,
       paidDate: payments.paidDate,
       status: payments.status,
-      paymentMethod: payments.paymentMethod,
-      stripePaymentIntentId: payments.stripePaymentIntentId,
-      stripePaymentIntentStatus: payments.stripePaymentIntentStatus,
       notes: payments.notes,
       createdAt: payments.createdAt,
-      updatedAt: payments.updatedAt
+      updatedAt: payments.updatedAt,
+      
+      // Player information
+      playerFirstName: players.firstName,
+      playerLastName: players.lastName,
+      playerAgeGroup: players.ageGroup,
+      playerLocation: players.location,
+      parentId: players.parentId
     };
     
-    // Conditionally add newer fields if they exist in the schema
-    // These will be null if not in database, which is better than causing a query error
-    try {
-      if (payments.sessionDuration) {
-        selectObj.sessionDuration = payments.sessionDuration;
-      }
-    } catch (e) {
-      console.warn('sessionDuration column does not exist, setting to null');
-      selectObj.sessionDuration = sql`NULL`;
-    }
-    
-    try {
-      if (payments.expectedAmount) {
-        selectObj.expectedAmount = payments.expectedAmount;
-      }
-    } catch (e) {
-      console.warn('expectedAmount column does not exist, setting to null');
-      selectObj.expectedAmount = sql`NULL`;
-    }
-    
-    try {
-      if (payments.isOverUnderPayment) {
-        selectObj.isOverUnderPayment = payments.isOverUnderPayment;
-      }
-    } catch (e) {
-      console.warn('isOverUnderPayment column does not exist, setting to null');
-      selectObj.isOverUnderPayment = sql`NULL`;
-    }
+    // Use SQL for potentially missing columns
+    // Using direct SQL ensures the query works even if columns don't exist
+    selectObj.sessionDuration = sql<string | null>`payments.session_duration`.as('sessionDuration');
+    selectObj.expectedAmount = sql<string | null>`payments.expected_amount`.as('expectedAmount');
+    selectObj.isOverUnderPayment = sql<boolean | null>`COALESCE(payments.is_over_under_payment, false)`.as('isOverUnderPayment');
+    selectObj.paymentMethod = sql<string | null>`payments.payment_method`.as('paymentMethod');
+    selectObj.stripePaymentIntentId = sql<string | null>`payments.stripe_payment_intent_id`.as('stripePaymentIntentId');
     
     return selectObj;
   }
