@@ -176,42 +176,71 @@ export function ScheduleSessionDialog() {
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={(date) => {
-                            if (date) {
-                              // Preserve the time if a date was already selected
-                              const newDate = new Date(date);
-                              if (field.value) {
-                                newDate.setHours(field.value.getHours());
-                                newDate.setMinutes(field.value.getMinutes());
-                              } else {
-                                // Default to current time if no previous time
-                                const now = new Date();
-                                newDate.setHours(now.getHours());
-                                newDate.setMinutes(now.getMinutes());
-                              }
-                              field.onChange(newDate);
-                            }
-                          }}
-                          initialFocus
-                        />
-                        <div className="p-3 border-t border-border">
-                          <Input
-                            type="time"
-                            value={field.value ? format(field.value, "HH:mm") : ""}
-                            onChange={(e) => {
-                              const timeString = e.target.value;
-                              if (timeString && field.value) {
-                                const [hours, minutes] = timeString.split(':').map(Number);
-                                const newDate = new Date(field.value);
-                                newDate.setHours(hours);
-                                newDate.setMinutes(minutes);
+                        <div className="space-y-3">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={(date) => {
+                              if (date) {
+                                // Preserve the time if a date was already selected
+                                const newDate = new Date(date);
+                                if (field.value) {
+                                  newDate.setHours(field.value.getHours());
+                                  newDate.setMinutes(field.value.getMinutes());
+                                } else {
+                                  // Default to current time if no previous time
+                                  const now = new Date();
+                                  newDate.setHours(now.getHours());
+                                  newDate.setMinutes(now.getMinutes());
+                                }
                                 field.onChange(newDate);
                               }
                             }}
+                            initialFocus
                           />
+                          <div className="p-3 border-t border-border">
+                            <div className="grid gap-2">
+                              <Input
+                                type="time"
+                                value={field.value ? format(field.value, "HH:mm") : ""}
+                                onChange={(e) => {
+                                  const timeString = e.target.value;
+                                  if (timeString && field.value) {
+                                    const [hours, minutes] = timeString.split(':').map(Number);
+                                    const newDate = new Date(field.value);
+                                    newDate.setHours(hours);
+                                    newDate.setMinutes(minutes);
+                                    field.onChange(newDate);
+                                  }
+                                }}
+                              />
+                              <div className="flex justify-end space-x-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Close the popover without confirmation
+                                    const buttonElement = document.activeElement as HTMLElement;
+                                    buttonElement?.blur();
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Close the popover with confirmation
+                                    const buttonElement = document.activeElement as HTMLElement;
+                                    buttonElement?.blur();
+                                  }}
+                                >
+                                  OK
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </PopoverContent>
                     </Popover>
@@ -246,42 +275,71 @@ export function ScheduleSessionDialog() {
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={(date) => {
-                            if (date) {
-                              // Preserve the time if a date was already selected
-                              const newDate = new Date(date);
-                              if (field.value) {
-                                newDate.setHours(field.value.getHours());
-                                newDate.setMinutes(field.value.getMinutes());
-                              } else if (form.getValues('startTime')) {
-                                // Default to start time + 1 hour if no previous time
-                                const startTime = form.getValues('startTime');
-                                newDate.setHours(startTime.getHours() + 1);
-                                newDate.setMinutes(startTime.getMinutes());
-                              }
-                              field.onChange(newDate);
-                            }
-                          }}
-                          initialFocus
-                        />
-                        <div className="p-3 border-t border-border">
-                          <Input
-                            type="time"
-                            value={field.value ? format(field.value, "HH:mm") : ""}
-                            onChange={(e) => {
-                              const timeString = e.target.value;
-                              if (timeString && field.value) {
-                                const [hours, minutes] = timeString.split(':').map(Number);
-                                const newDate = new Date(field.value);
-                                newDate.setHours(hours);
-                                newDate.setMinutes(minutes);
+                        <div className="space-y-3">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={(date) => {
+                              if (date) {
+                                // Preserve the time if a date was already selected
+                                const newDate = new Date(date);
+                                if (field.value) {
+                                  newDate.setHours(field.value.getHours());
+                                  newDate.setMinutes(field.value.getMinutes());
+                                } else if (form.getValues('startTime')) {
+                                  // Default to start time + 1 hour if no previous time
+                                  const startTime = form.getValues('startTime');
+                                  newDate.setHours(startTime.getHours() + 1);
+                                  newDate.setMinutes(startTime.getMinutes());
+                                }
                                 field.onChange(newDate);
                               }
                             }}
+                            initialFocus
                           />
+                          <div className="p-3 border-t border-border">
+                            <div className="grid gap-2">
+                              <Input
+                                type="time"
+                                value={field.value ? format(field.value, "HH:mm") : ""}
+                                onChange={(e) => {
+                                  const timeString = e.target.value;
+                                  if (timeString && field.value) {
+                                    const [hours, minutes] = timeString.split(':').map(Number);
+                                    const newDate = new Date(field.value);
+                                    newDate.setHours(hours);
+                                    newDate.setMinutes(minutes);
+                                    field.onChange(newDate);
+                                  }
+                                }}
+                              />
+                              <div className="flex justify-end space-x-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Close the popover without confirmation
+                                    const buttonElement = document.activeElement as HTMLElement;
+                                    buttonElement?.blur();
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Close the popover with confirmation
+                                    const buttonElement = document.activeElement as HTMLElement;
+                                    buttonElement?.blur();
+                                  }}
+                                >
+                                  OK
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </PopoverContent>
                     </Popover>
