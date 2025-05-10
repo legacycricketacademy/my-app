@@ -457,6 +457,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
   });
+  
+  // Helper endpoint to get email by username (for login UI compatibility)
+  app.get('/api/auth/get-email-by-username', async (req, res) => {
+    try {
+      const { username } = req.query;
+      
+      if (!username || typeof username !== 'string') {
+        return res.status(400).json({ message: "Username is required" });
+      }
+      
+      // Look up the user by username - try with multi-tenant storage first
+      let user = await multiTenantStorage.getUserByUsername(username);
+      
+      // If not found, try with storage without academy context
+      if (!user) {
+        // Remember current context
+        const currentContext = multiTenantStorage.getAcademyContext();
+        // Reset context temporarily to search across all academies
+        multiTenantStorage.setAcademyContext(null);
+        
+        try {
+          user = await multiTenantStorage.getUserByUsername(username);
+        } finally {
+          // Restore academy context
+          multiTenantStorage.setAcademyContext(currentContext);
+        }
+      }
+      
+      if (!user || !user.email) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return the email
+      return res.status(200).json({ email: user.email });
+    } catch (error) {
+      console.error("Error getting email by username:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   // Setup authentication routes and middleware
   setupAuth(app);
   
