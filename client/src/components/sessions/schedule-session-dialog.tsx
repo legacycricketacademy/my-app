@@ -187,12 +187,12 @@ export function ScheduleSessionDialog() {
                               value={field.value ? format(field.value, "HH:mm") : ""}
                               onChange={(e) => {
                                 const timeString = e.target.value;
-                                if (timeString && field.value) {
+                                if (timeString) {
                                   const [hours, minutes] = timeString.split(':').map(Number);
-                                  const newDate = new Date(field.value);
+                                  const newDate = field.value ? new Date(field.value) : new Date();
                                   newDate.setHours(hours);
                                   newDate.setMinutes(minutes);
-                                  field.onChange(newDate);
+                                  setTempStartDate(newDate);
                                 }
                               }}
                             />
@@ -213,7 +213,11 @@ export function ScheduleSessionDialog() {
                                 type="button"
                                 size="sm"
                                 onClick={() => {
-                                  // Close the popover with confirmation
+                                  // Make sure we commit any temporary selection
+                                  if (tempStartDate) {
+                                    field.onChange(tempStartDate);
+                                  }
+                                  // Close the popover
                                   const buttonElement = document.activeElement as HTMLElement;
                                   buttonElement?.blur();
                                 }}
@@ -239,12 +243,12 @@ export function ScheduleSessionDialog() {
                                     newDate.setHours(now.getHours());
                                     newDate.setMinutes(now.getMinutes());
                                   }
-                                  // Save to both temp state and field
+                                  // Only save to temp state, wait for OK button to commit
                                   setTempStartDate(newDate);
-                                  field.onChange(newDate);
                                   
                                   // Auto-close on mobile after selection
                                   if (window.innerWidth < 640) {
+                                    field.onChange(newDate); // On mobile, commit directly
                                     const buttonElement = document.activeElement as HTMLElement;
                                     buttonElement?.blur();
                                   }
@@ -297,12 +301,12 @@ export function ScheduleSessionDialog() {
                               value={field.value ? format(field.value, "HH:mm") : ""}
                               onChange={(e) => {
                                 const timeString = e.target.value;
-                                if (timeString && field.value) {
+                                if (timeString) {
                                   const [hours, minutes] = timeString.split(':').map(Number);
-                                  const newDate = new Date(field.value);
+                                  const newDate = field.value ? new Date(field.value) : new Date();
                                   newDate.setHours(hours);
                                   newDate.setMinutes(minutes);
-                                  field.onChange(newDate);
+                                  setTempEndDate(newDate);
                                 }
                               }}
                             />
@@ -323,7 +327,11 @@ export function ScheduleSessionDialog() {
                                 type="button"
                                 size="sm"
                                 onClick={() => {
-                                  // Close the popover with confirmation
+                                  // Make sure we commit any temporary selection
+                                  if (tempEndDate) {
+                                    field.onChange(tempEndDate);
+                                  }
+                                  // Close the popover
                                   const buttonElement = document.activeElement as HTMLElement;
                                   buttonElement?.blur();
                                 }}
@@ -349,12 +357,12 @@ export function ScheduleSessionDialog() {
                                     newDate.setHours(startTime.getHours() + 1);
                                     newDate.setMinutes(startTime.getMinutes());
                                   }
-                                  // Save to both temp state and field
+                                  // Only save to temp state, wait for OK button to commit
                                   setTempEndDate(newDate);
-                                  field.onChange(newDate);
                                   
                                   // Auto-close on mobile after selection
                                   if (window.innerWidth < 640) {
+                                    field.onChange(newDate); // On mobile, commit directly
                                     const buttonElement = document.activeElement as HTMLElement;
                                     buttonElement?.blur();
                                   }
