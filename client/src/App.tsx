@@ -23,6 +23,7 @@ import ImportDataPage from "@/pages/import-data-page";
 import ProfilePage from "@/pages/profile-page";
 import NotFound from "@/pages/not-found";
 import PlayersPendingReviewPage from "@/pages/admin/players-pending-review";
+import CoachesPendingApprovalPage from "@/pages/admin/coaches-pending-approval";
 
 // Parent Pages
 import ParentDashboard from "@/pages/parent-dashboard";
@@ -245,6 +246,13 @@ function RouterContent() {
         component={PlayersPendingReviewPage} 
         allowedRoles={["admin", "coach"]}
         redirectTo="/parent"
+      />
+      
+      <RoleBasedRoute 
+        path="/coaches-pending-approval" 
+        component={CoachesPendingApprovalPage} 
+        allowedRoles={["admin"]}
+        redirectTo="/"
       />
       
       {/* Profile page - accessible to all authenticated users */}
