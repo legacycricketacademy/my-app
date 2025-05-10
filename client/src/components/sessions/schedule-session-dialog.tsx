@@ -177,7 +177,7 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[85vw] sm:w-auto p-0 relative z-50" align="center" side="bottom" sideOffset={5}>
+                      <PopoverContent className="w-[95vw] sm:w-[350px] p-0 relative z-50" align="center" side="bottom" sideOffset={5}>
                         <div className="flex flex-col">
                           <div className="sticky top-0 z-10 bg-background p-2 border-b flex items-center justify-between">
                             <Input
@@ -226,7 +226,7 @@ export function ScheduleSessionDialog() {
                               </Button>
                             </div>
                           </div>
-                          <div className="overflow-auto p-1" style={{ maxHeight: '60vh' }}>
+                          <div className="overflow-y-auto overflow-x-hidden p-1" style={{ maxHeight: 'min(calc(60vh - 50px), 350px)', minHeight: '300px' }}>
                             <Calendar
                               mode="single"
                               selected={field.value}
@@ -291,7 +291,7 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[85vw] sm:w-auto p-0 relative z-50" align="center" side="bottom" sideOffset={5}>
+                      <PopoverContent className="w-[95vw] sm:w-[350px] p-0 relative z-50" align="center" side="bottom" sideOffset={5}>
                         <div className="flex flex-col">
                           <div className="sticky top-0 z-10 bg-background p-2 border-b flex items-center justify-between">
                             <Input
@@ -340,7 +340,7 @@ export function ScheduleSessionDialog() {
                               </Button>
                             </div>
                           </div>
-                          <div className="overflow-auto p-1" style={{ maxHeight: '60vh' }}>
+                          <div className="overflow-y-auto overflow-x-hidden p-1" style={{ maxHeight: 'min(calc(60vh - 50px), 350px)', minHeight: '300px' }}>
                             <Calendar
                               mode="single"
                               selected={field.value}
