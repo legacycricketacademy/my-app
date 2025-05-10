@@ -2573,6 +2573,272 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin invitation endpoints
+  app.post(`${apiPrefix}/admin/invite`, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Only superadmin or admin can invite new admins
+      if (req.user.role !== 'superadmin' && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Only administrators can send invitations" });
+      }
+      
+      const { email, role } = req.body;
+      
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ message: "Valid email is required" });
+      }
+      
+      if (!role || !['admin', 'coach'].includes(role)) {
+        return res.status(400).json({ message: "Valid role is required (admin or coach)" });
+      }
+      
+      // Check if user already exists with this email
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "A user with this email already exists" });
+      }
+      
+      // Check if there's an existing active invitation
+      const { adminInvitations } = require("@shared/schema");
+      const existingInvitations = await db.select().from(adminInvitations)
+        .where(eq(adminInvitations.email, email))
+        .where(eq(adminInvitations.status, "pending"));
+      
+      if (existingInvitations.length > 0) {
+        return res.status(400).json({ message: "An invitation for this email already exists" });
+      }
+      
+      // Generate invitation token with 7 day expiry
+      const token = generateToken(
+        { email, role, academyId: req.user.academyId || 1 },
+        7 * 24 * 60 * 60 * 1000 // 7 days
+      );
+      
+      // Create invitation record
+      const invitation = await db.insert(adminInvitations).values({
+        token,
+        email,
+        role,
+        status: "pending",
+        academyId: req.user.academyId || 1,
+        createdById: req.user.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      
+      // Generate admin invitation email function
+      function generateAdminInvitationEmail(
+        role: string,
+        invitationLink: string
+      ): { text: string; html: string } {
+        const ACADEMY_NAME = 'Legacy Cricket Academy';
+        
+        // Plain text version
+        const text = `
+Hello,
+
+You have been invited to join ${ACADEMY_NAME} as a ${role}.
+
+Use this link to create your account: ${invitationLink}
+
+This invitation will expire in 7 days.
+
+Thank you,
+${ACADEMY_NAME} Team
+        `;
+        
+        // HTML version
+        const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
+    .content { padding: 20px; }
+    .button { display: inline-block; padding: 10px 20px; color: white; background-color: #4f46e5; 
+              text-decoration: none; border-radius: 4px; margin: 20px 0; }
+    .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${ACADEMY_NAME}</h1>
+    </div>
+    <div class="content">
+      <p>Hello,</p>
+      <p>You have been invited to join <strong>${ACADEMY_NAME}</strong> as a <strong>${role}</strong>.</p>
+      <p>Click the button below to create your account:</p>
+      <a href="${invitationLink}" class="button">Accept Invitation</a>
+      <p><em>This invitation will expire in 7 days.</em></p>
+      <p>If the button doesn't work, copy and paste this link into your browser:</p>
+      <p>${invitationLink}</p>
+      <p>Thank you,<br>${ACADEMY_NAME} Team</p>
+    </div>
+    <div class="footer">
+      <p>This is an automated message, please do not reply to this email.</p>
+      <p>&copy; ${new Date().getFullYear()} ${ACADEMY_NAME}</p>
+    </div>
+  </div>
+</body>
+</html>
+        `;
+        
+        return { text, html };
+      }
+      
+      // Create invitation link
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const invitationLink = `${baseUrl}/auth?invitation=${token}`;
+      
+      // Generate email content
+      const { text, html } = generateAdminInvitationEmail(role, invitationLink);
+      
+      // Send invitation email
+      const { sendEmail } = require('./email');
+      const emailSent = await sendEmail({
+        to: email,
+        subject: `Invitation to join Legacy Cricket Academy as ${role}`,
+        text,
+        html
+      });
+      
+      if (!emailSent) {
+        // Don't fail the request, but note that email wasn't sent
+        console.warn(`Failed to send invitation email to ${email}`);
+        return res.status(201).json({ 
+          message: "Invitation created but email could not be sent",
+          invitationLink, // Return link for direct sharing
+          invitation: invitation[0]
+        });
+      }
+      
+      // Success response
+      res.status(201).json({ 
+        message: "Invitation sent successfully",
+        invitation: invitation[0]
+      });
+    } catch (error) {
+      console.error("Error creating admin invitation:", error);
+      res.status(500).json({ message: "An error occurred while creating the invitation" });
+    }
+  });
+  
+  // Get all pending admin invitations (for admin dashboard)
+  app.get(`${apiPrefix}/admin/invitations`, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Only admin/superadmin can view invitations
+      if (req.user.role !== 'superadmin' && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const { adminInvitations } = require("@shared/schema");
+      
+      // Filter by academy if specified
+      const academyId = req.user.academyId || req.query.academyId;
+      
+      let query = db.select().from(adminInvitations);
+      
+      if (academyId) {
+        query = query.where(eq(adminInvitations.academyId, Number(academyId)));
+      }
+      
+      const invitations = await query.orderBy(desc(adminInvitations.createdAt));
+      
+      res.json(invitations);
+    } catch (error) {
+      console.error("Error fetching admin invitations:", error);
+      res.status(500).json({ message: "Error fetching invitations" });
+    }
+  });
+  
+  // Revoke an admin invitation
+  app.post(`${apiPrefix}/admin/invitations/:id/revoke`, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Only admin/superadmin can revoke invitations
+      if (req.user.role !== 'superadmin' && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const invitationId = parseInt(req.params.id);
+      const { adminInvitations } = require("@shared/schema");
+      
+      // Update invitation status to revoked
+      const updatedInvitation = await db.update(adminInvitations)
+        .set({ 
+          status: "revoked",
+          updatedAt: new Date()
+        })
+        .where(eq(adminInvitations.id, invitationId))
+        .returning();
+      
+      if (updatedInvitation.length === 0) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+      
+      res.json({ 
+        message: "Invitation revoked successfully",
+        invitation: updatedInvitation[0]
+      });
+    } catch (error) {
+      console.error("Error revoking invitation:", error);
+      res.status(500).json({ message: "Error revoking invitation" });
+    }
+  });
+  
+  // Endpoint to verify admin invitation token
+  app.get(`${apiPrefix}/admin/verify-invitation`, async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: "Invalid token" });
+      }
+      
+      // Decode and verify the token
+      const payload = verifyToken(token);
+      
+      if (!payload.valid || !payload.payload) {
+        return res.status(400).json({ message: "Invalid or expired token" });
+      }
+      
+      // Check if this invitation exists and is still pending
+      const { adminInvitations } = require("@shared/schema");
+      const invitation = await db.select().from(adminInvitations)
+        .where(eq(adminInvitations.token, token))
+        .where(eq(adminInvitations.status, "pending"));
+      
+      if (invitation.length === 0) {
+        return res.status(400).json({ message: "Invitation not found or already used" });
+      }
+      
+      // Return token payload data
+      res.json({
+        email: payload.payload.email,
+        role: payload.payload.role,
+        academyId: payload.payload.academyId,
+        valid: true
+      });
+    } catch (error) {
+      console.error("Error verifying admin invitation:", error);
+      res.status(500).json({ message: "Error verifying invitation" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
