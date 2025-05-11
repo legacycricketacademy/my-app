@@ -1,5 +1,19 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  signOut, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  updateProfile, 
+  sendEmailVerification, 
+  sendPasswordResetEmail, 
+  GoogleAuthProvider, 
+  signInWithPopup,
+  browserLocalPersistence, 
+  browserSessionPersistence, 
+  setPersistence
+} from "firebase/auth";
 import { useEffect, useState } from "react";
 
 // Firebase configuration using environment variables
@@ -9,6 +23,8 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  // Enable cookies for Firebase auth in a browser environment
+  persistance: true, 
   // Optional configurations - if you have these values, uncomment them
   // messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   // measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
@@ -37,7 +53,17 @@ try {
   throw error;
 }
 
+// Initialize authentication with persistence
 export const auth = getAuth(app);
+// Enable browser persistence for auth state
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log("Firebase auth persistence enabled");
+  })
+  .catch(error => {
+    console.error("Error setting auth persistence:", error);
+  });
+
 export const googleProvider = new GoogleAuthProvider();
 
 // Firebase auth hooks
