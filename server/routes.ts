@@ -2950,6 +2950,16 @@ ${ACADEMY_NAME} Team
         return res.status(400).json({ message: "Username already exists" });
       }
       
+      // Determine the appropriate status based on role
+      let status = "active";
+      let isActive = true;
+      
+      // Set the appropriate status and activity flag based on role
+      if (role === "coach" || role === "admin") {
+        status = "pending";  // Coaches and admins need approval
+        isActive = false;    // Not active until approved
+      }
+      
       // Create user in our database
       const user = await storage.createUser({
         username,
@@ -2960,7 +2970,8 @@ ${ACADEMY_NAME} Team
         firebaseUid,
         academyId: academyId || null,
         isEmailVerified: false, // Firebase will verify the email
-        status: "active", // Auto-activate users from Firebase
+        status: status,
+        isActive: isActive,
       });
       
       // Log user in
