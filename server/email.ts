@@ -41,13 +41,40 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
 
   try {
     console.log('Attempting to send email to:', params.to);
+    
+    // Add more headers to reduce chance of being marked as spam
     await sgMail.send({
       to: params.to,
-      from: ACADEMY_EMAIL,
+      from: {
+        email: ACADEMY_EMAIL,
+        name: ACADEMY_NAME,  // Adding a proper name helps with deliverability
+      },
       subject: params.subject,
       text: params.text,
       html: params.html,
+      mailSettings: {
+        sandboxMode: {
+          enable: false  // Make sure sandbox mode is disabled in production
+        }
+      },
+      trackingSettings: {
+        clickTracking: {
+          enable: true
+        },
+        openTracking: {
+          enable: true
+        }
+      },
+      // Add categories for better tracking in SendGrid dashboard
+      categories: ['cricket-academy', 'notification'],
+      // Adding custom headers to prevent spam filters
+      headers: {
+        'X-Priority': '1', // High priority
+        'Importance': 'high',
+        'List-Unsubscribe': `<mailto:unsubscribe@${ACADEMY_EMAIL.split('@')[1]}>`,
+      },
     });
+    
     console.log('Email sent successfully to:', params.to);
     return true;
   } catch (error: any) {
@@ -313,19 +340,25 @@ Thanks,
 ${ACADEMY_NAME} Team
 `;
 
-  // HTML version
+  // HTML version with improved design and anti-spam measures
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>Coach Registration - Pending Approval</title>
   <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; }
     .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
     .content { padding: 20px; }
     .status-box { padding: 15px; background-color: #fff4e5; border-left: 4px solid #ff9800; 
                  border-radius: 4px; margin: 20px 0; }
-    .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+    .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+    .whitelist-notice { font-size: 11px; color: #999; margin-top: 10px; text-align: center; }
   </style>
 </head>
 <body>
@@ -344,8 +377,12 @@ ${ACADEMY_NAME} Team
       <p>Thanks,<br>${ACADEMY_NAME} Team</p>
     </div>
     <div class="footer">
-      <p>This is an automated message, please do not reply to this email.</p>
+      <p>This is an automated message sent to you because you registered for ${ACADEMY_NAME}.</p>
       <p>&copy; ${new Date().getFullYear()} ${ACADEMY_NAME}</p>
+      <div class="whitelist-notice">
+        <p>To ensure you receive our emails, please add ${ACADEMY_EMAIL} to your contacts.</p>
+        <p>If you believe you received this email in error, please ignore this message.</p>
+      </div>
     </div>
   </div>
 </body>
@@ -402,7 +439,15 @@ ${ACADEMY_NAME} Team
         <p>You now have full access to all coaching features on our platform.</p>
       </div>
       <p>You can now log in using your credentials and start managing your students, sessions, and more.</p>
-      <a href="${loginLink}" class="button">Login to Your Account</a>
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td align="center" style="border-radius: 4px;" bgcolor="#4f46e5">
+            <a href="${loginLink}" target="_blank" style="padding: 12px 24px; font-size: 16px; color: #ffffff; font-weight: bold; text-decoration: none; display: inline-block; border-radius: 4px; font-family: Arial, sans-serif;">
+              Login to Your Account
+            </a>
+          </td>
+        </tr>
+      </table>
       <p>Thanks,<br>${ACADEMY_NAME} Team</p>
     </div>
     <div class="footer">
@@ -471,7 +516,15 @@ ${ACADEMY_NAME} System
       </div>
       
       <p>Please review this request and approve if appropriate:</p>
-      <a href="${approvalLink}" class="button">Review Coach Account</a>
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td align="center" style="border-radius: 4px;" bgcolor="#4f46e5">
+            <a href="${approvalLink}" target="_blank" style="padding: 12px 24px; font-size: 16px; color: #ffffff; font-weight: bold; text-decoration: none; display: inline-block; border-radius: 4px; font-family: Arial, sans-serif;">
+              Review Coach Account
+            </a>
+          </td>
+        </tr>
+      </table>
       
       <p>Thanks,<br>${ACADEMY_NAME} System</p>
     </div>
