@@ -3255,7 +3255,8 @@ ${ACADEMY_NAME} Team
           const hostname = req.get('host');
           const protocol = req.protocol;
           const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
-          const approvalLink = `${appBaseUrl}/admin/coaches`;
+          // Use /coaches-pending-approval as the primary route, but we've also added an alias route at /admin/coaches
+          const approvalLink = `${appBaseUrl}/coaches-pending-approval`;
           
           const adminEmailContent = generateAdminCoachApprovalRequestEmail(
             "Administrator", // Admin name
