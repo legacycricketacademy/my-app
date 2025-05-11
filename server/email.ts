@@ -63,8 +63,7 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
           enable: true, // Add footer to comply with anti-spam laws
         },
         spamCheck: {
-          enable: true, // Enable spam check
-          threshold: 5  // Set spam check threshold
+          enable: false // Disabling spam check as it requires post_to_url parameter
         }
       },
       trackingSettings: {
