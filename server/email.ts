@@ -55,6 +55,16 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
       mailSettings: {
         sandboxMode: {
           enable: false  // Make sure sandbox mode is disabled in production
+        },
+        bypassListManagement: {
+          enable: false // Respect unsubscribe lists
+        },
+        footer: {
+          enable: true, // Add footer to comply with anti-spam laws
+        },
+        spamCheck: {
+          enable: true, // Enable spam check
+          threshold: 5  // Set spam check threshold
         }
       },
       trackingSettings: {
@@ -63,11 +73,27 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
         },
         openTracking: {
           enable: true
+        },
+        subscriptionTracking: {
+          enable: true
         }
       },
       // Add categories for better tracking in SendGrid dashboard
-      categories: ['cricket-academy', 'notification'],
+      categories: ['cricket-academy', 'system-notification', 'account-action'],
       // Adding custom headers to prevent spam filters
+      headers: {
+        'X-Priority': '1',
+        'Importance': 'high',
+        'X-MSMail-Priority': 'High',
+        'X-Entity-Ref-ID': `cricket-academy-${Date.now()}`, // Unique ID helps deliverability
+        'List-Unsubscribe': `<mailto:unsubscribe@${ACADEMY_EMAIL.split('@')[1]}?subject=Unsubscribe>`,
+        'Precedence': 'bulk'
+      },
+      customArgs: {
+        app: 'cricket-academy',
+        email_type: 'notification',
+        system_generated: 'true'
+      },
       headers: {
         'X-Priority': '1', // High priority
         'Importance': 'high',

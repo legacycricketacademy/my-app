@@ -256,6 +256,14 @@ function RouterContent() {
         redirectTo="/"
       />
       
+      {/* Add alternative path for admin/coaches to handle the URL in the email link */}
+      <RoleBasedRoute 
+        path="/admin/coaches" 
+        component={CoachesPendingApprovalPage} 
+        allowedRoles={["admin"]}
+        redirectTo="/"
+      />
+      
       {/* Profile page - accessible to all authenticated users */}
       <ProtectedRoute path="/profile" component={ProfilePage} />
       
