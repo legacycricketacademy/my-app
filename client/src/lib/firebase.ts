@@ -2,16 +2,16 @@ import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useEffect, useState } from "react";
 
-// Firebase configuration using hardcoded values for development
-// In a production environment, these would come from environment variables
+// Firebase configuration using environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyD2agq-FmwzlRdRqTr_6-wsWZJzoUmDyts",
-  authDomain: "legacy-cricket-academy.firebaseapp.com",
-  projectId: "legacy-cricket-academy",
-  storageBucket: "legacy-cricket-academy.appspot.com",
-  messagingSenderId: "872043124420",
-  appId: "1:872043124420:web:1a9f5998e4dcbf8f959b91",
-  measurementId: "G-X6C1JRHE20",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  // Optional configurations - if you have these values, uncomment them
+  // messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  // measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase - ensure we only initialize once
@@ -24,15 +24,14 @@ console.log("Firebase configuration:", {
 // Helper to get existing app or initialize a new one
 let app;
 try {
-  // Check if Firebase is already initialized
-  try {
-    app = initializeApp();
-    console.log("Using existing Firebase app");
-  } catch (e) {
-    // Initialize Firebase with config
-    app = initializeApp(firebaseConfig);
-    console.log("Firebase initialized successfully");
+  // Check if the environment variables are defined
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || !import.meta.env.VITE_FIREBASE_PROJECT_ID || !import.meta.env.VITE_FIREBASE_APP_ID) {
+    throw new Error("Firebase environment variables are missing. Please check your .env file.");
   }
+  
+  // Initialize Firebase with config
+  app = initializeApp(firebaseConfig);
+  console.log("Firebase initialized successfully");
 } catch (error: any) {
   console.error("Firebase initialization error:", error);
   throw error;
