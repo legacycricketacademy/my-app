@@ -339,25 +339,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
         
-        // Attempt to log in with Firebase
+        // First try the direct API approach
         try {
-          return await firebaseLoginFn(email, credentials.password);
-        } catch (error: any) {
-          console.error("Firebase login error:", error);
+          // Import the direct API login function
+          const { signInWithEmail } = await import('@/lib/firebase-direct');
           
-          // Map Firebase error codes to user-friendly messages
-          if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-            throw new Error("Invalid email/username or password");
-          } else if (error.code === 'auth/invalid-email') {
-            throw new Error("Invalid email format");
-          } else if (error.code === 'auth/user-disabled') {
-            throw new Error("This account has been disabled. Please contact support.");
-          } else if (error.code === 'auth/too-many-requests') {
-            throw new Error("Too many failed login attempts. Please try again later or reset your password.");
-          } else if (error.code === 'auth/network-request-failed') {
-            throw new Error("Network error. Please check your internet connection and try again.");
-          } else {
-            throw new Error(error.message || "An error occurred during login. Please try again.");
+          console.log("Attempting direct API login for:", email);
+          
+          // Login with direct API
+          const firebaseUser = await signInWithEmail(email, credentials.password);
+          
+          if (!firebaseUser || !firebaseUser.uid) {
+            console.error("Firebase direct API login returned invalid user");
+            throw new Error("Login failed. Please try again later.");
+          }
+          
+          console.log("Firebase direct API login successful:", firebaseUser.uid);
+          
+          // Make sure to send token to backend
+          const token = firebaseUser.idToken;
+          
+          // Call backend to login with Firebase token
+          const res = await fetch("/api/auth/login-firebase", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token }),
+            credentials: "include",
+          });
+          
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            console.error("Backend login failed:", errorData);
+            throw new Error(errorData.message || "Login failed on the server side. Please try again.");
+          }
+          
+          const userData = await res.json();
+          console.log("Backend login successful:", userData);
+          
+          // Return user data instead of Firebase credentials
+          return userData;
+        } 
+        catch (error: any) {
+          console.error("Firebase direct API or backend login error:", error);
+          
+          // Fall back to original SDK method
+          try {
+            console.log("Falling back to SDK login for:", email);
+            return await firebaseLoginFn(email, credentials.password);
+          } 
+          catch (sdkError: any) {
+            console.error("Firebase SDK login error:", sdkError);
+            
+            // Map Firebase error codes to user-friendly messages
+            if (error.message?.includes("EMAIL_NOT_FOUND") || 
+                error.message?.includes("INVALID_PASSWORD") ||
+                sdkError.code === 'auth/user-not-found' || 
+                sdkError.code === 'auth/wrong-password') {
+              throw new Error("Invalid email/username or password");
+            } else if (error.message?.includes("INVALID_EMAIL") ||
+                      sdkError.code === 'auth/invalid-email') {
+              throw new Error("Invalid email format");
+            } else if (sdkError.code === 'auth/user-disabled') {
+              throw new Error("This account has been disabled. Please contact support.");
+            } else if (sdkError.code === 'auth/too-many-requests') {
+              throw new Error("Too many failed login attempts. Please try again later or reset your password.");
+            } else if (sdkError.code === 'auth/network-request-failed') {
+              throw new Error("Network error. Please check your internet connection and try again.");
+            } else if (sdkError.code === 'auth/configuration-not-found') {
+              throw new Error("Firebase authentication is not properly configured. Please contact support.");
+            } else {
+              throw new Error("Login failed. Please try again later.");
+            }
           }
         }
       } catch (error: any) {
@@ -365,31 +419,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
     },
-    onSuccess: async (userCredential: any) => {
+    onSuccess: async (userData: User) => {
+      // User data is already returned from the mutation function
       try {
-        // Get user data from our database
-        const res = await fetch("/api/user");
-        if (res.ok) {
-          const userData = await res.json();
-          queryClient.setQueryData(["/api/user"], userData);
-          
-          // Check if the coach/admin account is pending approval
-          if ((userData.role === 'coach' || userData.role === 'admin') && 
-              (userData.status === 'pending' || userData.isActive === false)) {
-            toast({
-              title: "Account Pending Approval",
-              description: "Your account is awaiting administrator approval. You'll be notified when approved.",
-              duration: 6000, // show for longer
-            });
-          } else {
-            toast({
-              title: "Login successful",
-              description: `Welcome back, ${userData.fullName}!`,
-            });
-          }
+        // Update the query cache
+        queryClient.setQueryData(["/api/user"], userData);
+        
+        // Check if the coach/admin account is pending approval
+        if ((userData.role === 'coach' || userData.role === 'admin') && 
+            (userData.status === 'pending' || userData.isActive === false)) {
+          toast({
+            title: "Account Pending Approval",
+            description: "Your account is awaiting administrator approval. You'll be notified when approved.",
+            duration: 6000, // show for longer
+          });
+        } else {
+          toast({
+            title: "Login successful",
+            description: `Welcome back, ${userData.fullName}!`,
+          });
         }
       } catch (error) {
-        console.error("Error fetching user data after Firebase login:", error);
+        console.error("Error processing user data after login:", error);
       }
     },
     onError: (error: Error) => {
@@ -417,15 +468,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Firebase registration + backend registration
   const firebaseRegisterMutation = useMutation({
-    mutationFn: async (userData: RegisterData) => {
+    mutationFn: async (registerData: RegisterData) => {
       try {
-        // Validate Firebase configuration first
-        if (!auth) {
-          console.error("Firebase auth object is not available:", auth);
-          throw new Error("Firebase auth is not configured properly. Please contact support.");
-        }
-        
-        // Log the environment variables (without revealing sensitive data)
         console.log("Firebase config check:", {
           apiKeyExists: !!import.meta.env.VITE_FIREBASE_API_KEY,
           projectIdExists: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -433,72 +477,125 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID
         });
         
-        // First, create Firebase user
+        // First, try direct API approach for Firebase user creation
         let firebaseUser;
+        
         try {
-          console.log("Attempting to create Firebase user for email:", userData.email);
+          // Import functions from our direct API module
+          const { signUpWithEmail } = await import('@/lib/firebase-direct');
           
-          firebaseUser = await firebaseSignupFn(
-            userData.email, 
-            userData.password,
-            userData.fullName
+          console.log("Attempting direct API signup for:", registerData.email);
+          
+          // Create user with direct API call
+          firebaseUser = await signUpWithEmail(
+            registerData.email, 
+            registerData.password,
+            registerData.fullName
           );
           
           if (!firebaseUser || !firebaseUser.uid) {
-            console.error("Firebase user creation returned invalid user:", firebaseUser);
-            throw new Error("Failed to create Firebase user. Please try again later.");
+            console.error("Firebase direct API returned invalid user:", firebaseUser);
+            throw new Error("Failed to create user account. Please try again later.");
           }
           
           console.log("Firebase user created successfully with uid:", firebaseUser.uid);
-        } catch (error: any) {
-          console.error("Firebase user creation error:", error);
-          console.error("Error details:", {
-            code: error.code,
-            message: error.message,
-            fullError: JSON.stringify(error)
-          });
+        } 
+        catch (error: any) {
+          console.error("Firebase direct API error:", error);
           
-          // Map Firebase error codes to user-friendly messages
-          if (error.code === 'auth/email-already-in-use') {
-            throw new Error("This email is already registered. Please use a different email or try logging in.");
-          } else if (error.code === 'auth/invalid-email') {
-            throw new Error("Please enter a valid email address.");
-          } else if (error.code === 'auth/weak-password') {
-            throw new Error("Password is too weak. Please use a stronger password.");
-          } else if (error.code === 'auth/network-request-failed') {
-            throw new Error("Network error. Please check your internet connection and try again.");
-          } else if (error.code === 'auth/internal-error') {
-            throw new Error("Firebase internal error. Please try again later or contact support.");
-          } else {
-            throw new Error(`Firebase registration error: ${error.message || "Unknown error"} (Code: ${error.code || "unknown"})`);
+          // Fall back to original method if direct API fails
+          try {
+            console.log("Falling back to SDK method for:", userData.email);
+            
+            if (!auth) {
+              console.error("Firebase auth is not available");
+              throw new Error("Authentication service is not available. Please try again later.");
+            }
+            
+            firebaseUser = await firebaseSignupFn(
+              userData.email, 
+              userData.password,
+              userData.fullName
+            );
+            
+            if (!firebaseUser || !firebaseUser.uid) {
+              console.error("Firebase SDK signup returned invalid user:", firebaseUser);
+              throw new Error("Failed to create user. Please try again later.");
+            }
+          } 
+          catch (sdkError: any) {
+            console.error("Firebase user creation error:", error);
+            console.error("SDK error details:", {
+              code: sdkError.code,
+              message: sdkError.message
+            });
+            
+            // Map Firebase error codes to user-friendly messages
+            if (error.message?.includes("EMAIL_EXISTS") || sdkError.code === 'auth/email-already-in-use') {
+              throw new Error("This email is already registered. Please use a different email or try logging in.");
+            } else if (error.message?.includes("INVALID_EMAIL") || sdkError.code === 'auth/invalid-email') {
+              throw new Error("Please enter a valid email address.");
+            } else if (error.message?.includes("WEAK_PASSWORD") || sdkError.code === 'auth/weak-password') {
+              throw new Error("Password is too weak. Please use a stronger password.");
+            } else if (sdkError.code === 'auth/network-request-failed') {
+              throw new Error("Network error. Please check your internet connection and try again.");
+            } else if (sdkError.code === 'auth/configuration-not-found') {
+              throw new Error("Firebase authentication is not properly configured. Please contact support.");
+            } else {
+              throw new Error("Account creation failed. Please try again later.");
+            }
           }
         }
         
         // Then create or link with backend user
         try {
-          const res = await fetch("/api/auth/register-firebase", {
+          // Include idToken if available from direct API method
+          interface FirebaseUserData {
+            firebaseUid: string;
+            username: string;
+            email: string;
+            fullName: string;
+            role: string;
+            phone?: string;
+            academyId?: number;
+            idToken?: string;
+          }
+          
+          const firebaseData: FirebaseUserData = {
+            firebaseUid: firebaseUser.uid,
+            username: registerData.username,
+            email: registerData.email,
+            fullName: registerData.fullName,
+            role: registerData.role,
+            phone: registerData.phone,
+            academyId: registerData.academyId
+          };
+          
+          // Add token if available from direct API
+          if ('idToken' in firebaseUser && firebaseUser.idToken) {
+            firebaseData.idToken = firebaseUser.idToken;
+          }
+          
+          console.log("Registering with backend using Firebase uid:", firebaseUser.uid);
+          
+          const response = await fetch("/api/auth/register-firebase", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              firebaseUid: firebaseUser.uid,
-              username: userData.username,
-              email: userData.email,
-              fullName: userData.fullName,
-              role: userData.role,
-              phone: userData.phone,
-              academyId: userData.academyId
-            }),
+            body: JSON.stringify(firebaseData),
             credentials: "include",
           });
 
-          if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            throw new Error(errorData.message || "Backend registration failed. Please try again.");
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("Backend registration failed:", errorData);
+            throw new Error(errorData.message || "Registration failed on the server side. Please try again.");
           }
 
-          return await res.json();
+          const backendUserData = await response.json();
+          console.log("Backend registration successful:", backendUserData);
+          return backendUserData;
         } catch (error: any) {
           console.error("Backend registration error:", error);
           throw new Error(error.message || "Failed to register with the server. Please try again later.");
