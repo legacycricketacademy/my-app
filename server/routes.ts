@@ -18,9 +18,19 @@ import {
   insertConnectionRequestSchema,
   connectionRequests,
   academies,
-  users
+  users,
+  userAuditLogs
 } from "@shared/schema";
-import { sendEmail, generateInvitationEmail, generateVerificationEmail, generateForgotPasswordEmail, generateForgotUsernameEmail } from "./email";
+import { 
+  sendEmail, 
+  generateInvitationEmail, 
+  generateVerificationEmail, 
+  generateForgotPasswordEmail, 
+  generateForgotUsernameEmail,
+  generateCoachPendingApprovalEmail,
+  generateCoachApprovedEmail,
+  generateAdminCoachApprovalRequestEmail
+} from "./email";
 import { hashPassword, comparePasswords } from "./auth";
 import { eq } from "drizzle-orm";
 
@@ -728,9 +738,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send email notification to the coach about their account status
       if (approved) {
         try {
-          // Use improved email template for coach approval
-          const { generateCoachApprovedEmail, sendEmail } = require("./email");
-          
           // Generate login URL - use default if APP_URL is not set
           const appBaseUrl = process.env.APP_URL || "https://legacycricketacademy.com";
           const loginLink = `${appBaseUrl}/auth`;
@@ -3227,7 +3234,7 @@ ${ACADEMY_NAME} Team
       if (role === "coach") {
         try {
           // 1. Send email to the coach about pending approval
-          const { generateCoachPendingApprovalEmail, sendEmail } = require("./email");
+          // Import email functions from the current context (already imported at top)
           const coachEmailContent = generateCoachPendingApprovalEmail(fullName);
           
           await sendEmail({
@@ -3244,7 +3251,6 @@ ${ACADEMY_NAME} Team
           const appBaseUrl = process.env.APP_URL || "https://legacycricketacademy.com";
           const approvalLink = `${appBaseUrl}/admin/coaches`;
           
-          const { generateAdminCoachApprovalRequestEmail } = require("./email");
           const adminEmailContent = generateAdminCoachApprovalRequestEmail(
             "Administrator", // Admin name
             fullName,
