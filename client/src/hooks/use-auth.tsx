@@ -147,10 +147,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${user.fullName}!`,
-      });
+      
+      // Check if the coach/admin account is pending approval
+      if ((user.role === 'coach' || user.role === 'admin') && 
+          (user.status === 'pending' || user.isActive === false)) {
+        toast({
+          title: "Account Pending Approval",
+          description: "Your account is awaiting administrator approval. You'll be notified when approved.",
+          duration: 6000, // show for longer
+        });
+      } else {
+        toast({
+          title: "Login successful",
+          description: `Welcome back, ${user.fullName}!`,
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
