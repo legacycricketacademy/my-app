@@ -87,7 +87,7 @@ function RouterContent() {
   
   return (
     <Switch>
-      <Route path="/auth" component={AuthPageLocal} />
+      <Route path="/auth" component={AuthPage} />
       
       {/* Admin and Coach Routes */}
       <RoleBasedRoute 
