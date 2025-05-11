@@ -9,6 +9,7 @@ import { Redirect } from "wouter";
 
 // Admin/Coach Pages
 import AuthPage from "@/pages/auth-page";
+import AuthPageLocal from "@/pages/auth-page-local";
 import Dashboard from "@/pages/dashboard";
 import PlayersPage from "@/pages/players-page";
 import PlayerDetailPage from "@/pages/player-detail-page";
@@ -86,7 +87,7 @@ function RouterContent() {
   
   return (
     <Switch>
-      <Route path="/auth" component={AuthPage} />
+      <Route path="/auth" component={AuthPageLocal} />
       
       {/* Admin and Coach Routes */}
       <RoleBasedRoute 
