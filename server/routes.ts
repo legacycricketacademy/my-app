@@ -727,14 +727,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send email notification to the coach about their account status
       if (approved) {
-        // Here you would call your email service to send an approval notification
         try {
+          // Use improved email template for coach approval
+          const { generateCoachApprovedEmail, sendEmail } = require("./email");
+          
+          // Generate login URL - use default if APP_URL is not set
+          const appBaseUrl = process.env.APP_URL || "https://legacycricketacademy.com";
+          const loginLink = `${appBaseUrl}/auth`;
+          
+          const emailContent = generateCoachApprovedEmail(userData.fullName, loginLink);
+          
           await sendEmail({
             to: userData.email,
-            subject: "Your Coach Account Has Been Approved",
-            text: `Dear ${userData.fullName},\n\nYour coach account at Legacy Cricket Academy has been approved. You can now log in and access the coaching dashboard.\n\nThank you,\nLegacy Cricket Academy Team`,
-            html: `<p>Dear ${userData.fullName},</p><p>Your coach account at Legacy Cricket Academy has been approved. You can now log in and access the coaching dashboard.</p><p>Thank you,<br>Legacy Cricket Academy Team</p>`
+            subject: "Congratulations! Your Coach Account Has Been Approved",
+            text: emailContent.text,
+            html: emailContent.html
           });
+          
+          console.log("Sent coach approval email to:", userData.email);
         } catch (emailError) {
           console.error("Error sending approval email:", emailError);
           // Continue even if email fails
@@ -748,6 +758,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             text: `Dear ${userData.fullName},\n\nWe regret to inform you that your coach account application at Legacy Cricket Academy has not been approved at this time. If you have any questions, please contact the academy administrator.\n\nThank you,\nLegacy Cricket Academy Team`,
             html: `<p>Dear ${userData.fullName},</p><p>We regret to inform you that your coach account application at Legacy Cricket Academy has not been approved at this time. If you have any questions, please contact the academy administrator.</p><p>Thank you,<br>Legacy Cricket Academy Team</p>`
           });
+          
+          console.log("Sent coach rejection email to:", userData.email);
         } catch (emailError) {
           console.error("Error sending rejection email:", emailError);
           // Continue even if email fails
@@ -3210,6 +3222,49 @@ ${ACADEMY_NAME} Team
         status: status,
         isActive: isActive,
       });
+      
+      // Send appropriate emails for coach registration
+      if (role === "coach") {
+        try {
+          // 1. Send email to the coach about pending approval
+          const { generateCoachPendingApprovalEmail, sendEmail } = require("./email");
+          const coachEmailContent = generateCoachPendingApprovalEmail(fullName);
+          
+          await sendEmail({
+            to: email,
+            subject: "Your Coach Registration Status - Pending Approval",
+            text: coachEmailContent.text,
+            html: coachEmailContent.html
+          });
+          
+          console.log("Sent coach pending approval email to:", email);
+          
+          // 2. Send email to admin about new coach registration
+          const adminEmail = "madhukar.kcc@gmail.com"; // Administrator email
+          const appBaseUrl = process.env.APP_URL || "https://legacycricketacademy.com";
+          const approvalLink = `${appBaseUrl}/admin/coaches`;
+          
+          const { generateAdminCoachApprovalRequestEmail } = require("./email");
+          const adminEmailContent = generateAdminCoachApprovalRequestEmail(
+            "Administrator", // Admin name
+            fullName,
+            email,
+            approvalLink
+          );
+          
+          await sendEmail({
+            to: adminEmail,
+            subject: "New Coach Registration Requires Approval",
+            text: adminEmailContent.text,
+            html: adminEmailContent.html
+          });
+          
+          console.log("Sent admin notification email about new coach registration to:", adminEmail);
+        } catch (emailError) {
+          console.error("Error sending registration notification emails:", emailError);
+          // Continue even if emails fail
+        }
+      }
       
       // Log user in
       req.login(user, (err) => {
