@@ -2935,10 +2935,68 @@ ${ACADEMY_NAME} Team
     }
   });
   
+  // Login with Firebase token - this route supports both SDK and direct API tokens
+  app.post(`${apiPrefix}/auth/login-firebase`, async (req, res) => {
+    try {
+      if (!req.body.token) {
+        return res.status(400).json({ message: "Firebase token is required" });
+      }
+      
+      console.log("Attempting Firebase login with token");
+      
+      // Verify the Firebase token
+      const { verifyFirebaseToken, getUserFromFirebaseAuth } = require("./firebase-admin");
+      
+      try {
+        // Try to verify the token
+        const decodedToken = await verifyFirebaseToken(req.body.token);
+        
+        if (!decodedToken) {
+          return res.status(401).json({ message: "Invalid Firebase token" });
+        }
+        
+        console.log("Firebase token verified successfully for:", decodedToken.email);
+        
+        // Get or create user in our database
+        const user = await getUserFromFirebaseAuth(decodedToken, {
+          role: 'parent' // Default role for auto-created users
+        });
+        
+        if (!user) {
+          return res.status(400).json({ message: "Could not retrieve or create user account" });
+        }
+        
+        // Check account status for coaches and admins
+        if ((user.role === 'coach' || user.role === 'admin') && 
+            (user.status === 'pending' || user.isActive === false)) {
+          console.log("Coach/admin account is pending approval:", user.id);
+        }
+        
+        // Log the user in (create session)
+        req.login(user, (err) => {
+          if (err) {
+            console.error("Session login error:", err);
+            return res.status(500).json({ message: "Failed to create user session" });
+          }
+          console.log("User logged in successfully:", user.id);
+          return res.status(200).json(user);
+        });
+      } catch (verifyError) {
+        console.error("Firebase token verification error:", verifyError);
+        return res.status(401).json({ message: "Failed to authenticate with Firebase token" });
+      }
+    } catch (error: any) {
+      console.error("Firebase login error:", error);
+      res.status(500).json({ message: error.message || "Authentication error" });
+    }
+  });
+  
   // Register with Firebase
   app.post(`${apiPrefix}/auth/register-firebase`, async (req, res) => {
     try {
-      const { firebaseUid, username, email, fullName, role, phone, academyId } = req.body;
+      const { firebaseUid, username, email, fullName, role, phone, academyId, idToken } = req.body;
+      
+      console.log("Attempting Firebase registration");
       
       if (!firebaseUid || !username || !email || !fullName) {
         return res.status(400).json({ message: "Missing required fields" });
@@ -2950,6 +3008,30 @@ ${ACADEMY_NAME} Team
         return res.status(400).json({ message: "Username already exists" });
       }
       
+      // If we have an idToken (from direct API), verify it for additional security
+      if (idToken) {
+        console.log("Verifying Firebase ID token during registration");
+        try {
+          const { verifyFirebaseToken } = require("./firebase-admin");
+          const decodedToken = await verifyFirebaseToken(idToken);
+          
+          // Make sure the token matches the provided Firebase UID
+          if (!decodedToken || decodedToken.uid !== firebaseUid) {
+            console.error("Token UID doesn't match provided UID:", {
+              tokenUid: decodedToken?.uid,
+              providedUid: firebaseUid
+            });
+            return res.status(401).json({ message: "Invalid Firebase token" });
+          }
+          
+          console.log("Firebase token verified successfully");
+        } catch (tokenError) {
+          // Log the error but continue with registration
+          console.error("Error verifying Firebase token during registration:", tokenError);
+          // We'll still create the user, but it's worth logging this issue
+        }
+      }
+      
       // Determine the appropriate status based on role
       let status = "active";
       let isActive = true;
@@ -2959,6 +3041,8 @@ ${ACADEMY_NAME} Team
         status = "pending";  // Coaches and admins need approval
         isActive = false;    // Not active until approved
       }
+      
+      console.log("Creating user with Firebase UID:", firebaseUid);
       
       // Create user in our database
       const user = await storage.createUser({
@@ -2980,6 +3064,7 @@ ${ACADEMY_NAME} Team
           console.error("Session login error:", err);
           return res.status(500).json({ message: "Failed to create session" });
         }
+        console.log("User registered and logged in successfully:", user.id);
         return res.status(201).json(user);
       });
     } catch (error: any) {
