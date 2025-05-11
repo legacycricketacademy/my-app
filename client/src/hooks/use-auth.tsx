@@ -9,6 +9,7 @@ import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/lib/firebase";
 import { auth } from "@/lib/firebase-init";
+import { useLocalAuth } from "./use-local-auth";
 
 type AuthContextType = {
   user: User | null;
