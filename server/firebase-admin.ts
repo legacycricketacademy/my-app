@@ -84,6 +84,16 @@ export async function getUserFromFirebaseAuth(decodedToken: admin.auth.DecodedId
       // Generate a unique username if not provided
       const username = userData.username || `user_${Date.now()}`;
       
+      // Determine appropriate status based on role
+      let status = decodedToken.email_verified ? 'active' : 'pending_verification';
+      let isActive = decodedToken.email_verified;
+      
+      // For coach and admin roles, override status to pending approval
+      if (userData.role === 'coach' || userData.role === 'admin') {
+        status = 'pending';
+        isActive = false;
+      }
+      
       // Insert new user
       const insertData: any = {
         username: username,
@@ -93,7 +103,8 @@ export async function getUserFromFirebaseAuth(decodedToken: admin.auth.DecodedId
         phone: userData.phone,
         academyId: userData.academyId || null,
         isEmailVerified: decodedToken.email_verified || false,
-        status: decodedToken.email_verified ? 'active' : 'pending_verification',
+        status: status,
+        isActive: isActive,
         profileImage: decodedToken.picture,
         createdAt: new Date(),
         updatedAt: new Date()
