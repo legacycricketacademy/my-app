@@ -17,17 +17,23 @@ import {
   insertPaymentSchema,
   insertConnectionRequestSchema,
   connectionRequests,
-  academies
+  academies,
+  users
 } from "@shared/schema";
 import { sendEmail, generateInvitationEmail, generateVerificationEmail, generateForgotPasswordEmail, generateForgotUsernameEmail } from "./email";
-import { hashPassword } from "./auth";
+import { hashPassword, comparePasswords } from "./auth";
 import { eq } from "drizzle-orm";
 
-// Initialize Stripe
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing Stripe secret key. Please set STRIPE_SECRET_KEY environment variable.');
+// API prefix for routes
+const apiPrefix = "/api";
+
+// Initialize Stripe conditionally
+let stripe: Stripe | undefined;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+} else {
+  console.warn('Missing Stripe secret key. Stripe functionality will be limited.');
 }
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Helper function to parse CSV data
 function parseCsvData(csvData: string) {
@@ -499,6 +505,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication routes and middleware
   setupAuth(app);
+  
+  // Local authentication endpoints (Firebase bypass)
+  
+  // Local register endpoint
+  app.post("/api/auth/local-register", async (req, res) => {
+    try {
+      const { username, password, email, fullName, role, phone, academyId } = req.body;
+      
+      console.log("Local register request for:", email);
+      
+      if (!username || !password || !email || !fullName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Check if username already exists
+      const existingUserByUsername = await storage.getUserByUsername(username);
+      if (existingUserByUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      // Check if email already exists
+      const existingUserByEmail = await storage.getUserByEmail(email);
+      if (existingUserByEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(password);
+      
+      // Determine the appropriate status based on role
+      let status = "active";
+      let isActive = true;
+      
+      // Set the appropriate status and activity flag based on role
+      if (role === "coach" || role === "admin") {
+        status = "pending";  // Coaches and admins need approval
+        isActive = false;    // Not active until approved
+      }
+      
+      console.log("Creating user with local authentication");
+      
+      // Create user in our database
+      const user = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        fullName,
+        role: role || "parent",
+        phone,
+        academyId: academyId || null,
+        isEmailVerified: false, 
+        status: status,
+        isActive: isActive,
+      });
+      
+      // Remove password before sending response
+      const { password: _, ...userWithoutPassword } = user;
+      
+      // Log user in
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Session login error:", err);
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        
+        console.log("Local registration successful, user logged in:", user.id);
+        return res.status(201).json(userWithoutPassword);
+      });
+    } catch (error: any) {
+      console.error("Local register error:", error);
+      res.status(500).json({ message: error.message || "Registration error" });
+    }
+  });
+  
+  // Local login endpoint
+  app.post("/api/auth/local-login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      console.log("Local login request for:", username);
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      
+      // Look up the user by username first
+      let user = await multiTenantStorage.getUserByUsername(username);
+      
+      // If no user found by username, check if username is an email
+      if (!user && username.includes('@')) {
+        user = await multiTenantStorage.getUserByEmail(username);
+      }
+      
+      // If still no user, try with storage without academy context
+      if (!user) {
+        // Remember current context
+        const currentContext = multiTenantStorage.getAcademyContext();
+        // Reset context temporarily to search across all academies
+        multiTenantStorage.setAcademyContext(null);
+        
+        try {
+          user = await multiTenantStorage.getUserByUsername(username);
+          // If no user found by username, check if username is an email
+          if (!user && username.includes('@')) {
+            user = await multiTenantStorage.getUserByEmail(username);
+          }
+        } finally {
+          // Restore academy context
+          multiTenantStorage.setAcademyContext(currentContext);
+        }
+      }
+      
+      // Check if user exists and password is correct
+      if (!user || !(await comparePasswords(password, user.password))) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+      
+      // Check if the user account is active
+      if (user.role === "coach" && user.status === "pending") {
+        return res.status(403).json({ 
+          message: "Your coach account is pending approval. Please contact an administrator."
+        });
+      }
+      
+      // Set the academy context for this user
+      if (user.academyId) {
+        multiTenantStorage.setAcademyContext(user.academyId);
+      }
+      
+      // Remove password before sending response
+      const { password: _, ...userWithoutPassword } = user;
+      
+      // Create user session
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Session login error:", err);
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        
+        console.log("Local login successful:", user.id);
+        return res.status(200).json(userWithoutPassword);
+      });
+    } catch (error: any) {
+      console.error("Local login error:", error);
+      res.status(500).json({ message: error.message || "Login error" });
+    }
+  });
   
   // Get all pending coach accounts that need admin approval
   app.get("/api/users/pending-coaches", async (req, res) => {
