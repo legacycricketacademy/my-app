@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import { RoleBasedRoute } from "./lib/role-based-route";
 import { Redirect } from "wouter";
+import { OfflineDetector, OnlineStatusIndicator } from "@/components/offline-detector";
 
 // Admin/Coach Pages
 import AuthPage from "@/pages/auth-page";
@@ -294,6 +295,8 @@ function App() {
       <AuthProvider>
         <Router />
         <Toaster />
+        <OfflineDetector />
+        <OnlineStatusIndicator />
       </AuthProvider>
     </QueryClientProvider>
   );

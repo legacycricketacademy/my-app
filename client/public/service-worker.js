@@ -1,11 +1,23 @@
 // Service Worker for Legacy Cricket Academy PWA
 
-const CACHE_NAME = 'cricket-academy-v1';
+const CACHE_NAME = 'cricket-academy-v1.1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icons/favicon.svg'
+  '/icons/favicon.svg',
+  '/icons/icon-72x72.png',
+  '/icons/icon-96x96.png',
+  '/icons/apple-touch-icon.png',
+  '/icons/apple-splash-640-1136.png',
+  '/icons/apple-splash-750-1334.png',
+  '/icons/apple-splash-828-1792.png',
+  '/icons/apple-splash-1125-2436.png',
+  '/icons/apple-splash-1242-2208.png',
+  '/icons/apple-splash-1242-2688.png',
+  '/icons/apple-splash-1536-2048.png',
+  '/icons/apple-splash-1668-2388.png',
+  '/icons/apple-splash-2048-2732.png'
 ];
 
 // Install event - cache basic assets
