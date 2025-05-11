@@ -420,12 +420,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // Validate Firebase configuration first
         if (!auth) {
+          console.error("Firebase auth object is not available:", auth);
           throw new Error("Firebase auth is not configured properly. Please contact support.");
         }
+        
+        // Log the environment variables (without revealing sensitive data)
+        console.log("Firebase config check:", {
+          apiKeyExists: !!import.meta.env.VITE_FIREBASE_API_KEY,
+          projectIdExists: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
+          appIdExists: !!import.meta.env.VITE_FIREBASE_APP_ID,
+          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID
+        });
         
         // First, create Firebase user
         let firebaseUser;
         try {
+          console.log("Attempting to create Firebase user for email:", userData.email);
+          
           firebaseUser = await firebaseSignupFn(
             userData.email, 
             userData.password,
@@ -433,10 +444,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           );
           
           if (!firebaseUser || !firebaseUser.uid) {
+            console.error("Firebase user creation returned invalid user:", firebaseUser);
             throw new Error("Failed to create Firebase user. Please try again later.");
           }
+          
+          console.log("Firebase user created successfully with uid:", firebaseUser.uid);
         } catch (error: any) {
           console.error("Firebase user creation error:", error);
+          console.error("Error details:", {
+            code: error.code,
+            message: error.message,
+            fullError: JSON.stringify(error)
+          });
+          
           // Map Firebase error codes to user-friendly messages
           if (error.code === 'auth/email-already-in-use') {
             throw new Error("This email is already registered. Please use a different email or try logging in.");
@@ -446,8 +466,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             throw new Error("Password is too weak. Please use a stronger password.");
           } else if (error.code === 'auth/network-request-failed') {
             throw new Error("Network error. Please check your internet connection and try again.");
+          } else if (error.code === 'auth/internal-error') {
+            throw new Error("Firebase internal error. Please try again later or contact support.");
           } else {
-            throw new Error(`Firebase registration error: ${error.message || "Unknown error"}`);
+            throw new Error(`Firebase registration error: ${error.message || "Unknown error"} (Code: ${error.code || "unknown"})`);
           }
         }
         
