@@ -295,3 +295,194 @@ ${ACADEMY_NAME} Team
 
   return { text, html };
 }
+
+export function generateCoachPendingApprovalEmail(
+  coachName: string
+): { text: string; html: string } {
+  // Plain text version
+  const text = `
+Hello ${coachName},
+
+Thank you for registering as a coach with ${ACADEMY_NAME}.
+
+Your account is currently pending approval by an administrator. You will receive another email once your account has been approved.
+
+In the meantime, you can log in to your account but will have limited access until approval.
+
+Thanks,
+${ACADEMY_NAME} Team
+`;
+
+  // HTML version
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
+    .content { padding: 20px; }
+    .status-box { padding: 15px; background-color: #fff4e5; border-left: 4px solid #ff9800; 
+                 border-radius: 4px; margin: 20px 0; }
+    .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${ACADEMY_NAME}</h1>
+    </div>
+    <div class="content">
+      <p>Hello ${coachName},</p>
+      <p>Thank you for registering as a coach with ${ACADEMY_NAME}.</p>
+      <div class="status-box">
+        <p><strong>Account Status: Pending Approval</strong></p>
+        <p>Your account is currently pending approval by an administrator. You will receive another email once your account has been approved.</p>
+      </div>
+      <p>In the meantime, you can log in to your account but will have limited access until approval.</p>
+      <p>Thanks,<br>${ACADEMY_NAME} Team</p>
+    </div>
+    <div class="footer">
+      <p>This is an automated message, please do not reply to this email.</p>
+      <p>&copy; ${new Date().getFullYear()} ${ACADEMY_NAME}</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  return { text, html };
+}
+
+export function generateCoachApprovedEmail(
+  coachName: string,
+  loginLink: string = ACADEMY_WEBSITE
+): { text: string; html: string } {
+  // Plain text version
+  const text = `
+Hello ${coachName},
+
+Great news! Your coach account with ${ACADEMY_NAME} has been approved.
+
+You now have full access to the coaching features and can log in using your credentials.
+
+Login here: ${loginLink}
+
+Thanks,
+${ACADEMY_NAME} Team
+`;
+
+  // HTML version
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
+    .content { padding: 20px; }
+    .status-box { padding: 15px; background-color: #e6f7e6; border-left: 4px solid #4caf50; 
+                 border-radius: 4px; margin: 20px 0; }
+    .button { display: inline-block; padding: 10px 20px; color: white; background-color: #4f46e5; 
+              text-decoration: none; border-radius: 4px; margin: 20px 0; }
+    .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${ACADEMY_NAME}</h1>
+    </div>
+    <div class="content">
+      <p>Hello ${coachName},</p>
+      <div class="status-box">
+        <p><strong>🎉 Great news! Your coach account has been approved.</strong></p>
+        <p>You now have full access to all coaching features on our platform.</p>
+      </div>
+      <p>You can now log in using your credentials and start managing your students, sessions, and more.</p>
+      <a href="${loginLink}" class="button">Login to Your Account</a>
+      <p>Thanks,<br>${ACADEMY_NAME} Team</p>
+    </div>
+    <div class="footer">
+      <p>This is an automated message, please do not reply to this email.</p>
+      <p>&copy; ${new Date().getFullYear()} ${ACADEMY_NAME}</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  return { text, html };
+}
+
+export function generateAdminCoachApprovalRequestEmail(
+  adminName: string,
+  coachName: string,
+  coachEmail: string,
+  approvalLink: string
+): { text: string; html: string } {
+  // Plain text version
+  const text = `
+Hello ${adminName},
+
+A new coach account is pending approval at ${ACADEMY_NAME}.
+
+Coach Details:
+- Name: ${coachName}
+- Email: ${coachEmail}
+
+Please review and approve this account: ${approvalLink}
+
+Thanks,
+${ACADEMY_NAME} System
+`;
+
+  // HTML version
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
+    .content { padding: 20px; }
+    .coach-details { background-color: #f5f5f5; padding: 15px; border-radius: 4px; margin: 20px 0; }
+    .button { display: inline-block; padding: 10px 20px; color: white; background-color: #4f46e5; 
+              text-decoration: none; border-radius: 4px; margin: 20px 0; }
+    .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${ACADEMY_NAME}</h1>
+    </div>
+    <div class="content">
+      <p>Hello ${adminName},</p>
+      <p>A new coach account is pending your approval at ${ACADEMY_NAME}.</p>
+      
+      <div class="coach-details">
+        <h3>Coach Details:</h3>
+        <p><strong>Name:</strong> ${coachName}</p>
+        <p><strong>Email:</strong> ${coachEmail}</p>
+      </div>
+      
+      <p>Please review this request and approve if appropriate:</p>
+      <a href="${approvalLink}" class="button">Review Coach Account</a>
+      
+      <p>Thanks,<br>${ACADEMY_NAME} System</p>
+    </div>
+    <div class="footer">
+      <p>This is an automated message from your system.</p>
+      <p>&copy; ${new Date().getFullYear()} ${ACADEMY_NAME}</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  return { text, html };
+}
