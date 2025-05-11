@@ -94,11 +94,6 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
         email_type: 'notification',
         system_generated: 'true'
       },
-      headers: {
-        'X-Priority': '1', // High priority
-        'Importance': 'high',
-        'List-Unsubscribe': `<mailto:unsubscribe@${ACADEMY_EMAIL.split('@')[1]}>`,
-      },
     });
     
     console.log('Email sent successfully to:', params.to);
