@@ -7,23 +7,41 @@ import * as admin from "firebase-admin";
 let app: admin.app.App;
 
 try {
+  console.log("Attempting to get existing Firebase Admin app");
   app = admin.app();
+  console.log("Successfully retrieved existing Firebase Admin app");
 } catch (e) {
+  console.log("No existing Firebase Admin app found, initializing a new one");
+  
   // Initialize Firebase Admin SDK with service account from environment variables
   const serviceAccount = {
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    projectId: "legacy-cricket-academy",
+    clientEmail: "firebase-adminsdk-fbsvc@legacy-cricket-academy.iam.gserviceaccount.com",
     privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
   };
+
+  console.log("Firebase Admin configuration check:", {
+    projectIdExists: !!serviceAccount.projectId,
+    clientEmailExists: !!serviceAccount.clientEmail,
+    privateKeyExists: !!serviceAccount.privateKey,
+    projectId: serviceAccount.projectId,
+    clientEmail: serviceAccount.clientEmail?.substring(0, 5) + "..." // Only show first few chars for security
+  });
 
   if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
     console.error("Firebase Admin SDK is not properly configured. Missing required environment variables.");
     throw new Error("Firebase Admin SDK configuration is incomplete");
   }
 
-  app = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount)
-  });
+  try {
+    app = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount)
+    });
+    console.log("Firebase Admin SDK initialized successfully");
+  } catch (error) {
+    console.error("Error initializing Firebase Admin SDK:", error);
+    throw error;
+  }
 }
 
 export const auth = app.auth();
