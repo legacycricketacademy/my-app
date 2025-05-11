@@ -7,7 +7,8 @@ import {
 import { insertUserSchema, User } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useFirebaseAuth, auth } from "@/lib/firebase";
+import { useFirebaseAuth } from "@/lib/firebase";
+import { auth } from "@/lib/firebase-init";
 
 type AuthContextType = {
   user: User | null;

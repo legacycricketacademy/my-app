@@ -51,7 +51,18 @@ export const auth = app.auth();
  */
 export async function verifyFirebaseToken(idToken: string) {
   try {
-    return await auth.verifyIdToken(idToken);
+    console.log("Verifying Firebase token...");
+    if (!idToken || typeof idToken !== 'string') {
+      console.error("Invalid token format:", idToken);
+      throw new Error("Invalid token format");
+    }
+    
+    const decodedToken = await auth.verifyIdToken(idToken);
+    console.log("Firebase token verified successfully:", {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+    });
+    return decodedToken;
   } catch (error) {
     console.error("Error verifying Firebase token:", error);
     throw error;
