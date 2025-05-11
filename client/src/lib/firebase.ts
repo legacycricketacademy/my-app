@@ -1,69 +1,20 @@
-import { initializeApp } from "firebase/app";
-import { 
-  getAuth, 
-  onAuthStateChanged, 
-  signOut, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  updateProfile, 
-  sendEmailVerification, 
-  sendPasswordResetEmail, 
-  GoogleAuthProvider, 
-  signInWithPopup,
-  browserLocalPersistence, 
-  browserSessionPersistence, 
-  setPersistence
+import {
+  onAuthStateChanged,
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup
 } from "firebase/auth";
 import { useEffect, useState } from "react";
 
-// Firebase configuration using environment variables
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  // Enable cookies for Firebase auth in a browser environment
-  persistance: true, 
-  // Optional configurations - if you have these values, uncomment them
-  // messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  // measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-};
+// Import Firebase and Auth from our initialization file
+import firebaseApp, { auth } from "./firebase-init";
 
-// Initialize Firebase - ensure we only initialize once
-console.log("Firebase configuration:", {
-  apiKey: firebaseConfig.apiKey,
-  projectId: firebaseConfig.projectId,
-  appId: firebaseConfig.appId
-});
-
-// Helper to get existing app or initialize a new one
-let app;
-try {
-  // Check if the environment variables are defined
-  if (!import.meta.env.VITE_FIREBASE_API_KEY || !import.meta.env.VITE_FIREBASE_PROJECT_ID || !import.meta.env.VITE_FIREBASE_APP_ID) {
-    throw new Error("Firebase environment variables are missing. Please check your .env file.");
-  }
-  
-  // Initialize Firebase with config
-  app = initializeApp(firebaseConfig);
-  console.log("Firebase initialized successfully");
-} catch (error: any) {
-  console.error("Firebase initialization error:", error);
-  throw error;
-}
-
-// Initialize authentication with persistence
-export const auth = getAuth(app);
-// Enable browser persistence for auth state
-setPersistence(auth, browserLocalPersistence)
-  .then(() => {
-    console.log("Firebase auth persistence enabled");
-  })
-  .catch(error => {
-    console.error("Error setting auth persistence:", error);
-  });
-
+// Create Google provider
 export const googleProvider = new GoogleAuthProvider();
 
 // Firebase auth hooks
