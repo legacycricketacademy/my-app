@@ -1,12 +1,16 @@
 {
   "name": "Legacy Cricket Academy",
   "short_name": "Cricket Academy",
+  "description": "Comprehensive cricket academy management system for player development, coaching workflows, and family engagement.",
   "theme_color": "#4f46e5",
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
+  "categories": ["sports", "education", "fitness"],
+  "lang": "en",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "icons/icon-72x72.png",
