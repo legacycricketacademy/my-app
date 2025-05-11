@@ -385,8 +385,8 @@ ${ACADEMY_NAME} Team
     .content { padding: 20px; }
     .status-box { padding: 15px; background-color: #e6f7e6; border-left: 4px solid #4caf50; 
                  border-radius: 4px; margin: 20px 0; }
-    .button { display: inline-block; padding: 10px 20px; color: white; background-color: #4f46e5; 
-              text-decoration: none; border-radius: 4px; margin: 20px 0; }
+    .button { display: inline-block; padding: 10px 20px; color: white !important; background-color: #4f46e5; 
+              text-decoration: none; border-radius: 4px; margin: 20px 0; font-weight: bold; }
     .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
   </style>
 </head>
@@ -450,8 +450,8 @@ ${ACADEMY_NAME} System
     .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
     .content { padding: 20px; }
     .coach-details { background-color: #f5f5f5; padding: 15px; border-radius: 4px; margin: 20px 0; }
-    .button { display: inline-block; padding: 10px 20px; color: white; background-color: #4f46e5; 
-              text-decoration: none; border-radius: 4px; margin: 20px 0; }
+    .button { display: inline-block; padding: 10px 20px; color: white !important; background-color: #4f46e5; 
+              text-decoration: none; border-radius: 4px; margin: 20px 0; font-weight: bold; }
     .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
   </style>
 </head>

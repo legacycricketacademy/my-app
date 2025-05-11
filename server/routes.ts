@@ -738,8 +738,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send email notification to the coach about their account status
       if (approved) {
         try {
-          // Generate login URL - use default if APP_URL is not set
-          const appBaseUrl = process.env.APP_URL || "https://legacycricketacademy.com";
+          // Generate a proper login link that points to the actual deployed app
+          const hostname = req.get('host');
+          const protocol = req.protocol;
+          const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
           const loginLink = `${appBaseUrl}/auth`;
           
           const emailContent = generateCoachApprovedEmail(userData.fullName, loginLink);
@@ -3248,7 +3250,11 @@ ${ACADEMY_NAME} Team
           
           // 2. Send email to admin about new coach registration
           const adminEmail = "madhukar.kcc@gmail.com"; // Administrator email
-          const appBaseUrl = process.env.APP_URL || "https://legacycricketacademy.com";
+          
+          // Generate a proper approval link that points to the actual deployed app
+          const hostname = req.get('host');
+          const protocol = req.protocol;
+          const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
           const approvalLink = `${appBaseUrl}/admin/coaches`;
           
           const adminEmailContent = generateAdminCoachApprovalRequestEmail(
