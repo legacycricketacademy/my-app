@@ -249,9 +249,26 @@ export default function AuthPage() {
   function onRegisterSubmit(data: RegisterFormValues) {
     // Use Firebase registration for all new users
     try {
+      console.log("Starting registration process with data:", {
+        email: data.email,
+        username: data.username,
+        role: data.role,
+        fullName: data.fullName,
+        hasPassword: !!data.password
+      });
+      
       firebaseRegisterMutation.mutate(data, {
+        onSuccess: () => {
+          console.log("Registration succeeded");
+          toast({
+            title: "Registration Successful",
+            description: "Your account has been created successfully!",
+          });
+        },
         onError: (error) => {
           console.error("Firebase registration error:", error);
+          console.error("Error message:", error.message);
+          console.error("Error stack:", error.stack);
           
           // Show a more user-friendly error message
           let errorMessage = "Registration failed. Please try again.";
@@ -262,6 +279,10 @@ export default function AuthPage() {
             errorMessage = "Authentication system configuration error. Please contact support.";
           } else if (error.message?.includes("auth/email-already-in-use")) {
             errorMessage = "This email is already registered. Try logging in instead.";
+          } else if (error.message?.includes("auth/internal-error")) {
+            errorMessage = "Authentication service encountered an error. Please try again later.";
+          } else if (error.message?.includes("auth/network-request-failed")) {
+            errorMessage = "Network connection error. Please check your internet connection and try again.";
           }
           
           toast({
@@ -269,13 +290,19 @@ export default function AuthPage() {
             description: errorMessage,
             variant: "destructive",
           });
-        }
+        },
       });
     } catch (error: any) {
-      console.error("Registration error:", error);
+      console.error("Registration process error:", error);
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+        code: error.code
+      });
+      
       toast({
         title: "Registration Failed",
-        description: error.message || "An unexpected error occurred",
+        description: error.message || "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     }
