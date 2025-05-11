@@ -245,10 +245,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Registration successful",
-        description: `Welcome, ${user.fullName}!`,
-      });
+      
+      // Check if the coach/admin account is pending approval
+      if ((user.role === 'coach' || user.role === 'admin') && 
+          (user.status === 'pending' || user.isActive === false)) {
+        toast({
+          title: "Account Pending Approval",
+          description: "Your account is awaiting administrator approval. You'll be notified when approved.",
+          duration: 6000, // show for longer
+        });
+      } else {
+        toast({
+          title: "Registration successful",
+          description: `Welcome, ${user.fullName}!`,
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -353,6 +364,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
     },
+    onSuccess: async (userCredential: any) => {
+      try {
+        // Get user data from our database
+        const res = await fetch("/api/user");
+        if (res.ok) {
+          const userData = await res.json();
+          queryClient.setQueryData(["/api/user"], userData);
+          
+          // Check if the coach/admin account is pending approval
+          if ((userData.role === 'coach' || userData.role === 'admin') && 
+              (userData.status === 'pending' || userData.isActive === false)) {
+            toast({
+              title: "Account Pending Approval",
+              description: "Your account is awaiting administrator approval. You'll be notified when approved.",
+              duration: 6000, // show for longer
+            });
+          } else {
+            toast({
+              title: "Login successful",
+              description: `Welcome back, ${userData.fullName}!`,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data after Firebase login:", error);
+      }
+    },
     onError: (error: Error) => {
       toast({
         title: "Login failed",
@@ -449,10 +487,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Registration successful",
-        description: "Please check your email to verify your account",
-      });
+      
+      // Check if the coach/admin account is pending approval
+      if ((user.role === 'coach' || user.role === 'admin') && 
+          (user.status === 'pending' || user.isActive === false)) {
+        toast({
+          title: "Registration successful",
+          description: "Your account is awaiting administrator approval. You'll be notified when approved.",
+          duration: 6000, // show for longer
+        });
+      } else {
+        toast({
+          title: "Registration successful",
+          description: "Please check your email to verify your account",
+        });
+      }
     },
     onError: (error: Error) => {
       console.error("Firebase registration error:", error);
