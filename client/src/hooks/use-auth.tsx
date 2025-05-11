@@ -505,7 +505,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           // Fall back to original method if direct API fails
           try {
-            console.log("Falling back to SDK method for:", userData.email);
+            console.log("Falling back to SDK method for:", registerData.email);
             
             if (!auth) {
               console.error("Firebase auth is not available");
@@ -513,9 +513,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             
             firebaseUser = await firebaseSignupFn(
-              userData.email, 
-              userData.password,
-              userData.fullName
+              registerData.email, 
+              registerData.password,
+              registerData.fullName
             );
             
             if (!firebaseUser || !firebaseUser.uid) {
