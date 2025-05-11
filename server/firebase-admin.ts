@@ -9,10 +9,10 @@ let app: admin.app.App;
 try {
   app = admin.app();
 } catch (e) {
-  // Initialize Firebase Admin SDK with service account
+  // Initialize Firebase Admin SDK with service account from environment variables
   const serviceAccount = {
-    projectId: "legacy-cricket-academy",
-    clientEmail: "firebase-adminsdk-fbsvc@legacy-cricket-academy.iam.gserviceaccount.com",
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
   };
 
