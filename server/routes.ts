@@ -3279,11 +3279,11 @@ ${ACADEMY_NAME} Team
           // Also send notification to admin about new coach
           const adminEmail = "madhukar.kcc@gmail.com"; // Administrator email
           
-          // Generate approval link
+          // Generate approval link - make sure it points to the correct admin page path
           const hostname = req.get('host');
           const protocol = req.protocol;
           const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
-          const approvalLink = `${appBaseUrl}/coaches-pending-approval`;
+          const approvalLink = `${appBaseUrl}/admin/coaches-pending-approval`;
           
           const adminEmailContent = generateAdminCoachApprovalRequestEmail(
             "Administrator", // Admin name
