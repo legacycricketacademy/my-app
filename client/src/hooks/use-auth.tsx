@@ -833,6 +833,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  // Resend verification email mutation
+  const resendVerificationEmailMutation = useMutation({
+    mutationFn: async ({ userId }: { userId: number }) => {
+      const res = await apiRequest("POST", "/api/auth/resend-verification", { userId });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Verification email resent",
+        description: "Please check your email for the verification link.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to resend verification email",
+        description: error.message || "An error occurred. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  });
+
   return (
     <AuthContext.Provider
       value={{
@@ -848,6 +869,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         firebaseRegisterMutation,
         googleSignInMutation,
         resetPasswordMutation,
+        resendVerificationEmailMutation,
       }}
     >
       {children}
