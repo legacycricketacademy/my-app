@@ -26,6 +26,7 @@ import ProfilePage from "@/pages/profile-page";
 import NotFound from "@/pages/not-found";
 import PlayersPendingReviewPage from "@/pages/admin/players-pending-review";
 import CoachesPendingApprovalPage from "@/pages/admin/coaches-pending-approval";
+import DebugPage from "@/pages/debug-page";
 
 // Parent Pages
 import ParentDashboard from "@/pages/parent-dashboard";
@@ -273,6 +274,7 @@ function RouterContent() {
       
       {/* Public diagnostic routes */}
       <Route path="/stripe-debug" component={StripeDebugPage} />
+      <Route path="/debug" component={DebugPage} />
       
       <Route component={NotFound} />
     </Switch>
