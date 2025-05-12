@@ -18,7 +18,7 @@ type AuthContextType = {
   firebaseUser: any;
   firebaseLoading: boolean;
   loginMutation: UseMutationResult<User, Error, LoginData>;
-  logoutMutation: UseMutationResult<void, Error, void>;
+  logoutMutation: UseMutationResult<{ serverLogoutSucceeded: boolean }, Error, void>;
   registerMutation: UseMutationResult<User, Error, RegisterData>;
   firebaseLoginMutation: UseMutationResult<any, Error, LoginData>;
   firebaseRegisterMutation: UseMutationResult<any, Error, RegisterData>;
