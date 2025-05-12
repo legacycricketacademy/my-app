@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@db";
 import { desc, and, or } from "drizzle-orm";
 import Stripe from "stripe";
+import { verifyFirebaseToken } from "./firebase-admin";
 import { 
   insertPlayerSchema, 
   insertSessionSchema, 
@@ -3217,7 +3218,7 @@ ${ACADEMY_NAME} Team
       if (idToken) {
         console.log("Verifying Firebase ID token during registration");
         try {
-          const { verifyFirebaseToken } = require("./firebase-admin");
+          // Using the imported verifyFirebaseToken from the top of the file
           const decodedToken = await verifyFirebaseToken(idToken);
           
           // Make sure the token matches the provided Firebase UID
