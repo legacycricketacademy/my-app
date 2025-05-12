@@ -2,13 +2,15 @@
 import { storage } from "../storage";
 import { verifyFirebaseToken } from "../firebase-admin";
 import { z } from "zod";
-import { InsertUser, insertUserSchema } from "@shared/schema";
+import { InsertUser, insertUserSchema, users } from "@shared/schema";
 import { 
   sendEmail, 
   generateVerificationEmail, 
   generateCoachPendingApprovalEmail,
   generateAdminCoachApprovalRequestEmail
 } from "../email";
+import { eq } from "drizzle-orm";
+import { db } from "@db";
 
 // Custom error classes for better error handling
 export class AuthError extends Error {
@@ -256,6 +258,30 @@ export async function registerFirebaseUser(
 }
 
 /**
+ * Resend a verification email to a user
+ */
+export async function resendVerificationEmail(userId: number, appBaseUrl?: string): Promise<boolean> {
+  try {
+    const user = await storage.getUser(userId);
+    
+    if (!user) {
+      console.error(`Cannot resend verification email - user not found: ${userId}`);
+      return false;
+    }
+    
+    if (user.isEmailVerified) {
+      console.log(`User ${maskEmail(user.email)} is already verified, no need to resend`);
+      return true;
+    }
+    
+    return await sendParentVerificationEmail(userId, user.email, user.fullName, appBaseUrl);
+  } catch (error) {
+    console.error(`Failed to resend verification email for user ${userId}:`, error);
+    return false;
+  }
+}
+
+/**
  * Send verification emails to newly registered parents
  */
 async function sendParentVerificationEmail(
@@ -269,12 +295,12 @@ async function sendParentVerificationEmail(
     
     // First, update the database to indicate we're attempting to send an email
     try {
-      await storage.db.update(storage.schema.users)
+      await db.update(users)
         .set({ 
           emailStatus: "pending", 
           lastEmailAttempt: new Date() 
         })
-        .where(eq(storage.schema.users.id, userId));
+        .where(eq(users.id, userId));
     } catch (dbError) {
       console.warn(`Failed to update email status to pending: ${dbError}`);
       // Continue trying to send the email anyway
@@ -304,13 +330,13 @@ async function sendParentVerificationEmail(
       console.log(`Verification email sent successfully to: ${maskEmail(email)}`);
       
       try {
-        await storage.db.update(storage.schema.users)
+        await db.update(users)
           .set({ 
             emailStatus: "sent", 
             lastEmailAttempt: new Date(),
             emailFailureReason: null
           })
-          .where(eq(storage.schema.users.id, userId));
+          .where(eq(users.id, userId));
       } catch (dbError) {
         console.warn(`Failed to update email status to sent: ${dbError}`);
       }
@@ -321,13 +347,13 @@ async function sendParentVerificationEmail(
       console.warn(`Failed to send verification email to: ${maskEmail(email)} - ${failureReason}`);
       
       try {
-        await storage.db.update(storage.schema.users)
+        await db.update(users)
           .set({ 
             emailStatus: "failed", 
             lastEmailAttempt: new Date(),
             emailFailureReason: failureReason
           })
-          .where(eq(storage.schema.users.id, userId));
+          .where(eq(users.id, userId));
       } catch (dbError) {
         console.warn(`Failed to update email status to failed: ${dbError}`);
       }
@@ -346,13 +372,13 @@ async function sendParentVerificationEmail(
     // Record the error in the database
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     try {
-      await storage.db.update(storage.schema.users)
+      await db.update(users)
         .set({ 
           emailStatus: "failed", 
           lastEmailAttempt: new Date(),
           emailFailureReason: errorMessage
         })
-        .where(eq(storage.schema.users.id, userId));
+        .where(eq(users.id, userId));
     } catch (dbError) {
       console.error("Failed to update email status in database:", dbError);
     }
