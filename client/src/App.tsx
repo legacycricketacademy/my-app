@@ -27,6 +27,7 @@ import NotFound from "@/pages/not-found";
 import PlayersPendingReviewPage from "@/pages/admin/players-pending-review";
 import CoachesPendingApprovalPage from "@/pages/admin/coaches-pending-approval";
 import DebugPage from "@/pages/debug-page";
+import ForceLogoutPage from "@/pages/force-logout";
 
 // Parent Pages
 import ParentDashboard from "@/pages/parent-dashboard";
@@ -275,6 +276,9 @@ function RouterContent() {
       {/* Public diagnostic routes */}
       <Route path="/stripe-debug" component={StripeDebugPage} />
       <Route path="/debug" component={DebugPage} />
+      
+      {/* Emergency logout page - accessible even when logged in */}
+      <Route path="/emergency-logout" component={ForceLogoutPage} />
       
       <Route component={NotFound} />
     </Switch>
