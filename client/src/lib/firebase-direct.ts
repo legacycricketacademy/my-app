@@ -32,6 +32,12 @@ export async function signUpWithEmail(email: string, password: string, displayNa
     if (!response.ok) {
       const errorData = await response.json();
       console.error("Firebase REST signup error:", errorData);
+      
+      // Better handling for email-already-in-use errors
+      if (errorData.error?.message === 'EMAIL_EXISTS') {
+        throw new Error("This email is already registered. Please log in or use a different email address.");
+      }
+      
       throw new Error(errorData.error?.message || 'Signup failed');
     }
 
@@ -164,6 +170,47 @@ async function getUserInfo(idToken: string) {
   } catch (error) {
     console.error("Direct Firebase user lookup error:", error);
     throw error;
+  }
+}
+
+/**
+ * Check if an email is already registered with Firebase
+ * This can be used to provide early feedback to users before they submit the form
+ */
+export async function checkEmailExists(email: string): Promise<boolean> {
+  try {
+    // We use the password reset endpoint with a non-existent email to check if it exists
+    // If the email exists, Firebase will return a success response
+    // If the email does not exist, Firebase will return a "EMAIL_NOT_FOUND" error
+    const response = await fetch(`${BASE_URL}:sendOobCode?key=${FIREBASE_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        requestType: 'PASSWORD_RESET',
+        email
+      })
+    });
+
+    const data = await response.json();
+    
+    // If we get a success response, the email exists
+    if (response.ok) {
+      return true;
+    }
+    
+    // If we get a EMAIL_NOT_FOUND error, the email does not exist
+    if (data.error?.message === 'EMAIL_NOT_FOUND') {
+      return false;
+    }
+    
+    // For other errors, we assume the email might exist
+    console.warn("Could not definitively check if email exists:", data.error);
+    return false;
+  } catch (error) {
+    console.error("Error checking if email exists:", error);
+    return false;
   }
 }
 

@@ -3457,7 +3457,8 @@ ${ACADEMY_NAME} Team
         ValidationError,
         UserExistsError,
         DatabaseError,
-        EmailError
+        EmailError,
+        EmailAlreadyRegisteredError
       } = await import('./services/auth-service');
       
       // Get app base URL
@@ -3514,7 +3515,8 @@ ${ACADEMY_NAME} Team
       if (error instanceof AuthError || error instanceof ValidationError || 
           error instanceof InvalidTokenError || error instanceof UserExistsError || 
           error instanceof DatabaseError || error instanceof EmailError || 
-          error.name === 'AuthError') {
+          error instanceof EmailAlreadyRegisteredError || 
+          error.name === 'AuthError' || error.name === 'EmailAlreadyRegisteredError') {
         // Get status code from the error or default to 500
         const statusCode = error.statusCode || 500;
         
