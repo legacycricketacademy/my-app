@@ -167,6 +167,16 @@ export function Sidebar() {
         <div className="border-t border-gray-200 pt-2">
           <p className="text-xs text-gray-500 mb-2">If normal sign out fails:</p>
           <SimpleLogoutButton />
+          
+          {/* Emergency logout page link */}
+          <div className="mt-3 text-center">
+            <a 
+              href="/emergency-logout" 
+              className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              Open Emergency Logout Tool
+            </a>
+          </div>
         </div>
       </div>
     </aside>
