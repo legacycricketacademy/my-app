@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/lib/firebase";
+import ErrorBoundary from "@/components/error-boundary";
 
 const loginSchema = z.object({
   username: z.string()
@@ -771,19 +772,38 @@ export default function AuthPage() {
                     <Button 
                       type="submit" 
                       className="w-full mt-4" 
-                      disabled={
-                        registerMutation.isPending || 
-                        !isStrongPassword(registerForm.getValues().password) ||
-                        registerForm.formState.isSubmitting ||
-                        !registerForm.formState.isValid
-                      }
+                      disabled={(() => {
+                        try {
+                          const password = registerForm.getValues().password || "";
+                          return (
+                            registerMutation.isPending || 
+                            !isStrongPassword(password) ||
+                            registerForm.formState.isSubmitting ||
+                            !registerForm.formState.isValid
+                          );
+                        } catch (error) {
+                          console.error("Error in button disabled logic:", error);
+                          return true; // Disable button on error
+                        }
+                      })()}
                     >
-                      {registerMutation.isPending 
-                        ? "Registering..." 
-                        : !isStrongPassword(registerForm.getValues().password)
-                        ? "Password must meet requirements"
-                        : "Register"
-                      }
+                      {(() => {
+                        try {
+                          if (registerMutation.isPending) {
+                            return "Registering...";
+                          }
+                          
+                          const password = registerForm.getValues().password || "";
+                          if (!isStrongPassword(password)) {
+                            return "Password must meet requirements";
+                          }
+                          
+                          return "Register";
+                        } catch (error) {
+                          console.error("Error in button text logic:", error);
+                          return "Register"; // Default text on error
+                        }
+                      })()}
                     </Button>
                   </form>
                 </Form>
