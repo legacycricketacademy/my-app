@@ -37,7 +37,24 @@ export function Sidebar() {
   };
   
   const handleLogout = () => {
-    logoutMutation.mutate();
+    try {
+      // Try the mutation first
+      logoutMutation.mutate();
+      
+      // Set a backup timer to force logout even if mutation fails
+      setTimeout(() => {
+        if (logoutMutation.isPending) {
+          // Force clear user data and redirect
+          window.localStorage.setItem('force_logout', 'true');
+          window.location.href = '/auth';
+        }
+      }, 2000);
+    } catch (error) {
+      console.error("Error in logout handler:", error);
+      // Force logout on any error
+      window.localStorage.setItem('force_logout', 'true');
+      window.location.href = '/auth';
+    }
   };
   
   // Base nav items for admins/coaches

@@ -60,6 +60,22 @@ export const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
+  // Check for force logout flag
+  useEffect(() => {
+    const forceLogout = window.localStorage.getItem('force_logout');
+    if (forceLogout === 'true') {
+      // Clear the flag
+      window.localStorage.removeItem('force_logout');
+      // Clear user data
+      queryClient.setQueryData(["/api/user"], null);
+      // Show toast
+      toast({
+        title: "Logged out",
+        description: "You have been logged out due to a session error.",
+      });
+    }
+  }, [toast]);
+  
   // Firebase auth hook
   const {
     currentUser: firebaseUser,
