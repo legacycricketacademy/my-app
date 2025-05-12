@@ -258,12 +258,24 @@ export default function AuthPage() {
       });
       
       firebaseRegisterMutation.mutate(data, {
-        onSuccess: () => {
-          console.log("Registration succeeded");
-          toast({
-            title: "Registration Successful",
-            description: "Your account has been created successfully!",
-          });
+        onSuccess: (userData) => {
+          console.log("Registration succeeded with status:", userData?.status);
+          
+          // Different message based on status (for coach/admin that need approval)
+          if ((userData?.role === 'coach' || userData?.role === 'admin') && 
+              (userData?.status === 'pending_approval' || userData?.status === 'pending' || 
+               userData?.isActive === false)) {
+            toast({
+              title: "Registration Successful",
+              description: "Your account is awaiting administrator approval. You'll be notified when approved.",
+              duration: 6000, // show for longer
+            });
+          } else {
+            toast({
+              title: "Registration Successful",
+              description: "Your account has been created successfully! Please check your email for verification.",
+            });
+          }
         },
         onError: (error) => {
           console.error("Firebase registration error:", error);
