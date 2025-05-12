@@ -24,7 +24,16 @@ export function SimpleLogoutButton() {
       // 4. Set various flags to ensure logout state
       localStorage.setItem('emergency_logout', Date.now().toString());
       
-      // 5. Try server-side logout in fire-and-forget mode
+      // 5. Try both logout endpoints in fire-and-forget mode
+      // First try our new dedicated force-logout endpoint
+      fetch("/api/force-logout", {
+        method: "POST", 
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" }
+      }).catch(() => { /* ignore */ });
+      
+      // Also try the standard logout endpoint as backup
       fetch("/api/logout", {
         method: "POST", 
         credentials: "include",

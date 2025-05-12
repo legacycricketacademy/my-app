@@ -35,26 +35,66 @@ export default function TestRegister() {
     try {
       console.log("Sending registration data:", {...formData, password: "[REDACTED]"});
       
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-        credentials: "include"
-      });
+      // Step 1: Clear any existing session first to avoid conflicts
+      try {
+        await fetch("/api/force-logout", {
+          method: "POST",
+          credentials: "include"
+        });
+        console.log("Cleared existing session first");
+      } catch (logoutErr) {
+        console.log("Logout before registration failed (not critical):", logoutErr);
+      }
       
-      console.log("Response status:", res.status);
+      // Step 2: Attempt the registration with better error handling and tracing
+      let res;
+      try {
+        console.log("Starting registration API call...");
+        res = await fetch("/api/register", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Debug-Mode": "true" // Custom header for debug routes
+          },
+          body: JSON.stringify(formData),
+          credentials: "include"
+        });
+        console.log("Registration API call completed with status:", res.status);
+      } catch (fetchErr: any) {
+        console.error("Network error during registration fetch:", fetchErr);
+        throw new Error(`Network error: ${fetchErr.message}`);
+      }
       
-      const data = await res.json();
-      console.log("Response data:", data);
+      // Step 3: Parse the response data with error handling
+      let data;
+      try {
+        const textResponse = await res.text();
+        console.log("Raw response:", textResponse);
+        
+        try {
+          data = JSON.parse(textResponse);
+          console.log("Parsed response data:", data);
+        } catch (jsonErr) {
+          console.error("Error parsing JSON:", jsonErr);
+          throw new Error(`Server returned invalid JSON: ${textResponse}`);
+        }
+      } catch (responseErr: any) {
+        console.error("Error reading response:", responseErr);
+        throw new Error(`Error processing response: ${responseErr.message}`);
+      }
       
+      // Step 4: Handle the response based on status
       if (!res.ok) {
-        setError(data.message || "Registration failed");
+        const errorMsg = data.message || "Registration failed";
+        console.error("Registration API returned error:", errorMsg, data);
+        setError(errorMsg);
         toast({
           title: "Registration failed",
-          description: data.message || "Something went wrong",
+          description: errorMsg,
           variant: "destructive"
         });
       } else {
+        console.log("Registration successful:", data);
         setResponse(data);
         toast({
           title: "Registration successful",
@@ -62,7 +102,7 @@ export default function TestRegister() {
         });
       }
     } catch (err: any) {
-      console.error("Registration error:", err);
+      console.error("Registration process error:", err);
       setError(err.message || "Registration failed");
       toast({
         title: "Registration failed",
@@ -168,6 +208,9 @@ export default function TestRegister() {
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded">
               <strong>Error:</strong> {error}
+              <div className="mt-2 text-xs text-gray-600">
+                Please check the browser console (F12) for more detailed error information.
+              </div>
             </div>
           )}
           
