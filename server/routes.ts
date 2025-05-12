@@ -3449,223 +3449,98 @@ ${ACADEMY_NAME} Team
     try {
       console.log("=== Firebase registration endpoint hit ===");
       
-      // Validate required token in request
-      if (!req.body.idToken) {
-        return res.status(400).json({ 
-          error: "validation_error", 
-          message: "Firebase ID token is required"
-        });
-      }
+      // Import auth service
+      const { 
+        registerFirebaseUser, 
+        AuthError,
+        InvalidTokenError,
+        ValidationError,
+        UserExistsError
+      } = await import('./services/auth-service');
       
-      // Get basic data from request for logging
-      const { username, email, fullName, role, idToken } = req.body;
+      // Get app base URL
+      const hostname = req.get('host');
+      const protocol = req.protocol;
+      const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
       
-      console.log("Registration request received for:", { email, username });
-      
-      // IMPORTANT: Always verify the Firebase token first
-      let decodedToken;
-      try {
-        decodedToken = await verifyFirebaseToken(idToken);
+      // Call the service with properly structured input
+      const result = await registerFirebaseUser({
+        // Pass all required fields 
+        idToken: req.body.idToken,
+        username: req.body.username,
+        email: req.body.email,
+        fullName: req.body.fullName,
         
-        if (!decodedToken || !decodedToken.uid) {
-          return res.status(401).json({ 
-            error: "invalid_token", 
-            message: "Invalid or expired Firebase token"
-          });
-        }
-        
-        console.log("Firebase token successfully verified for UID:", decodedToken.uid);
-      } catch (tokenError) {
-        console.error("Firebase token verification failed:", tokenError);
-        return res.status(401).json({ 
-          error: "token_verification_failed", 
-          message: "Failed to verify Firebase authentication token"
-        });
-      }
+        // Optional fields
+        role: req.body.role,
+        phone: req.body.phone,
+        academyId: req.body.academyId
+      }, {
+        // Pass options
+        appBaseUrl
+      });
       
-      // Use the firebaseUid from the verified token, not from the request body
-      const firebaseUid = decodedToken.uid;
-      
-      // Validate required fields
-      if (!username || !email || !fullName) {
-        return res.status(400).json({ 
-          error: "missing_fields", 
-          message: "Missing required user information",
-          details: {
-            username: !username ? "Username is required" : null,
-            email: !email ? "Email is required" : null,
-            fullName: !fullName ? "Full name is required" : null
-          }
-        });
-      }
-      
-      // Check for existing user by Firebase UID (make the endpoint idempotent)
-      const existingUserByUid = await storage.getUserByFirebaseUid(firebaseUid);
-      if (existingUserByUid) {
-        console.log("User already exists with Firebase UID:", firebaseUid);
-        
-        // Instead of error, consider this a success - user already registered
-        // Just return the existing user (idempotent operation)
+      // Handle existing user case (idempotent registration)
+      if (!result.isNewUser) {
         return res.status(200).json({
-          ...existingUserByUid,
+          ...result.user,
           message: "User already registered" 
         });
       }
       
-      // Check if username already exists
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ 
-          error: "username_exists", 
-          message: "Username already exists" 
-        });
-      }
-      
-      // Check if email already exists
-      const existingEmail = await storage.getUserByEmail(email);
-      if (existingEmail) {
-        return res.status(400).json({ 
-          error: "email_exists", 
-          message: "Email is already registered" 
-        });
-      }
-      
-      // Extract academy ID from request if present
-      const academyId = req.body.academyId || null;
-      
-      // Validate phone if present
-      const phone = req.body.phone || null;
-      
-      // Determine the appropriate status based on role
-      let status = "active";
-      let isActive = true;
-      
-      // For coaches and admins, require approval
-      if (role === "coach" || role === "admin") {
-        status = "pending_approval";
-        isActive = false;
-      }
-      
-      // Prepare user data with proper validation
-      const userData = {
-        academyId,
-        firebaseUid,
-        username,
-        email,
-        fullName,
-        role: role || "parent",
-        status,
-        isActive,
-        phone,
-        password: null // No password needed for Firebase auth
-      };
-      
-      // Validate user data with schema
-      insertUserSchema.parse(userData);
-      
-      console.log("Validated user data ready for insertion");
-      console.log("Creating user with Firebase UID:", firebaseUid);
-      
-      // Create user in database
-      const user = await storage.createUser(userData);
-      
-      // Send appropriate emails based on user role
-      try {
-        if (role === "coach") {
-          // Send email to coach about pending approval
-          const coachEmailContent = generateCoachPendingApprovalEmail(fullName);
-          
-          await sendEmail({
-            to: email,
-            subject: "Your Coach Registration Status - Pending Approval",
-            text: coachEmailContent.text,
-            html: coachEmailContent.html
-          });
-          
-          console.log("Sent coach pending approval email to:", email);
-          
-          // Also notify admin about new coach
-          const adminEmail = "madhukar.kcc@gmail.com"; // Administrator email
-          
-          // Generate approval link
-          const hostname = req.get('host');
-          const protocol = req.protocol;
-          const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
-          const approvalLink = `${appBaseUrl}/admin/coaches-pending-approval`;
-          
-          const adminEmailContent = generateAdminCoachApprovalRequestEmail(
-            "Administrator", // Admin name
-            fullName,
-            email,
-            approvalLink
-          );
-          
-          await sendEmail({
-            to: adminEmail,
-            subject: "New Coach Registration Requires Approval",
-            text: adminEmailContent.text,
-            html: adminEmailContent.html
-          });
-          
-          console.log("Sent admin notification email about coach registration");
-        } else if (role === "parent" || !role) {
-          // For parents, send verification email
-          console.log("Sending verification email to parent:", email);
-          
-          // Generate verification token
-          const verificationToken = generateVerificationToken(user.id, email);
-          
-          // Create verification link
-          const hostname = req.get('host');
-          const protocol = req.protocol;
-          const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
-          const verificationLink = `${appBaseUrl}/verify-email?token=${verificationToken}`;
-          
-          // Generate and send verification email
-          const { text, html } = generateVerificationEmail(fullName, verificationLink);
-          
-          await sendEmail({
-            to: email,
-            subject: "Verify Your Email Address for Legacy Cricket Academy",
-            text,
-            html
-          });
-          
-          console.log("Sent verification email to parent:", email);
-        }
-      } catch (emailError) {
-        console.error("Error sending emails:", emailError);
-        // Continue even if emails fail - don't block registration
-      }
-      
       // Log user in
-      req.login(user, (err) => {
+      req.login(result.user, (err) => {
         if (err) {
           console.error("Session login error:", err);
-          return res.status(500).json({ message: "Failed to create session" });
+          return res.status(500).json({ 
+            error: "session_error",
+            message: "Failed to create session" 
+          });
         }
-        console.log("User registered and logged in successfully:", user.id);
-        return res.status(201).json(user);
+        
+        // Return success with email status
+        const response = {
+          ...result.user,
+          emailSent: result.emailSent
+        };
+        
+        console.log("User registered and logged in successfully:", result.user.id);
+        return res.status(201).json(response);
       });
     } catch (error: any) {
-      console.error("Firebase register error details:", {
+      // Use our custom error types to determine appropriate responses
+      if (error.name === 'AuthError') {
+        // Get status code from the error or default to 500
+        const statusCode = error.statusCode || 500;
+        
+        // Return structured error response
+        return res.status(statusCode).json({
+          error: error.code || 'auth_error',
+          message: error.message,
+          details: error.details
+        });
+      }
+      
+      // Log unexpected errors
+      console.error("Unexpected Firebase registration error:", {
         message: error.message,
         stack: error.stack,
-        name: error.name,
-        code: error.code,
-        type: typeof error,
-        stringified: String(error)
+        name: error.name, 
+        code: error.code
       });
       
-      // Check if it's a database constraint violation
-      if (error.code === '23505') { // PostgreSQL unique violation error
+      // Handle PostgreSQL constraint violations as a fallback
+      if (error.code === '23505') {
         return res.status(400).json({ 
+          error: 'unique_violation',
           message: "Database constraint violation. User might already exist.",
           details: error.detail || error.message
         });
       }
       
+      // Generic error response for unexpected errors
       res.status(500).json({ 
+        error: 'server_error',
         message: error.message || "Registration error",
         code: error.code
       });
