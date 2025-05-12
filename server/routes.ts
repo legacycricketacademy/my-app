@@ -17,10 +17,12 @@ import {
   insertAnnouncementSchema, 
   insertPaymentSchema,
   insertConnectionRequestSchema,
+  insertUserSchema,
   connectionRequests,
   academies,
   users,
-  userAuditLogs
+  userAuditLogs,
+  userRoles
 } from "@shared/schema";
 import { 
   sendEmail, 
@@ -3528,75 +3530,49 @@ ${ACADEMY_NAME} Team
         });
       }
       
-      // Validate and sanitize the input using Zod schema
-      try {
-        // Extract academy ID from request if present
-        const academyId = req.body.academyId || null;
-        
-        // Determine the appropriate status based on role
-        let status = "active";
-        let isActive = true;
-        
-        // For coaches, require approval
-        if (role === "coach") {
-          status = "pending_approval";
-          isActive = false;
-        }
-        
-        // Validate phone if present
-        const phone = req.body.phone || null;
-        
-        // Validate data structure using Zod schema
-        const userData = insertUserSchema.parse({
-          academyId,
-          firebaseUid,
-          username,
-          email,
-          fullName,
-          role,
-          status,
-          isActive,
-          phone,
-          password: null // No password needed for Firebase auth
-        });
-        
-        console.log("Validated user data ready for insertion");
-      } catch (validationError: any) {
-        console.error("Validation error:", validationError);
-        return res.status(400).json({
-          error: "validation_error",
-          message: "Invalid user data",
-          details: validationError.errors || validationError.message
-        });
-      }
+      // Extract academy ID from request if present
+      const academyId = req.body.academyId || null;
       
-      // Set the appropriate status and activity flag based on role
+      // Validate phone if present
+      const phone = req.body.phone || null;
+      
+      // Determine the appropriate status based on role
+      let status = "active";
+      let isActive = true;
+      
+      // For coaches and admins, require approval
       if (role === "coach" || role === "admin") {
-        status = "pending";  // Coaches and admins need approval
-        isActive = false;    // Not active until approved
+        status = "pending_approval";
+        isActive = false;
       }
       
-      console.log("Creating user with Firebase UID:", firebaseUid);
-      
-      // Create user in our database
-      const user = await storage.createUser({
+      // Prepare user data with proper validation
+      const userData = {
+        academyId,
+        firebaseUid,
         username,
         email,
         fullName,
         role: role || "parent",
+        status,
+        isActive,
         phone,
-        firebaseUid,
-        academyId: academyId || null,
-        isEmailVerified: false, // Firebase will verify the email
-        status: status,
-        isActive: isActive,
-        password: null, // Firebase users don't use local password
-      });
+        password: null // No password needed for Firebase auth
+      };
+      
+      // Validate user data with schema
+      insertUserSchema.parse(userData);
+      
+      console.log("Validated user data ready for insertion");
+      console.log("Creating user with Firebase UID:", firebaseUid);
+      
+      // Create user in database
+      const user = await storage.createUser(userData);
       
       // Send appropriate emails based on user role
       try {
         if (role === "coach") {
-          // Send email to the coach about pending approval
+          // Send email to coach about pending approval
           const coachEmailContent = generateCoachPendingApprovalEmail(fullName);
           
           await sendEmail({
@@ -3608,10 +3584,10 @@ ${ACADEMY_NAME} Team
           
           console.log("Sent coach pending approval email to:", email);
           
-          // Also send notification to admin about new coach
+          // Also notify admin about new coach
           const adminEmail = "madhukar.kcc@gmail.com"; // Administrator email
           
-          // Generate approval link - make sure it points to the correct admin page path
+          // Generate approval link
           const hostname = req.get('host');
           const protocol = req.protocol;
           const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
@@ -3631,24 +3607,21 @@ ${ACADEMY_NAME} Team
             html: adminEmailContent.html
           });
           
-          console.log("Sent admin notification email about coach registration to:", adminEmail);
-        } 
-        
-        // For parents and by default, send verification email
-        if (role === "parent" || !role) {
+          console.log("Sent admin notification email about coach registration");
+        } else if (role === "parent" || !role) {
+          // For parents, send verification email
           console.log("Sending verification email to parent:", email);
           
           // Generate verification token
           const verificationToken = generateVerificationToken(user.id, email);
           
-          // Create verification link that points to our frontend page
+          // Create verification link
           const hostname = req.get('host');
           const protocol = req.protocol;
           const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
-          // Make sure the link goes to the frontend route, not an API endpoint
           const verificationLink = `${appBaseUrl}/verify-email?token=${verificationToken}`;
           
-          // Generate and send the verification email
+          // Generate and send verification email
           const { text, html } = generateVerificationEmail(fullName, verificationLink);
           
           await sendEmail({
@@ -3661,7 +3634,7 @@ ${ACADEMY_NAME} Team
           console.log("Sent verification email to parent:", email);
         }
       } catch (emailError) {
-        console.error("Error sending registration notification emails:", emailError);
+        console.error("Error sending emails:", emailError);
         // Continue even if emails fail - don't block registration
       }
       
@@ -3684,7 +3657,7 @@ ${ACADEMY_NAME} Team
         stringified: String(error)
       });
       
-      // Check if it's a database constraint violation (e.g., duplicate username/email)
+      // Check if it's a database constraint violation
       if (error.code === '23505') { // PostgreSQL unique violation error
         return res.status(400).json({ 
           message: "Database constraint violation. User might already exist.",
