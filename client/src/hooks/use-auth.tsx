@@ -723,8 +723,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            console.error("Backend registration failed:", errorData);
-            throw new Error(errorData.message || "Registration failed on the server side. Please try again.");
+            console.error("Backend registration failed:", {
+              status: response.status,
+              statusText: response.statusText,
+              errorData
+            });
+            
+            // For unique constraint violations and other client errors
+            if (response.status === 400) {
+              throw new Error(errorData.message || errorData.details || "User already exists or invalid data.");
+            }
+            
+            // For 5xx server errors
+            throw new Error(
+              errorData.message || 
+              `Server error (${response.status}): Registration failed on the server side. Please try again.`
+            );
           }
 
           const backendUserData = await response.json();

@@ -3604,8 +3604,27 @@ ${ACADEMY_NAME} Team
         return res.status(201).json(user);
       });
     } catch (error: any) {
-      console.error("Firebase register error:", error);
-      res.status(500).json({ message: error.message || "Registration error" });
+      console.error("Firebase register error details:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        code: error.code,
+        type: typeof error,
+        stringified: String(error)
+      });
+      
+      // Check if it's a database constraint violation (e.g., duplicate username/email)
+      if (error.code === '23505') { // PostgreSQL unique violation error
+        return res.status(400).json({ 
+          message: "Database constraint violation. User might already exist.",
+          details: error.detail || error.message
+        });
+      }
+      
+      res.status(500).json({ 
+        message: error.message || "Registration error",
+        code: error.code
+      });
     }
   });
   
