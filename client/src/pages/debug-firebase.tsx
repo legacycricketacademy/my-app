@@ -7,17 +7,25 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } f
 import { auth } from "@/lib/firebase-init";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function DebugFirebasePage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState("parent");
+  
   const [firebaseStatus, setFirebaseStatus] = useState<"unknown" | "working" | "error">("unknown");
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<"unknown" | "working" | "error">("unknown");
   const [backendError, setBackendError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [detailedLogs, setDetailedLogs] = useState(false);
+  const [activeTab, setActiveTab] = useState("test-firebase");
   const { toast } = useToast();
 
   // Check Firebase configuration on mount
@@ -49,6 +57,10 @@ export default function DebugFirebasePage() {
       });
       return;
     }
+    
+    // Generate a username if not provided
+    const generatedUsername = username || email.split('@')[0] + Math.floor(Math.random() * 1000);
+    const generatedFullName = fullName || email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1);
 
     setIsLoading(true);
     setResult(null);
