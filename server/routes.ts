@@ -27,7 +27,7 @@ import {
 import { 
   sendEmail, 
   generateInvitationEmail, 
-  generateVerificationEmail, 
+  generateVerificationEmail,
   generateForgotPasswordEmail, 
   generateForgotUsernameEmail,
   generateCoachPendingApprovalEmail,
