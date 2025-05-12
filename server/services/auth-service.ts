@@ -267,6 +267,19 @@ async function sendParentVerificationEmail(
   try {
     console.log(`Sending verification email to parent: ${maskEmail(email)}`);
     
+    // First, update the database to indicate we're attempting to send an email
+    try {
+      await storage.db.update(storage.schema.users)
+        .set({ 
+          emailStatus: "pending", 
+          lastEmailAttempt: new Date() 
+        })
+        .where(eq(storage.schema.users.id, userId));
+    } catch (dbError) {
+      console.warn(`Failed to update email status to pending: ${dbError}`);
+      // Continue trying to send the email anyway
+    }
+    
     // This function comes from the main app
     const generateVerificationToken = (global as any).generateVerificationToken;
     if (!generateVerificationToken) {
@@ -286,11 +299,38 @@ async function sendParentVerificationEmail(
       html
     });
     
+    // Update the database with the result of our attempt
     if (result) {
       console.log(`Verification email sent successfully to: ${maskEmail(email)}`);
+      
+      try {
+        await storage.db.update(storage.schema.users)
+          .set({ 
+            emailStatus: "sent", 
+            lastEmailAttempt: new Date(),
+            emailFailureReason: null
+          })
+          .where(eq(storage.schema.users.id, userId));
+      } catch (dbError) {
+        console.warn(`Failed to update email status to sent: ${dbError}`);
+      }
+      
       return true;
     } else {
-      console.warn(`Failed to send verification email to: ${maskEmail(email)}`);
+      const failureReason = "Email service error - SENDGRID_API_KEY may be missing or invalid";
+      console.warn(`Failed to send verification email to: ${maskEmail(email)} - ${failureReason}`);
+      
+      try {
+        await storage.db.update(storage.schema.users)
+          .set({ 
+            emailStatus: "failed", 
+            lastEmailAttempt: new Date(),
+            emailFailureReason: failureReason
+          })
+          .where(eq(storage.schema.users.id, userId));
+      } catch (dbError) {
+        console.warn(`Failed to update email status to failed: ${dbError}`);
+      }
       
       // In development, allow registration without email for testing
       if (process.env.NODE_ENV === 'development') {
@@ -302,6 +342,21 @@ async function sendParentVerificationEmail(
     }
   } catch (error) {
     console.error(`Failed to send verification email to: ${maskEmail(email)}`, error);
+    
+    // Record the error in the database
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    try {
+      await storage.db.update(storage.schema.users)
+        .set({ 
+          emailStatus: "failed", 
+          lastEmailAttempt: new Date(),
+          emailFailureReason: errorMessage
+        })
+        .where(eq(storage.schema.users.id, userId));
+    } catch (dbError) {
+      console.error("Failed to update email status in database:", dbError);
+    }
+    
     return false;
   }
 }
