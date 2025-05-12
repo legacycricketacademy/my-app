@@ -1308,7 +1308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const resetToken = generatePasswordResetToken(user.id, user.email);
       
       // Create reset link
-      const resetLink = `${req.protocol}://${req.get('host')}${apiPrefix}/reset-password?token=${resetToken}`;
+      const resetLink = `${req.protocol}://${req.get('host')}/api/reset-password?token=${resetToken}`;
       console.log(`Reset link generated: ${resetLink}`);
       
       // Generate email content
@@ -1421,7 +1421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get(`${apiPrefix}/reset-password`, async (req, res) => {
+  app.get("/api/reset-password", async (req, res) => {
     // This endpoint just checks if the token is valid and redirects to the frontend reset page
     const { token } = req.query;
     
@@ -1439,7 +1439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.redirect(`/reset-password?token=${token}`);
   });
   
-  app.post(`${apiPrefix}/reset-password`, async (req, res) => {
+  app.post("/api/reset-password", async (req, res) => {
     try {
       const { token, password } = req.body;
       
