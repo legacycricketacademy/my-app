@@ -35,6 +35,7 @@ import {
   generateAdminCoachApprovalRequestEmail
 } from "./email";
 import { hashPassword, comparePasswords } from "./auth";
+import { resendVerificationEmail } from "./services/auth-service";
 import { eq } from "drizzle-orm";
 
 // API prefix for routes
@@ -545,6 +546,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication routes and middleware
   setupAuth(app);
+  
+  // Endpoint to resend verification email
+  app.post('/api/auth/resend-verification', async (req, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (!userId || typeof userId !== 'number') {
+        return res.status(400).json({ message: "Valid user ID is required" });
+      }
+      
+      // Get the app's base URL for constructing verification links
+      const appBaseUrl = `${req.protocol}://${req.get('host')}`;
+      
+      // Call the resendVerificationEmail function
+      const success = await resendVerificationEmail(userId, appBaseUrl);
+      
+      if (success) {
+        return res.status(200).json({ 
+          message: "Verification email resent successfully" 
+        });
+      } else {
+        return res.status(500).json({ 
+          message: "Failed to resend verification email" 
+        });
+      }
+    } catch (error) {
+      console.error("Error resending verification email:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      return res.status(500).json({ 
+        message: "Error resending verification email", 
+        error: errorMessage
+      });
+    }
+  });
   
   // Local authentication endpoints (Firebase bypass)
   
