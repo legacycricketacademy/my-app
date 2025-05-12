@@ -545,6 +545,89 @@ export function setupAuth(app: Express) {
       res.sendStatus(200);
     });
   });
+  
+  // Add a special endpoint to fix Firebase users by adding a password
+  app.post("/api/fix-firebase-user", async (req, res) => {
+    try {
+      const { email, username, password } = req.body;
+      
+      if (!email || !username || !password) {
+        return res.status(400).json({
+          message: "Missing required fields",
+          missing: Object.entries({
+            email: !email,
+            username: !username,
+            password: !password
+          }).filter(([_, missing]) => missing).map(([field]) => field)
+        });
+      }
+      
+      console.log(`Looking up user with email: ${email}`);
+      const existingUser = await multiTenantStorage.getUserByEmail(email);
+      
+      if (!existingUser) {
+        return res.status(404).json({
+          message: `No user found with email: ${email}`
+        });
+      }
+      
+      console.log(`Found user: ${existingUser.id} (${existingUser.username || "no username"})`);
+      
+      // Check if this is a Firebase user without a password
+      if (!existingUser.firebaseUid) {
+        return res.status(400).json({
+          message: "This user is not a Firebase user",
+          user: {
+            id: existingUser.id,
+            email: existingUser.email,
+            username: existingUser.username,
+            hasFirebaseUid: !!existingUser.firebaseUid,
+            hasPassword: !!existingUser.password
+          }
+        });
+      }
+      
+      if (existingUser.password) {
+        return res.status(400).json({
+          message: "This user already has a password set",
+          user: {
+            id: existingUser.id,
+            email: existingUser.email,
+            username: existingUser.username,
+            hasFirebaseUid: !!existingUser.firebaseUid,
+            hasPassword: !!existingUser.password
+          }
+        });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(password);
+      
+      // Update the user
+      console.log(`Updating user ${existingUser.id} with new username and password`);
+      
+      const updatedUser = await multiTenantStorage.updateUser(existingUser.id, {
+        username,
+        password: hashedPassword,
+        updatedAt: new Date()
+      });
+      
+      return res.status(200).json({
+        message: "User updated successfully",
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          username: updatedUser.username
+        }
+      });
+    } catch (error: any) {
+      console.error("Error fixing Firebase user:", error);
+      return res.status(500).json({
+        message: "Internal server error",
+        error: error.message
+      });
+    }
+  });
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {
