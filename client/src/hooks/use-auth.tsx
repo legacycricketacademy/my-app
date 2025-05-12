@@ -274,39 +274,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      // Create a variable to track if we were able to contact the server
+      let serverLogoutSucceeded = false;
+      
       try {
-        // First logout from backend
+        // First try to logout from backend
         const res = await fetch("/api/logout", {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
           credentials: "include",
         });
         
-        if (!res.ok) {
-          throw new Error("Logout failed. Please try again.");
+        // Mark success if server responded properly
+        serverLogoutSucceeded = res.ok;
+        
+        // Try to logout from Firebase even if backend logout failed
+        if (firebaseUser) {
+          try {
+            await firebaseLogoutFn();
+          } catch (firebaseError) {
+            console.error("Firebase logout error:", firebaseError);
+            // Continue with client-side logout even if Firebase logout fails
+          }
         }
         
-        // Then logout from Firebase
-        if (firebaseUser) {
-          await firebaseLogoutFn();
-        }
+        // If server logout failed but we finished without throwing, return this info
+        return { serverLogoutSucceeded };
       } catch (error) {
         console.error("Logout error:", error);
-        throw error;
+        // Return false for server success, but don't throw - we'll still clear client state
+        return { serverLogoutSucceeded: false };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      // Always clear local state
       queryClient.setQueryData(["/api/user"], null);
+      
+      if (result?.serverLogoutSucceeded) {
+        toast({
+          title: "Logged out",
+          description: "You have been successfully logged out.",
+        });
+      } else {
+        toast({
+          title: "Logged out",
+          description: "You've been logged out locally, but there may have been server errors.",
+        });
+      }
+      
+      // Force redirect to auth page
+      window.location.href = '/auth';
+    },
+    onError: () => {
+      // Despite error, clear local state
+      queryClient.setQueryData(["/api/user"], null);
+      
       toast({
         title: "Logged out",
-        description: "You have been successfully logged out.",
+        description: "You've been logged out locally, but there were server errors.",
       });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Logout failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      
+      // Force redirect to auth page even on error
+      window.location.href = '/auth';
     },
   });
 
