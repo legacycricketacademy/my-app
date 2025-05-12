@@ -23,7 +23,8 @@ export default function VerifyEmailPage() {
       }
 
       try {
-        const response = await apiRequest("POST", "/api/verify-email", { token });
+        // The API is actually a GET endpoint with a query parameter, not a POST with body
+        const response = await fetch(`/api/verify-email?token=${encodeURIComponent(token)}`);
         
         if (response.ok) {
           setStatus("success");

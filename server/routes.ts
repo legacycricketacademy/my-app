@@ -1049,9 +1049,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate verification token
       const token = generateVerificationToken(userId, user.email);
       
-      // Create verification link
+      // Create verification link that points to our frontend page
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const verificationLink = `${baseUrl}/api/verify-email?token=${token}`;
+      const verificationLink = `${baseUrl}/verify-email?token=${token}`;
       
       // Generate email content
       const { text, html } = generateVerificationEmail(user.fullName, verificationLink);
