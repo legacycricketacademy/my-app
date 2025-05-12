@@ -274,6 +274,18 @@ export default function AuthPage() {
     }
   }
   
+  // Helper function to log errors in a structured way
+  function logErrorDetails(error: any, context: string = "Error") {
+    console.error(`${context}:`, error);
+    console.error("Error details:", {
+      message: error.message,
+      name: error.name,
+      code: error.code,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
   function onRegisterSubmit(data: RegisterFormValues) {
     // Use Firebase registration for all new users
     try {
@@ -287,6 +299,7 @@ export default function AuthPage() {
       
       // Save the email for debugging in case of error
       (window as any)._lastRegistrationEmail = data.email;
+      (window as any)._lastRegistrationAttempt = new Date().toISOString();
       
       firebaseRegisterMutation.mutate(data, {
         onSuccess: (userData) => {
@@ -334,9 +347,7 @@ export default function AuthPage() {
           }
         },
         onError: (error) => {
-          console.error("Firebase registration error:", error);
-          console.error("Error message:", error.message);
-          console.error("Error stack:", error.stack);
+          logErrorDetails(error, "Firebase registration error");
           
           // Show a more user-friendly error message
           let errorMessage = "Registration failed. Please try again.";
@@ -365,12 +376,7 @@ export default function AuthPage() {
         },
       });
     } catch (error: any) {
-      console.error("Registration process error:", error);
-      console.error("Error details:", {
-        message: error.message,
-        stack: error.stack,
-        code: error.code
-      });
+      logErrorDetails(error, "Registration process error");
       
       toast({
         title: "Registration Failed",
