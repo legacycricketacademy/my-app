@@ -720,9 +720,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           
           console.log("Firebase registration response status:", response.status);
+          console.log("Firebase registration response headers:", JSON.stringify(Array.from(response.headers.entries())));
 
           // All responses include the user data, even if the account is in a pending state
-          // So we process all responses between 200-299 as successful
+          // Both 200 OK (existing user) and 201 Created (new user) are valid success responses
           if (response.status < 200 || response.status >= 300) {
             const errorData = await response.json().catch(() => ({}));
             console.error("Backend registration failed:", {
@@ -749,7 +750,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           const backendUserData = await response.json();
-          console.log("Backend registration successful:", backendUserData);
+          
+          // Log user data with sensitive fields redacted for debugging
+          console.log("Backend registration successful:", {
+            id: backendUserData.id,
+            username: backendUserData.username,
+            role: backendUserData.role,
+            status: backendUserData.status,
+            isActive: backendUserData.isActive,
+            responseStatus: response.status
+          });
+          
+          // Ensure status field is consistent for coach/admin accounts
+          if ((backendUserData.role === 'coach' || backendUserData.role === 'admin') && 
+              !backendUserData.isActive && 
+              !backendUserData.status) {
+            // Ensure there's a status field for pending accounts
+            backendUserData.status = 'pending_approval';
+          }
+          
           return backendUserData;
         } catch (error: any) {
           console.error("Backend registration error:", error);
