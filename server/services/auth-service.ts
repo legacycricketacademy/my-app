@@ -50,6 +50,18 @@ export class UserExistsError extends AuthError {
   }
 }
 
+export class EmailAlreadyRegisteredError extends AuthError {
+  constructor(email?: string) {
+    const maskedEmail = email ? maskEmail(email) : '';
+    super(
+      `Email ${maskedEmail ? maskedEmail + ' ' : ''}is already registered. Please login instead.`, 
+      409, 
+      "email_already_registered"
+    );
+    this.name = 'EmailAlreadyRegisteredError';
+  }
+}
+
 export class DatabaseError extends AuthError {
   constructor(message: string, code?: string) {
     super(message, 500, code || "database_error");
@@ -156,7 +168,8 @@ export async function registerFirebaseUser(
   
   const existingEmail = await storage.getUserByEmail(input.email);
   if (existingEmail) {
-    throw new UserExistsError("email");
+    // Use the more specific EmailAlreadyRegisteredError with HTTP 409
+    throw new EmailAlreadyRegisteredError(input.email);
   }
   
   // Determine status based on role
