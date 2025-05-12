@@ -356,7 +356,17 @@ export const userAuditLogsRelations = relations(userAuditLogs, ({ one }) => ({
 }));
 
 // Zod Schemas for validation
-export const insertUserSchema = createInsertSchema(users);
+export const insertUserSchema = createInsertSchema(users, {
+  username: (schema) => schema.min(3, "Username must be at least 3 characters"),
+  password: (schema) => schema.min(6, "Password must be at least 6 characters"),
+  email: (schema) => schema.email("Please enter a valid email address"),
+  fullName: (schema) => schema.min(2, "Full name must be at least 2 characters"),
+  role: (schema) => z.enum(userRoles, {
+    errorMap: () => ({ message: "Please select a valid role" }),
+  }),
+  phone: (schema) => schema.optional().refine(val => !val || val.length >= 10, 
+    "Phone number must be at least 10 digits")
+});
 export const insertPlayerSchema = createInsertSchema(players, {
   // Override dateOfBirth to accept both Date objects and ISO string dates
   dateOfBirth: (schema) => z.union([

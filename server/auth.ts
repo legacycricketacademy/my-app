@@ -268,8 +268,10 @@ export function setupAuth(app: Express) {
       console.log(`Setting academy context to ${userData.academyId} for user creation`);
       multiTenantStorage.setAcademyContext(userData.academyId);
       
+      // Create the user in the database
+      console.log("Creating user in database...");
+      
       try {
-        console.log("Creating user in database...");
         const user = await multiTenantStorage.createUser(userData);
         console.log("User created successfully:", { userId: user.id, username: user.username });
       
@@ -357,11 +359,11 @@ export function setupAuth(app: Express) {
             emailSent: !!verificationLink
           });
         });
-      } catch (dbError) {
+      } catch (dbError: any) {
         console.error("Database error during user creation:", dbError);
         return res.status(500).json({ 
           message: "Error creating user account. Please try again later.",
-          error: dbError.message
+          error: dbError?.message || "Unknown error"
         });
       }
     } catch (error) {
