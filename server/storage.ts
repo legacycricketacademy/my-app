@@ -653,26 +653,15 @@ export class DatabaseStorage implements IStorage {
         SELECT 
           p.id, p.academy_id AS "academyId", p.player_id AS "playerId", 
           p.amount, p.payment_type AS "paymentType",
-          CASE 
-            WHEN EXISTS (
-              SELECT 1 FROM information_schema.columns 
-              WHERE table_name = 'payments' AND column_name = 'month'
-            ) 
-            THEN p.month 
-            ELSE NULL 
-          END AS "month",
           p.due_date AS "dueDate", p.paid_date AS "paidDate", 
           p.status, p.payment_method AS "paymentMethod", 
           p.stripe_payment_intent_id AS "stripePaymentIntentId",
-          p.stripe_payment_intent_status AS "stripePaymentIntentStatus",
           p.notes, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
           pl.first_name AS "playerFirstName", pl.last_name AS "playerLastName",
           pl.age_group AS "playerAgeGroup", pl.location AS "playerLocation"
       `;
       
-      // Try to add the new columns if they exist
-      // These SQL queries are designed to be resilient to missing columns using CASE
-      // WHEN EXISTS handling
+      // Only include columns we know exist in the database
       query += `
         , CASE 
             WHEN EXISTS (
@@ -690,14 +679,6 @@ export class DatabaseStorage implements IStorage {
             THEN p.expected_amount 
             ELSE NULL 
           END AS "expectedAmount"
-        , CASE 
-            WHEN EXISTS (
-              SELECT 1 FROM information_schema.columns 
-              WHERE table_name = 'payments' AND column_name = 'is_over_under_payment'
-            ) 
-            THEN p.is_over_under_payment 
-            ELSE FALSE 
-          END AS "isOverUnderPayment"
       `;
       
       query += `
