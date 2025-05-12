@@ -33,12 +33,37 @@ export async function signUpWithEmail(email: string, password: string, displayNa
       const errorData = await response.json();
       console.error("Firebase REST signup error:", errorData);
       
-      // Better handling for email-already-in-use errors
-      if (errorData.error?.message === 'EMAIL_EXISTS') {
-        throw new Error("This email is already registered. Please log in or use a different email address.");
+      // Map Firebase error codes to more user-friendly messages
+      const errorCode = errorData.error?.message;
+      let errorMessage = 'Signup failed';
+      
+      // Better error mapping
+      switch (errorCode) {
+        case 'EMAIL_EXISTS':
+          errorMessage = "This email is already registered. Please log in or use a different email address.";
+          break;
+        case 'INVALID_EMAIL':
+          errorMessage = "Please enter a valid email address.";
+          break;
+        case 'WEAK_PASSWORD':
+          errorMessage = "The password is too weak. Please use a stronger password with at least 6 characters.";
+          break;
+        case 'OPERATION_NOT_ALLOWED':
+          errorMessage = "Email/password accounts are not enabled. Please contact support.";
+          break;
+        case 'TOO_MANY_ATTEMPTS_TRY_LATER':
+          errorMessage = "We have blocked all requests from this device due to unusual activity. Try again later.";
+          break;
+        default:
+          errorMessage = errorData.error?.message || 'Signup failed';
       }
       
-      throw new Error(errorData.error?.message || 'Signup failed');
+      // Create an error with the right message and add the code for debugging
+      const error = new Error(errorMessage);
+      (error as any).code = errorCode;
+      (error as any).originalError = errorData.error;
+      
+      throw error;
     }
 
     const data = await response.json();
@@ -89,7 +114,38 @@ export async function signInWithEmail(email: string, password: string) {
     if (!response.ok) {
       const errorData = await response.json();
       console.error("Firebase REST login error:", errorData);
-      throw new Error(errorData.error?.message || 'Login failed');
+      
+      // Map Firebase error codes to more user-friendly messages
+      const errorCode = errorData.error?.message;
+      let errorMessage = 'Login failed';
+      
+      // Better error mapping for login errors
+      switch (errorCode) {
+        case 'EMAIL_NOT_FOUND':
+          errorMessage = "No account found with this email address. Please check your email or sign up.";
+          break;
+        case 'INVALID_PASSWORD':
+          errorMessage = "Incorrect password. Please try again or reset your password.";
+          break;
+        case 'USER_DISABLED':
+          errorMessage = "This account has been disabled. Please contact support.";
+          break;
+        case 'INVALID_EMAIL':
+          errorMessage = "Please enter a valid email address.";
+          break;
+        case 'TOO_MANY_ATTEMPTS_TRY_LATER':
+          errorMessage = "Too many unsuccessful login attempts. Please try again later or reset your password.";
+          break;
+        default:
+          errorMessage = errorData.error?.message || 'Login failed';
+      }
+      
+      // Create an error with the right message and add the code for debugging
+      const error = new Error(errorMessage);
+      (error as any).code = errorCode;
+      (error as any).originalError = errorData.error;
+      
+      throw error;
     }
 
     const data = await response.json();
