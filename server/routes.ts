@@ -3309,10 +3309,11 @@ ${ACADEMY_NAME} Team
           // Generate verification token
           const verificationToken = generateVerificationToken(user.id, email);
           
-          // Create verification link
+          // Create verification link that points to our frontend page
           const hostname = req.get('host');
           const protocol = req.protocol;
           const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
+          // Make sure the link goes to the frontend route, not an API endpoint
           const verificationLink = `${appBaseUrl}/verify-email?token=${verificationToken}`;
           
           // Generate and send the verification email
