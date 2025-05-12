@@ -261,7 +261,17 @@ export default function AuthPage() {
         onSuccess: (userData) => {
           console.log("Registration succeeded with status:", userData?.status);
           
+          // Log the user data for debugging
+          console.log("User registration completed with data:", {
+            id: userData?.id,
+            username: userData?.username,
+            role: userData?.role,
+            status: userData?.status,
+            isActive: userData?.isActive !== false // Convert to boolean for logging
+          });
+          
           // Different message based on status (for coach/admin that need approval)
+          // Check for pending_approval or pending status, or if isActive is explicitly false
           if ((userData?.role === 'coach' || userData?.role === 'admin') && 
               (userData?.status === 'pending_approval' || userData?.status === 'pending' || 
                userData?.isActive === false)) {
