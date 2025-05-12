@@ -901,95 +901,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
   });
   
-  // Test email endpoint
+  // Test email endpoint with template support
   app.post(`${apiPrefix}/test-email`, async (req, res) => {
     try {
+      // Verify user is authenticated
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
-      const { email } = req.body;
+      // Extract parameters
+      const { email, template, name } = req.body;
       if (!email || typeof email !== 'string') {
         return res.status(400).json({ message: "Email address is required" });
       }
       
-      // Create test email content
-      const testEmailSubject = "Test Email from Legacy Cricket Academy";
-      const testEmailText = "This is a test email from Legacy Cricket Academy. If you received this email, it means your email configuration is working correctly.";
-      const testEmailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
-            .content { padding: 20px; }
-            .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Legacy Cricket Academy</h1>
-            </div>
-            <div class="content">
-              <h2>Test Email</h2>
-              <p>This is a test email from Legacy Cricket Academy.</p>
-              <p>If you received this email, it means your email configuration is working correctly.</p>
-              <p>No further action is required.</p>
-            </div>
-            <div class="footer">
-              <p>This is an automated message, please do not reply to this email.</p>
-              <p>&copy; ${new Date().getFullYear()} Legacy Cricket Academy</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-      
-      // Toggle this for testing
-      const skipActualEmailSending = false;
-      
-      if (skipActualEmailSending) {
-        return res.status(200).json({ 
-          message: "Test email skipped but simulation successful!", 
-          status: "success",
-          note: "Email sending was bypassed for testing" 
-        });
-      }
-      
-      // Try to send test email
-      try {
-        const emailSent = await sendEmail({
-          to: email,
-          subject: testEmailSubject,
-          text: testEmailText,
-          html: testEmailHtml
-        });
-        
-        if (!emailSent) {
-          return res.status(500).json({
-            message: "Failed to send test email. Check server logs for details.",
-            status: "error"
+      // Template-based email
+      if (template) {
+        try {
+          const baseUrl = `${req.protocol}://${req.get('host')}`;
+          const testToken = "TEST_TOKEN_" + Date.now();
+          const testLink = `${baseUrl}/verify-email?token=${testToken}`;
+          const displayName = name || 'Test User';
+          
+          let emailContent;
+          let emailSubject;
+          
+          switch (template) {
+            case 'verification':
+              emailContent = generateVerificationEmail(displayName, testLink);
+              emailSubject = "Verify Your Email Address for Legacy Cricket Academy";
+              break;
+            case 'coach-approval-pending':
+              emailContent = generateCoachPendingApprovalEmail(displayName);
+              emailSubject = "Your Coach Registration Status - Pending Approval";
+              break;
+            case 'coach-approved':
+              emailContent = generateCoachApprovedEmail(displayName, baseUrl);
+              emailSubject = "Your Coach Account Has Been Approved";
+              break;
+            case 'admin-notification':
+              emailContent = generateAdminCoachApprovalRequestEmail('Admin', displayName, email, `${baseUrl}/admin/coaches-pending-approval`);
+              emailSubject = "New Coach Registration Requires Approval";
+              break;
+            default:
+              return res.status(400).json({ 
+                message: "Invalid template type",
+                validTemplates: ['verification', 'coach-approval-pending', 'coach-approved', 'admin-notification']
+              });
+          }
+          
+          const result = await sendEmail({
+            to: email,
+            subject: emailSubject,
+            text: emailContent.text,
+            html: emailContent.html
+          });
+          
+          if (result) {
+            return res.status(200).json({ 
+              message: "Test email sent successfully using template",
+              details: {
+                template,
+                to: email,
+                subject: emailSubject,
+                testLink: template === 'verification' ? testLink : undefined
+              }
+            });
+          } else {
+            return res.status(500).json({ message: "Failed to send test email" });
+          }
+        } catch (templateError) {
+          console.error("Error with template email:", templateError);
+          return res.status(500).json({ 
+            message: "Error generating template email", 
+            error: String(templateError) 
           });
         }
+      } 
+      // Default test email (no template specified)
+      else {
+        try {
+          // Create test email content
+          const testEmailSubject = "Test Email from Legacy Cricket Academy";
+          const testEmailText = "This is a test email from Legacy Cricket Academy. If you received this email, it means your email configuration is working correctly.";
+          const testEmailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
+              .content { padding: 20px; }
+              .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Legacy Cricket Academy</h1>
+              </div>
+              <div class="content">
+                <h2>Test Email</h2>
+                <p>This is a test email from Legacy Cricket Academy.</p>
+                <p>If you received this email, it means your email configuration is working correctly.</p>
+                <p>No further action is required.</p>
+              </div>
+              <div class="footer">
+                <p>This is an automated message, please do not reply to this email.</p>
+                <p>&copy; ${new Date().getFullYear()} Legacy Cricket Academy</p>
+              </div>
+            </div>
+          </body>
+          </html>
+          `;
         
-        res.status(200).json({ 
-          message: "Test email sent successfully!", 
-          status: "success" 
-        });
-      } catch (emailError) {
-        console.error("Email sending error:", emailError);
-        return res.status(500).json({ 
-          message: "Email service error. Check server logs for details.",
-          status: "error",
-          error: String(emailError)
-        });
+          // Toggle this for testing
+          const skipActualEmailSending = false;
+          
+          if (skipActualEmailSending) {
+            return res.status(200).json({ 
+              message: "Test email skipped but simulation successful!", 
+              status: "success",
+              note: "Email sending was bypassed for testing" 
+            });
+          }
+          
+          const emailSent = await sendEmail({
+            to: email,
+            subject: testEmailSubject,
+            text: testEmailText,
+            html: testEmailHtml
+          });
+          
+          if (!emailSent) {
+            return res.status(500).json({
+              message: "Failed to send test email. Check server logs for details.",
+              status: "error"
+            });
+          }
+          
+          return res.status(200).json({ 
+            message: "Test email sent successfully!", 
+            status: "success" 
+          });
+        } catch (plainEmailError) {
+          console.error("Plain email error:", plainEmailError);
+          return res.status(500).json({ 
+            message: "Error sending plain test email", 
+            error: String(plainEmailError) 
+          });
+        }
       }
     } catch (error) {
-      console.error("Error sending test email:", error);
-      res.status(500).json({ message: "Internal server error" });
+      console.error("Error in test email endpoint:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
   });
   
@@ -1025,6 +1091,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating email diagnostic:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Test route to generate and view registration emails without sending them
+  app.get(`${apiPrefix}/test-email-templates`, async (req, res) => {
+    // Only allow this in development environment
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ message: "This endpoint is not available in production" });
+    }
+    
+    const type = req.query.type as string || 'verification';
+    const email = req.query.email as string || 'test@example.com';
+    const name = req.query.name as string || 'Test User';
+    
+    try {
+      let emailTemplate;
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const testToken = "TEST_TOKEN_" + Date.now();
+      const testLink = `${baseUrl}/verify-email?token=${testToken}`;
+      
+      switch (type) {
+        case 'verification':
+          emailTemplate = generateVerificationEmail(name, testLink);
+          break;
+        case 'coach-approval-pending':
+          emailTemplate = generateCoachPendingApprovalEmail(name);
+          break;
+        case 'coach-approved':
+          emailTemplate = generateCoachApprovedEmail(name, baseUrl);
+          break;
+        case 'admin-notification':
+          emailTemplate = generateAdminCoachApprovalRequestEmail('Admin', name, email, `${baseUrl}/admin/coaches-pending-approval`);
+          break;
+        default:
+          emailTemplate = generateVerificationEmail(name, testLink);
+      }
+      
+      return res.json({
+        message: "Email template generated successfully",
+        template: {
+          subject: `Test Email: ${type}`,
+          text: emailTemplate.text,
+          html: emailTemplate.html,
+          testLink: testLink
+        }
+      });
+    } catch (error: any) {
+      console.error(`Error generating test email template (${type}):`, error);
+      return res.status(500).json({
+        status: "error",
+        message: "Error generating test email template",
+        details: { error: error.message }
+      });
     }
   });
 

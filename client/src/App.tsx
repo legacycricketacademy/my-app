@@ -29,6 +29,7 @@ import CoachesPendingApprovalPage from "@/pages/admin/coaches-pending-approval";
 import DebugPage from "@/pages/debug-page";
 import ForceLogoutPage from "@/pages/force-logout";
 import TestRegister from "@/pages/test-register";
+import TestEmailTools from "@/pages/test-email-tools";
 
 // Parent Pages
 import ParentDashboard from "@/pages/parent-dashboard";
@@ -279,6 +280,7 @@ function RouterContent() {
       <Route path="/stripe-debug" component={StripeDebugPage} />
       <Route path="/debug" component={DebugPage} />
       <Route path="/test-register" component={TestRegister} />
+      <Route path="/test-email-tools" component={TestEmailTools} />
       
       {/* Emergency logout page - accessible even when logged in */}
       <Route path="/emergency-logout" component={ForceLogoutPage} />
