@@ -469,6 +469,37 @@ async function processPlayersData(playersData: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Special force logout endpoint for stubborn sessions
+  app.post("/api/force-logout", (req, res) => {
+    console.log("Force logout requested");
+    
+    // Destroy the session
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session:", err);
+          return res.status(500).json({ 
+            success: false, 
+            message: "Failed to destroy session" 
+          });
+        }
+        
+        console.log("Session destroyed successfully");
+        res.clearCookie("connect.sid"); // Clear the session cookie
+        
+        return res.status(200).json({ 
+          success: true, 
+          message: "Session destroyed successfully" 
+        });
+      });
+    } else {
+      console.log("No session to destroy");
+      return res.status(200).json({ 
+        success: true, 
+        message: "No session to destroy" 
+      });
+    }
+  });
   // Simple test endpoint to check connectivity
   app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
