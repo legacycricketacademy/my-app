@@ -146,6 +146,13 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
+    // Set a response timeout to ensure we always send something back
+    const responseTimeout = setTimeout(() => {
+      if (!res.headersSent) {
+        console.error("Registration request timed out after 20 seconds!");
+        res.status(500).json({ message: "Registration request timed out" });
+      }
+    }, 20000);
     console.log("Registration request received:", {
       ...req.body,
       password: req.body.password ? "[REDACTED]" : undefined
@@ -373,6 +380,9 @@ export function setupAuth(app: Express) {
         // Log in the new user
         console.log("Logging in the newly registered user...");
         req.login(user, (err) => {
+          // Clear the timeout since we're about to respond
+          clearTimeout(responseTimeout);
+          
           if (err) {
             console.error("Error during login after registration:", err);
             return next(err);
@@ -395,7 +405,20 @@ export function setupAuth(app: Express) {
         });
       }
     } catch (error) {
+      // Clear the timeout since we're about to respond
+      clearTimeout(responseTimeout);
+      
       console.error("Unhandled error in registration:", error);
+      
+      // Send a more detailed error back to the client
+      if (error instanceof Error) {
+        return res.status(500).json({ 
+          message: "Registration failed due to server error", 
+          error: error.message,
+          stack: process.env.NODE_ENV === 'production' ? undefined : error.stack
+        });
+      }
+      
       next(error);
     }
   });

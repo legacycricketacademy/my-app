@@ -38,6 +38,31 @@ import { eq } from "drizzle-orm";
 // API prefix for routes
 const apiPrefix = "/api";
 
+// Add a force-logout endpoint that destroys the session without relying on passport
+// This provides a more reliable way to logout when sessions are stuck
+function setupForceLogoutEndpoint(app: Express) {
+  app.post(`${apiPrefix}/force-logout`, (req, res) => {
+    console.log("Received force-logout request");
+    
+    if (req.session) {
+      console.log("Destroying session for force-logout");
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session:", err);
+          return res.status(500).json({ message: "Error during force logout", error: err.message });
+        }
+        
+        console.log("Session successfully destroyed");
+        res.clearCookie("connect.sid");
+        return res.status(200).json({ message: "Force logout successful" });
+      });
+    } else {
+      console.log("No session found to destroy");
+      return res.status(200).json({ message: "No session to logout" });
+    }
+  });
+}
+
 // Initialize Stripe conditionally
 let stripe: Stripe | undefined;
 if (process.env.STRIPE_SECRET_KEY) {
