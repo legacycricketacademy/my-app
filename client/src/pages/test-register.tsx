@@ -120,6 +120,10 @@ export default function TestRegister() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl">Test Registration</CardTitle>
           <CardDescription>Create a new account with direct API access</CardDescription>
+          <div className="mt-2 p-2 bg-blue-50 text-blue-800 text-sm rounded border border-blue-200">
+            <p className="font-medium">Firebase Admin is now properly configured! 🎉</p>
+            <p className="text-xs mt-1">The missing FIREBASE_PROJECT_ID environment variable has been added.</p>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -133,6 +137,9 @@ export default function TestRegister() {
                 placeholder="johndoe"
                 required
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Username must be at least 6 characters and unique in the system.
+              </p>
             </div>
             
             <div className="space-y-2">
@@ -146,6 +153,9 @@ export default function TestRegister() {
                 placeholder="••••••••"
                 required
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Password must be at least 8 characters long. Try "Password123!".
+              </p>
             </div>
             
             <div className="space-y-2">
