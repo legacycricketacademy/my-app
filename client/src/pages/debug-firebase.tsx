@@ -90,7 +90,60 @@ export default function DebugFirebasePage() {
         const idToken = await firebaseUser.getIdToken();
         if (detailedLogs) console.log("Got Firebase ID token");
         
-        // Now try to register with our backend
+        // Try to register with backend to create a database record
+        try {
+          // First try to register a complete user account
+          if (detailedLogs) console.log("Attempting full user registration with backend...");
+          
+          const registerResponse = await fetch("/api/v1/auth/register-firebase", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              firebaseUid: firebaseUser.uid,
+              username: generatedUsername,
+              email: firebaseUser.email,
+              fullName: generatedFullName,
+              role: role,
+              idToken: idToken,
+            }),
+            credentials: "include",
+          });
+          
+          if (registerResponse.ok) {
+            const userData = await registerResponse.json();
+            if (detailedLogs) console.log("Full user registration successful:", userData);
+            
+            setBackendStatus("working");
+            setResult((prev: any) => ({ 
+              ...prev, 
+              userRegistration: {
+                success: true,
+                userData
+              }
+            }));
+            
+            toast({
+              title: "Success!",
+              description: "User created in backend database",
+            });
+            
+            // No need for debug endpoint if full registration worked
+            return userData;
+          } else {
+            const errorData = await registerResponse.json().catch(() => ({ message: "Failed to parse error response" }));
+            if (detailedLogs) console.error("Full registration failed:", errorData);
+            
+            // Continue to debug endpoint since full registration failed
+          }
+        } catch (regError) {
+          console.error("Error during user registration:", regError);
+          // Continue to debug endpoint
+        }
+        
+        // Fallback to debug endpoint
+        if (detailedLogs) console.log("Falling back to debug endpoint...");
         const response = await fetch("/api/v1/auth/debug-firebase", {
           method: "POST",
           headers: {
