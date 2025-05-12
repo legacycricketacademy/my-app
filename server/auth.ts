@@ -146,6 +146,9 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
+    // Determine if this is a debug request
+    const isDebugMode = req.headers['x-debug-mode'] === 'true';
+    
     // Set a response timeout to ensure we always send something back
     const responseTimeout = setTimeout(() => {
       if (!res.headersSent) {
@@ -153,6 +156,15 @@ export function setupAuth(app: Express) {
         res.status(500).json({ message: "Registration request timed out" });
       }
     }, 20000);
+    
+    // Log verbose request details if in debug mode
+    if (isDebugMode) {
+      console.log("============ DEBUG REGISTRATION START ============");
+      console.log("Headers:", req.headers);
+      console.log("Session:", req.session ? "exists" : "none");
+      console.log("Academy context:", req.academyId || "none");
+    }
+    
     console.log("Registration request received:", {
       ...req.body,
       password: req.body.password ? "[REDACTED]" : undefined
@@ -426,10 +438,56 @@ export function setupAuth(app: Express) {
           });
         });
       } catch (dbError: any) {
-        console.error("Database error during user creation:", dbError);
+        // Clear the timeout since we're about to respond
+        clearTimeout(responseTimeout);
+        
+        // Log detailed error information in debug mode
+        if (isDebugMode) {
+          console.error("============ DB ERROR DETAILS ============");
+          console.error("Database error during user creation:", dbError);
+          console.error("SQL error code:", dbError?.code);
+          console.error("SQL constraint:", dbError?.constraint);
+          console.error("SQL detail:", dbError?.detail);
+          console.error("SQL table:", dbError?.table);
+          console.error("SQL column:", dbError?.column);
+          console.error("Full error:", dbError);
+          console.error("User data (except password):", {
+            ...userData,
+            password: "[REDACTED]"
+          });
+          console.error("=========================================");
+        } else {
+          console.error("Database error during user creation:", dbError);
+        }
+        
+        // Check for specific database errors
+        let errorMessage = "Error creating user account. Please try again later.";
+        let errorField = null;
+        
+        // PostgreSQL error codes
+        if (dbError?.code === '23505') { // Unique violation
+          if (dbError.constraint?.includes('username')) {
+            errorMessage = "Username already exists. Please choose a different username.";
+            errorField = "username";
+          } else if (dbError.constraint?.includes('email')) {
+            errorMessage = "Email already in use. Please use a different email.";
+            errorField = "email";
+          } else if (dbError.constraint?.includes('phone')) {
+            errorMessage = "Phone number already registered. Please use a different phone number.";
+            errorField = "phone";
+          }
+        }
+        
         return res.status(500).json({ 
-          message: "Error creating user account. Please try again later.",
-          error: dbError?.message || "Unknown error"
+          message: errorMessage,
+          field: errorField,
+          error: dbError?.message || "Unknown error",
+          // Only include detailed error info in debug mode
+          details: isDebugMode ? {
+            code: dbError?.code,
+            constraint: dbError?.constraint,
+            detail: dbError?.detail
+          } : undefined
         });
       }
     } catch (error) {

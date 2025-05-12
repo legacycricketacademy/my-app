@@ -54,11 +54,19 @@ export default function RegisterDebug() {
       
       addLog(`Sending data: ${JSON.stringify({...data, password: "***"})}`);
       
+      // Record exact request details for debugging
+      const requestData = JSON.stringify(data);
+      addLog(`Request payload: ${JSON.stringify({...data, password: "***"})}`);
+      addLog(`Request headers: Content-Type=application/json, credentials=include`);
+      
       // Send the registration request to our backend directly
       const res = await fetch("/api/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        headers: { 
+          "Content-Type": "application/json",
+          "X-Debug-Mode": "true" // Add debugging header to trigger verbose server logs
+        },
+        body: requestData,
         credentials: "include",
       });
       
