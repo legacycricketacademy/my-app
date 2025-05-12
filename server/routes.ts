@@ -3312,6 +3312,64 @@ ${ACADEMY_NAME} Team
     }
   });
   
+  // Debug Firebase integration - for testing only
+  app.post(`${apiPrefix}/auth/debug-firebase`, async (req, res) => {
+    try {
+      console.log("Debug Firebase endpoint called");
+      const { idToken, firebaseUid, email } = req.body;
+      
+      if (!idToken || !firebaseUid || !email) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      console.log("Firebase integration debug with UID:", firebaseUid);
+      
+      // Try to verify the token
+      let decodedToken;
+      try {
+        console.log("Verifying Firebase ID token...");
+        decodedToken = await verifyFirebaseToken(idToken);
+        console.log("Firebase token verified:", decodedToken?.uid);
+        
+        // Check if the token matches the provided UID
+        if (decodedToken?.uid !== firebaseUid) {
+          console.error("Token UID doesn't match provided UID:", {
+            tokenUid: decodedToken?.uid,
+            providedUid: firebaseUid
+          });
+          return res.status(400).json({ 
+            message: "Firebase token UID doesn't match provided UID",
+            tokenUid: decodedToken?.uid,
+            providedUid: firebaseUid
+          });
+        }
+      } catch (tokenError) {
+        console.error("Error verifying Firebase token:", tokenError);
+        return res.status(401).json({ 
+          message: "Failed to verify Firebase token",
+          error: tokenError instanceof Error ? tokenError.message : String(tokenError)
+        });
+      }
+      
+      // Return success with diagnostic info
+      return res.status(200).json({
+        success: true,
+        message: "Firebase integration check successful",
+        tokenInfo: {
+          uid: decodedToken.uid,
+          email: decodedToken.email,
+          emailVerified: decodedToken.email_verified
+        }
+      });
+    } catch (error) {
+      console.error("Error in debug Firebase endpoint:", error);
+      return res.status(500).json({ 
+        message: "Server error during Firebase integration check",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Register with Firebase
   app.post(`${apiPrefix}/auth/register-firebase`, async (req, res) => {
     try {
