@@ -68,11 +68,14 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log(`Login attempt with username: ${username}`);
+        
         // Try to find user with multi-tenant storage first
         let user = await multiTenantStorage.getUserByUsername(username);
         
         // If user not found with current academy context, check without context
         if (!user) {
+          console.log(`User ${username} not found in current academy context, trying all academies`);
           // Reset academy context to null to search across all academies
           const currentContext = multiTenantStorage.getAcademyContext();
           multiTenantStorage.setAcademyContext(null);
@@ -83,10 +86,23 @@ export function setupAuth(app: Express) {
           multiTenantStorage.setAcademyContext(currentContext);
         }
         
-        // Check if user exists and password is correct
-        if (!user || !(await comparePasswords(password, user.password))) {
+        // If still no user found, return unauthorized
+        if (!user) {
+          console.log(`No user found with username: ${username}`);
           return done(null, false, { message: "Incorrect username or password" });
         }
+        
+        // Check if password is correct
+        const passwordValid = await comparePasswords(password, user.password);
+        console.log(`Password check for ${username}: ${passwordValid ? 'valid' : 'invalid'}`);
+        
+        if (!passwordValid) {
+          return done(null, false, { message: "Incorrect username or password" });
+        }
+        
+        // Log full user object for debugging (except password)
+        const { password: pw, ...userDebug } = user;
+        console.log(`Login successful for ${username}, user details:`, userDebug);
         
         // Check if the user account is active
         if (user.role === "coach" && user.status === "pending") {

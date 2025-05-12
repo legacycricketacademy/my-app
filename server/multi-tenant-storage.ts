@@ -95,8 +95,22 @@ export class MultiTenantStorage extends DatabaseStorage {
     if (this.currentAcademyId) {
       conditions.push(eq(users.academyId, this.currentAcademyId));
     }
-    const result = await db.select().from(users).where(and(...conditions)).limit(1);
-    return result[0] || null;
+    
+    try {
+      console.log(`Searching for user with username: "${username}" in academy context: ${this.currentAcademyId || 'all academies'}`);
+      const result = await db.select().from(users).where(and(...conditions)).limit(1);
+      
+      if (result[0]) {
+        console.log(`User found: ${result[0].id} (${result[0].username})`);
+      } else {
+        console.log(`No user found with username: "${username}"`);
+      }
+      
+      return result[0] || null;
+    } catch (error) {
+      console.error("Error in getUserByUsername:", error);
+      return null;
+    }
   }
 
   async getUserByEmail(email: string): Promise<any> {
