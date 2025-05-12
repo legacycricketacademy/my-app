@@ -158,6 +158,21 @@ export function setupAuth(app: Express) {
       password: req.body.password ? "[REDACTED]" : undefined
     });
     
+    // Check for missing required fields early
+    if (!req.body.username || !req.body.password || !req.body.email || !req.body.fullName || !req.body.role) {
+      clearTimeout(responseTimeout); // Clear timeout since we're responding
+      return res.status(400).json({ 
+        message: "Missing required fields", 
+        missing: Object.entries({
+          username: !req.body.username,
+          password: !req.body.password,
+          email: !req.body.email,
+          fullName: !req.body.fullName,
+          role: !req.body.role
+        }).filter(([_, missing]) => missing).map(([field]) => field)
+      });
+    }
+    
     try {
       // Enhanced validation with more detailed error checking
       const requiredFields = ['username', 'password', 'email', 'fullName', 'role'];
