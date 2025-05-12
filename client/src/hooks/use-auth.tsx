@@ -60,19 +60,45 @@ export const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
-  // Check for force logout flag
+  // Check for force logout flag on component mount
   useEffect(() => {
     const forceLogout = window.localStorage.getItem('force_logout');
-    if (forceLogout === 'true') {
-      // Clear the flag
+    const loggedOut = window.localStorage.getItem('logged_out');
+    
+    // Handle any stored logout flags
+    if (forceLogout === 'true' || loggedOut === 'true') {
+      // Clear all flags
       window.localStorage.removeItem('force_logout');
-      // Clear user data
+      window.localStorage.removeItem('logged_out');
+      
+      // Clear any cookies to ensure session is terminated
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
+      });
+      
+      // Clear user data in React Query
       queryClient.setQueryData(["/api/user"], null);
+      
+      // Try to send logout request to server in the background
+      fetch("/api/logout", { 
+        method: "POST",
+        credentials: "include"
+      }).catch(() => {
+        // Ignore errors
+      });
+      
       // Show toast
       toast({
         title: "Logged out",
-        description: "You have been logged out due to a session error.",
+        description: "You have been logged out successfully.",
       });
+      
+      // If we're not already on the auth page, redirect there
+      if (window.location.pathname !== '/auth') {
+        window.location.href = '/auth';
+      }
     }
   }, [toast]);
   

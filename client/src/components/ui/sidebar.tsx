@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CricketIcon } from "@/components/ui/cricket-icon";
 import { queryClient } from "@/lib/queryClient";
+import { SimpleLogoutButton } from "@/components/ui/simple-logout-button";
 
 // Add Firebase type to window
 declare global {
@@ -151,7 +152,7 @@ export function Sidebar() {
       </nav>
       
       {/* Sidebar Footer */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 space-y-2">
         <Button 
           variant="ghost" 
           className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 px-2"
@@ -161,6 +162,12 @@ export function Sidebar() {
           <LogOut className="h-5 w-5 mr-2" />
           <span>{logoutMutation.isPending ? "Signing Out..." : "Sign Out"}</span>
         </Button>
+        
+        {/* Add the emergency button separately */}
+        <div className="border-t border-gray-200 pt-2">
+          <p className="text-xs text-gray-500 mb-2">If normal sign out fails:</p>
+          <SimpleLogoutButton />
+        </div>
       </div>
     </aside>
   );
