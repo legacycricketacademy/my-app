@@ -341,6 +341,10 @@ export default function AuthPage() {
             errorMessage = "Authentication service encountered an error. Please try again later.";
           } else if (error.message?.includes("auth/network-request-failed")) {
             errorMessage = "Network connection error. Please check your internet connection and try again.";
+          } else if (error.message?.includes("Invalid response from server")) {
+            errorMessage = "The server returned an invalid response. Please try again or contact support.";
+          } else if (error.message?.includes("Failed to process server response")) {
+            errorMessage = "Failed to process the server response. Please try again.";
           }
           
           toast({

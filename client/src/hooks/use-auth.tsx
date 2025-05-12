@@ -766,18 +766,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             );
           }
 
-          const backendUserData = await response.json();
-          
-          // Log user data with sensitive fields redacted for debugging
-          console.log("Backend registration successful:", {
-            id: backendUserData.id,
-            username: backendUserData.username,
-            role: backendUserData.role,
-            status: backendUserData.status,
-            isActive: backendUserData.isActive,
-            responseStatus: response.status,
-            fullData: JSON.stringify(backendUserData)
-          });
+          let backendUserData;
+          try {
+            backendUserData = await response.json();
+            
+            // Validate that we have a proper user object
+            if (!backendUserData || typeof backendUserData !== 'object' || !backendUserData.id) {
+              console.error("Invalid backend response:", backendUserData);
+              throw new Error("Invalid response from server. Please try again.");
+            }
+            
+            // Log user data with sensitive fields redacted for debugging
+            console.log("Backend registration successful:", {
+              id: backendUserData.id,
+              username: backendUserData.username,
+              role: backendUserData.role,
+              status: backendUserData.status,
+              isActive: backendUserData.isActive,
+              responseStatus: response.status,
+              fullData: JSON.stringify(backendUserData)
+            });
+          } catch (jsonError) {
+            console.error("Error parsing JSON response:", jsonError);
+            console.error("Response status:", response.status);
+            console.error("Response text:", await response.text().catch(() => "Could not get response text"));
+            throw new Error("Failed to process server response. Please try again.");
+          }
           
           // Ensure status field is consistent for coach/admin accounts
           if ((backendUserData.role === 'coach' || backendUserData.role === 'admin') && 
