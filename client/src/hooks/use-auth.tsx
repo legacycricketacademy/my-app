@@ -24,6 +24,7 @@ type AuthContextType = {
   firebaseRegisterMutation: UseMutationResult<any, Error, RegisterData>;
   googleSignInMutation: UseMutationResult<any, Error, void>;
   resetPasswordMutation: UseMutationResult<boolean, Error, {email: string}>;
+  resendVerificationEmailMutation: UseMutationResult<{message: string}, Error, {userId: number}>;
 };
 
 type LoginData = {
@@ -54,7 +55,8 @@ export const AuthContext = createContext<AuthContextType>({
   firebaseLoginMutation: {} as any,
   firebaseRegisterMutation: {} as any,
   googleSignInMutation: {} as any,
-  resetPasswordMutation: {} as any
+  resetPasswordMutation: {} as any,
+  resendVerificationEmailMutation: {} as any
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
