@@ -761,7 +761,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: backendUserData.role,
             status: backendUserData.status,
             isActive: backendUserData.isActive,
-            responseStatus: response.status
+            responseStatus: response.status,
+            fullData: JSON.stringify(backendUserData)
           });
           
           // Ensure status field is consistent for coach/admin accounts
