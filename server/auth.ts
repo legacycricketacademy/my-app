@@ -272,13 +272,25 @@ export function setupAuth(app: Express) {
       }
       
       // Create new user with hashed password
-      console.log("Hashing password...");
-      const hashedPassword = await hashPassword(req.body.password);
-      let userData = {
-        ...req.body,
-        password: hashedPassword,
-        isEmailVerified: false,
-      };
+      console.log("About to hash password for registration...");
+      let userData;
+      try {
+        const hashedPassword = await hashPassword(req.body.password);
+        console.log("Password hashed successfully");
+        userData = {
+          ...req.body,
+          password: hashedPassword,
+          isEmailVerified: false,
+        };
+      } catch (error) {
+        const hashError = error as Error;
+        console.error("Failed to hash password:", hashError);
+        clearTimeout(responseTimeout);
+        return res.status(500).json({ 
+          message: "Error creating account - password processing failed",
+          error: hashError.message
+        });
+      }
       
       // Check role and set appropriate status
       console.log(`Setting up user with role: ${userData.role}`);
