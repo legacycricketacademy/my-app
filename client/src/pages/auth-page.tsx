@@ -81,7 +81,7 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const [invitationToken, setInvitationToken] = useState<InvitationToken | null>(null);
   const [invitationExpired, setInvitationExpired] = useState<boolean>(false);
-  const { user, loginMutation, registerMutation, firebaseRegisterMutation } = useAuth();
+  const { user, loginMutation, registerMutation, firebaseRegisterMutation, resendVerificationEmailMutation } = useAuth();
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const { 
@@ -133,6 +133,8 @@ export default function AuthPage() {
   
   // State for email verification success message
   const [emailVerified, setEmailVerified] = useState<boolean>(false);
+  const [registeredUser, setRegisteredUser] = useState<{ id: number; email: string } | null>(null);
+  const [emailVerificationStatus, setEmailVerificationStatus] = useState<"pending" | "sent" | "failed" | null>(null);
   
   // Parse URL for invitation token and verification success
   useEffect(() => {
@@ -267,8 +269,23 @@ export default function AuthPage() {
             username: userData?.username,
             role: userData?.role,
             status: userData?.status,
-            isActive: userData?.isActive !== false // Convert to boolean for logging
+            isActive: userData?.isActive !== false, // Convert to boolean for logging
+            emailStatus: userData?.emailStatus
           });
+          
+          // Store registered user info for verification status display
+          if (userData?.id) {
+            setRegisteredUser({
+              id: userData.id,
+              email: userData.email
+            });
+            
+            // Set email verification status based on the response
+            if (userData.emailStatus) {
+              setEmailVerificationStatus(userData.emailStatus === "sent" ? "sent" : 
+                                        userData.emailStatus === "failed" ? "failed" : "pending");
+            }
+          }
           
           // Different message based on status (for coach/admin that need approval)
           // Check for pending_approval or pending status, or if isActive is explicitly false
@@ -386,6 +403,25 @@ export default function AuthPage() {
           variant: "destructive",
         });
       });
+  }
+
+  function handleResendVerificationEmail() {
+    if (registeredUser?.id) {
+      // Set status to pending while we make the request
+      setEmailVerificationStatus("pending");
+      
+      resendVerificationEmailMutation.mutate(
+        { userId: registeredUser.id },
+        {
+          onSuccess: () => {
+            setEmailVerificationStatus("sent");
+          },
+          onError: () => {
+            setEmailVerificationStatus("failed");
+          }
+        }
+      );
+    }
   }
 
   return (
