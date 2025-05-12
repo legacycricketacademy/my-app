@@ -1,248 +1,198 @@
-import React, { useState } from "react";
-import { useLocation } from "wouter";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-
-const firebaseUserSchema = z.object({
-  email: z.string().email("Invalid email address").min(1, "Email is required"),
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string().min(1, "Please confirm your password"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { useNavigate } from "wouter";
+import { Label } from "@/components/ui/label";
 
 export default function FixFirebaseUser() {
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const form = useForm<z.infer<typeof firebaseUserSchema>>({
-    resolver: zodResolver(firebaseUserSchema),
-    defaultValues: {
-      email: "",
-      username: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
-
-  const onSubmit = async (values: z.infer<typeof firebaseUserSchema>) => {
-    setIsSubmitting(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
-    setSuccess(null);
+    
+    // Basic validation
+    if (!email || !username || !password) {
+      setError("All fields are required");
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
     
     try {
-      console.log("Submitting firebase fix request:", { 
-        email: values.email, 
-        username: values.username, 
-        password: "***hidden***" 
-      });
+      setLoading(true);
       
-      const response = await apiRequest(
-        "POST", 
-        "/api/fix-firebase-user", 
-        {
-          email: values.email,
-          username: values.username,
-          password: values.password,
-        }
-      );
+      const response = await fetch("/api/fix-firebase-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          username,
+          password,
+        }),
+      });
       
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.message || "Failed to update user account");
+        throw new Error(data.message || "Failed to update account");
       }
       
-      console.log("Fix Firebase user response:", data);
-      
-      setSuccess("Your account has been updated successfully! You can now log in with your username and password.");
+      setSuccess(true);
       toast({
-        title: "Account updated!",
-        description: "You can now log in with your username and password.",
-        variant: "default",
+        title: "Account updated",
+        description: "You can now log in with your email and password",
       });
-      
-      // Clear the form
-      form.reset();
-      
-      // After a delay, redirect to the login page
-      setTimeout(() => navigate("/auth-simplified"), 3000);
-      
     } catch (err: any) {
-      console.error("Error updating Firebase user:", err);
-      const errorMessage = err?.message || "Failed to update user account. Please try again.";
-      setError(errorMessage);
+      console.error("Error fixing user:", err);
+      setError(err.message || "An unexpected error occurred");
       toast({
-        title: "Update failed",
-        description: errorMessage,
+        title: "Failed to update account",
+        description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-100">
-      {/* Left side - Form */}
-      <div className="w-full md:w-1/2 p-8 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Add Password to Google Account</CardTitle>
-            <CardDescription>
-              If you signed up with Google but want to be able to log in directly with a username and password, 
-              fill out this form to add password authentication to your account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                
-                {success && (
-                  <Alert variant="default" className="bg-green-50 border-green-200 text-green-800">
-                    <AlertDescription>{success}</AlertDescription>
-                  </Alert>
-                )}
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Your Google Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your Google email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Choose a Username</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Select a username for direct login" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>New Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Create a password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Confirm your password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <Button 
-                  type="submit" 
-                  className="w-full mt-4" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Processing...
-                    </span>
-                  ) : "Add Password to Account"}
-                </Button>
-                
-                <div className="text-center mt-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex items-center mb-2">
+            <Button 
+              variant="ghost" 
+              className="p-0 mr-2" 
+              onClick={() => navigate("/auth")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle>Add Password to Google Account</CardTitle>
+          </div>
+          <CardDescription>
+            This will add a password to your existing Google account, allowing you to log in with either method.
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
+          {success ? (
+            <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <AlertTitle>Success!</AlertTitle>
+              <AlertDescription>
+                Your account has been updated successfully. You can now log in with your email and password.
+                <div className="mt-4">
                   <Button 
-                    variant="link" 
-                    className="text-sm" 
-                    onClick={() => navigate("/auth-simplified")}
+                    onClick={() => navigate("/auth")}
+                    className="w-full"
                   >
-                    Back to Login
+                    Go to login page
                   </Button>
                 </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Right side - Information section */}
-      <div className="w-full md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-900 p-8 flex items-center justify-center text-white">
-        <div className="max-w-xl">
-          <h1 className="text-3xl font-bold mb-6">Why Add a Password?</h1>
-          <div className="space-y-6">
-            <div className="bg-white/10 p-5 rounded-lg">
-              <h2 className="text-xl font-semibold mb-2">Flexibility</h2>
-              <p>
-                Adding a password gives you the flexibility to log in directly without 
-                needing Google authentication each time.
-              </p>
-            </div>
-            
-            <div className="bg-white/10 p-5 rounded-lg">
-              <h2 className="text-xl font-semibold mb-2">Alternative Access</h2>
-              <p>
-                If you ever can't access your Google account or prefer not to use it, 
-                having a password provides a backup way to sign in.
-              </p>
-            </div>
-            
-            <div className="bg-white/10 p-5 rounded-lg">
-              <h2 className="text-xl font-semibold mb-2">Same Account, More Options</h2>
-              <p>
-                This doesn't create a new account - it simply adds direct login to your 
-                existing Google-linked account. All your data stays connected!
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                  <CardDescription className="text-xs">
+                    This must be the email you used to sign up with Google
+                  </CardDescription>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="username">Desired Username</Label>
+                  <Input
+                    id="username"
+                    placeholder="Choose a username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password">New Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Choose a password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <CardFooter className="flex justify-end px-0 pt-4">
+                <Button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full"
+                >
+                  {loading ? "Processing..." : "Add Password to Account"}
+                </Button>
+              </CardFooter>
+            </form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
