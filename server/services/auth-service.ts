@@ -78,6 +78,58 @@ export class EmailError extends AuthError {
   }
 }
 
+export class WeakPasswordError extends AuthError {
+  constructor(message: string = "Password does not meet security requirements") {
+    super(message, 400, "weak_password");
+    this.name = 'WeakPasswordError';
+  }
+}
+
+// Password validation function that matches our frontend criteria
+export function isStrongPassword(password: string): boolean {
+  // Check minimum length
+  if (password.length < 8) return false;
+  
+  // Check for uppercase letter
+  if (!/[A-Z]/.test(password)) return false;
+  
+  // Check for lowercase letter
+  if (!/[a-z]/.test(password)) return false;
+  
+  // Check for number
+  if (!/[0-9]/.test(password)) return false;
+  
+  // Check for special character
+  if (!/[^A-Za-z0-9]/.test(password)) return false;
+  
+  return true;
+}
+
+// Function to validate password with detailed error message
+export function validatePassword(password: string): { valid: boolean; message?: string } {
+  if (password.length < 8) {
+    return { valid: false, message: "Password must be at least 8 characters long" };
+  }
+  
+  if (!/[A-Z]/.test(password)) {
+    return { valid: false, message: "Password must include at least one uppercase letter" };
+  }
+  
+  if (!/[a-z]/.test(password)) {
+    return { valid: false, message: "Password must include at least one lowercase letter" };
+  }
+  
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, message: "Password must include at least one number" };
+  }
+  
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return { valid: false, message: "Password must include at least one special character" };
+  }
+  
+  return { valid: true };
+}
+
 export interface FirebaseRegistrationInput {
   idToken: string;
   username: string;
