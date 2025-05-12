@@ -278,6 +278,7 @@ async function sendParentVerificationEmail(
     
     const { text, html } = generateVerificationEmail(fullName, verificationLink);
     
+    // Try to send the verification email
     const result = await sendEmail({
       to: email,
       subject: "Verify Your Email Address for Legacy Cricket Academy",
@@ -285,8 +286,20 @@ async function sendParentVerificationEmail(
       html
     });
     
-    console.log(`Verification email sent successfully to: ${maskEmail(email)}`);
-    return true;
+    if (result) {
+      console.log(`Verification email sent successfully to: ${maskEmail(email)}`);
+      return true;
+    } else {
+      console.warn(`Failed to send verification email to: ${maskEmail(email)}`);
+      
+      // In development, allow registration without email for testing
+      if (process.env.NODE_ENV === 'development') {
+        console.log('DEVELOPMENT MODE: Continuing without email verification');
+        return true;
+      }
+      
+      return false;
+    }
   } catch (error) {
     console.error(`Failed to send verification email to: ${maskEmail(email)}`, error);
     return false;
