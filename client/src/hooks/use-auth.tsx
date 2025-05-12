@@ -601,6 +601,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const firebaseRegisterMutation = useMutation({
     mutationFn: async (registerData: RegisterData) => {
       try {
+        console.log("Firebase registration started with data:", {
+          email: registerData.email,
+          username: registerData.username,
+          role: registerData.role,
+          fullName: registerData.fullName,
+          hasPassword: !!registerData.password
+        });
+          
         console.log("Firebase config check:", {
           apiKeyExists: !!import.meta.env.VITE_FIREBASE_API_KEY,
           projectIdExists: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -633,6 +641,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } 
         catch (error: any) {
           console.error("Firebase direct API error:", error);
+          console.error("Error details:", {
+            message: error.message,
+            code: error.code,
+            stack: error.stack,
+            fullError: JSON.stringify(error)
+          });
           
           // Fall back to original method if direct API fails
           try {
@@ -776,10 +790,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return backendUserData;
         } catch (error: any) {
           console.error("Backend registration error:", error);
+          console.error("Error details:", {
+            message: error.message,
+            name: error.name,
+            code: error.code,
+            stack: error.stack,
+            fullError: JSON.stringify(error)
+          });
           throw new Error(error.message || "Failed to register with the server. Please try again later.");
         }
       } catch (error: any) {
         console.error("Registration process error:", error);
+        console.error("Full registration error details:", {
+          message: error.message,
+          name: error.name,
+          code: error.code,
+          stack: error.stack
+        });
         throw error;
       }
     },
