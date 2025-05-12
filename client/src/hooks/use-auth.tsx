@@ -60,47 +60,73 @@ export const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
-  // Check for force logout flag on component mount
+  // Check for ANY logout flags on component mount or URL params
   useEffect(() => {
+    // 1. Check for various logout flags
     const forceLogout = window.localStorage.getItem('force_logout');
     const loggedOut = window.localStorage.getItem('logged_out');
+    const emergencyLogout = window.localStorage.getItem('emergency_logout');
     
-    // Handle any stored logout flags
-    if (forceLogout === 'true' || loggedOut === 'true') {
-      // Clear all flags
-      window.localStorage.removeItem('force_logout');
-      window.localStorage.removeItem('logged_out');
+    // 2. Check URL parameters too (for ?logout=timestamp)
+    const urlParams = new URLSearchParams(window.location.search);
+    const logoutParam = urlParams.get('logout');
+    
+    // 3. Handle any stored logout flags
+    if (forceLogout || loggedOut || emergencyLogout || logoutParam) {
+      // CLEAN SLATE: Clear ALL storage
+      localStorage.clear();
+      sessionStorage.clear();
       
-      // Clear any cookies to ensure session is terminated
+      // AGGRESSIVE: Clear all cookies in multiple ways
+      // Method 1: Standard technique
       document.cookie.split(";").forEach((c) => {
         document.cookie = c
           .replace(/^ +/, "")
           .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
       });
       
-      // Clear user data in React Query
-      queryClient.setQueryData(["/api/user"], null);
+      // Method 2: More forceful cookie clearing with domain targeting
+      const cookies = document.cookie.match(/[^ =;]+(?==)/g) || [];
+      cookies.forEach(name => {
+        // Clear the cookie for current path
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+        
+        // Also try with domain
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=${window.location.hostname}`;
+        
+        // Also try parent domain (for subdomains)
+        const domain = window.location.hostname.split('.').slice(-2).join('.');
+        if (domain !== window.location.hostname) {
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=${domain}`;
+        }
+      });
       
-      // Try to send logout request to server in the background
+      // THOROUGH: Clear React Query cache entirely
+      queryClient.clear();
+      
+      // BACKGROUND: Try server logout but don't wait 
       fetch("/api/logout", { 
-        method: "POST",
-        credentials: "include"
-      }).catch(() => {
-        // Ignore errors
-      });
+        method: "POST", 
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" }
+      }).catch(() => {/* ignore */});
       
-      // Show toast
-      toast({
-        title: "Logged out",
-        description: "You have been logged out successfully.",
-      });
+      // USER FEEDBACK: Show toast if not coming from URL with logout param
+      if (!logoutParam) {
+        toast({
+          title: "Logged out",
+          description: "You have been successfully logged out.",
+        });
+      }
       
-      // If we're not already on the auth page, redirect there
+      // REDIRECT: If we're not already on auth page, go there
       if (window.location.pathname !== '/auth') {
-        window.location.href = '/auth';
+        // Use timestamp to bust cache
+        window.location.href = `/auth?t=${Date.now()}`;
       }
     }
-  }, [toast]);
+  }, [toast, window.location.search]);
   
   // Firebase auth hook
   const {

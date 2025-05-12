@@ -3,46 +3,52 @@ import { Button } from "@/components/ui/button";
 
 export function SimpleLogoutButton() {
   const handleSimpleLogout = () => {
-    // This is a direct bypass of all auth logic
+    // NUCLEAR OPTION - bypass all logic and just set direct values
     try {
-      // Clear any session data
-      document.cookie.split(";").forEach((c) => {
-        document.cookie = c
-          .replace(/^ +/, "")
-          .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
+      // 1. Clear all cookies forcefully
+      document.cookie.split(";").forEach(function(c) {
+        document.cookie = c.trim().split("=")[0] + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
       });
       
-      // Clear localStorage
-      localStorage.clear();
+      // 2. Use a stronger cookie deletion approach for alternative paths
+      const cookieNames = document.cookie.match(/[^ =;]+(?==)/g) || [];
+      cookieNames.forEach(name => {
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=${window.location.hostname}`;
+      });
       
-      // Clear sessionStorage
+      // 3. Clear all storage
+      localStorage.clear();
       sessionStorage.clear();
       
-      // Remove any stored auth state
-      localStorage.setItem('logged_out', 'true');
+      // 4. Set various flags to ensure logout state
+      localStorage.setItem('emergency_logout', Date.now().toString());
       
-      // Redirect to auth page
-      window.location.href = "/auth";
+      // 5. Try server-side logout in fire-and-forget mode
+      fetch("/api/logout", {
+        method: "POST", 
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" }
+      }).catch(() => { /* ignore */ });
       
-      // For extra certainty, reload after 200ms
-      setTimeout(() => {
-        window.location.reload();
-      }, 200);
+      // 6. Force immediate redirect
+      window.location.href = "/auth?logout=" + Date.now();
     } catch (error) {
-      console.error("Logout error:", error);
-      // Force redirect
+      console.error("Absolute last resort logout error:", error);
+      // Just redirect anyway as a last resort
       window.location.href = "/auth";
     }
   };
 
   return (
     <Button
-      variant="ghost"
-      className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 px-2"
+      variant="destructive"
+      className="w-full justify-start px-2"
       onClick={handleSimpleLogout}
     >
       <LogOut className="h-5 w-5 mr-2" />
-      <span>Emergency Sign Out</span>
+      <span>Force Sign Out</span>
     </Button>
   );
 }
