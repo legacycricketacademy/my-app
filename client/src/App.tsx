@@ -33,6 +33,7 @@ import TestEmailTools from "@/pages/test-email-tools";
 import DebugFirebasePage from "@/pages/debug-firebase";
 import FirebaseDebugEnhanced from "@/pages/firebase-debug-enhanced";
 import DebugFirebaseNew from "@/pages/debug-firebase-new";
+import SimpleFirebaseDebug from "@/pages/simple-firebase-debug";
 
 // Parent Pages
 import ParentDashboard from "@/pages/parent-dashboard";
@@ -285,6 +286,7 @@ function RouterContent() {
       <Route path="/debug-firebase" component={DebugFirebasePage} />
       <Route path="/firebase-debug-enhanced" component={FirebaseDebugEnhanced} />
       <Route path="/debug-firebase-new" component={DebugFirebaseNew} />
+      <Route path="/simple-firebase-debug" component={SimpleFirebaseDebug} />
       <Route path="/test-register" component={TestRegister} />
       <Route path="/test-email-tools" component={TestEmailTools} />
       
