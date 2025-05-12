@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+
+// Extend Window interface for debugging purposes
+declare global {
+  interface Window {
+    _lastRegistrationEmail?: string;
+  }
+}
 import { useLocation } from "wouter";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -277,6 +284,9 @@ export default function AuthPage() {
         fullName: data.fullName,
         hasPassword: !!data.password
       });
+      
+      // Save the email for debugging in case of error
+      (window as any)._lastRegistrationEmail = data.email;
       
       firebaseRegisterMutation.mutate(data, {
         onSuccess: (userData) => {
