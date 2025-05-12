@@ -3369,6 +3369,78 @@ ${ACADEMY_NAME} Team
       });
     }
   });
+  
+  // Send verification email endpoint for debugging tool
+  app.post(`${apiPrefix}/auth/send-verification-email`, async (req, res) => {
+    try {
+      console.log("Debug send verification email endpoint called");
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      
+      // Get user by ID
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.isEmailVerified) {
+        return res.status(400).json({ message: "Email already verified" });
+      }
+      
+      // Generate verification token
+      const token = generateVerificationToken(userId, user.email);
+      
+      // Create verification link
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const verificationLink = `${baseUrl}/verify-email?token=${token}`;
+      
+      // Generate email content
+      const { text, html } = generateVerificationEmail(user.fullName || user.username, verificationLink);
+      
+      // Try to send verification email
+      try {
+        const emailSent = await sendEmail({
+          to: user.email,
+          subject: "Verify Your Email Address",
+          text,
+          html
+        });
+        
+        if (!emailSent) {
+          // Return success but with the verification link
+          return res.status(200).json({ 
+            message: "Verification email could not be sent, but verification link is valid",
+            verificationLink,
+            status: "warning"
+          });
+        }
+        
+        res.status(200).json({ 
+          message: "Verification email sent", 
+          status: "success",
+          email: user.email
+        });
+      } catch (emailError) {
+        console.error("Email sending error:", emailError);
+        // Return the verification link instead of failing
+        return res.status(200).json({ 
+          message: "Email service unavailable, but here's your verification link",
+          verificationLink,
+          status: "warning"
+        });
+      }
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+      res.status(500).json({ 
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Register with Firebase
   app.post(`${apiPrefix}/auth/register-firebase`, async (req, res) => {
