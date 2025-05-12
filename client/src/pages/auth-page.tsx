@@ -737,7 +737,9 @@ export default function AuthPage() {
                             <Input type="password" placeholder="Choose a password" {...field} />
                           </FormControl>
                           <FormMessage />
-                          <PasswordStrengthMeter password={field.value} />
+                          <ErrorBoundary>
+                            <PasswordStrengthMeter password={field.value} />
+                          </ErrorBoundary>
                         </FormItem>
                       )}
                     />
