@@ -45,6 +45,7 @@ import MakePaymentNewPage from "@/pages/parent/make-payment-new";
 import PaymentSuccessPage from "@/pages/parent/payment-success";
 import PaymentDebugPage from "@/pages/parent/payment-debug";
 import ParentAnnouncementsPage from "@/pages/parent/announcements";
+import VerifyEmailPage from "@/pages/verify-email";
 
 function RouterContent() {
   const { user } = useAuth();
@@ -281,6 +282,9 @@ function RouterContent() {
       
       {/* Emergency logout page - accessible even when logged in */}
       <Route path="/emergency-logout" component={ForceLogoutPage} />
+      
+      {/* Email verification page */}
+      <Route path="/verify-email" component={VerifyEmailPage} />
       
       <Route component={NotFound} />
     </Switch>
