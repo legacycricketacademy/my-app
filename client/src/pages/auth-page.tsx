@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CricketIcon } from "@/components/ui/cricket-icon";
 import { Users, Heart, Bell, DollarSign, LinkIcon, CheckCircle, Key, User, Mail, LogIn, AlertCircle, Clock } from "lucide-react";
+import { PasswordStrengthMeter, isStrongPassword } from "@/components/password-strength-meter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -736,6 +737,7 @@ export default function AuthPage() {
                             <Input type="password" placeholder="Choose a password" {...field} />
                           </FormControl>
                           <FormMessage />
+                          <PasswordStrengthMeter password={field.value} />
                         </FormItem>
                       )}
                     />
@@ -767,9 +769,19 @@ export default function AuthPage() {
                     <Button 
                       type="submit" 
                       className="w-full mt-4" 
-                      disabled={registerMutation.isPending}
+                      disabled={
+                        registerMutation.isPending || 
+                        !isStrongPassword(registerForm.getValues().password) ||
+                        registerForm.formState.isSubmitting ||
+                        !registerForm.formState.isValid
+                      }
                     >
-                      {registerMutation.isPending ? "Registering..." : "Register"}
+                      {registerMutation.isPending 
+                        ? "Registering..." 
+                        : !isStrongPassword(registerForm.getValues().password)
+                        ? "Password must meet requirements"
+                        : "Register"
+                      }
                     </Button>
                   </form>
                 </Form>
