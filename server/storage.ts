@@ -738,10 +738,9 @@ export class DatabaseStorage implements IStorage {
           createdAt: payments.createdAt,
           updatedAt: payments.updatedAt,
           
-          // Use safe selection for optional columns
+          // Only include columns known to exist in the database
           sessionDuration: sql<string | null>`payments.session_duration`.as('sessionDuration'),
           expectedAmount: sql<string | null>`payments.expected_amount`.as('expectedAmount'),
-          isOverUnderPayment: sql<boolean | null>`payments.is_over_under_payment`.as('isOverUnderPayment'),
           paymentMethod: sql<string | null>`payments.payment_method`.as('paymentMethod'),
           stripePaymentIntentId: sql<string | null>`payments.stripe_payment_intent_id`.as('stripePaymentIntentId'),
           
