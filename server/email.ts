@@ -41,9 +41,10 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
 
   try {
     console.log('Attempting to send email to:', params.to);
+    console.log('Using sender email:', ACADEMY_EMAIL);
     
-    // Add more headers to reduce chance of being marked as spam
-    await sgMail.send({
+    // Create email message object
+    const msg = {
       to: params.to,
       from: {
         email: ACADEMY_EMAIL,
@@ -93,12 +94,51 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
         email_type: 'notification',
         system_generated: 'true'
       },
+    };
+    
+    // Show more details about what we're trying to send
+    console.log('Email details:', {
+      to: msg.to,
+      from: msg.from.email,
+      subject: msg.subject,
+      hasHtmlContent: !!msg.html,
+      hasTextContent: !!msg.text,
     });
     
-    console.log('Email sent successfully to:', params.to);
-    return true;
+    try {
+      // Attempt to send email with the message we created
+      const response = await sgMail.send(msg);
+      
+      console.log('Email API response:', {
+        statusCode: response[0]?.statusCode,
+        headers: response[0]?.headers ? 'Present' : 'Missing'
+      });
+      
+      console.log('Email sent successfully to:', params.to);
+      return true;
+    } catch (sendError: any) {
+      // Log detailed SendGrid error information
+      console.error('SendGrid API error:', {
+        message: sendError.message,
+        code: sendError.code,
+        response: sendError.response?.body ? {
+          statusCode: sendError.response.statusCode,
+          body: sendError.response.body,
+          errors: sendError.response.body?.errors
+        } : 'No response body'
+      });
+      
+      // If it's an authentication error with the SendGrid API key
+      if (sendError.response?.body?.errors?.some((e: any) => 
+          e.message?.includes('authorization') || e.message?.includes('authenticated'))) {
+        console.error('SendGrid authentication failed - API key may be invalid or revoked');
+      }
+      
+      throw sendError;
+    }
   } catch (error: any) {
-    console.error('Email sending error:', error?.response?.body || error);
+    console.error('Email sending error:', error?.message || error);
+    console.error('Error details:', error);
     return false;
   }
 }
