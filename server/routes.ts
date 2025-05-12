@@ -3584,6 +3584,15 @@ ${ACADEMY_NAME} Team
         code: error.code
       });
       
+      // Log additional context for debugging
+      console.error("Registration context:", {
+        username: req.body.username, 
+        email: req.body.email,
+        role: req.body.role,
+        firebaseUidProvided: !!req.body.firebaseUid,
+        idTokenProvided: !!req.body.idToken
+      });
+      
       // Handle PostgreSQL constraint violations as a fallback
       if (error.code === '23505') {
         return res.status(400).json({ 
