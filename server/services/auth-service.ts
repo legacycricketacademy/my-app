@@ -131,7 +131,8 @@ export function validatePassword(password: string): { valid: boolean; message?: 
 }
 
 export interface FirebaseRegistrationInput {
-  idToken: string;
+  idToken?: string;
+  firebaseUid?: string;  // Allow direct UID when idToken is not available
   username: string;
   email: string;
   fullName: string;
@@ -168,9 +169,9 @@ export async function registerFirebaseUser(
   input: FirebaseRegistrationInput,
   options: RegistrationOptions = {}
 ): Promise<RegisterFirebaseUserResult> {
-  // First validate the minimal required fields
-  if (!input.idToken) {
-    throw new ValidationError("Firebase ID token is required");
+  // First validate the minimal required fields - either idToken or firebaseUid is required
+  if (!input.idToken && !input.firebaseUid) {
+    throw new ValidationError("Either Firebase ID token or Firebase UID is required");
   }
   
   if (!input.username || !input.email || !input.fullName) {
@@ -184,24 +185,33 @@ export async function registerFirebaseUser(
   const maskedEmail = maskEmail(input.email);
   console.log(`Starting Firebase registration for: ${input.username}, ${maskedEmail}`);
   
-  // Verify Firebase token
-  let decodedToken;
-  try {
-    console.log("Verifying Firebase ID token...");
-    decodedToken = await verifyFirebaseToken(input.idToken);
-    
-    if (!decodedToken || !decodedToken.uid) {
-      throw new InvalidTokenError("Invalid or missing Firebase UID in token");
-    }
-    
-    console.log(`Firebase token verified successfully for UID: ${decodedToken.uid}`);
-  } catch (error) {
-    console.error("Firebase token verification failed:", error);
-    throw new InvalidTokenError("Failed to verify Firebase authentication token");
-  }
+  // Get Firebase UID - either from token verification or direct input
+  let firebaseUid: string;
   
-  // Use the firebaseUid from the verified token
-  const firebaseUid = decodedToken.uid;
+  if (input.idToken) {
+    // Verify Firebase token if provided
+    try {
+      console.log("Verifying Firebase ID token...");
+      const decodedToken = await verifyFirebaseToken(input.idToken as string);
+      
+      if (!decodedToken || !decodedToken.uid) {
+        throw new InvalidTokenError("Invalid or missing Firebase UID in token");
+      }
+      
+      firebaseUid = decodedToken.uid;
+      console.log(`Firebase token verified successfully for UID: ${firebaseUid}`);
+    } catch (error) {
+      console.error("Firebase token verification failed:", error);
+      throw new InvalidTokenError("Failed to verify Firebase authentication token");
+    }
+  } else if (input.firebaseUid) {
+    // Use directly provided Firebase UID
+    firebaseUid = input.firebaseUid;
+    console.log(`Using directly provided Firebase UID: ${firebaseUid}`);
+  } else {
+    // This should never happen due to the earlier validation
+    throw new ValidationError("Firebase authentication information is missing");
+  }
   
   // Check for existing user by Firebase UID (make registration idempotent)
   const existingUserByUid = await storage.getUserByFirebaseUid(firebaseUid);
