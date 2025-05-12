@@ -19,6 +19,18 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CricketIcon } from "@/components/ui/cricket-icon";
+import { queryClient } from "@/lib/queryClient";
+
+// Add Firebase type to window
+declare global {
+  interface Window {
+    firebase?: {
+      auth: () => {
+        signOut: () => Promise<void>;
+      };
+    };
+  }
+}
 
 export function Sidebar() {
   const { user, logoutMutation } = useAuth();
@@ -37,22 +49,16 @@ export function Sidebar() {
   };
   
   const handleLogout = () => {
+    // EMERGENCY FIX: Just redirect to auth page immediately
     try {
-      // Try the mutation first
-      logoutMutation.mutate();
-      
-      // Set a backup timer to force logout even if mutation fails
-      setTimeout(() => {
-        if (logoutMutation.isPending) {
-          // Force clear user data and redirect
-          window.localStorage.setItem('force_logout', 'true');
-          window.location.href = '/auth';
-        }
-      }, 2000);
-    } catch (error) {
-      console.error("Error in logout handler:", error);
-      // Force logout on any error
+      // Set a flag in localStorage that we'll check on page load
       window.localStorage.setItem('force_logout', 'true');
+      
+      // Force redirect to auth page
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error("Fallback logout error:", error);
+      // Just redirect anyway
       window.location.href = '/auth';
     }
   };
