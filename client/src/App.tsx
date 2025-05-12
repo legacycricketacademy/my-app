@@ -7,6 +7,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { RoleBasedRoute } from "./lib/role-based-route";
 import { Redirect } from "wouter";
 import { OfflineDetector, OnlineStatusIndicator } from "@/components/offline-detector";
+import ErrorBoundary from "@/components/error-boundary";
 
 // Admin/Coach Pages
 import AuthPage from "@/pages/auth-page";
@@ -97,7 +98,11 @@ function RouterContent() {
   
   return (
     <Switch>
-      <Route path="/auth" component={AuthPage} />
+      <Route path="/auth">
+        <ErrorBoundary>
+          <AuthPage />
+        </ErrorBoundary>
+      </Route>
       
       {/* Admin and Coach Routes */}
       <RoleBasedRoute 
@@ -311,16 +316,20 @@ function Router() {
   return <RouterContent />;
 }
 
+
+
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-        <OfflineDetector />
-        <OnlineStatusIndicator />
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Router />
+          <Toaster />
+          <OfflineDetector />
+          <OnlineStatusIndicator />
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
