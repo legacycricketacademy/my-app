@@ -2,6 +2,34 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+// Enhanced error logging for debugging
+const originalError = console.error;
+console.error = function(...args) {
+  // Log original error
+  originalError.apply(console, args);
+  
+  // Add enhanced error info for API calls
+  if (args[0] && typeof args[0] === 'string' && args[0].includes('API call')) {
+    try {
+      const errorDetails = args.slice(1).map(arg => {
+        if (arg instanceof Error) {
+          return {
+            name: arg.name,
+            message: arg.message,
+            stack: arg.stack
+          };
+        }
+        return arg;
+      });
+      
+      originalError.call(console, '🔍 Enhanced Error Information:', errorDetails);
+    } catch (e) {
+      // If our enhanced logging fails, fall back to original error
+      originalError.call(console, 'Enhanced logging failed:', e);
+    }
+  }
+};
+
 // Mobile viewport adjustment for iOS devices
 function setViewportForMobile() {
   // Check if we're running in a mobile browser
