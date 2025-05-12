@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CricketIcon } from "@/components/ui/cricket-icon";
-import { Users, Heart, Bell, DollarSign, LinkIcon, CheckCircle, Key, User, Mail, LogIn } from "lucide-react";
+import { Users, Heart, Bell, DollarSign, LinkIcon, CheckCircle, Key, User, Mail, LogIn, AlertCircle, Clock } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -32,8 +32,24 @@ const registerSchema = z.object({
     .regex(/^[a-zA-Z0-9._-]+$/, "Username can only contain letters, numbers, periods, underscores, and hyphens"),
   password: z.string()
     .min(1, "Password is required")
-    .min(6, "Password must be at least 6 characters long")
-    .max(100, "Password is too long (maximum 100 characters)"),
+    .min(8, "Password must be at least 8 characters long")
+    .max(100, "Password is too long (maximum 100 characters)")
+    .refine(
+      (password) => /[A-Z]/.test(password),
+      "Password must include at least one uppercase letter"
+    )
+    .refine(
+      (password) => /[a-z]/.test(password),
+      "Password must include at least one lowercase letter"
+    )
+    .refine(
+      (password) => /[0-9]/.test(password),
+      "Password must include at least one number"
+    )
+    .refine(
+      (password) => /[^A-Za-z0-9]/.test(password),
+      "Password must include at least one special character"
+    ),
   fullName: z.string()
     .min(1, "Full name is required")
     .min(2, "Please enter your complete name")
@@ -115,6 +131,7 @@ export default function AuthPage() {
       phone: "",
       role: "parent",
     },
+    mode: "onChange" // Enable real-time validation as fields change
   });
   
   const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
@@ -466,6 +483,59 @@ export default function AuthPage() {
                 <AlertTitle className="text-green-600">Email Verified Successfully</AlertTitle>
                 <AlertDescription>
                   Your email has been verified. You can now log in to your account.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {registeredUser && emailVerificationStatus && (
+              <Alert className={`mb-4 ${
+                emailVerificationStatus === "sent" ? "border-blue-600/20 bg-blue-50" :
+                emailVerificationStatus === "failed" ? "border-red-600/20 bg-red-50" :
+                "border-yellow-600/20 bg-yellow-50"
+              }`}>
+                {emailVerificationStatus === "sent" ? (
+                  <Mail className="h-4 w-4 text-blue-600" />
+                ) : emailVerificationStatus === "failed" ? (
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                ) : (
+                  <Clock className="h-4 w-4 text-yellow-600" />
+                )}
+                
+                <AlertTitle className={
+                  emailVerificationStatus === "sent" ? "text-blue-600" :
+                  emailVerificationStatus === "failed" ? "text-red-600" :
+                  "text-yellow-600"
+                }>
+                  {emailVerificationStatus === "sent" ? "Verification Email Sent" :
+                   emailVerificationStatus === "failed" ? "Verification Email Failed" :
+                   "Sending Verification Email..."}
+                </AlertTitle>
+                
+                <AlertDescription>
+                  {emailVerificationStatus === "sent" ? (
+                    <>
+                      A verification email has been sent to {registeredUser.email}. 
+                      Please check your inbox and click the verification link.
+                    </>
+                  ) : emailVerificationStatus === "failed" ? (
+                    <>
+                      There was a problem sending the verification email to {registeredUser.email}.
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2" 
+                        onClick={handleResendVerificationEmail}
+                        disabled={resendVerificationEmailMutation.isPending}
+                      >
+                        {resendVerificationEmailMutation.isPending ? 
+                          "Resending..." : "Resend Verification Email"}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      Sending verification email to {registeredUser.email}...
+                    </>
+                  )}
                 </AlertDescription>
               </Alert>
             )}
