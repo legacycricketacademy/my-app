@@ -349,24 +349,51 @@ export default function AuthPage() {
         onError: (error) => {
           logErrorDetails(error, "Firebase registration error");
           
-          // Show a more user-friendly error message
-          let errorMessage = "Registration failed. Please try again.";
+          // Import the helper from use-auth.tsx
+          const getFirebaseErrorMessage = (e: any): string => {
+            // Default message
+            let message = "Registration failed. Please try again.";
+            
+            // Process special error cases
+            if (e.message?.includes("Invalid response from server")) {
+              return "The server returned an invalid response. Please try again or contact support.";
+            } else if (e.message?.includes("Failed to process server response")) {
+              return "Failed to process the server response. Please try again.";
+            }
+            
+            // Extract error code from Firebase error format
+            const errorCode = e.code || 
+                          (e.message && e.message.includes("auth/") ? 
+                            e.message.split("auth/")[1].split(")")[0] : null);
+            
+            if (!errorCode) return message;
+            
+            // Map Firebase error codes to user-friendly messages
+            switch (errorCode) {
+              case 'email-already-in-use':
+              case 'EMAIL_EXISTS':
+                return "This email is already registered. Try logging in instead.";
+              case 'invalid-email':
+              case 'INVALID_EMAIL':
+                return "Please enter a valid email address.";
+              case 'weak-password':
+              case 'WEAK_PASSWORD':
+                return "Password is too weak. Please use a stronger password.";
+              case 'network-request-failed':
+                return "Network connection error. Please check your internet connection and try again.";
+              case 'internal-error':
+                return "Authentication service encountered an error. Please try again later.";
+              case 'invalid-api-key':
+                return "Authentication system configuration error. Please contact support.";
+              case 'configuration-not-found':
+                return "Firebase authentication is not properly configured. Please contact support.";
+              default:
+                return e.message || message;
+            }
+          };
           
-          if (error.message?.includes("auth/configuration-not-found")) {
-            errorMessage = "Firebase authentication is not properly configured. Please contact support.";
-          } else if (error.message?.includes("auth/invalid-api-key")) {
-            errorMessage = "Authentication system configuration error. Please contact support.";
-          } else if (error.message?.includes("auth/email-already-in-use")) {
-            errorMessage = "This email is already registered. Try logging in instead.";
-          } else if (error.message?.includes("auth/internal-error")) {
-            errorMessage = "Authentication service encountered an error. Please try again later.";
-          } else if (error.message?.includes("auth/network-request-failed")) {
-            errorMessage = "Network connection error. Please check your internet connection and try again.";
-          } else if (error.message?.includes("Invalid response from server")) {
-            errorMessage = "The server returned an invalid response. Please try again or contact support.";
-          } else if (error.message?.includes("Failed to process server response")) {
-            errorMessage = "Failed to process the server response. Please try again.";
-          }
+          // Show a more user-friendly error message
+          let errorMessage = getFirebaseErrorMessage(error);
           
           toast({
             title: "Registration Failed",

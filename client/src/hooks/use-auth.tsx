@@ -11,6 +11,57 @@ import { useFirebaseAuth } from "@/lib/firebase";
 import { auth } from "@/lib/firebase-init";
 import { useLocalAuth } from "./use-local-auth";
 
+// Helper function to map Firebase error codes to user-friendly messages
+function getFirebaseErrorMessage(error: any): string {
+  // Default message
+  let message = "Authentication failed. Please try again.";
+  
+  // Extract error code from various possible error formats
+  const errorCode = error.code || 
+                   (error.message && error.message.includes("auth/") ? 
+                     error.message.split("auth/")[1].split(")")[0] : null);
+  
+  if (!errorCode) return message;
+  
+  // Map Firebase error codes to user-friendly messages
+  switch (errorCode) {
+    case 'email-already-in-use':
+    case 'EMAIL_EXISTS':
+      return "This email is already registered. Please log in instead.";
+    case 'user-not-found':
+    case 'EMAIL_NOT_FOUND':
+      return "No account found with this email. Please check your email or sign up.";
+    case 'wrong-password':
+    case 'INVALID_PASSWORD':
+      return "Incorrect password. Please try again or reset your password.";
+    case 'user-disabled':
+    case 'USER_DISABLED':
+      return "This account has been disabled. Please contact support.";
+    case 'invalid-email':
+    case 'INVALID_EMAIL':
+      return "Please enter a valid email address.";
+    case 'weak-password':
+    case 'WEAK_PASSWORD':
+      return "Password is too weak. Please use a stronger password.";
+    case 'network-request-failed':
+      return "Network error. Please check your internet connection and try again.";
+    case 'too-many-requests':
+    case 'TOO_MANY_ATTEMPTS_TRY_LATER':
+      return "Too many attempts. Please try again later.";
+    case 'popup-closed-by-user':
+      return "Sign-in window was closed. Please try again.";
+    case 'account-exists-with-different-credential':
+      return "An account already exists with the same email but different sign-in credentials.";
+    case 'operation-not-allowed':
+    case 'OPERATION_NOT_ALLOWED':
+      return "This sign-in method is not allowed. Please contact support.";
+    case 'configuration-not-found':
+      return "Firebase configuration error. Please contact support.";
+    default:
+      return error.message || message;
+  }
+}
+
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
@@ -675,20 +726,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               message: sdkError.message
             });
             
-            // Map Firebase error codes to user-friendly messages
-            if (error.message?.includes("EMAIL_EXISTS") || sdkError.code === 'auth/email-already-in-use') {
-              throw new Error("This email is already registered. Please use a different email or try logging in.");
-            } else if (error.message?.includes("INVALID_EMAIL") || sdkError.code === 'auth/invalid-email') {
-              throw new Error("Please enter a valid email address.");
-            } else if (error.message?.includes("WEAK_PASSWORD") || sdkError.code === 'auth/weak-password') {
-              throw new Error("Password is too weak. Please use a stronger password.");
-            } else if (sdkError.code === 'auth/network-request-failed') {
-              throw new Error("Network error. Please check your internet connection and try again.");
-            } else if (sdkError.code === 'auth/configuration-not-found') {
-              throw new Error("Firebase authentication is not properly configured. Please contact support.");
-            } else {
-              throw new Error("Account creation failed. Please try again later.");
-            }
+            // Use our helper to get a user-friendly error message
+            const errorMessage = getFirebaseErrorMessage(sdkError) || getFirebaseErrorMessage(error);
+            throw new Error(errorMessage);
           }
         }
         
