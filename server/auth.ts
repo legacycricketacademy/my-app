@@ -146,28 +146,60 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
+    console.log("Registration request received:", {
+      ...req.body,
+      password: req.body.password ? "[REDACTED]" : undefined
+    });
+    
     try {
+      // Validate required fields
+      const requiredFields = ['username', 'password', 'email', 'fullName', 'role'];
+      for (const field of requiredFields) {
+        if (!req.body[field]) {
+          console.error(`Registration failed: Missing required field '${field}'`);
+          return res.status(400).json({ 
+            message: `Missing required field: ${field}`,
+            field: field
+          });
+        }
+      }
+      
       // If no academyId was provided in the request but we have it in the context, add it
       if (!req.body.academyId && req.academyId) {
+        console.log(`Using academy ID ${req.academyId} from context`);
         req.body.academyId = req.academyId;
       } else if (!req.body.academyId) {
         // Default to academy ID 1 if not specified
+        console.log("No academy ID provided, defaulting to 1");
         req.body.academyId = 1;
       }
       
+      console.log(`Registration for academy ID: ${req.body.academyId}`);
+      
       // Check for existing user in the current academy context
+      console.log(`Checking if username '${req.body.username}' already exists...`);
       const existingUser = await multiTenantStorage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).json({ message: "Username already exists in this academy" });
+        console.error(`Registration failed: Username '${req.body.username}' already exists`);
+        return res.status(400).json({ 
+          message: "Username already exists in this academy",
+          field: "username" 
+        });
       }
 
+      console.log(`Checking if email '${req.body.email}' already exists...`);
       const existingEmail = await multiTenantStorage.getUserByEmail(req.body.email);
       if (existingEmail) {
-        return res.status(400).json({ message: "Email already in use in this academy" });
+        console.error(`Registration failed: Email '${req.body.email}' already in use`);
+        return res.status(400).json({ 
+          message: "Email already in use in this academy",
+          field: "email" 
+        });
       }
 
       // Check if phone number is provided and if it's already in use
       if (req.body.phone) {
+        console.log(`Checking if phone '${req.body.phone}' already exists...`);
         try {
           const existingUsers = await db.select().from(users)
             .where(and(
@@ -177,7 +209,11 @@ export function setupAuth(app: Express) {
             .limit(1);
             
           if (existingUsers.length > 0) {
-            return res.status(400).json({ message: "Phone number already registered in this academy" });
+            console.error(`Registration failed: Phone '${req.body.phone}' already registered`);
+            return res.status(400).json({ 
+              message: "Phone number already registered in this academy",
+              field: "phone" 
+            });
           }
         } catch (err) {
           console.error("Error checking phone number:", err);
@@ -186,6 +222,7 @@ export function setupAuth(app: Express) {
       }
       
       // Create new user with hashed password
+      console.log("Hashing password...");
       const hashedPassword = await hashPassword(req.body.password);
       let userData = {
         ...req.body,
@@ -194,106 +231,141 @@ export function setupAuth(app: Express) {
       };
       
       // Check role and set appropriate status
+      console.log(`Setting up user with role: ${userData.role}`);
       if (userData.role === "admin") {
         // Admin accounts should be pending until approved by superadmin
+        console.log("Admin registration - setting status to pending");
         userData = {
           ...userData,
           status: "pending", 
           isActive: false
         };
       } else if (userData.role === "coach") {
+        console.log("Coach registration - setting status to pending");
         userData = {
           ...userData,
           status: "pending", // Coaches need admin approval
           isActive: false    // Inactive until approved
         };
       } else if (userData.role === "parent") {
+        console.log("Parent registration - setting status to active");
         userData = {
           ...userData,
           status: "active", // Parents are automatically approved
           isActive: true
         };
+      } else {
+        console.log(`Unknown role: ${userData.role}, defaulting to parent`);
+        userData = {
+          ...userData,
+          role: "parent",
+          status: "active",
+          isActive: true
+        };
       }
 
       // Set academy context before creating user
+      console.log(`Setting academy context to ${userData.academyId} for user creation`);
       multiTenantStorage.setAcademyContext(userData.academyId);
       
-      const user = await multiTenantStorage.createUser(userData);
-      
-      // Generate a verification token directly
-      let verificationLink = '';
       try {
-        // Generate token for email verification
-        // This is the same implementation as in routes.ts
-        const generateToken = (payload: any, expiresInMs: number): string => {
-          const tokenPayload = {
-            ...payload,
-            expires: Date.now() + expiresInMs
+        console.log("Creating user in database...");
+        const user = await multiTenantStorage.createUser(userData);
+        console.log("User created successfully:", { userId: user.id, username: user.username });
+      
+        // Generate a verification token directly
+        let verificationLink = '';
+        try {
+          console.log("Generating verification token...");
+          // Generate token for email verification
+          // This is the same implementation as in routes.ts
+          const generateToken = (payload: any, expiresInMs: number): string => {
+            const tokenPayload = {
+              ...payload,
+              expires: Date.now() + expiresInMs
+            };
+            return Buffer.from(JSON.stringify(tokenPayload)).toString('base64');
           };
-          return Buffer.from(JSON.stringify(tokenPayload)).toString('base64');
-        };
-        
-        // Generate verification token (24 hour expiration)
-        const token = generateToken(
-          { userId: user.id, email: user.email },
-          24 * 60 * 60 * 1000
-        );
-        
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        verificationLink = `${baseUrl}/api/verify-email?token=${token}`;
-        
-        // Generate email content
-        const { text, html } = generateVerificationEmail(user.fullName, verificationLink);
-        
-        // Send verification email
-        console.log(`Attempting to send verification email to ${user.email}...`);
-        const emailSent = await sendEmail({
-          to: user.email,
-          subject: "Verify Your Email Address for Legacy Cricket Academy",
-          text,
-          html
-        });
-        
-        // Log email status but continue with registration regardless
-        if (emailSent) {
-          console.log(`✓ Verification email successfully sent to ${user.email}`);
-        } else {
-          console.warn(`⚠️ Failed to send verification email to ${user.email}`);
+          
+          // Generate verification token (24 hour expiration)
+          const token = generateToken(
+            { userId: user.id, email: user.email },
+            24 * 60 * 60 * 1000
+          );
+          
+          const baseUrl = `${req.protocol}://${req.get('host')}`;
+          verificationLink = `${baseUrl}/api/verify-email?token=${token}`;
+          console.log("Verification link generated:", verificationLink);
+          
+          // Generate email content
+          console.log("Generating verification email...");
+          const { text, html } = generateVerificationEmail(user.fullName, verificationLink);
+          
+          // Send verification email
+          console.log(`Attempting to send verification email to ${user.email}...`);
+          const emailSent = await sendEmail({
+            to: user.email,
+            subject: "Verify Your Email Address for Legacy Cricket Academy",
+            text,
+            html
+          });
+          
+          // Log email status but continue with registration regardless
+          if (emailSent) {
+            console.log(`✓ Verification email successfully sent to ${user.email}`);
+          } else {
+            console.warn(`⚠️ Failed to send verification email to ${user.email}`);
+          }
+        } catch (emailError) {
+          console.error('Error in verification email process:', emailError);
+          // Continue with registration even if email fails
         }
-      } catch (emailError) {
-        console.error('Error in verification email process:', emailError);
-        // Continue with registration even if email fails
-      }
-      
-      // Log the user activity
-      try {
-        // Import userAuditLogs directly to avoid TypeScript issues
-        const { userAuditLogs } = require("@shared/schema");
-        await db.insert(userAuditLogs).values({
-          userId: user.id,
-          academyId: user.academyId,
-          actionType: 'register',
-          actionDetails: { role: user.role, status: user.status },
-          ipAddress: req.ip,
-          userAgent: req.headers['user-agent']
+        
+        // Log the user activity
+        try {
+          console.log("Creating audit log entry...");
+          // Import userAuditLogs directly to avoid TypeScript issues
+          const { userAuditLogs } = require("@shared/schema");
+          await db.insert(userAuditLogs).values({
+            userId: user.id,
+            academyId: user.academyId,
+            actionType: 'register',
+            actionDetails: { role: user.role, status: user.status },
+            ipAddress: req.ip,
+            userAgent: req.headers['user-agent']
+          });
+          console.log("Audit log created successfully");
+        } catch (auditError) {
+          console.error('Error creating audit log:', auditError);
+          // Non-critical, continue with registration
+        }
+        
+        // Log in the new user
+        console.log("Logging in the newly registered user...");
+        req.login(user, (err) => {
+          if (err) {
+            console.error("Error during login after registration:", err);
+            return next(err);
+          }
+          
+          // Don't send password back to client
+          const { password, ...userWithoutPassword } = user;
+          console.log("Registration process completed successfully");
+          return res.status(201).json({
+            ...userWithoutPassword,
+            verificationLink: verificationLink || undefined,
+            emailSent: !!verificationLink
+          });
         });
-      } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
-        // Non-critical, continue with registration
-      }
-      
-      // Log in the new user
-      req.login(user, (err) => {
-        if (err) return next(err);
-        // Don't send password back to client
-        const { password, ...userWithoutPassword } = user;
-        return res.status(201).json({
-          ...userWithoutPassword,
-          verificationLink: verificationLink || undefined,
-          emailSent: !!verificationLink
+      } catch (dbError) {
+        console.error("Database error during user creation:", dbError);
+        return res.status(500).json({ 
+          message: "Error creating user account. Please try again later.",
+          error: dbError.message
         });
-      });
+      }
     } catch (error) {
+      console.error("Unhandled error in registration:", error);
       next(error);
     }
   });

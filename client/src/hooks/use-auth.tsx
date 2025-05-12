@@ -244,10 +244,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
+      console.log("Registration attempt started with data:", {...data, password: "[REDACTED]"});
+      
       try {
+        // Step 1: Validate data with schema
+        console.log("Validating registration data...");
         const validatedData = insertUserSchema.parse(data);
+        console.log("Validation successful");
         
-        // Direct fetch instead of apiRequest to avoid double body reading
+        // Step 2: Make the API request
+        console.log("Sending registration request to server...");
         const res = await fetch("/api/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -255,19 +261,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           credentials: "include",
         });
         
+        console.log(`Registration response status: ${res.status}`);
+        
+        // Step 3: Handle errors
         if (!res.ok) {
+          console.log("Registration failed:", res.status, res.statusText);
+          
           // Clone the response before reading
           const clonedRes = res.clone();
           let errorMessage = "Please check your information and try again.";
           
           try {
+            // Try to parse the error response
+            console.log("Parsing error response...");
             const errorData = await clonedRes.json();
+            console.log("Error data:", errorData);
             
             if (res.status === 400) {
               if (errorData.message?.includes("Username already exists")) {
                 errorMessage = "This username is already taken. Please choose a different username.";
-              } else if (errorData.message?.includes("Email already exists")) {
+              } else if (errorData.message?.includes("Email already in use")) {
                 errorMessage = "An account with this email already exists. Please use a different email or try logging in.";
+              } else if (errorData.message?.includes("Phone number already registered")) {
+                errorMessage = "This phone number is already registered. Please use a different phone number.";
               } else if (errorData.message) {
                 errorMessage = errorData.message;
               }
@@ -278,6 +294,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           } catch (e) {
             // If JSON parsing fails, use generic error message
+            console.error("Failed to parse error response:", e);
+            
             if (res.status === 400) {
               errorMessage = "Please check your information and try again.";
             } else if (res.status === 429) {
@@ -287,13 +305,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
           
+          console.error("Registration error:", errorMessage);
           throw new Error(errorMessage);
         }
         
+        // Step 4: Return successful response
+        console.log("Registration successful, parsing user data...");
         return await res.json();
       } catch (error: any) {
+        // Step 5: Handle validation errors
+        console.error("Registration error:", error);
+        
         // Handle Zod validation errors with user-friendly messages
         if (error.name === "ZodError") {
+          console.log("Zod validation error:", error.errors);
+          
           const fieldName = error.errors[0]?.path?.join('.') || "";
           let errorMessage = error.errors[0]?.message || "Please check your information and try again.";
           
@@ -308,8 +334,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             errorMessage = errorMessage.replace("String", "Full name");
           }
           
+          console.error("Validation error:", errorMessage);
           throw new Error(errorMessage);
         }
+        
+        // Step 6: Re-throw other errors
         throw error;
       }
     },
