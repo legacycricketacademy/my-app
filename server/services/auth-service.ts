@@ -177,7 +177,7 @@ export async function registerFirebaseUser(
   let isActive = true;
   
   if (input.role === "coach" || input.role === "admin") {
-    status = "pending_approval";
+    status = "pending_approval";  // Use "pending_approval" to match UI expectations
     isActive = false;
   }
   
