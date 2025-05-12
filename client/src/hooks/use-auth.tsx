@@ -721,7 +721,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           console.log("Firebase registration response status:", response.status);
 
-          if (!response.ok) {
+          // All responses include the user data, even if the account is in a pending state
+          // So we process all responses between 200-299 as successful
+          if (response.status < 200 || response.status >= 300) {
             const errorData = await response.json().catch(() => ({}));
             console.error("Backend registration failed:", {
               status: response.status,
@@ -732,6 +734,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // For unique constraint violations and other client errors
             if (response.status === 400) {
               throw new Error(errorData.message || errorData.details || "User already exists or invalid data.");
+            }
+            
+            // For duplicate email errors (409 Conflict)
+            if (response.status === 409) {
+              throw new Error(errorData.message || "Email is already registered. Please login instead.");
             }
             
             // For 5xx server errors
@@ -756,9 +763,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
       
+      console.log("Registration success - user status:", user.status);
+      
       // Check if the coach/admin account is pending approval
+      // Status values can be 'pending', 'pending_approval', or custom values
       if ((user.role === 'coach' || user.role === 'admin') && 
-          (user.status === 'pending' || user.isActive === false)) {
+          (user.status === 'pending' || user.status === 'pending_approval' || 
+           user.isActive === false)) {
         toast({
           title: "Registration successful",
           description: "Your account is awaiting administrator approval. You'll be notified when approved.",
