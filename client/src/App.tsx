@@ -118,7 +118,14 @@ function RouterContent() {
             <p>Something went wrong in the auth page. Please check the console for errors.</p>
           </div>
         }>
-          <AuthPage />
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              <span className="ml-2">Loading authentication page...</span>
+            </div>
+          }>
+            {React.createElement(React.lazy(() => import("@/pages/auth-page-simplified")))}
+          </React.Suspense>
         </ErrorBoundary>
       </Route>
       

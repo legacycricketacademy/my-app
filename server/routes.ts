@@ -3547,11 +3547,13 @@ ${ACADEMY_NAME} Team
       });
     } catch (error: any) {
       // Use our custom error types to determine appropriate responses
-      if (error instanceof AuthError || error instanceof ValidationError || 
-          error instanceof InvalidTokenError || error instanceof UserExistsError || 
-          error instanceof DatabaseError || error instanceof EmailError || 
-          error instanceof EmailAlreadyRegisteredError || 
-          error.name === 'AuthError' || error.name === 'EmailAlreadyRegisteredError') {
+      if (error.name === 'AuthError' || 
+          error.name === 'ValidationError' || 
+          error.name === 'InvalidTokenError' || 
+          error.name === 'UserExistsError' || 
+          error.name === 'DatabaseError' || 
+          error.name === 'EmailError' || 
+          error.name === 'EmailAlreadyRegisteredError') {
         // Get status code from the error or default to 500
         const statusCode = error.statusCode || 500;
         
