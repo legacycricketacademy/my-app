@@ -152,16 +152,44 @@ export function setupAuth(app: Express) {
     });
     
     try {
-      // Validate required fields
+      // Enhanced validation with more detailed error checking
       const requiredFields = ['username', 'password', 'email', 'fullName', 'role'];
-      for (const field of requiredFields) {
-        if (!req.body[field]) {
-          console.error(`Registration failed: Missing required field '${field}'`);
-          return res.status(400).json({ 
-            message: `Missing required field: ${field}`,
-            field: field
-          });
-        }
+      
+      // 1. Check required fields are present
+      const missingFields = requiredFields.filter(field => !req.body[field]);
+      if (missingFields.length > 0) {
+        console.error(`Registration failed: Missing required fields: ${missingFields.join(', ')}`);
+        return res.status(400).json({ 
+          message: `Missing required fields: ${missingFields.join(', ')}`,
+          fields: missingFields
+        });
+      }
+      
+      // 2. Validate specific field formats
+      if (req.body.username && req.body.username.length < 3) {
+        console.error(`Registration failed: Username too short (${req.body.username.length} chars)`);
+        return res.status(400).json({
+          message: "Username must be at least 3 characters long",
+          field: "username"
+        });
+      }
+      
+      if (req.body.password && req.body.password.length < 6) {
+        console.error(`Registration failed: Password too short (${req.body.password.length} chars)`);
+        return res.status(400).json({
+          message: "Password must be at least 6 characters long",
+          field: "password"
+        });
+      }
+      
+      // Basic email validation regex
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (req.body.email && !emailRegex.test(req.body.email)) {
+        console.error(`Registration failed: Invalid email format (${req.body.email})`);
+        return res.status(400).json({
+          message: "Please enter a valid email address",
+          field: "email"
+        });
       }
       
       // If no academyId was provided in the request but we have it in the context, add it

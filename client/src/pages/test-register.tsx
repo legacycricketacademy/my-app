@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { SimpleLogoutButton } from "@/components/ui/simple-logout-button";
+import { Separator } from "@/components/ui/separator";
 
 export default function TestRegister() {
   const [formData, setFormData] = useState({
@@ -177,6 +179,59 @@ export default function TestRegister() {
               </pre>
             </div>
           )}
+          
+          <Separator className="my-6" />
+          
+          <div className="space-y-4">
+            <h3 className="font-medium">Logout Testing</h3>
+            <p className="text-sm text-muted-foreground">If you're experiencing logout issues, try this force logout button:</p>
+            <SimpleLogoutButton />
+            
+            <h3 className="font-medium mt-4">Alternative Force Logout</h3>
+            <p className="text-sm text-muted-foreground">This uses a different method calling our server API endpoint:</p>
+            <Button 
+              variant="destructive"
+              className="w-full"
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/force-logout", {
+                    method: "POST",
+                    credentials: "include"
+                  });
+                  const data = await res.json();
+                  
+                  if (res.ok) {
+                    toast({
+                      title: "Logout successful",
+                      description: data.message,
+                    });
+                    
+                    // Clear frontend state
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    // Force redirect
+                    window.location.href = "/auth?force-logout=" + Date.now();
+                  } else {
+                    toast({
+                      title: "Logout failed",
+                      description: data.message,
+                      variant: "destructive"
+                    });
+                  }
+                } catch (err: any) {
+                  console.error("Force logout error:", err);
+                  toast({
+                    title: "Logout error",
+                    description: err.message || "Failed to contact server",
+                    variant: "destructive"
+                  });
+                }
+              }}
+            >
+              Server-Side Force Logout
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
