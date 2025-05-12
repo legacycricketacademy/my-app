@@ -3446,58 +3446,129 @@ ${ACADEMY_NAME} Team
   app.post(`${apiPrefix}/auth/register-firebase`, async (req, res) => {
     try {
       console.log("=== Firebase registration endpoint hit ===");
-      console.log("Request body:", JSON.stringify(req.body));
       
-      const { firebaseUid, username, email, fullName, role, phone, academyId, idToken } = req.body;
+      // Validate required token in request
+      if (!req.body.idToken) {
+        return res.status(400).json({ 
+          error: "validation_error", 
+          message: "Firebase ID token is required"
+        });
+      }
       
-      console.log("Firebase registration data:", { 
-        firebaseUid, 
-        username, 
-        email, 
-        fullName, 
-        role, 
-        hasPhone: !!phone, 
-        hasAcademyId: !!academyId, 
-        hasToken: !!idToken 
-      });
+      // Get basic data from request for logging
+      const { username, email, fullName, role, idToken } = req.body;
       
-      if (!firebaseUid || !username || !email || !fullName) {
-        return res.status(400).json({ message: "Missing required fields" });
+      console.log("Registration request received for:", { email, username });
+      
+      // IMPORTANT: Always verify the Firebase token first
+      let decodedToken;
+      try {
+        decodedToken = await verifyFirebaseToken(idToken);
+        
+        if (!decodedToken || !decodedToken.uid) {
+          return res.status(401).json({ 
+            error: "invalid_token", 
+            message: "Invalid or expired Firebase token"
+          });
+        }
+        
+        console.log("Firebase token successfully verified for UID:", decodedToken.uid);
+      } catch (tokenError) {
+        console.error("Firebase token verification failed:", tokenError);
+        return res.status(401).json({ 
+          error: "token_verification_failed", 
+          message: "Failed to verify Firebase authentication token"
+        });
+      }
+      
+      // Use the firebaseUid from the verified token, not from the request body
+      const firebaseUid = decodedToken.uid;
+      
+      // Validate required fields
+      if (!username || !email || !fullName) {
+        return res.status(400).json({ 
+          error: "missing_fields", 
+          message: "Missing required user information",
+          details: {
+            username: !username ? "Username is required" : null,
+            email: !email ? "Email is required" : null,
+            fullName: !fullName ? "Full name is required" : null
+          }
+        });
+      }
+      
+      // Check for existing user by Firebase UID (make the endpoint idempotent)
+      const existingUserByUid = await storage.getUserByFirebaseUid(firebaseUid);
+      if (existingUserByUid) {
+        console.log("User already exists with Firebase UID:", firebaseUid);
+        
+        // Instead of error, consider this a success - user already registered
+        // Just return the existing user (idempotent operation)
+        return res.status(200).json({
+          ...existingUserByUid,
+          message: "User already registered" 
+        });
       }
       
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
+        return res.status(400).json({ 
+          error: "username_exists", 
+          message: "Username already exists" 
+        });
       }
       
-      // If we have an idToken (from direct API), verify it for additional security
-      if (idToken) {
-        console.log("Verifying Firebase ID token during registration");
-        try {
-          // Using the imported verifyFirebaseToken from the top of the file
-          const decodedToken = await verifyFirebaseToken(idToken);
-          
-          // Make sure the token matches the provided Firebase UID
-          if (!decodedToken || decodedToken.uid !== firebaseUid) {
-            console.error("Token UID doesn't match provided UID:", {
-              tokenUid: decodedToken?.uid,
-              providedUid: firebaseUid
-            });
-            return res.status(401).json({ message: "Invalid Firebase token" });
-          }
-          
-          console.log("Firebase token verified successfully");
-        } catch (tokenError) {
-          // Log the error but continue with registration
-          console.error("Error verifying Firebase token during registration:", tokenError);
-          // We'll still create the user, but it's worth logging this issue
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ 
+          error: "email_exists", 
+          message: "Email is already registered" 
+        });
+      }
+      
+      // Validate and sanitize the input using Zod schema
+      try {
+        // Extract academy ID from request if present
+        const academyId = req.body.academyId || null;
+        
+        // Determine the appropriate status based on role
+        let status = "active";
+        let isActive = true;
+        
+        // For coaches, require approval
+        if (role === "coach") {
+          status = "pending_approval";
+          isActive = false;
         }
+        
+        // Validate phone if present
+        const phone = req.body.phone || null;
+        
+        // Validate data structure using Zod schema
+        const userData = insertUserSchema.parse({
+          academyId,
+          firebaseUid,
+          username,
+          email,
+          fullName,
+          role,
+          status,
+          isActive,
+          phone,
+          password: null // No password needed for Firebase auth
+        });
+        
+        console.log("Validated user data ready for insertion");
+      } catch (validationError: any) {
+        console.error("Validation error:", validationError);
+        return res.status(400).json({
+          error: "validation_error",
+          message: "Invalid user data",
+          details: validationError.errors || validationError.message
+        });
       }
-      
-      // Determine the appropriate status based on role
-      let status = "active";
-      let isActive = true;
       
       // Set the appropriate status and activity flag based on role
       if (role === "coach" || role === "admin") {
