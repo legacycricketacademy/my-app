@@ -336,6 +336,25 @@ function RouterContent() {
       {/* Email verification page */}
       <Route path="/verify-email" component={VerifyEmailPage} />
       
+      {/* Page to fix Firebase users by adding password authentication */}
+      <Route path="/fix-firebase-user">
+        <ErrorBoundary fallback={
+          <div className="p-6 bg-red-50 text-red-800 rounded-md m-4">
+            <h2 className="text-lg font-bold mb-2">Fix Firebase User Error</h2>
+            <p>Something went wrong on the fix Firebase user page. Please try again later.</p>
+          </div>
+        }>
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              <span className="ml-2">Loading...</span>
+            </div>
+          }>
+            {React.createElement(React.lazy(() => import("@/pages/fix-firebase-user")))}
+          </React.Suspense>
+        </ErrorBoundary>
+      </Route>
+      
       <Route component={NotFound} />
     </Switch>
   );

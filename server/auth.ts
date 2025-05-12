@@ -252,41 +252,19 @@ export function setupAuth(app: Express) {
       console.log(`Checking if email '${req.body.email}' already exists...`);
       const existingEmail = await multiTenantStorage.getUserByEmail(req.body.email);
       if (existingEmail) {
-        // Special handling for Firebase users attempting to set up local auth
-        if (existingEmail.firebaseUid && !existingEmail.password) {
-          console.log(`User with email '${req.body.email}' exists as Firebase user without local password, adding password...`);
-          
-          // This user exists but only has Firebase auth, we can add a password
-          try {
-            const hashedPassword = await hashPassword(req.body.password);
-            await multiTenantStorage.updateUser(existingEmail.id, {
-              password: hashedPassword,
-              username: req.body.username, // Update username for local auth
-              updatedAt: new Date()
-            });
-            
-            // Log the user in automatically
-            req.login(existingEmail, (err) => {
-              if (err) return next(err);
-              return res.status(200).json({ 
-                ...existingEmail,
-                message: "Added local authentication to your existing account"
-              });
-            });
-            return; // Important - return here to avoid continuing with account creation
-          } catch (error) {
-            console.error("Error adding password to Firebase account:", error);
-            return res.status(500).json({ 
-              message: "Could not add password to your existing account",
-              field: "password",
-              error: error.message 
-            });
-          }
+        // Check if this is a Firebase account (has firebase_uid)
+        if (existingEmail.firebaseUid) {
+          console.log(`Registration failed: Email '${req.body.email}' is registered with Google authentication`);
+          return res.status(400).json({ 
+            message: "This email is already registered with Google. Please use Google Sign-In instead.",
+            field: "email",
+            authMethod: "google"
+          });
         } else {
-          // Regular case - email already in use
+          // Regular case - email already in use with direct registration
           console.error(`Registration failed: Email '${req.body.email}' already in use`);
           return res.status(400).json({ 
-            message: "Email already in use. Please use a different email.",
+            message: "Email already in use. Please use a different email or try logging in.",
             field: "email" 
           });
         }
