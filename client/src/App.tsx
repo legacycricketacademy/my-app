@@ -31,6 +31,7 @@ import ForceLogoutPage from "@/pages/force-logout";
 import TestRegister from "@/pages/test-register";
 import TestEmailTools from "@/pages/test-email-tools";
 import DebugFirebasePage from "@/pages/debug-firebase";
+import FirebaseDebugEnhanced from "@/pages/firebase-debug-enhanced";
 
 // Parent Pages
 import ParentDashboard from "@/pages/parent-dashboard";
@@ -281,6 +282,7 @@ function RouterContent() {
       <Route path="/stripe-debug" component={StripeDebugPage} />
       <Route path="/debug" component={DebugPage} />
       <Route path="/debug-firebase" component={DebugFirebasePage} />
+      <Route path="/firebase-debug-enhanced" component={FirebaseDebugEnhanced} />
       <Route path="/test-register" component={TestRegister} />
       <Route path="/test-email-tools" component={TestEmailTools} />
       
