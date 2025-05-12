@@ -1,5 +1,5 @@
-import { pool, db } from './index';
-import { sql } from 'drizzle-orm';
+import { db } from "./index";
+import { sql } from "drizzle-orm";
 
 /**
  * Removes references to the non-existent 'month' column in payment queries
@@ -7,46 +7,43 @@ import { sql } from 'drizzle-orm';
  */
 async function fixMonthColumnReferences() {
   try {
-    console.log("Starting fix for month column references in payment queries...");
+    console.log("Checking for month column in payments table...");
     
-    // Read the current storage.ts file
-    const fs = require('fs');
-    const path = require('path');
-    const storageFilePath = path.join(process.cwd(), 'server', 'storage.ts');
+    // Check if the month column exists
+    const columnCheckResult = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'payments' AND column_name = 'month'
+      ) as column_exists
+    `);
     
-    if (!fs.existsSync(storageFilePath)) {
-      console.error(`File not found: ${storageFilePath}`);
-      return;
-    }
+    const monthColumnExists = columnCheckResult.rows[0].column_exists;
+    console.log(`Month column exists: ${monthColumnExists}`);
     
-    let content = fs.readFileSync(storageFilePath, 'utf8');
+    // Show all columns in the payments table
+    const columnsResult = await db.execute(sql`
+      SELECT column_name FROM information_schema.columns 
+      WHERE table_name = 'payments'
+      ORDER BY ordinal_position
+    `);
     
-    // Replace the problematic CASE statements with NULL AS "month"
-    const monthCaseRegex = /CASE\s+WHEN\s+EXISTS\s+\(\s+SELECT\s+1\s+FROM\s+information_schema\.columns\s+WHERE\s+table_name\s+=\s+'payments'\s+AND\s+column_name\s+=\s+'month'\s+\)\s+THEN\s+p\.month\s+ELSE\s+NULL\s+END\s+AS\s+"month",/g;
-    const replacement = 'NULL AS "month", /* Fixed month column reference */';
+    console.log("Columns in the payments table:");
+    columnsResult.rows.forEach((row: any) => {
+      console.log(`- ${row.column_name}`);
+    });
     
-    const updatedContent = content.replace(monthCaseRegex, replacement);
+    // Log the fix that's needed
+    console.log("\nFix instructions:");
+    console.log("1. In server/storage.ts:");
+    console.log("   - Find the getAllPayments method and remove references to 'p.month' column");
+    console.log("   - The month column doesn't exist in the database, so we need to remove it from queries");
+    console.log("2. For a permanent fix:");
+    console.log("   - Either add the column to the database schema (in shared/schema.ts)");
+    console.log("   - Or create a migration script to add the column to the payments table");
     
-    if (content === updatedContent) {
-      console.log("No replacements made - pattern not found");
-      return;
-    }
-    
-    // Write the updated content back to the file
-    fs.writeFileSync(storageFilePath, updatedContent, 'utf8');
-    
-    console.log("Successfully fixed month column references in storage.ts");
   } catch (error) {
     console.error("Error fixing month column references:", error);
   }
 }
 
-// Run the function if this file is executed directly
-if (require.main === module) {
-  fixMonthColumnReferences()
-    .then(() => process.exit(0))
-    .catch(error => {
-      console.error("Error:", error);
-      process.exit(1);
-    });
-}
+fixMonthColumnReferences();
