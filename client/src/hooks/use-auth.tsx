@@ -707,6 +707,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           console.log("Registering with backend using Firebase uid:", firebaseUser.uid);
           
+          // Adding more detailed logging for debugging
+          console.log("Firebase registration request data:", JSON.stringify(firebaseData));
+          
           const response = await fetch("/api/auth/register-firebase", {
             method: "POST",
             headers: {
@@ -715,6 +718,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             body: JSON.stringify(firebaseData),
             credentials: "include",
           });
+          
+          console.log("Firebase registration response status:", response.status);
 
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));

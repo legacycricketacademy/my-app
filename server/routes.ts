@@ -3445,9 +3445,21 @@ ${ACADEMY_NAME} Team
   // Register with Firebase
   app.post(`${apiPrefix}/auth/register-firebase`, async (req, res) => {
     try {
+      console.log("=== Firebase registration endpoint hit ===");
+      console.log("Request body:", JSON.stringify(req.body));
+      
       const { firebaseUid, username, email, fullName, role, phone, academyId, idToken } = req.body;
       
-      console.log("Attempting Firebase registration");
+      console.log("Firebase registration data:", { 
+        firebaseUid, 
+        username, 
+        email, 
+        fullName, 
+        role, 
+        hasPhone: !!phone, 
+        hasAcademyId: !!academyId, 
+        hasToken: !!idToken 
+      });
       
       if (!firebaseUid || !username || !email || !fullName) {
         return res.status(400).json({ message: "Missing required fields" });
