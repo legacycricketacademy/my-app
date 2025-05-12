@@ -34,8 +34,10 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   createUser(userData: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
+  updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User | undefined>;
   
   // Player methods
   getPlayerById(id: number): Promise<any>;
@@ -133,9 +135,26 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
   
+  async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid));
+    return result[0];
+  }
+  
   async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(userData).returning();
     return user;
+  }
+  
+  async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ 
+        stripeCustomerId, 
+        updatedAt: new Date() 
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
   }
   
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
