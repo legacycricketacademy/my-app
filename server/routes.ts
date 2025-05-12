@@ -3258,13 +3258,13 @@ ${ACADEMY_NAME} Team
         isEmailVerified: false, // Firebase will verify the email
         status: status,
         isActive: isActive,
+        password: null, // Firebase users don't use local password
       });
       
-      // Send appropriate emails for coach registration
-      if (role === "coach") {
-        try {
-          // 1. Send email to the coach about pending approval
-          // Import email functions from the current context (already imported at top)
+      // Send appropriate emails based on user role
+      try {
+        if (role === "coach") {
+          // Send email to the coach about pending approval
           const coachEmailContent = generateCoachPendingApprovalEmail(fullName);
           
           await sendEmail({
@@ -3276,14 +3276,13 @@ ${ACADEMY_NAME} Team
           
           console.log("Sent coach pending approval email to:", email);
           
-          // 2. Send email to admin about new coach registration
+          // Also send notification to admin about new coach
           const adminEmail = "madhukar.kcc@gmail.com"; // Administrator email
           
-          // Generate a proper approval link that points to the actual deployed app
+          // Generate approval link
           const hostname = req.get('host');
           const protocol = req.protocol;
           const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
-          // Use /coaches-pending-approval as the primary route, but we've also added an alias route at /admin/coaches
           const approvalLink = `${appBaseUrl}/coaches-pending-approval`;
           
           const adminEmailContent = generateAdminCoachApprovalRequestEmail(
@@ -3300,11 +3299,37 @@ ${ACADEMY_NAME} Team
             html: adminEmailContent.html
           });
           
-          console.log("Sent admin notification email about new coach registration to:", adminEmail);
-        } catch (emailError) {
-          console.error("Error sending registration notification emails:", emailError);
-          // Continue even if emails fail
+          console.log("Sent admin notification email about coach registration to:", adminEmail);
+        } 
+        
+        // For parents and by default, send verification email
+        if (role === "parent" || !role) {
+          console.log("Sending verification email to parent:", email);
+          
+          // Generate verification token
+          const verificationToken = generateVerificationToken(user.id, email);
+          
+          // Create verification link
+          const hostname = req.get('host');
+          const protocol = req.protocol;
+          const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
+          const verificationLink = `${appBaseUrl}/verify-email?token=${verificationToken}`;
+          
+          // Generate and send the verification email
+          const { text, html } = generateVerificationEmail(fullName, verificationLink);
+          
+          await sendEmail({
+            to: email,
+            subject: "Verify Your Email Address for Legacy Cricket Academy",
+            text,
+            html
+          });
+          
+          console.log("Sent verification email to parent:", email);
         }
+      } catch (emailError) {
+        console.error("Error sending registration notification emails:", emailError);
+        // Continue even if emails fail - don't block registration
       }
       
       // Log user in
