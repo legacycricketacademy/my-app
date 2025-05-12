@@ -3483,6 +3483,7 @@ ${ACADEMY_NAME} Team
   app.post("/api/auth/register-firebase", async (req, res) => {
     try {
       console.log("=== Firebase registration endpoint hit ===");
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
       
       // Import auth service
       const { 
@@ -3501,10 +3502,20 @@ ${ACADEMY_NAME} Team
       const protocol = req.protocol;
       const appBaseUrl = process.env.APP_URL || `${protocol}://${hostname}`;
       
+      console.log(`Received request for user with username ${req.body.username} and email ${req.body.email}`);
+      
+      // If no idToken but a firebaseUid is provided, use that directly
+      const useDirectUid = !req.body.idToken && req.body.firebaseUid;
+      
+      if (useDirectUid) {
+        console.log(`Using direct Firebase UID: ${req.body.firebaseUid} without token verification`);
+      }
+      
       // Call the service with properly structured input
       const result = await registerFirebaseUser({
         // Pass all required fields 
         idToken: req.body.idToken,
+        firebaseUid: useDirectUid ? req.body.firebaseUid : undefined, // Use provided UID if no token
         username: req.body.username,
         email: req.body.email,
         fullName: req.body.fullName,

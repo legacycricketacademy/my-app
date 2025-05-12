@@ -716,6 +716,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             academyId: registerData.academyId
           };
           
+          // Ensure firebaseUid is always included even when using token auth
+          console.log(`Including Firebase UID ${firebaseUser.uid} in registration request`);
+          
           // Add token if available from direct API
           if ('idToken' in firebaseUser && firebaseUser.idToken) {
             firebaseData.idToken = firebaseUser.idToken;
@@ -727,6 +730,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log("Firebase registration request data:", JSON.stringify(firebaseData));
           
           // Ensure correct API path
+          console.log("Making Firebase registration request to: /api/auth/register-firebase");
+          console.log("Request data:", JSON.stringify(firebaseData, null, 2));
+          
           const response = await fetch("/api/auth/register-firebase", {
             method: "POST",
             headers: {
