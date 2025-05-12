@@ -358,7 +358,8 @@ export function setupAuth(app: Express) {
           );
           
           const baseUrl = `${req.protocol}://${req.get('host')}`;
-          verificationLink = `${baseUrl}/api/verify-email?token=${token}`;
+          // Fix: Point to frontend verification page instead of API endpoint
+          verificationLink = `${baseUrl}/verify-email?token=${token}`;
           console.log("Verification link generated:", verificationLink);
           
           // Generate email content
