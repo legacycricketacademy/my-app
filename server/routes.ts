@@ -1276,7 +1276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Forgot password and username endpoints
-  app.post(`${apiPrefix}/auth/forgot-password`, async (req, res) => {
+  app.post("/api/auth/forgot-password", async (req, res) => {
     try {
       const { email } = req.body;
       
@@ -1368,7 +1368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post(`${apiPrefix}/auth/forgot-username`, async (req, res) => {
+  app.post("/api/auth/forgot-username", async (req, res) => {
     try {
       const { email } = req.body;
       
@@ -3254,7 +3254,7 @@ ${ACADEMY_NAME} Team
   });
   
   // Firebase Authentication endpoints
-  app.post(`${apiPrefix}/auth/firebase-auth`, async (req, res) => {
+  app.post("/api/auth/firebase-auth", async (req, res) => {
     try {
       if (!req.body.idToken) {
         return res.status(400).json({ message: "Firebase ID token is required" });
@@ -3294,7 +3294,7 @@ ${ACADEMY_NAME} Team
   });
   
   // Login with Firebase token - this route supports both SDK and direct API tokens
-  app.post(`${apiPrefix}/auth/login-firebase`, async (req, res) => {
+  app.post("/api/auth/login-firebase", async (req, res) => {
     try {
       if (!req.body.token) {
         return res.status(400).json({ message: "Firebase token is required" });
@@ -3480,7 +3480,7 @@ ${ACADEMY_NAME} Team
   });
 
   // Register with Firebase
-  app.post(`${apiPrefix}/auth/register-firebase`, async (req, res) => {
+  app.post("/api/auth/register-firebase", async (req, res) => {
     try {
       console.log("=== Firebase registration endpoint hit ===");
       

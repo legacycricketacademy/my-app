@@ -712,6 +712,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Adding more detailed logging for debugging
           console.log("Firebase registration request data:", JSON.stringify(firebaseData));
           
+          // Ensure correct API path
           const response = await fetch("/api/auth/register-firebase", {
             method: "POST",
             headers: {
