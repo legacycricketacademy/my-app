@@ -574,7 +574,15 @@ export class DatabaseStorage implements IStorage {
       let query = `
         SELECT 
           p.id, p.academy_id AS "academyId", p.player_id AS "playerId", 
-          p.amount, p.payment_type AS "paymentType", p.month, 
+          p.amount, p.payment_type AS "paymentType", 
+          CASE 
+              WHEN EXISTS (
+                  SELECT 1 FROM information_schema.columns 
+                  WHERE table_name = 'payments' AND column_name = 'month'
+              ) 
+              THEN p.month 
+              ELSE NULL 
+          END AS "month",
           p.due_date AS "dueDate", p.paid_date AS "paidDate", 
           p.status, p.payment_method AS "paymentMethod", 
           p.stripe_payment_intent_id AS "stripePaymentIntentId",
