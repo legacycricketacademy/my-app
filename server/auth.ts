@@ -10,7 +10,6 @@ import { User as SelectUser, users, userAuditLogs } from "@shared/schema";
 import { db } from "@db";
 import { requireAdmin, requireCoach, requireParent } from "./middleware/require-role";
 import { generateVerificationEmail, sendEmail } from "./email";
-import { createSuccessResponse } from "./utils/api-response";
 import {
   authenticate,
   authorize,
@@ -385,18 +384,25 @@ export function setupAuth(app: Express) {
           // Check if this is a Firebase account (has firebase_uid)
           if (existingEmail.firebaseUid) {
             console.log(`Registration failed: Email '${email}' is registered with Google authentication`);
-            return res.status(400).json({ 
-              message: "This email is already registered with Google. Please use Google Sign-In instead.",
-              field: "email",
-              authMethod: "google"
-            });
+            return res.status(400).json(
+              createErrorResponse(
+                "This email is already registered with Google. Please use Google Sign-In instead.", 
+                "email_used_with_google",
+                400,
+                { field: "email", authMethod: "google" }
+              )
+            );
           } else {
             // Regular case - email already in use with direct registration
             console.error(`Registration failed: Email '${email}' already in use`);
-            return res.status(400).json({ 
-              message: "Email already in use. Please use a different email or try logging in.",
-              field: "email" 
-            });
+            return res.status(400).json(
+              createErrorResponse(
+                "Email already in use. Please use a different email or try logging in.",
+                "email_in_use",
+                400,
+                { field: "email" }
+              )
+            );
           }
         }
       }
