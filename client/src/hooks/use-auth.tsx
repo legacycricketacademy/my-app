@@ -275,34 +275,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
       
-      // Direct fetch instead of apiRequest to avoid double body reading
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-        credentials: "include",
-      });
-      
-      // Handle specific status codes with user-friendly messages
-      if (!res.ok) {
-        if (res.status === 401) {
-          if (isProblematicUsername) {
-            // Special error for problematic user
-            console.error("Special user login failed with 401");
-            throw new Error("The special account login failed. Please contact support.");
-          } else {
-            throw new Error("The username or password you entered is incorrect. Please try again.");
-          }
-        } else if (res.status === 403) {
-          throw new Error("Your account has been locked or deactivated. Please contact support.");
-        } else if (res.status === 429) {
-          throw new Error("Too many login attempts. Please try again later.");
-        } else {
-          throw new Error("Unable to log in at this time. Please try again later.");
-        }
+      // Use apiRequest from api-client.ts for standardized handling
+      const response = await apiRequest<{ user: User }>('POST', "/api/login", credentials);
+
+      // With standardized responses, we expect:
+      // { success: true, message: string, data: { user: User } }
+      if (!response.success) {
+        throw new Error(response.message || "Login failed. Please try again.");
       }
       
-      return await res.json();
+      // Return the user from the response data
+      return response.data?.user;
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
