@@ -3509,21 +3509,37 @@ ${ACADEMY_NAME} Team
       // Create synthetic UID for Firebase
       const syntheticUid = `direct-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
       
-      // Create user data
-      const userData = {
+      // Use insertUserSchema to ensure the data matches the required schema
+      const validatedData = {
         username: req.body.username,
         email: req.body.email,
         fullName: req.body.fullName || req.body.username,
-        isActive: true,
         role: req.body.role || "parent",
         firebaseUid: syntheticUid,
         academyId: req.body.academyId || null,
         phone: req.body.phone || null,
+        status: "active",
+        isActive: true,
         emailVerified: true,
         isApproved: true,
-        status: "active",
         // Generate a random password for this user
         password: await hashPassword(Math.random().toString(36).substring(2) + Date.now().toString())
+      };
+      
+      // Create user data - extract only the fields allowed by the schema
+      const userData = {
+        username: validatedData.username,
+        email: validatedData.email,
+        fullName: validatedData.fullName,
+        role: validatedData.role as any, // Type cast to avoid enum validation issues
+        firebaseUid: validatedData.firebaseUid,
+        academyId: validatedData.academyId,
+        phone: validatedData.phone,
+        status: validatedData.status,
+        isActive: validatedData.isActive,
+        emailVerified: validatedData.emailVerified,
+        isApproved: validatedData.isApproved,
+        password: validatedData.password
       };
       
       // Create the user directly
@@ -3536,12 +3552,12 @@ ${ACADEMY_NAME} Team
         emailSent: false,
         message: "User created successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in direct registration:", error);
       res.status(500).json({ 
         error: 'server_error',
         message: error.message || "Registration error",
-        code: error.code
+        code: error.code || 'unknown'
       });
     }
   });
@@ -3708,21 +3724,37 @@ ${ACADEMY_NAME} Team
           // Import the hashPassword function
           const { hashPassword } = await import('./auth');
           
-          // Create a special user record directly
-          const userData = {
+          // Create validated data
+          const validatedData = {
             username: req.body.username,
             email: req.body.email,
             fullName: req.body.fullName || req.body.username,
-            isActive: true,
             role: req.body.role || "parent",
             firebaseUid: syntheticUid,
             academyId: req.body.academyId || null,
             phone: req.body.phone || null,
+            status: "active",
+            isActive: true,
             emailVerified: true,
             isApproved: true,
-            status: "active",
             // Generate a random password for this user - they can reset it later
             password: await hashPassword(Math.random().toString(36).substring(2) + Date.now().toString())
+          };
+          
+          // Create a special user record directly - with correct typing
+          const userData = {
+            username: validatedData.username,
+            email: validatedData.email,
+            fullName: validatedData.fullName,
+            role: validatedData.role as any, // Type cast for safety
+            firebaseUid: validatedData.firebaseUid,
+            academyId: validatedData.academyId,
+            phone: validatedData.phone,
+            status: validatedData.status,
+            isActive: validatedData.isActive,
+            emailVerified: validatedData.emailVerified,
+            isApproved: validatedData.isApproved,
+            password: validatedData.password
           };
           
           const newUser = await storage.createUser(userData);
@@ -3733,8 +3765,13 @@ ${ACADEMY_NAME} Team
             emailSent: false,
             message: "User created via fallback method"
           });
-        } catch (fallbackError) {
+        } catch (fallbackError: any) {
           console.error("Failed to create fallback user:", fallbackError);
+          console.error("Fallback error details:", {
+            message: fallbackError.message || "Unknown error",
+            code: fallbackError.code || "unknown",
+            stack: fallbackError.stack
+          });
         }
       }
       
