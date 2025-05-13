@@ -205,7 +205,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   
   // Extract user from the API response
+  console.log("Auth - Raw API Response:", userResponse);
+  
   const user = userResponse?.success && userResponse?.data?.user ? userResponse.data.user : null;
+  
+  console.log("Auth - Extracted User:", user);
   
   // Link Firebase with our backend when Firebase auth state changes
   useEffect(() => {
