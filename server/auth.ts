@@ -359,10 +359,14 @@ export function setupAuth(app: Express) {
       const existingUser = await multiTenantStorage.getUserByUsername(req.body.username);
       if (existingUser) {
         console.error(`Registration failed: Username '${req.body.username}' already exists`);
-        return res.status(400).json({ 
-          message: "Username already exists in this academy",
-          field: "username" 
-        });
+        return res.status(400).json(
+          createErrorResponse(
+            "Username already exists in this academy",
+            "username_in_use", 
+            400,
+            { field: "username" }
+          )
+        );
       }
 
       // Special handling for clowmail.com and other problematic email domains
