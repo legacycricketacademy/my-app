@@ -72,6 +72,21 @@ interface JwtPayload {
   iat?: number;
 }
 
+// Extend the Express Request type to include our custom properties
+declare global {
+  namespace Express {
+    interface Request {
+      academyId?: number;
+      user?: {
+        id: number;
+        role: string;
+        academyId?: number;
+        [key: string]: any;
+      } | undefined;
+    }
+  }
+}
+
 // Global JWT authentication middleware factory
 export function createAuthMiddleware(storage: typeof multiTenantStorage = multiTenantStorage) {
   return function authMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -81,7 +96,7 @@ export function createAuthMiddleware(storage: typeof multiTenantStorage = multiT
     }
     
     // Otherwise check JWT tokens
-    const accessToken = req.cookies['access_token'];
+    const accessToken = req.cookies?.['access_token'];
     if (!accessToken) {
       return res.status(401).json({ message: "Unauthorized - No token provided" });
     }
@@ -89,7 +104,7 @@ export function createAuthMiddleware(storage: typeof multiTenantStorage = multiT
     try {
       // Verify token
       const decoded = jwt.verify(accessToken, JWT_ACCESS_SECRET);
-      const payload = decoded as any;
+      const payload = decoded as JwtPayload;
       
       // Set user and academyId on request object
       req.user = { 
@@ -105,7 +120,7 @@ export function createAuthMiddleware(storage: typeof multiTenantStorage = multiT
       return next();
     } catch (error) {
       // Check if token is expired
-      if ((error as any).name === 'TokenExpiredError') {
+      if ((error as Error).name === 'TokenExpiredError') {
         // Could trigger refresh token flow here, but we'll handle that separately
         return res.status(401).json({ message: "Token expired", code: "TOKEN_EXPIRED" });
       }
