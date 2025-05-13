@@ -9,6 +9,7 @@ import { RoleBasedRoute } from "./lib/role-based-route";
 import { Redirect } from "wouter";
 import { OfflineDetector, OnlineStatusIndicator } from "@/components/offline-detector";
 import ErrorBoundary from "@/components/error-boundary";
+import TestPage from "@/pages/test-page";
 
 // Admin/Coach Pages
 import AuthPage from "@/pages/auth-page";
@@ -320,6 +321,7 @@ function RouterContent() {
       <Route path="/simple-firebase-debug" component={SimpleFirebaseDebug} />
       <Route path="/test-register" component={TestRegister} />
       <Route path="/test-email-tools" component={TestEmailTools} />
+      <Route path="/test-page" component={TestPage} />
       <Route path="/register-debug">
         <React.Suspense fallback={
           <div className="flex items-center justify-center min-h-screen">
