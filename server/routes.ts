@@ -871,6 +871,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'standalone-react.html'));
   });
   
+  // Route to serve our comprehensive Cricket Academy standalone app
+  app.get('/app', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'cricket-academy-app.html'));
+  });
+  
   // Create a page with inline React code for direct testing
   app.get('/direct-react-test', (req, res) => {
     res.send(`
@@ -977,6 +982,113 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     `);
   });
   
+  // Add a temporary redirect from the root to our standalone app
+  app.get('/', (req, res) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Legacy Cricket Academy</title>
+        <style>
+          body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .alert {
+            background-color: #e0f2fe;
+            border: 1px solid #38bdf8;
+            color: #0369a1;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+          }
+          .alert-success {
+            background-color: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+          }
+          .btn {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 500;
+            margin-right: 10px;
+            transition: background-color 0.2s;
+          }
+          .btn:hover {
+            background-color: #4338ca;
+          }
+          h1 {
+            color: #4f46e5;
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+          }
+          .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          }
+          .card h3 {
+            margin-top: 0;
+            color: #4f46e5;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Legacy Cricket Academy</h1>
+        
+        <div class="alert">
+          <strong>Development Mode:</strong> The standard React app is currently experiencing bundling issues. 
+          Please use one of our standalone alternatives below.
+        </div>
+        
+        <div class="grid">
+          <div class="card">
+            <h3>Comprehensive App</h3>
+            <p>Our feature-rich standalone application with authentication and dashboard features.</p>
+            <a href="/app" class="btn">Launch App</a>
+          </div>
+          
+          <div class="card">
+            <h3>Simple App</h3>
+            <p>A basic standalone demo with interactive counter and live clock.</p>
+            <a href="/standalone" class="btn">Launch Demo</a>
+          </div>
+          
+          <div class="card">
+            <h3>Direct React Test</h3>
+            <p>A minimal React test page to verify React functionality.</p>
+            <a href="/direct-react-test" class="btn">View Test</a>
+          </div>
+          
+          <div class="card">
+            <h3>API Status</h3>
+            <p>Check if the backend API is running properly.</p>
+            <a href="/api/ping" class="btn">Check API</a>
+          </div>
+        </div>
+        
+        <div class="alert alert-success" style="margin-top: 30px;">
+          <strong>Note:</strong> All backend API endpoints are fully functional. The issues are limited to the frontend bundling system.
+        </div>
+      </body>
+      </html>
+    `);
+  });
+
   // Simple test endpoint to check connectivity
   app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
