@@ -63,6 +63,58 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "cricket-academy-re
 const JWT_ACCESS_EXPIRY = '15m';  // 15 minutes
 const JWT_REFRESH_EXPIRY = '30d'; // 30 days
 
+// Type declarations for better safety
+interface JwtPayload {
+  userId: number;
+  role: string;
+  academyId?: number;
+  exp?: number;
+  iat?: number;
+}
+
+// Global JWT authentication middleware factory
+export function createAuthMiddleware(storage: typeof multiTenantStorage = multiTenantStorage) {
+  return function authMiddleware(req: Request, res: Response, next: NextFunction) {
+    // Check if user is already authenticated via session
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    
+    // Otherwise check JWT tokens
+    const accessToken = req.cookies['access_token'];
+    if (!accessToken) {
+      return res.status(401).json({ message: "Unauthorized - No token provided" });
+    }
+    
+    try {
+      // Verify token
+      const decoded = jwt.verify(accessToken, JWT_ACCESS_SECRET);
+      const payload = decoded as any;
+      
+      // Set user and academyId on request object
+      req.user = { 
+        id: payload.userId,
+        role: payload.role,
+        academyId: payload.academyId
+      };
+      
+      if (payload.academyId) {
+        req.academyId = payload.academyId;
+      }
+      
+      return next();
+    } catch (error) {
+      // Check if token is expired
+      if ((error as any).name === 'TokenExpiredError') {
+        // Could trigger refresh token flow here, but we'll handle that separately
+        return res.status(401).json({ message: "Token expired", code: "TOKEN_EXPIRED" });
+      }
+      
+      return res.status(401).json({ message: "Invalid token" });
+    }
+  };
+}
+
 const scryptAsync = promisify(scrypt);
 
 export async function hashPassword(password: string) {
@@ -79,6 +131,7 @@ export async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  // Session settings
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "cricket-academy-secret",
     resave: false,
@@ -89,6 +142,9 @@ export function setupAuth(app: Express) {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     },
   };
+  
+  // Create the JWT authentication middleware
+  const authMiddleware = createAuthMiddleware(multiTenantStorage);
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
@@ -744,36 +800,33 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.get("/api/user", authenticate, async (req, res) => {
+  app.get("/api/user", authMiddleware, async (req, res) => {
+    // authMiddleware has already verified the user is authenticated
+    // via passport session or JWT token, and set req.user
     try {
-      // Try to get user from standard authentication first
-      if (req.isAuthenticated() && req.user) {
+      // For JWT tokens, we need to get the complete user object from the database
+      if (req.user && !req.isAuthenticated()) {
+        // User is authenticated via JWT but not passport session
+        const userId = req.user.id;
+        
+        // Get full user data from storage
+        const user = await multiTenantStorage.getUser(userId);
+        if (!user) {
+          return res.sendStatus(401);
+        }
+        
         // Don't send password back to client
-        const { password, ...userWithoutPassword } = req.user as SelectUser;
+        const { password, ...userWithoutPassword } = user as any;
         return res.json(userWithoutPassword);
-      }
-      
-      // If not authenticated via session, try JWT token
-      const accessToken = req.cookies['access_token'];
-      if (!accessToken) {
+      } else if (req.user) {
+        // User is authenticated via passport session
+        // Don't send password back to client
+        const { password, ...userWithoutPassword } = req.user as any;
+        return res.json(userWithoutPassword);
+      } else {
+        // No authenticated user found
         return res.sendStatus(401);
       }
-      
-      // Verify the token and get user info
-      const tokenPayload = await verifyAccessToken(accessToken);
-      if (!tokenPayload) {
-        return res.sendStatus(401);
-      }
-      
-      // Get the user from the database
-      const user = await multiTenantStorage.getUser(tokenPayload.userId);
-      if (!user) {
-        return res.sendStatus(401);
-      }
-      
-      // Don't send password back to client
-      const { password, ...userWithoutPassword } = user as any;
-      return res.json(userWithoutPassword);
     } catch (error) {
       console.error("Error in /api/user endpoint:", error);
       return res.sendStatus(401);
@@ -781,23 +834,19 @@ export function setupAuth(app: Express) {
   });
   
   // Middleware for protecting routes by role
-  app.use("/api/admin", (req, res, next) => {
-    if (!req.isAuthenticated()) {
-      return res.sendStatus(401);
+  app.use("/api/admin", authMiddleware, (req, res, next) => {
+    // Check if user has admin role
+    if (req.user && (req.user.role === "admin" || req.user.role === "superadmin")) {
+      return next();
     }
-    if (req.user && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-    next();
+    return res.status(403).json({ message: "Access denied" });
   });
   
-  app.use("/api/coach", (req, res, next) => {
-    if (!req.isAuthenticated()) {
-      return res.sendStatus(401);
+  app.use("/api/coach", authMiddleware, (req, res, next) => {
+    // Check if user has coach, admin, or superadmin role
+    if (req.user && (req.user.role === "coach" || req.user.role === "admin" || req.user.role === "superadmin")) {
+      return next();
     }
-    if (req.user && req.user.role !== "coach" && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-    next();
+    return res.status(403).json({ message: "Access denied" });
   });
 }
