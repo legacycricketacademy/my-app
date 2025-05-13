@@ -196,13 +196,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Backend user data
   const {
-    data: user,
+    data: userResponse,
     error,
     isLoading,
-  } = useQuery<User | null, Error>({
+  } = useQuery<ApiResponse<{ user: User }> | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
+  
+  // Extract user from the API response
+  const user = userResponse?.success && userResponse?.data?.user ? userResponse.data.user : null;
   
   // Link Firebase with our backend when Firebase auth state changes
   useEffect(() => {
@@ -234,8 +237,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (res.ok) {
-        const userData = await res.json();
-        queryClient.setQueryData(["/api/user"], userData);
+        const apiResponse = await res.json();
+        if (apiResponse.success && apiResponse.data) {
+          // The response follows our standardized API format
+          queryClient.setQueryData(["/api/user"], apiResponse);
+        } else {
+          console.error("Firebase link response was not in expected format:", apiResponse);
+          // If linking fails or has unexpected format, log out of Firebase
+          await firebaseLogoutFn();
+        }
       } else {
         // If linking fails, log out of Firebase
         await firebaseLogoutFn();
