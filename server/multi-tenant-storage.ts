@@ -12,6 +12,8 @@ import {
   announcements,
   payments,
   connectionRequests,
+  userSessions,
+  userAuditLogs,
 } from "../shared/schema";
 import { DatabaseStorage } from "./storage";
 
@@ -376,6 +378,176 @@ export class MultiTenantStorage extends DatabaseStorage {
     }
     const result = await db.insert(connectionRequests).values(requestData).returning();
     return result[0];
+  }
+
+  /**
+   * User session management methods
+   */
+  async createSession(userId: number, sessionId: string): Promise<void> {
+    // Set expiration to 30 days from now
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
+    await db.insert(userSessions).values({
+      userId, 
+      sessionId,
+      expiresAt,
+      isActive: true,
+      tokenVersion: 1,
+      lastActiveAt: new Date(),
+      updatedAt: new Date()
+    });
+  }
+
+  async getSession(sessionId: string): Promise<any> {
+    const result = await db.select().from(userSessions).where(eq(userSessions.sessionId, sessionId)).limit(1);
+    return result[0] || null;
+  }
+
+  async validateSession(userId: number, sessionId: string, tokenVersion: number): Promise<boolean> {
+    const result = await db.select().from(userSessions).where(
+      and(
+        eq(userSessions.userId, userId),
+        eq(userSessions.sessionId, sessionId),
+        eq(userSessions.isActive, true),
+        eq(userSessions.tokenVersion, tokenVersion),
+        gte(userSessions.expiresAt, new Date())
+      )
+    ).limit(1);
+    
+    return result.length > 0;
+  }
+
+  async invalidateSession(userId: number, sessionId: string): Promise<void> {
+    await db.update(userSessions)
+      .set({ 
+        isActive: false,
+        updatedAt: new Date() 
+      })
+      .where(
+        and(
+          eq(userSessions.userId, userId),
+          eq(userSessions.sessionId, sessionId)
+        )
+      );
+  }
+
+  async invalidateAllUserSessions(userId: number): Promise<void> {
+    await db.update(userSessions)
+      .set({ 
+        isActive: false,
+        updatedAt: new Date() 
+      })
+      .where(eq(userSessions.userId, userId));
+  }
+
+  async updateSessionActivity(sessionId: string): Promise<void> {
+    await db.update(userSessions)
+      .set({
+        lastActiveAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(userSessions.sessionId, sessionId));
+  }
+
+  async incrementTokenVersion(userId: number, sessionId: string): Promise<number> {
+    const session = await db.select().from(userSessions)
+      .where(
+        and(
+          eq(userSessions.userId, userId),
+          eq(userSessions.sessionId, sessionId)
+        )
+      ).limit(1);
+    
+    if (!session[0]) {
+      throw new Error("Session not found");
+    }
+    
+    const newVersion = (session[0].tokenVersion || 0) + 1;
+    
+    await db.update(userSessions)
+      .set({ 
+        tokenVersion: newVersion,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(userSessions.userId, userId),
+          eq(userSessions.sessionId, sessionId)
+        )
+      );
+    
+    return newVersion;
+  }
+
+  async updateLastLogin(userId: number): Promise<void> {
+    await db.update(users)
+      .set({ lastSignInAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  /**
+   * Audit log methods
+   */
+  async createAuditLog(logEntry: any): Promise<void> {
+    // Apply academy context if available
+    if (this.currentAcademyId && !logEntry.academyId) {
+      logEntry.academyId = this.currentAcademyId;
+    }
+
+    await db.insert(userAuditLogs).values(logEntry);
+  }
+
+  async getAuditLogsByUserId(userId: number, limit: number = 100): Promise<any[]> {
+    const conditions = [eq(userAuditLogs.userId, userId)];
+    
+    if (this.currentAcademyId) {
+      conditions.push(eq(userAuditLogs.academyId, this.currentAcademyId));
+    }
+    
+    return await db.select()
+      .from(userAuditLogs)
+      .where(and(...conditions))
+      .orderBy(desc(userAuditLogs.createdAt))
+      .limit(limit);
+  }
+
+  async getRecentAuditLogs(limit: number = 100): Promise<any[]> {
+    const conditions = [];
+    
+    if (this.currentAcademyId) {
+      conditions.push(eq(userAuditLogs.academyId, this.currentAcademyId));
+    }
+    
+    if (conditions.length === 0) {
+      return await db.select()
+        .from(userAuditLogs)
+        .orderBy(desc(userAuditLogs.createdAt))
+        .limit(limit);
+    }
+    
+    return await db.select()
+      .from(userAuditLogs)
+      .where(and(...conditions))
+      .orderBy(desc(userAuditLogs.createdAt))
+      .limit(limit);
+  }
+
+  async getSecurityAuditLogs(limit: number = 100): Promise<any[]> {
+    const securityActions = ['login', 'login_failed', 'logout', 'password_changed', 'password_reset'];
+    const conditions = securityActions.map(action => eq(userAuditLogs.action, action));
+    
+    let query = db.select()
+      .from(userAuditLogs)
+      .where(or(...conditions));
+    
+    if (this.currentAcademyId) {
+      query = query.where(eq(userAuditLogs.academyId, this.currentAcademyId));
+    }
+    
+    return await query
+      .orderBy(desc(userAuditLogs.createdAt))
+      .limit(limit);
   }
 }
 

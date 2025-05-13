@@ -127,8 +127,8 @@ export async function auditFailedLogin(
   await createAuditLog(storage, {
     action: 'login_failed',
     details: `Failed login attempt for username: ${username}. Reason: ${reason}`,
-    ipAddress: res.locals.ipAddress || getClientIp(req),
-    userAgent: res.locals.userAgent || req.headers['user-agent']
+    ipAddress: req.res?.locals.ipAddress || getClientIp(req),
+    userAgent: req.res?.locals.userAgent || req.headers['user-agent']
   });
 }
 
