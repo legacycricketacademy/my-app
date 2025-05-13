@@ -674,6 +674,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Import functions from our direct API module
           const { signUpWithEmail } = await import('@/lib/firebase-direct');
           
+          // Special debugging for the problematic email
+          if (registerData.email === "haumankind@chapsmail.com") {
+            console.log("📢 SPECIAL DEBUG for haumankind@chapsmail.com:");
+            console.log("- Attempting registration with direct API");
+            console.log("- Password length:", registerData.password.length);
+            console.log("- Full name:", registerData.fullName);
+            console.log("- Username:", registerData.username);
+          }
+          
           console.log("Attempting direct API signup for:", registerData.email);
           
           // Create user with direct API call
@@ -695,9 +704,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Error details:", {
             message: error.message,
             code: error.code,
-            stack: error.stack,
-            fullError: JSON.stringify(error)
+            stack: error.stack
           });
+          
+          // Special debug for problematic email
+          if (registerData.email === "haumankind@chapsmail.com") {
+            console.log("📢 SPECIAL DEBUG for haumankind@chapsmail.com - DIRECT API ERROR:");
+            console.log("- Error message:", error.message);
+            console.log("- Error code:", error.code);
+            console.log("- Original error:", error.originalError ? JSON.stringify(error.originalError) : "none");
+            
+            // Try to identify if it's a network issue, configuration issue, or Firebase API issue
+            if (error.message?.includes("network") || error.message?.includes("connect")) {
+              console.log("👉 Appears to be a NETWORK issue");
+            } else if (error.code?.includes("configuration") || error.message?.includes("configuration")) {
+              console.log("👉 Appears to be a CONFIGURATION issue");
+            } else if (error.message?.includes("EMAIL_EXISTS")) {
+              console.log("👉 Email already exists in Firebase");
+            }
+          }
           
           // Fall back to original method if direct API fails
           try {
@@ -723,8 +748,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error("Firebase user creation error:", error);
             console.error("SDK error details:", {
               code: sdkError.code,
-              message: sdkError.message
+              message: sdkError.message,
+              stack: sdkError.stack
             });
+            
+            // Special debug for problematic email
+            if (registerData.email === "haumankind@chapsmail.com") {
+              console.log("📢 SPECIAL DEBUG for haumankind@chapsmail.com - SDK ERROR:");
+              console.log("- SDK Error message:", sdkError.message);
+              console.log("- SDK Error code:", sdkError.code);
+              console.log("- Previous direct API error:", error?.message);
+              
+              // Try to identify if it's a network issue, configuration issue, or Firebase API issue
+              if (sdkError.message?.includes("network") || sdkError.code === "auth/network-request-failed") {
+                console.log("👉 SDK Error: NETWORK issue");
+              } else if (sdkError.code === "auth/configuration-not-found") {
+                console.log("👉 SDK Error: CONFIGURATION issue");
+              } else if (sdkError.code === "auth/email-already-in-use") {
+                console.log("👉 SDK Error: Email already exists in Firebase");
+              }
+            }
             
             // Use our helper to get a user-friendly error message
             const errorMessage = getFirebaseErrorMessage(sdkError) || getFirebaseErrorMessage(error);
