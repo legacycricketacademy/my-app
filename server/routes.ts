@@ -707,23 +707,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
     `);
   });
   
-  // Create a specialized debug endpoint that will let us see React errors in the browser
+  // Create a simpler diagnostic page directly in the response rather than reading from a file
   app.get('/react-diagnostic', (req, res) => {
-    // Read the diagnostic.html file and serve it directly
-    const fs = require('fs');
-    const path = require('path');
-    
-    const diagnosticPath = path.join(process.cwd(), 'client', 'src', 'diagnostic.html');
-    
-    fs.readFile(diagnosticPath, 'utf8', (err, data) => {
-      if (err) {
-        console.error('Error reading diagnostic file:', err);
-        return res.status(500).send('Error loading diagnostic tool');
-      }
-      
-      // Serve the HTML content directly
-      res.send(data);
-    });
+    // Send an HTML page with React diagnostic content directly
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>React Error Diagnostic</title>
+        <style>
+          body {
+            font-family: system-ui, sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+          }
+          .container {
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          h1 {
+            color: #2563eb;
+          }
+          pre {
+            background-color: #f1f5f9;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+          }
+          .error {
+            color: #ef4444;
+            border-left: 4px solid #ef4444;
+            padding-left: 15px;
+          }
+          .success {
+            color: #10b981;
+            border-left: 4px solid #10b981;
+            padding-left: 15px;
+          }
+          button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+          }
+          button:hover {
+            background-color: #1d4ed8;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>React Error Diagnostic</h1>
+          <p>This tool helps diagnose React-related issues in the application.</p>
+          
+          <div id="errors"></div>
+          
+          <h2>Browser Information</h2>
+          <pre id="browser-info">Loading browser information...</pre>
+          
+          <h2>Test Simple React Setup</h2>
+          <button id="test-react-button">Test Basic React</button>
+          <div id="react-test-container"></div>
+
+          <h2>Status</h2>
+          <div id="status"></div>
+          
+          <script>
+            // Display browser information
+            const browserInfoDiv = document.getElementById('browser-info');
+            browserInfoDiv.textContent = \`
+User Agent: \${navigator.userAgent}
+Platform: \${navigator.platform}
+Screen: \${window.screen.width}x\${window.screen.height}
+Window Size: \${window.innerWidth}x\${window.innerHeight}
+\`;
+            
+            // Log global errors
+            window.addEventListener('error', function(event) {
+              const errorDiv = document.getElementById('errors');
+              const errorMsg = document.createElement('div');
+              errorMsg.className = 'error';
+              errorMsg.innerHTML = \`
+                <h3>JavaScript Error:</h3>
+                <p><strong>Message:</strong> \${event.message}</p>
+                <p><strong>Source:</strong> \${event.filename}</p>
+                <p><strong>Line:</strong> \${event.lineno}, Column: \${event.colno}</p>
+                <pre>\${event.error ? event.error.stack : 'No stack trace available'}</pre>
+              \`;
+              errorDiv.appendChild(errorMsg);
+              
+              // Prevent the browser's default error handler
+              event.preventDefault();
+            });
+            
+            // Test button
+            document.getElementById('test-react-button').addEventListener('click', function() {
+              const status = document.getElementById('status');
+              
+              try {
+                // See if React is defined in the global scope
+                status.innerHTML = '<div class="success">Testing React availability...</div>';
+                
+                if (typeof React === 'undefined') {
+                  status.innerHTML += '<div class="error">React is not defined in the global scope.</div>';
+                  
+                  // Try to load React from a CDN
+                  status.innerHTML += '<div class="success">Attempting to load React from CDN...</div>';
+                  
+                  const reactScript = document.createElement('script');
+                  reactScript.src = 'https://unpkg.com/react@18/umd/react.development.js';
+                  reactScript.crossOrigin = '';
+                  
+                  const reactDomScript = document.createElement('script');
+                  reactDomScript.src = 'https://unpkg.com/react-dom@18/umd/react-dom.development.js';
+                  reactDomScript.crossOrigin = '';
+                  
+                  document.body.appendChild(reactScript);
+                  document.body.appendChild(reactDomScript);
+                  
+                  status.innerHTML += '<div class="success">React scripts loaded. Please try the test again.</div>';
+                } else {
+                  status.innerHTML += '<div class="success">React is already loaded in the global scope.</div>';
+                  
+                  if (typeof ReactDOM === 'undefined') {
+                    status.innerHTML += '<div class="error">ReactDOM is not defined.</div>';
+                  } else {
+                    status.innerHTML += '<div class="success">ReactDOM is available.</div>';
+                    
+                    // Try to use React
+                    const testDiv = document.getElementById('react-test-container');
+                    testDiv.innerHTML = '';
+                    
+                    const element = React.createElement('div', null, 'Simple React Component Works!');
+                    ReactDOM.render(element, testDiv);
+                    
+                    status.innerHTML += '<div class="success">Successfully rendered a React component!</div>';
+                  }
+                }
+              } catch (err) {
+                status.innerHTML += \`<div class="error">Error during React test: \${err.message}</div>\`;
+                console.error('React test error:', err);
+              }
+            });
+          </script>
+        </div>
+      </body>
+      </html>
+    `);
   });
   
   // Simple test endpoint to check connectivity
