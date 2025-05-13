@@ -1,6 +1,30 @@
+// Use globals from CDN first, fall back to imports if needed
+// @ts-ignore - Using globals from CDN
+const ReactFromCDN = window.React;
+// @ts-ignore - Using globals from CDN
+const ReactDOMFromCDN = window.ReactDOM;
+
+// Fallback imports - will be used if CDN didn't load
+import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App";
-import MinimalApp from "./MinimalApp";
+
+// Log the React source we're using
+console.log("React available:", 
+  ReactFromCDN ? "Yes (from CDN)" : 
+  typeof React !== 'undefined' ? "Yes (from import)" : "No");
+
+console.log("ReactDOM available:", 
+  ReactDOMFromCDN ? "Yes (from CDN)" : 
+  typeof createRoot !== 'undefined' ? "Yes (from import)" : "No");
+
+// Use the first available version of each dependency
+const ReactImpl = ReactFromCDN || React;
+const createRootImpl = 
+  ReactDOMFromCDN?.createRoot || 
+  createRoot || 
+  null;
+
+// Import minimal app only to keep dependencies simple
 import "./index.css";
 
 // Enhanced error logging for debugging
@@ -62,7 +86,7 @@ function setViewportForMobile() {
 // Call viewport adjustment
 setViewportForMobile();
 
-// Load our minimal React app without ANY dependencies
+// Load our minimal React app without complex dependencies
 import MinimalReactApp from './MinimalReactApp';
 const rootElement = document.getElementById("root");
 
@@ -71,17 +95,54 @@ if (!rootElement) {
 } else {
   try {
     console.log("Attempting to render React app...");
-    createRoot(rootElement).render(<MinimalReactApp />);
+    
+    // Try using CDN version first with modern createRoot method
+    if (ReactDOMFromCDN?.createRoot) {
+      console.log("Using ReactDOM.createRoot from CDN");
+      ReactDOMFromCDN.createRoot(rootElement).render(
+        ReactFromCDN.createElement(MinimalReactApp)
+      );
+    }
+    // Next try using the imported createRoot method
+    else if (createRootImpl) {
+      console.log("Using createRoot from import");
+      createRootImpl(rootElement).render(
+        ReactImpl.createElement(MinimalReactApp)
+      );
+    }
+    // Last resort: try the legacy render method if available
+    else if (ReactDOMFromCDN?.render) {
+      console.log("Using legacy ReactDOM.render from CDN");
+      ReactDOMFromCDN.render(
+        ReactFromCDN.createElement(MinimalReactApp),
+        rootElement
+      );
+    }
+    // If all methods fail, we have no way to render React
+    else {
+      throw new Error("No React rendering method available");
+    }
+    
     console.log("React rendering completed");
   } catch (error) {
     console.error("Error rendering React app:", error);
     
     // If React rendering fails, display a fallback message directly in the DOM
     rootElement.innerHTML = `
-      <div style="padding: 20px; font-family: sans-serif;">
-        <h1 style="color: #e53e3e;">React Rendering Error</h1>
-        <p>There was an error rendering the React application.</p>
-        <pre style="background: #f7fafc; padding: 15px; border-radius: 5px; overflow: auto;">${error instanceof Error ? error.message : String(error)}</pre>
+      <div style="padding: 20px; font-family: system-ui, sans-serif;">
+        <h1 style="color: #e53e3e; font-size: 24px; margin-bottom: 16px;">React Rendering Error</h1>
+        <p style="margin-bottom: 16px;">There was an error rendering the React application.</p>
+        <div style="background: #f7fafc; padding: 15px; border-radius: 5px; overflow: auto; font-family: monospace;">
+          ${error instanceof Error ? error.message : String(error)}
+        </div>
+        <div style="margin-top: 20px;">
+          <p>Try these troubleshooting options:</p>
+          <ul style="margin-top: 8px; margin-left: 20px;">
+            <li><a href="/direct-react-test" style="color: #3182ce;">Visit Direct React Test Page</a></li>
+            <li><a href="/diagnostic" style="color: #3182ce;">View System Diagnostics</a></li>
+            <li><a href="#" onclick="window.location.reload(); return false;" style="color: #3182ce;">Refresh the page</a></li>
+          </ul>
+        </div>
       </div>
     `;
   }
