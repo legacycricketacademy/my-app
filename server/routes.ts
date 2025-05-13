@@ -851,10 +851,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (email) {
             try {
               // Generate and send the pending approval email to coach
-              const coachPendingEmail = generateCoachPendingApprovalEmail(
-                fullName,
-                "Legacy Cricket Academy" // Default if no academy specified
-              );
+              const coachPendingEmail = { 
+                text: `Hello ${fullName}, your coach registration at Legacy Cricket Academy is pending approval.`,
+                html: `<p>Hello ${fullName},</p><p>Your coach registration at Legacy Cricket Academy is pending approval.</p>`
+              };
               
               const emailSent = await sendEmail({
                 to: email,
@@ -1135,7 +1135,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Update last sign-in info
-      await storage.updateUserLastSignIn(user.id, req.ip);
+      await storage.updateUser(user.id, {
+        lastSignInAt: new Date(),
+        lastSignInIp: req.ip
+      });
       
       // Generate JWT token
       const token = generateToken({
