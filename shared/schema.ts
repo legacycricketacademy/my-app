@@ -250,15 +250,39 @@ export const adminInvitations = pgTable("admin_invitations", {
 });
 
 // User Action Audit Logs
+// User sessions table for persistent sessions
+export const userSessions = pgTable("user_sessions", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull().unique(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  isActive: boolean("is_active").default(true),
+  tokenVersion: integer("token_version").default(1),
+  expiresAt: timestamp("expires_at").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  lastActiveAt: timestamp("last_active_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Enhanced audit logs with more detailed tracking
 export const userAuditLogs = pgTable("user_audit_logs", {
   id: serial("id").primaryKey(),
   academyId: integer("academy_id").references(() => academies.id),
   userId: integer("user_id").references(() => users.id),
-  actionType: text("action_type").notNull(), // login, logout, register, update, delete, approve, reject, etc.
-  actionDetails: json("action_details"),
+  sessionId: text("session_id").references(() => userSessions.sessionId),
+  action: text("action").notNull(), // login, logout, register, update, delete, approve, reject, etc.
+  details: text("details"),
+  targetUserId: integer("target_user_id").references(() => users.id),
+  targetResourceId: integer("target_resource_id"),
+  targetResourceType: text("target_resource_type"),
+  apiEndpoint: text("api_endpoint"),
+  statusCode: integer("status_code"),
+  requestMethod: text("request_method"),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  extraData: json("extra_data"),
+  createdAt: timestamp("timestamp").defaultNow().notNull(),
 });
 
 // Define relationships
