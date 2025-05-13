@@ -590,7 +590,291 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Local authentication endpoints (Firebase bypass)
   
-  // Local register endpoint
+  // Unified register endpoint (main entry point for registration)
+  app.post("/api/register", async (req, res) => {
+    try {
+      const { username, password, email, fullName, role, phone, academyId } = req.body;
+      
+      console.log("Registration request received for:", email);
+      
+      if (!username || !password || !email || !fullName) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Missing required fields",
+          code: "validation_error"
+        });
+      }
+      
+      // Check if username already exists
+      const existingUserByUsername = await storage.getUserByUsername(username);
+      if (existingUserByUsername) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Username already exists",
+          code: "username_exists"
+        });
+      }
+      
+      // Check if email already exists
+      const existingUserByEmail = await storage.getUserByEmail(email);
+      if (existingUserByEmail) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Email already in use",
+          code: "email_exists"
+        });
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(password);
+      
+      // Determine the appropriate status based on role
+      let status = "active";
+      let isActive = true;
+      
+      // Set the appropriate status and activity flag based on role
+      if (role === "coach" || role === "admin") {
+        status = "pending";  // Coaches and admins need approval
+        isActive = false;    // Not active until approved
+      }
+      
+      // Create user in our database
+      const user = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        fullName,
+        role: role || "parent",
+        phone,
+        academyId: academyId || null,
+        isEmailVerified: false, 
+        status: status,
+        isActive: isActive,
+      });
+      
+      // Remove password before sending response
+      const { password: _, ...userWithoutPassword } = user;
+      
+      // Log user in
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login after registration failed:", err);
+          return res.status(200).json({
+            success: true,
+            message: "Registration successful, but auto-login failed. Please login manually.",
+            user: userWithoutPassword
+          });
+        }
+        
+        // Return success response with user data
+        return res.status(201).json({
+          success: true,
+          message: "Registration successful!",
+          user: userWithoutPassword
+        });
+      });
+      
+      // For coach registrations, notify administrators
+      if (role === 'coach') {
+        try {
+          // Find all admins to notify by querying the database directly
+          const adminsQuery = await db.query.users.findMany({
+            where: (users, { eq }) => eq(users.role, 'admin')
+          });
+          
+          if (adminsQuery && adminsQuery.length > 0) {
+            for (const admin of adminsQuery) {
+              if (admin.email) {
+                try {
+                  // For email approval notifications, only include user's name and role
+                  const emailContent = {
+                    text: `Hello ${admin.fullName || 'Admin'},\n\nA new coach (${fullName}) has registered and is awaiting your approval. Please login to the admin dashboard to review this request.\n\nThank you,\nCricket Academy Team`,
+                    html: `<p>Hello ${admin.fullName || 'Admin'},</p><p>A new coach (${fullName}) has registered and is awaiting your approval. Please login to the admin dashboard to review this request.</p><p>Thank you,<br>Cricket Academy Team</p>`
+                  };
+                  
+                  await sendEmail({
+                    to: admin.email,
+                    subject: "New Coach Registration Needs Approval",
+                    text: emailContent.text,
+                    html: emailContent.html
+                  });
+                  console.log(`Coach approval notification sent to admin ${admin.email}`);
+                } catch (emailError) {
+                  console.error(`Failed to send coach approval email to admin ${admin.email}:`, emailError);
+                }
+              }
+            }
+          }
+          
+          // Also notify the coach about pending approval
+          const coachEmail = {
+            text: `Hello ${fullName},\n\nThank you for registering as a coach with the Cricket Academy. Your account is pending administrator approval. You will be notified once your account has been approved.\n\nThank you,\nCricket Academy Team`,
+            html: `<p>Hello ${fullName},</p><p>Thank you for registering as a coach with the Cricket Academy. Your account is pending administrator approval. You will be notified once your account has been approved.</p><p>Thank you,<br>Cricket Academy Team</p>`
+          };
+          
+          await sendEmail({
+            to: email,
+            subject: "Your Coach Registration is Pending Approval",
+            text: coachEmail.text,
+            html: coachEmail.html
+          });
+        } catch (notifyError) {
+          console.error("Failed to notify about coach registration:", notifyError);
+        }
+      }
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Registration failed: " + (error.message || "Unknown error"),
+        code: error.code || "server_error"
+      });
+    }
+  });
+  
+  // Standard credentials registration endpoint (for mobile app integration)
+  app.post("/api/registerWithStandardCredentials", async (req, res) => {
+    try {
+      const { username, password, email, fullName, role, phone, academyId } = req.body;
+      
+      console.log("Standard credentials registration request for:", email);
+      
+      if (!username || !password || !email) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Missing required fields",
+          code: "validation_error"
+        });
+      }
+      
+      // Check if username already exists
+      const existingUserByUsername = await storage.getUserByUsername(username);
+      if (existingUserByUsername) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Username already exists",
+          code: "username_exists"
+        });
+      }
+      
+      // Check if email already exists
+      const existingUserByEmail = await storage.getUserByEmail(email);
+      if (existingUserByEmail) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Email already in use",
+          code: "email_exists"
+        });
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(password);
+      
+      // Determine the appropriate status based on role
+      let status = "active";
+      let isActive = true;
+      
+      // Set the appropriate status and activity flag based on role
+      if (role === "coach" || role === "admin") {
+        status = "pending";  // Coaches and admins need approval
+        isActive = false;    // Not active until approved
+      }
+      
+      // Create user in our database
+      const user = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        fullName: fullName || username, // Use username as fullName if not provided
+        role: role || "parent",
+        phone: phone || "",
+        academyId: academyId || null,
+        isEmailVerified: false, 
+        status: status,
+        isActive: isActive,
+      });
+      
+      // Remove password before sending response
+      const { password: _, ...userWithoutPassword } = user;
+      
+      // Log user in
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login after registration failed:", err);
+          return res.status(200).json({
+            success: true,
+            message: "Registration successful, but auto-login failed. Please login manually.",
+            user: userWithoutPassword
+          });
+        }
+        
+        // Return success response with user data
+        return res.status(201).json({
+          success: true,
+          message: "Registration successful!",
+          user: userWithoutPassword
+        });
+      });
+      
+      // For coach registrations, notify administrators
+      if (role === 'coach') {
+        try {
+          // Find all admins to notify by querying the database directly
+          const adminsQuery = await db.query.users.findMany({
+            where: (users, { eq }) => eq(users.role, 'admin')
+          });
+          
+          if (adminsQuery && adminsQuery.length > 0) {
+            for (const admin of adminsQuery) {
+              if (admin.email) {
+                try {
+                  // For email approval notifications, only include user's name and role
+                  const emailContent = {
+                    text: `Hello ${admin.fullName || 'Admin'},\n\nA new coach (${fullName || username}) has registered and is awaiting your approval. Please login to the admin dashboard to review this request.\n\nThank you,\nCricket Academy Team`,
+                    html: `<p>Hello ${admin.fullName || 'Admin'},</p><p>A new coach (${fullName || username}) has registered and is awaiting your approval. Please login to the admin dashboard to review this request.</p><p>Thank you,<br>Cricket Academy Team</p>`
+                  };
+                  
+                  await sendEmail({
+                    to: admin.email,
+                    subject: "New Coach Registration Needs Approval",
+                    text: emailContent.text,
+                    html: emailContent.html
+                  });
+                  console.log(`Coach approval notification sent to admin ${admin.email}`);
+                } catch (emailError) {
+                  console.error(`Failed to send coach approval email to admin ${admin.email}:`, emailError);
+                }
+              }
+            }
+          }
+          
+          // Also notify the coach about pending approval
+          const coachEmail = {
+            text: `Hello ${fullName || username},\n\nThank you for registering as a coach with the Cricket Academy. Your account is pending administrator approval. You will be notified once your account has been approved.\n\nThank you,\nCricket Academy Team`,
+            html: `<p>Hello ${fullName || username},</p><p>Thank you for registering as a coach with the Cricket Academy. Your account is pending administrator approval. You will be notified once your account has been approved.</p><p>Thank you,<br>Cricket Academy Team</p>`
+          };
+          
+          await sendEmail({
+            to: email,
+            subject: "Your Coach Registration is Pending Approval",
+            text: coachEmail.text,
+            html: coachEmail.html
+          });
+        } catch (notifyError) {
+          console.error("Failed to notify about coach registration:", notifyError);
+        }
+      }
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Registration failed: " + (error.message || "Unknown error"),
+        code: error.code || "server_error"
+      });
+    }
+  });
+  
+  // Local register endpoint (maintained for backward compatibility)
   app.post("/api/auth/local-register", async (req, res) => {
     try {
       const { username, password, email, fullName, role, phone, academyId } = req.body;
