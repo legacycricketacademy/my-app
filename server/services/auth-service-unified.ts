@@ -12,7 +12,7 @@
 import { Request, Response } from 'express';
 import { auth as firebaseAuth } from '../firebase-admin';
 import { DecodedIdToken } from 'firebase-admin/auth';
-import { IMultiTenantStorage } from '../multi-tenant-storage';
+import { IMultiTenantStorage } from './session-service';
 import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import { sendEmail } from '../email';

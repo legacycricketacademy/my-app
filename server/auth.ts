@@ -9,6 +9,24 @@ import { multiTenantStorage } from "./multi-tenant-storage";
 import { User as SelectUser, users, userAuditLogs } from "@shared/schema";
 import { db } from "@db";
 import { generateVerificationEmail, sendEmail } from "./email";
+import {
+  authenticate,
+  authorize,
+  generateSessionId,
+  createSessionTokens,
+  verifyAccessToken,
+  verifyRefreshToken,
+  refreshTokens,
+  setSessionCookies,
+  clearSessionCookies
+} from "./services/session-service";
+import {
+  createAuditLog,
+  auditSuccessfulLogin,
+  auditFailedLogin,
+  auditPasswordReset,
+  auditRegistration
+} from "./services/audit-service";
 
 // Define global types for token functions
 declare global {
@@ -26,12 +44,24 @@ declare global {
   }
 }
 import { eq, and } from "drizzle-orm";
+import jwt from "jsonwebtoken";
 
 declare global {
   namespace Express {
     interface User extends SelectUser {}
+    // Extend the Request interface to include user and academyId
+    interface Request {
+      user?: User;
+      academyId?: number;
+    }
   }
 }
+
+// JWT Secret configuration
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "cricket-academy-access-jwt-secret";
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "cricket-academy-refresh-jwt-secret";
+const JWT_ACCESS_EXPIRY = '15m';  // 15 minutes
+const JWT_REFRESH_EXPIRY = '30d'; // 30 days
 
 const scryptAsync = promisify(scrypt);
 
