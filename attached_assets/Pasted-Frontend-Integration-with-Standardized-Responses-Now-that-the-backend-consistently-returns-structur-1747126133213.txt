@@ -1,0 +1,1118 @@
+Frontend Integration with Standardized Responses
+
+Now that the backend consistently returns structured responses, the frontend should expect and gracefully handle this pattern across login, register, and protected routes.
+
+⸻
+
+🔧 Specifically:
+	1.	Update frontend API client (api-client.ts)
+	•	Parse all responses assuming this format:
+
+
+
+interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+}
+
+
+2.	Update useAuth.tsx hooks
+	•	Extract res.data.user for login/register
+	•	Show toast on res.message
+	•	Redirect on res.success
+3.	Update error states in UI
+	•	Handle !res.success with alerts/toasts
+	•	Show fallback if res.data is missing
+•	Example: "Invalid credentials" → toast.error(res.message)
+
+
+	4.	Test role-gated routes
+	•	Admin-only views
+	•	Coach approvals
+	•	Parent dashboards
+
+
+
+
+generated an updated api-client.ts with full support for standardized responses + a React example for login/register
+
+here’s a full setup for your api-client.ts with support for standardized API responses, plus a clean usage example for login and register in your frontend.
+
+1. client/src/lib/api-client.ts
+
+// client/src/lib/api-client.ts
+
+import axios from "axios";
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+  [key: string]: any;
+}
+
+export const api = axios.create({
+  baseURL: "/api",
+  withCredentials: true, // for cookie/session-based auth (optional)
+});
+
+export async function apiPost<T>(
+  url: string,
+  body: any
+): Promise<ApiResponse<T>> {
+  try {
+    const res = await api.post<ApiResponse<T>>(url, body);
+    return res.data;
+  } catch (err: any) {
+    return (
+      err?.response?.data ?? {
+        success: false,
+        message: "An unexpected error occurred",
+      }
+    );
+  }
+}
+
+export async function apiGet<T>(url: string): Promise<ApiResponse<T>> {
+  try {
+    const res = await api.get<ApiResponse<T>>(url);
+    return res.data;
+  } catch (err: any) {
+    return (
+      err?.response?.data ?? {
+        success: false,
+        message: "An unexpected error occurred",
+      }
+    );
+  }
+}
+
+
+2. useAuth.tsx Usage Example (Login)
+
+
+import { apiPost } from "@/lib/api-client";
+import { toast } from "react-hot-toast";
+import { User } from "@/types/user";
+
+export async function login(email: string, password: string) {
+  const res = await apiPost<{ user: User; token?: string }>(
+    "/auth/local-login",
+    { email, password }
+  );
+
+  if (res.success && res.data?.user) {
+    toast.success(res.message);
+    // Set auth state, store token if needed
+    return res.data.user;
+  } else {
+    toast.error(res.message || "Login failed");
+    return null;
+  }
+}
+
+
+3. Register Example
+
+export async function register(data: {
+  email: string;
+  password: string;
+  role: "parent" | "coach";
+}) {
+  const res = await apiPost<{ user: User }>("/auth/register-firebase", data);
+
+  if (res.success) {
+    toast.success(res.message);
+    return res.data?.user;
+  } else {
+    toast.error(res.message || "Registration failed");
+    return null;
+  }
+}
+
+
+ 4. Your Component Call
+
+<Button
+  onClick={async () => {
+    const user = await login(email, password);
+    if (user) navigate("/dashboard");
+  }}
+>
+  Login
+</Button>
+
+here’s a clean and secure implementation of a protected getCurrentUser() helper using your standardized /api/user endpoint. This will help you restore the user’s session on app reload, gate access to routes, and pre-fill user context.
+
+
+1. API Helper: getCurrentUser
+
+// client/src/lib/auth.ts
+import { apiGet } from "@/lib/api-client";
+import { User } from "@/types/user";
+import { ApiResponse } from "@/types/api";
+
+export async function getCurrentUser(): Promise<User | null> {
+  const res: ApiResponse<{ user: User }> = await apiGet("/user");
+
+  if (res.success && res.data?.user) {
+    return res.data.user;
+  } else {
+    console.warn("No active user session:", res.message);
+    return null;
+  }
+} 
+
+2. Hook: useAuth Initialization
+// client/src/context/auth-context.tsx
+import { getCurrentUser } from "@/lib/auth";
+import { createContext, useEffect, useState } from "react";
+
+const AuthContext = createContext({ user: null, loading: true });
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const current = await getCurrentUser();
+      setUser(current);
+      setLoading(false);
+    })();
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+3. Backend /api/user Endpoint (Confirm Standardized)
+
+
+
+res.status(200).json({
+  success: true,
+  message: "User fetched successfully",
+  data: { user },
+});
+
+
+ Here’s how to make your getCurrentUser() helper token-based instead of relying on cookie/session authentication — perfect for mobile clients, stateless APIs, or apps where Firebase JWTs are stored in localStorage.
+
+
+1. Update getCurrentUser() to Accept a Token
+
+// client/src/lib/auth.ts
+import { api } from "@/lib/api-client";
+import { User } from "@/types/user";
+import { ApiResponse } from "@/types/api";
+
+export async function getCurrentUser(token: string): Promise<User | null> {
+  try {
+    const res = await api.get<ApiResponse<{ user: User }>>("/user", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (res.data.success && res.data.data?.user) {
+      return res.data.data.user;
+    } else {
+      console.warn("User not authenticated:", res.data.message);
+      return null;
+    }
+  } catch (err) {
+    console.error("Failed to fetch user", err);
+    return null;
+  }
+}
+
+
+ 2. Store the Token After Login
+
+
+const res = await login(email, password); // returns { user, token }
+
+if (res?.token) {
+  localStorage.setItem("token", res.token);
+}
+
+3. On App Load: Restore Auth
+
+useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    getCurrentUser(token).then((user) => {
+      setUser(user);
+      setLoading(false);
+    });
+  } else {
+    setLoading(false);
+  }
+}, []);
+
+
+4. Backend Middleware: Accept Bearer Token
+
+
+Update your requireAuth middleware:
+
+const token = req.headers.authorization?.split(" ")[1];
+const decoded = jwt.verify(token, process.env.JWT_SECRET);
+req.user = decoded;
+
+
+
+⸻
+
+This enables full stateless token-based authentication, so your frontend can safely store the token (ideally in httpOnly cookie or secure storage on mobile), and your backend verifies each request.
+
+
+
+hat you’ve implemented token-based authentication, the next logical step is to add refresh token logic and auto-logout on expiry. This ensures:
+	•	🔒 Users aren’t logged out abruptly when the access token expires
+	•	✅ Your app stays secure and seamless for logged-in users
+	•	🔁 You maintain a smooth UX without forcing re-login too often
+
+
+Step-by-Step: Add Refresh Token Support
+
+🔐 1. Token Design
+	•	Access Token: Short-lived (e.g. 15 min), stored in memory or localStorage
+	•	Refresh Token: Long-lived (e.g. 7–30 days), stored in secure httpOnly cookie
+
+⸻
+
+🧠 2. Backend /refresh-token Endpoint
+
+// server/routes/auth.ts
+app.post("/api/auth/refresh-token", async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) return res.status(401).json({ success: false, message: "No refresh token." });
+
+  try {
+    const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const user = await db.users.findFirst({ where: { id: payload.userId } });
+
+    if (!user) throw new Error("User not found");
+
+    const newAccessToken = jwt.sign(
+      { userId: user.id, role: user.role, academyId: user.academyId },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    res.json({ success: true, token: newAccessToken });
+  } catch (err) {
+    res.status(403).json({ success: false, message: "Invalid refresh token." });
+  }
+});
+
+
+ 3. Set Refresh Token Cookie During Login
+
+res.cookie("refreshToken", refreshToken, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+});
+
+4. Frontend Auto-Refresh Logic
+
+auth.ts
+
+export async function refreshAccessToken(): Promise<string | null> {
+  try {
+    const res = await api.post<ApiResponse<{ token: string }>>("/auth/refresh-token");
+    if (res.data.success && res.data.data?.token) {
+      localStorage.setItem("token", res.data.data.token);
+      return res.data.data.token;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+5. Auto-Logout & Token Expiry Detection
+
+Use a timer or interceptor to:
+	•	Refresh token before expiry
+	•	Log out if refresh fails
+
+You can also use a setInterval or JWT decode to track expiry in the auth-context.tsx.
+
+here’s a full example of how to decode the JWT expiry, auto-refresh the access token, and auto-logout if refresh fails, all from the frontend using React context.
+
+1. Decode JWT Expiry in Frontend
+
+Install a lightweight decoder:
+
+npm install jwt-decode
+
+Then create a helper:
+
+// lib/jwt.ts
+import jwtDecode from "jwt-decode";
+
+export function getTokenExpiry(token: string): number | null {
+  try {
+    const decoded: any = jwtDecode(token);
+    return decoded.exp ? decoded.exp * 1000 : null; // milliseconds
+  } catch {
+    return null;
+  }
+}
+
+2. Auth Context: Auto Refresh on Expiry
+
+Update your AuthProvider:
+
+// context/auth-context.tsx
+import { createContext, useEffect, useState } from "react";
+import { getCurrentUser, refreshAccessToken } from "@/lib/auth";
+import { getTokenExpiry } from "@/lib/jwt";
+
+const AuthContext = createContext({ user: null, loading: true });
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function init() {
+      if (token) {
+        const user = await getCurrentUser(token);
+        if (user) setUser(user);
+      }
+      setLoading(false);
+    }
+    init();
+  }, [token]);
+
+  // 🔁 Auto-refresh before token expires
+  useEffect(() => {
+    if (!token) return;
+
+    const expiry = getTokenExpiry(token);
+    if (!expiry) return;
+
+    const now = Date.now();
+    const refreshTime = expiry - now - 60 * 1000; // refresh 1 min before expiry
+
+    const timeout = setTimeout(async () => {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        setToken(newToken);
+      } else {
+        // auto-logout
+        localStorage.removeItem("token");
+        setUser(null);
+      }
+    }, refreshTime);
+
+    return () => clearTimeout(timeout);
+  }, [token]);
+
+  return (
+    <AuthContext.Provider value={{ user, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+3. Summary
+	•	🎯 JWT expiry is decoded with jwt-decode
+	•	⏱ A timer refreshes the token ~1 min before expiration
+	•	❌ If refresh fails, user is automatically logged out
+	•	🔐 This gives a secure and smooth session management flow
+
+
+
+Great — here’s how to implement a smooth “Session Expired” fallback UI and auto-redirect to login when the user is logged out due to an expired or invalid token.
+
+
+ 1. Create SessionExpiredFallback Component
+
+// components/auth/SessionExpiredFallback.tsx
+
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+
+const SessionExpiredFallback = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    toast.error("Your session has expired. Please log in again.");
+    navigate("/auth/login", { replace: true });
+  }, []);
+
+  return null;
+};
+
+export default SessionExpiredFallback;
+
+
+
+ 2. Modify AuthProvider to Use This on Auto-Logout
+
+
+Update the token refresh failure handler:
+
+// inside AuthProvider useEffect (token refresh block)
+const newToken = await refreshAccessToken();
+if (newToken) {
+  setToken(newToken);
+} else {
+  // auto-logout + session expired UI
+  localStorage.removeItem("token");
+  setUser(null);
+  setSessionExpired(true); // new state flag
+}
+
+
+Add this state at the top:
+
+const [sessionExpired, setSessionExpired] = useState(false);
+
+
+3. Render Fallback Conditionally in Provider
+
+Wrap your app in a conditional return:
+
+
+if (sessionExpired) return <SessionExpiredFallback />;
+
+
+— here’s a toast-free, silent fallback version of SessionExpiredFallback for mobile apps or use cases where you want to auto-redirect without showing a pop-up (ideal when session expires quietly in the background).
+
+
+ Silent Fallback: SessionExpiredRedirect.tsx
+
+
+// components/auth/SessionExpiredRedirect.tsx
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+const SessionExpiredRedirect = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    navigate("/auth/login", { replace: true });
+  }, []);
+
+  return null;
+};
+
+export default SessionExpiredRedirect;
+
+
+How to Use It
+
+If you want to silently redirect after logout or token refresh failure:
+
+if (sessionExpired) return <SessionExpiredRedirect />;
+
+Or export both versions and decide dynamically based on app context:
+
+
+const isMobile = window.innerWidth < 768;
+
+return sessionExpired
+  ? isMobile
+    ? <SessionExpiredRedirect />
+    : <SessionExpiredFallback />
+  : children;
+
+This lets you:
+	•	Redirect silently on mobile or in-app environments
+	•	Keep toasts on web or desktop for visibility
+	•	Maintain control over UX depending on device or role
+
+
+
+Perfect — here’s a clean, centralized useSessionManager() React hook to manage:
+	•	✅ Token expiry detection
+	•	🔁 Auto-refresh
+	•	❌ Auto-logout on refresh failure
+	•	🔄 Session restore on reload
+	•	🔀 Dynamic fallback: toast-based or silent redirect
+
+
+
+
+
+1. useSessionManager.ts
+
+
+// hooks/useSessionManager.ts
+import { useEffect, useState } from "react";
+import jwtDecode from "jwt-decode";
+import { getCurrentUser, refreshAccessToken } from "@/lib/auth";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { User } from "@/types/user";
+
+export function useSessionManager() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const navigate = useNavigate();
+
+  // Decode expiry from JWT
+  const getTokenExpiry = (token: string): number | null => {
+    try {
+      const decoded: any = jwtDecode(token);
+      return decoded.exp ? decoded.exp * 1000 : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Initialize session from stored token
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    const init = async () => {
+      const user = await getCurrentUser(token);
+      if (user) {
+        setUser(user);
+        const expiry = getTokenExpiry(token);
+        if (expiry) {
+          const refreshDelay = expiry - Date.now() - 60 * 1000;
+          setTimeout(async () => {
+            const newToken = await refreshAccessToken();
+            if (newToken) {
+              localStorage.setItem("token", newToken);
+            } else {
+              localStorage.removeItem("token");
+              setUser(null);
+              setSessionExpired(true);
+            }
+          }, refreshDelay);
+        }
+      } else {
+        localStorage.removeItem("token");
+        setSessionExpired(true);
+      }
+
+      setLoading(false);
+    };
+
+    init();
+  }, []);
+
+  // Handle redirect if expired
+  useEffect(() => {
+    if (sessionExpired) {
+      const isMobile = window.innerWidth < 768;
+      if (!isMobile) toast.error("Session expired. Please log in again.");
+      navigate("/auth/login", { replace: true });
+    }
+  }, [sessionExpired, navigate]);
+
+  return { user, loading };
+}
+
+
+2. In Your Auth Context or Provider
+
+import { useSessionManager } from "@/hooks/useSessionManager";
+
+export const AuthProvider = ({ children }) => {
+  const { user, loading } = useSessionManager();
+
+  return (
+    <AuthContext.Provider value={{ user, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+
+What This Gives You
+	•	✅ One hook to handle session start, expiry, refresh, and recovery
+	•	✅ Auto-redirects based on token validity
+	•	✅ Works for both toast-based and silent fallback depending on device
+
+
+Awesome! Adding a grace period warning dialog before the session expires is a great user experience — it lets users stay logged in with a click rather than getting logged out unexpectedly.
+
+⸻
+
+✅ What This Feature Will Do:
+	•	⏱ Warn the user 1–2 minutes before token expiry
+	•	🙋 Show a dialog: “Your session is about to expire. Stay logged in?”
+	•	🔁 If the user confirms, it triggers a token refresh
+	•	❌ If they ignore or decline, they’ll be logged out automatically
+
+⸻
+
+
+
+1. Grace Dialog Component
+
+// components/auth/SessionExpiryDialog.tsx
+import { Dialog } from "@headlessui/react";
+import { useState } from "react";
+
+export default function SessionExpiryDialog({ onExtend, onExpire }) {
+  const [isOpen, setIsOpen] = useState(true);
+
+  const handleStay = () => {
+    setIsOpen(false);
+    onExtend();
+  };
+
+  const handleLogout = () => {
+    setIsOpen(false);
+    onExpire();
+  };
+
+  return (
+    <Dialog open={isOpen} onClose={handleLogout} className="relative z-50">
+      <div className="fixed inset-0 bg-black/40" />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <Dialog.Panel className="w-full max-w-sm rounded bg-white p-6 shadow-lg">
+          <Dialog.Title className="text-lg font-semibold">
+            Session Expiring Soon
+          </Dialog.Title>
+          <Dialog.Description className="text-sm text-gray-600 mt-2">
+            Your session will expire in 1 minute. Would you like to stay logged in?
+          </Dialog.Description>
+          <div className="mt-4 flex justify-end gap-2">
+            <button
+              onClick={handleLogout}
+              className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded"
+            >
+              Log Out
+            </button>
+            <button
+              onClick={handleStay}
+              className="px-3 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded"
+            >
+              Stay Logged In
+            </button>
+          </div>
+        </Dialog.Panel>
+      </div>
+    </Dialog>
+  );
+}
+
+
+2. Update useSessionManager() to Use Dialog
+
+Inside your token refresh timer logic:
+
+import SessionExpiryDialog from "@/components/auth/SessionExpiryDialog";
+
+const [showExpiryDialog, setShowExpiryDialog] = useState(false);
+
+...
+
+const refreshDelay = expiry - Date.now() - 2 * 60 * 1000; // 2 mins before expiry
+setTimeout(() => {
+  setShowExpiryDialog(true);
+}, refreshDelay);
+
+
+Then render it:
+
+{showExpiryDialog && (
+  <SessionExpiryDialog
+    onExtend={async () => {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        localStorage.setItem("token", newToken);
+        setShowExpiryDialog(false);
+      } else {
+        setUser(null);
+        localStorage.removeItem("token");
+        setSessionExpired(true);
+      }
+    }}
+    onExpire={() => {
+      setUser(null);
+      localStorage.removeItem("token");
+      setSessionExpired(true);
+    }}
+  />
+)}
+
+
+Benefits
+	•	🔐 Keeps users logged in securely with no surprise timeouts
+	•	✅ Feels polished and production-grade
+	•	📱 Works for both desktop and mobile
+
+
+
+ here’s the alternative version of the session expiry warning using a toast notification instead of a dialog, with a “Stay Logged In” button inside the toast itself.
+
+
+
+ 1. Session Expiry Toast UI
+
+We’ll use react-hot-toast’s custom toast:
+
+// hooks/useSessionManager.ts (inside your session expiry logic)
+
+import toast from "react-hot-toast";
+
+function showSessionExpiryToast(onExtend: () => void, onExpire: () => void) {
+  const toastId = toast(
+    (t) => (
+      <div className="flex flex-col">
+        <span className="font-medium">Your session will expire soon.</span>
+        <div className="mt-2 flex gap-2">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              onExtend();
+            }}
+            className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Stay Logged In
+          </button>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              onExpire();
+            }}
+            className="px-3 py-1 text-sm rounded bg-gray-200 hover:bg-gray-300"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    ),
+    {
+      id: "session-expiry",
+      duration: 1000 * 60, // auto-dismiss after 1 min
+      position: "top-center",
+    }
+  );
+}
+
+2. Add to useSessionManager()
+
+Replace your setTimeout(... setShowExpiryDialog) block with:
+
+const refreshDelay = expiry - Date.now() - 2 * 60 * 1000;
+
+setTimeout(() => {
+  showSessionExpiryToast(
+    async () => {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        localStorage.setItem("token", newToken);
+      } else {
+        localStorage.removeItem("token");
+        setUser(null);
+        setSessionExpired(true);
+      }
+    },
+    () => {
+      localStorage.removeItem("token");
+      setUser(null);
+      setSessionExpired(true);
+    }
+  );
+}, refreshDelay);
+
+
+Why This Works
+	•	✅ No modal/dialog — ideal for quick UI
+	•	🔁 Lets users stay logged in with one click
+	•	⏳ Toast auto-dismisses if ignored, triggering logout afterward
+
+
+
+Perfect — here’s how to auto-trigger logout if the toast is ignored within the warning window (e.g., 1 minute). This ensures the session ends if the user takes no action.
+
+⸻
+
+✅ Full Implementation: Toast with Auto-Expire
+
+We’ll:
+	•	Show the toast 2 minutes before token expiry
+	•	If the user doesn’t click anything, we’ll automatically log them out
+
+⸻
+
+✅ 1. Update showSessionExpiryToast Utility
+
+Add a timeout inside the function to trigger logout if no action is taken:
+
+
+function showSessionExpiryToast(onExtend: () => void, onExpire: () => void) {
+  const toastId = "session-expiry";
+
+  // Show toast
+  toast.custom(
+    (t) => (
+      <div className="flex flex-col px-4 py-3 bg-white rounded shadow w-80">
+        <span className="font-medium text-sm text-black">Your session will expire soon.</span>
+        <div className="mt-3 flex gap-2 justify-end">
+          <button
+            onClick={() => {
+              toast.dismiss(toastId);
+              onExtend();
+              clearTimeout(autoExpireTimeout);
+            }}
+            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Stay Logged In
+          </button>
+          <button
+            onClick={() => {
+              toast.dismiss(toastId);
+              onExpire();
+              clearTimeout(autoExpireTimeout);
+            }}
+            className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    ),
+    { id: toastId, duration: 1000 * 60 } // Show for 60 sec
+  );
+
+  // Auto-trigger logout after 60 seconds
+  const autoExpireTimeout = setTimeout(() => {
+    toast.dismiss(toastId);
+    onExpire();
+  }, 1000 * 60); // 60 sec fallback
+}
+
+
+
+2. Call in useSessionManager()
+
+No change needed — just make sure the same onExtend() and onExpire() logic is passed when showing the toast:
+
+setTimeout(() => {
+  showSessionExpiryToast(
+    async () => {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        localStorage.setItem("token", newToken);
+      } else {
+        localStorage.removeItem("token");
+        setUser(null);
+        setSessionExpired(true);
+      }
+    },
+    () => {
+      localStorage.removeItem("token");
+      setUser(null);
+      setSessionExpired(true);
+    }
+  );
+}, refreshDelay);
+
+
+Result
+	•	✅ User gets a clean, dismissible toast with options
+	•	🛑 If ignored, auto-logout triggers after 1 minute
+	•	🔁 Seamless refresh if they click “Stay Logged In”
+
+
+Great — let’s add a lastRefreshTime tracker in localStorage so you can:
+	•	🧠 Know when the user last refreshed their token
+	•	🔁 Use it to throttle refresh attempts (avoid spamming /refresh-token)
+	•	📊 Optionally log/visualize session behavior for admins
+
+
+
+1. Set lastRefreshTime After a Token Refresh
+
+Update your refreshAccessToken() function like this:
+
+// lib/auth.ts
+export async function refreshAccessToken(): Promise<string | null> {
+  try {
+    const res = await api.post<ApiResponse<{ token: string }>>("/auth/refresh-token");
+    if (res.data.success && res.data.data?.token) {
+      localStorage.setItem("token", res.data.data.token);
+      localStorage.setItem("lastRefreshTime", Date.now().toString());
+      return res.data.data.token;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+
+2. Use lastRefreshTime in useSessionManager()
+
+Before scheduling a refresh or showing the toast:
+
+const lastRefresh = Number(localStorage.getItem("lastRefreshTime") || "0");
+const now = Date.now();
+
+// Only refresh or warn if it's been > 10 min since last refresh
+if (now - lastRefresh > 10 * 60 * 1000) {
+  // Proceed with toast + auto-refresh
+  setTimeout(() => {
+    showSessionExpiryToast(...);
+  }, refreshDelay);
+}
+
+You can also use this in analytics or session logs:
+
+console.log("Last token refresh:", new Date(lastRefresh).toLocaleString());
+
+Optional: Clear It on Logout
+
+localStorage.removeItem("lastRefreshTime");
+
+Why This Is Useful
+	•	🔒 Prevents refresh abuse (rate-limiting logic)
+	•	📊 Can be used for admin dashboard stats (e.g. “User refreshed at 2:45 PM”)
+	•	⚙️ Useful for future session audit or tracking tools
+
+Here’s a full useSessionTracker() React hook that:
+
+✅ Tracks:
+	•	Session start time
+	•	Last token refresh time
+	•	Time until expiration
+	•	Remaining session duration
+	•	🔁 Refresh triggers
+	•	❌ Auto-logout handling
+	•	🧠 Optional callback hooks (onRefresh, onExpire)
+
+⸻
+
+✅ 1. useSessionTracker.ts
+
+// hooks/useSessionTracker.ts
+import { useEffect, useState } from "react";
+import jwtDecode from "jwt-decode";
+import { refreshAccessToken } from "@/lib/auth";
+
+export interface SessionTrackerOptions {
+  onRefresh?: () => void;
+  onExpire?: () => void;
+  refreshThresholdMinutes?: number; // default: 2
+}
+
+export function useSessionTracker({
+  onRefresh,
+  onExpire,
+  refreshThresholdMinutes = 2,
+}: SessionTrackerOptions = {}) {
+  const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  // Decode token and calculate timings
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const decoded: any = jwtDecode(token);
+      const exp = decoded.exp * 1000;
+      setExpiresAt(exp);
+      setSessionStartedAt(Number(localStorage.getItem("sessionStartedAt")) || Date.now());
+      setLastRefreshTime(Number(localStorage.getItem("lastRefreshTime")) || Date.now());
+
+      // Save session start if not already set
+      if (!localStorage.getItem("sessionStartedAt")) {
+        localStorage.setItem("sessionStartedAt", Date.now().toString());
+      }
+
+      // Setup countdown timer
+      const interval = setInterval(() => {
+        const now = Date.now();
+        const timeRemaining = exp - now;
+        setTimeLeft(timeRemaining);
+
+        // Refresh if nearing expiry
+        if (timeRemaining <= refreshThresholdMinutes * 60 * 1000 && timeRemaining > 0) {
+          refreshAccessToken().then((newToken) => {
+            if (newToken) {
+              setLastRefreshTime(Date.now());
+              localStorage.setItem("lastRefreshTime", Date.now().toString());
+              if (onRefresh) onRefresh();
+            } else {
+              clearInterval(interval);
+              localStorage.removeItem("token");
+              localStorage.removeItem("sessionStartedAt");
+              localStorage.removeItem("lastRefreshTime");
+              if (onExpire) onExpire();
+            }
+          });
+        }
+
+        if (timeRemaining <= 0) {
+          clearInterval(interval);
+          localStorage.removeItem("token");
+          localStorage.removeItem("sessionStartedAt");
+          localStorage.removeItem("lastRefreshTime");
+          if (onExpire) onExpire();
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    } catch {
+      return;
+    }
+  }, []);
+
+  return {
+    sessionStartedAt,
+    lastRefreshTime,
+    expiresAt,
+    timeLeft, // in ms
+    timeLeftMinutes: timeLeft ? Math.floor(timeLeft / 60000) : null,
+  };
+}
+
+2. Example Usage in AuthProvider or Dashboard
+
+const {
+  sessionStartedAt,
+  lastRefreshTime,
+  expiresAt,
+  timeLeftMinutes,
+} = useSessionTracker({
+  onRefresh: () => toast.success("Session extended."),
+  onExpire: () => navigate("/auth/login"),
+});
+
+ 3. Optional UI Display
+
+{timeLeftMinutes !== null && (
+  <p className="text-xs text-gray-500">
+    Session ends in: {timeLeftMinutes} minute{timeLeftMinutes === 1 ? "" : "s"}
+  </p>
+)}
+
+This hook gives you real-time control, metrics, and session safety, and can easily be used for:
+	•	Admin tools
+	•	User session history
+	•	Auto-warnings
+	•	Graceful logout flows
+
+
+
