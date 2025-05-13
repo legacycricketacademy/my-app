@@ -506,6 +506,8 @@ async function processPlayersData(playersData: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve static files from the public directory for certain routes
+  app.use(express.static(path.join(import.meta.dirname, 'public')));
   // Set up the force-logout endpoint
   setupForceLogoutEndpoint(app);
   
