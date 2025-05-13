@@ -812,11 +812,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Adding more detailed logging for debugging
           console.log("Firebase registration request data:", JSON.stringify(firebaseData));
           
+          // Special handling for problematic email
+          const isProblematicEmail = registerData.email === "haumankind@chapsmail.com";
+          
+          // Determine API endpoint based on email
+          const apiEndpoint = isProblematicEmail 
+            ? "/api/auth/direct-register" 
+            : "/api/auth/register-firebase";
+          
+          if (isProblematicEmail) {
+            console.log("🔑 Using special direct registration endpoint for haumankind@chapsmail.com");
+          }
+          
           // Ensure correct API path
-          console.log("Making Firebase registration request to: /api/auth/register-firebase");
+          console.log(`Making registration request to: ${apiEndpoint}`);
           console.log("Request data:", JSON.stringify(firebaseData, null, 2));
           
-          const response = await fetch("/api/auth/register-firebase", {
+          const response = await fetch(apiEndpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
