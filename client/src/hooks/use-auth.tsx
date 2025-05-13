@@ -5,7 +5,9 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { insertUserSchema, User } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { getQueryFn, queryClient } from "../lib/queryClient";
+import { apiRequest, ApiResponse } from "../lib/api-client";
+import { AuthResponse } from "@shared/api-types";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/lib/firebase";
 import { auth } from "@/lib/firebase-init";
@@ -276,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       // Use apiRequest from api-client.ts for standardized handling
-      const response = await apiRequest<{ user: User }>('POST', "/api/login", credentials);
+      const response = await apiRequest<AuthResponse>('POST', "/api/login", credentials);
 
       // With standardized responses, we expect:
       // { success: true, message: string, data: { user: User } }
@@ -324,70 +326,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const validatedData = insertUserSchema.parse(data);
         console.log("Validation successful");
         
-        // Step 2: Make the API request
+        // Step 2: Make the API request using standardized API client
         console.log("Sending registration request to server...");
-        const res = await fetch("/api/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(validatedData),
-          credentials: "include",
-        });
+        const response = await apiRequest<{ user: User }>('POST', "/api/register", validatedData);
         
-        console.log(`Registration response status: ${res.status}`);
+        // With standardized responses, we expect:
+        // { success: true, message: string, data: { user: User } }
+        console.log(`Registration response success: ${response.success}`);
         
-        // Step 3: Handle errors
-        if (!res.ok) {
-          console.log("Registration failed:", res.status, res.statusText);
-          
-          // Clone the response before reading
-          const clonedRes = res.clone();
-          let errorMessage = "Please check your information and try again.";
-          
-          try {
-            // Try to parse the error response
-            console.log("Parsing error response...");
-            const errorData = await clonedRes.json();
-            console.log("Error data:", errorData);
-            
-            if (res.status === 400) {
-              if (errorData.message?.includes("Username already exists")) {
-                errorMessage = "This username is already taken. Please choose a different username.";
-              } else if (errorData.message?.includes("Email already in use")) {
-                errorMessage = "An account with this email already exists. Please use a different email or try logging in.";
-              } else if (errorData.message?.includes("Phone number already registered")) {
-                errorMessage = "This phone number is already registered. Please use a different phone number.";
-              } else if (errorData.message) {
-                errorMessage = errorData.message;
-              }
-            } else if (res.status === 429) {
-              errorMessage = "Too many registration attempts. Please try again later.";
-            } else {
-              errorMessage = "We couldn't complete your registration at this time. Please try again later.";
-            }
-          } catch (e) {
-            // If JSON parsing fails, use generic error message
-            console.error("Failed to parse error response:", e);
-            
-            if (res.status === 400) {
-              errorMessage = "Please check your information and try again.";
-            } else if (res.status === 429) {
-              errorMessage = "Too many registration attempts. Please try again later.";
-            } else {
-              errorMessage = "We couldn't complete your registration at this time. Please try again later.";
-            }
-          }
-          
-          console.error("Registration error:", errorMessage);
-          throw new Error(errorMessage);
+        if (!response.success) {
+          console.log("Registration failed:", response.message);
+          throw new Error(response.message || "Registration failed. Please try again.");
         }
         
-        // Step 4: Return successful response
-        console.log("Registration successful, parsing user data...");
-        return await res.json();
+        // Return the user object from response data
+        console.log("Registration successful, returning user data...");
+        return response.data?.user;
       } catch (error: any) {
-        // Step 5: Handle validation errors
-        console.error("Registration error:", error);
-        
         // Handle Zod validation errors with user-friendly messages
         if (error.name === "ZodError") {
           console.log("Zod validation error:", error.errors);
@@ -410,15 +365,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error(errorMessage);
         }
         
-        // Step 6: Re-throw other errors
+        // For API errors, the message is already user-friendly from our standardized response
         throw error;
       }
     },
-    onSuccess: (response: any) => {
-      console.log("Registration response received:", response);
-      
-      // Handle the direct user object from backend (not wrapped in data property)
-      const user = response;
+    onSuccess: (user: User) => {
+      console.log("Registration successful, user data:", user);
       
       // Store user data in the React Query cache
       queryClient.setQueryData(["/api/user"], user);
