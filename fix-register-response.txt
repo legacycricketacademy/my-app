@@ -1,0 +1,33 @@
+1. Line 662-666: Replace with
+          return res.status(200).json(
+            createSuccessResponse(
+              { user: userWithoutPassword },
+              "Registration successful, but auto-login failed. Please login manually."
+            )
+          );
+
+2. Line 669-674: Replace with
+        // Return success response with user data in standardized format
+        return res.status(201).json(
+          createSuccessResponse(
+            { user: userWithoutPassword },
+            "Registration successful!"
+          )
+        );
+
+3. Line 954-958: Replace with
+          return res.status(200).json(
+            createSuccessResponse(
+              { user: userWithoutPassword },
+              "Registration successful, but auto-login failed. Please login manually."
+            )
+          );
+
+4. Line 962-966: Replace with
+        // Return success response with user data in standardized format
+        return res.status(201).json(
+          createSuccessResponse(
+            { user: userWithoutPassword },
+            "Registration successful!"
+          )
+        );
