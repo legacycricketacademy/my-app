@@ -38,6 +38,12 @@ import {
 import { hashPassword, comparePasswords } from "./auth";
 import { resendVerificationEmail } from "./services/auth-service";
 import { eq } from "drizzle-orm";
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  createAuthResponse,
+  createUnauthorizedResponse
+} from "./utils/api-response";
 
 // API prefix for routes
 const apiPrefix = "/api";
