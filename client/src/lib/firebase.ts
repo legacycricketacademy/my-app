@@ -7,7 +7,8 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  Auth
 } from "firebase/auth";
 import { useEffect, useState } from "react";
 
@@ -23,6 +24,13 @@ export function useFirebaseAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle case where auth is null (Firebase not initialized)
+    if (!auth) {
+      setCurrentUser(null);
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
@@ -31,17 +39,23 @@ export function useFirebaseAuth() {
     return unsubscribe;
   }, []);
 
+  // Helper function to check if auth is available
+  const checkAuth = (): Auth => {
+    if (!auth) {
+      console.warn("Firebase auth is not initialized, falling back to direct authentication");
+      throw new Error("Firebase auth is not available");
+    }
+    return auth;
+  };
+
   // Email/Password signup
   const signup = async (email: string, password: string, displayName: string) => {
     try {
       console.log("Firebase signup: Checking auth initialization");
-      if (!auth) {
-        console.error("Auth is not initialized:", auth);
-        throw new Error("Firebase auth is not initialized");
-      }
+      const authInstance = checkAuth();
       
       console.log("Firebase signup: Attempting to create user with email", email);
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
       console.log("Firebase signup: User created successfully", userCredential.user.uid);
       
       // Update profile with display name
@@ -69,13 +83,10 @@ export function useFirebaseAuth() {
   const login = async (email: string, password: string) => {
     try {
       console.log("Firebase login: Checking auth initialization");
-      if (!auth) {
-        console.error("Auth is not initialized:", auth);
-        throw new Error("Firebase auth is not initialized");
-      }
+      const authInstance = checkAuth();
       
       console.log("Firebase login: Attempting to sign in with email", email);
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(authInstance, email, password);
       console.log("Firebase login: User signed in successfully", userCredential.user.uid);
       return userCredential.user;
     } catch (error: any) {
@@ -92,30 +103,39 @@ export function useFirebaseAuth() {
   // Google sign-in
   const signInWithGoogle = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      const authInstance = checkAuth();
+      const result = await signInWithPopup(authInstance, googleProvider);
       return result.user;
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error("Google sign-in error:", error);
+      throw error;
     }
   };
 
   // Password reset
   const resetPassword = async (email: string) => {
     try {
-      await sendPasswordResetEmail(auth, email);
+      const authInstance = checkAuth();
+      await sendPasswordResetEmail(authInstance, email);
       return true;
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error("Password reset error:", error);
+      throw error;
     }
   };
 
   // Logout
   const logout = async () => {
     try {
+      if (!auth) {
+        console.warn("No active Firebase session to log out from");
+        return true;
+      }
       await signOut(auth);
       return true;
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error("Logout error:", error);
+      throw error;
     }
   };
 
