@@ -185,6 +185,21 @@ export async function registerFirebaseUser(
   const maskedEmail = maskEmail(input.email);
   console.log(`Starting Firebase registration for: ${input.username}, ${maskedEmail}`);
   
+  // Special debugging for problematic email
+  const isProblematicEmail = input.email === "haumankind@chapsmail.com";
+  if (isProblematicEmail) {
+    console.log("🔍 SERVER SIDE: Special debugging for haumankind@chapsmail.com");
+    console.log("- Input data:", {
+      username: input.username,
+      email: input.email,
+      fullName: input.fullName,
+      role: input.role,
+      hasIdToken: !!input.idToken,
+      hasFirebaseUid: !!input.firebaseUid,
+      academyId: input.academyId
+    });
+  }
+  
   // Get Firebase UID - either from token verification or direct input
   let firebaseUid: string;
   
@@ -192,24 +207,74 @@ export async function registerFirebaseUser(
     // Verify Firebase token if provided
     try {
       console.log("Verifying Firebase ID token...");
+      
+      if (isProblematicEmail) {
+        console.log("🔍 Attempting to verify Firebase token for haumankind@chapsmail.com");
+      }
+      
       const decodedToken = await verifyFirebaseToken(input.idToken as string);
       
       if (!decodedToken || !decodedToken.uid) {
+        if (isProblematicEmail) {
+          console.log("🔍 Token verification returned empty or invalid result:", decodedToken);
+        }
         throw new InvalidTokenError("Invalid or missing Firebase UID in token");
       }
       
       firebaseUid = decodedToken.uid;
+      
+      if (isProblematicEmail) {
+        console.log("🔍 Firebase token verified successfully for haumankind@chapsmail.com");
+        console.log("- Decoded token data:", {
+          uid: decodedToken.uid,
+          email: decodedToken.email,
+          emailVerified: decodedToken.email_verified,
+          name: decodedToken.name,
+          provider: decodedToken.firebase?.sign_in_provider
+        });
+      }
+      
       console.log(`Firebase token verified successfully for UID: ${firebaseUid}`);
     } catch (error) {
       console.error("Firebase token verification failed:", error);
+      
+      if (isProblematicEmail) {
+        console.log("🔍 Token verification FAILED for haumankind@chapsmail.com");
+        console.log("- Error details:", {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          code: error.code,
+          internal: JSON.stringify(error)
+        });
+      }
+      
       throw new InvalidTokenError("Failed to verify Firebase authentication token");
     }
   } else if (input.firebaseUid) {
     // Use directly provided Firebase UID
     firebaseUid = input.firebaseUid;
     console.log(`Using directly provided Firebase UID: ${firebaseUid}`);
+    
+    if (isProblematicEmail) {
+      console.log("🔍 Using DIRECT Firebase UID for haumankind@chapsmail.com");
+      console.log("- Firebase UID:", firebaseUid);
+      
+      // Validate the UID format to catch obvious issues
+      if (!firebaseUid || firebaseUid.length < 20) {
+        console.log("⚠️ WARNING: Firebase UID appears to be invalid (too short)");
+      } else if (!/^[a-zA-Z0-9]+$/.test(firebaseUid)) {
+        console.log("⚠️ WARNING: Firebase UID contains non-alphanumeric characters");
+      } else {
+        console.log("✅ Firebase UID format appears valid");
+      }
+    }
   } else {
     // This should never happen due to the earlier validation
+    if (isProblematicEmail) {
+      console.log("🔍 CRITICAL ERROR: No Firebase authentication for haumankind@chapsmail.com");
+      console.log("- No idToken or firebaseUid provided");
+    }
     throw new ValidationError("Firebase authentication information is missing");
   }
   
