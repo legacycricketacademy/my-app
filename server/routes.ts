@@ -826,11 +826,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (admin.email) {
               try {
                 // Generate and send the approval request email
-                const coachApprovalEmail = generateAdminCoachApprovalRequestEmail(
-                  admin.username,
-                  fullName,
-                  email
-                );
+                const coachApprovalEmail = { 
+                  text: `Hello ${admin.username}, a new coach ${fullName} (${email}) has registered and needs approval.`,
+                  html: `<p>Hello ${admin.username},</p><p>A new coach ${fullName} (${email}) has registered and needs approval.</p>`
+                };
                 
                 const emailSent = await sendEmail({
                   to: admin.email,
@@ -1097,6 +1096,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Local login endpoint
+  // Standardized login endpoint that uses the expected response format
+  app.post("/api/standard-login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      console.log("Standardized login request for:", username);
+      
+      if (!username || !password) {
+        return res.status(400).json(
+          createErrorResponse("Username and password are required", "validation_error", 400)
+        );
+      }
+      
+      // Find the user by username
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user) {
+        return res.status(401).json(
+          createErrorResponse("Invalid username or password", "invalid_credentials", 401)
+        );
+      }
+      
+      // Check if user is active
+      if (!user.isActive) {
+        return res.status(403).json(
+          createErrorResponse("Account is not active. Please contact admin.", "account_inactive", 403)
+        );
+      }
+      
+      // Verify password
+      const isPasswordValid = await comparePasswords(password, user.password);
+      
+      if (!isPasswordValid) {
+        return res.status(401).json(
+          createErrorResponse("Invalid username or password", "invalid_credentials", 401)
+        );
+      }
+      
+      // Update last sign-in info
+      await storage.updateUserLastSignIn(user.id, req.ip);
+      
+      // Generate JWT token
+      const token = generateToken({
+        userId: user.id,
+        role: user.role,
+        academyId: user.academyId
+      }, 24 * 60 * 60 * 1000); // 24 hours
+      
+      // Remove sensitive data
+      const { password: _, ...userWithoutPassword } = user;
+      
+      return res.json(
+        createSuccessResponse(
+          { user: userWithoutPassword, token }, 
+          "Login successful"
+        )
+      );
+    } catch (error: any) {
+      console.error("Login error:", error);
+      return res.status(500).json(
+        createErrorResponse(error.message || "Login failed", "server_error", 500)
+      );
+    }
+  });
+  
   app.post("/api/auth/local-login", async (req, res) => {
     try {
       const { username, password } = req.body;
