@@ -304,7 +304,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return user;
     },
     onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
+      // Store user in standardized API response format
+      queryClient.setQueryData(["/api/user"], {
+        success: true,
+        message: "User data retrieved successfully",
+        data: { user }
+      });
       
       // Check if the coach/admin account is pending approval
       if ((user.role === 'coach' || user.role === 'admin') && 
@@ -390,8 +395,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: User) => {
       console.log("Registration successful, user data:", user);
       
-      // Store user data in the React Query cache
-      queryClient.setQueryData(["/api/user"], user);
+      // Store user data in the React Query cache with standardized format
+      queryClient.setQueryData(["/api/user"], {
+        success: true,
+        message: "User data retrieved successfully",
+        data: { user }
+      });
       
       // Check if the coach/admin account is pending approval
       if ((user.role === 'coach' || user.role === 'admin') && 
@@ -893,7 +902,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
+      // Store user data with standardized API response format
+      queryClient.setQueryData(["/api/user"], {
+        success: true,
+        message: "User data retrieved successfully",
+        data: { user }
+      });
       
       console.log("Registration success - user status:", user.status);
       
