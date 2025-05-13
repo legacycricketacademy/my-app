@@ -6,6 +6,10 @@
     <title>Legacy Cricket Academy</title>
     <meta name="description" content="Comprehensive cricket academy management system for player development, coaching workflows, and family engagement.">
     
+    <!-- Add React from CDN for reliable rendering -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
     <!-- PWA Support -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#4f46e5">
@@ -16,6 +20,8 @@
     <!-- Added console logger to debug React rendering issues -->
     <script>
       console.log("HTML document loading - Cricket Academy App");
+      console.log("React available from CDN:", typeof React !== 'undefined');
+      console.log("ReactDOM available from CDN:", typeof ReactDOM !== 'undefined');
       
       // Add global error handler
       window.addEventListener('error', function(event) {
@@ -100,6 +106,46 @@
           document.body.classList.add('loaded');
         }, 300);
       });
+    </script>
+    
+    <!-- Fallback content if main React app fails to load -->
+    <script>
+      // Set a timeout to check if React app has rendered properly
+      setTimeout(function() {
+        const rootEl = document.getElementById('root');
+        const loaderEl = document.getElementById('app-loader');
+        
+        // If the root element is empty after 5 seconds, the React app didn't render
+        if (rootEl && (!rootEl.innerHTML || rootEl.innerHTML.trim() === '')) {
+          console.log('React app did not render, showing fallback content');
+          
+          // Remove the loader
+          if (loaderEl) {
+            loaderEl.style.display = 'none';
+          }
+          
+          // Create a simple app without relying on the bundled version
+          rootEl.innerHTML = `
+            <div style="max-width: 800px; margin: 40px auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <h1 style="color: #4f46e5; margin-top: 0;">Legacy Cricket Academy</h1>
+              <p>We're experiencing technical difficulties with the main application.</p>
+              <p>You can still access these working endpoints:</p>
+              <ul>
+                <li><a href="/direct-react-test" style="color: #4f46e5;">Direct React Test Page</a></li>
+                <li><a href="/diagnostic" style="color: #4f46e5;">System Diagnostic Page</a></li>
+                <li><a href="/api/ping" style="color: #4f46e5;">API Health Check</a></li>
+              </ul>
+              <p>We're working to fix this issue as quickly as possible.</p>
+              <button id="refresh-btn" style="background-color: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: 500; cursor: pointer;">Refresh Page</button>
+            </div>
+          `;
+          
+          // Add refresh button functionality
+          document.getElementById('refresh-btn').addEventListener('click', function() {
+            window.location.reload();
+          });
+        }
+      }, 5000); // Wait 5 seconds to check if React rendered
     </script>
     
     <!-- PWA Service Worker is registered in main.tsx -->

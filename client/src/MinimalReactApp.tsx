@@ -1,4 +1,6 @@
-import React from 'react';
+// Use globally available React from CDN first, fall back to imported React
+// This ensures the app will work even if the module system has issues
+const React = window.React || require('react');
 
 // Super minimal React app with no dependencies at all
 export default function MinimalReactApp() {
