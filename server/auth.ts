@@ -96,10 +96,15 @@ export function createAuthMiddleware(storage: typeof multiTenantStorage = multiT
       return next();
     }
     
+    // Import response utilities for standardized responses
+    const { createUnauthorizedResponse } = require('./utils/api-response');
+    
     // Otherwise check JWT tokens
     const accessToken = req.cookies?.['access_token'];
     if (!accessToken) {
-      return res.status(401).json({ message: "Unauthorized - No token provided" });
+      return res.status(401).json(createUnauthorizedResponse(
+        "Unauthorized - No token provided"
+      ));
     }
     
     try {
@@ -123,10 +128,14 @@ export function createAuthMiddleware(storage: typeof multiTenantStorage = multiT
       // Check if token is expired
       if ((error as Error).name === 'TokenExpiredError') {
         // Could trigger refresh token flow here, but we'll handle that separately
-        return res.status(401).json({ message: "Token expired", code: "TOKEN_EXPIRED" });
+        return res.status(401).json(createUnauthorizedResponse(
+          "Token expired"
+        ));
       }
       
-      return res.status(401).json({ message: "Invalid token" });
+      return res.status(401).json(createUnauthorizedResponse(
+        "Invalid token"
+      ));
     }
   };
 }
