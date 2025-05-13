@@ -15,22 +15,70 @@ const BASE_URL = 'https://identitytoolkit.googleapis.com/v1/accounts';
 export async function signUpWithEmail(email: string, password: string, displayName: string) {
   try {
     console.log("Attempting direct REST API signup for:", email);
+
+    // Special debug for problematic email
+    if (email === "haumankind@chapsmail.com") {
+      console.log("💥 DIRECT API: Processing registration for haumankind@chapsmail.com");
+      console.log("- API Key:", FIREBASE_API_KEY ? FIREBASE_API_KEY.substring(0, 5) + "..." : "undefined");
+      console.log("- Password length:", password?.length);
+      console.log("- Display name:", displayName);
+    }
     
     // First create the account
+    const requestBody = {
+      email,
+      password,
+      returnSecureToken: true
+    };
+    
+    console.log("Direct API request to:", `${BASE_URL}:signUp?key=${FIREBASE_API_KEY ? FIREBASE_API_KEY.substring(0, 5) + "..." : "undefined"}`);
+    console.log("Request payload:", JSON.stringify(requestBody, null, 2));
+    
     const response = await fetch(`${BASE_URL}:signUp?key=${FIREBASE_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        email,
-        password,
-        returnSecureToken: true
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      // Special debug for problematic email
+      if (email === "haumankind@chapsmail.com") {
+        console.log("💥 DIRECT API ERROR: haumankind@chapsmail.com - Response not OK");
+        console.log("- Response status:", response.status);
+        console.log("- Response status text:", response.statusText);
+        
+        // Try to get the response body as text first
+        try {
+          const errorText = await response.text();
+          console.log("- Response body (text):", errorText);
+          // Try to parse it as JSON
+          try {
+            const errorJson = JSON.parse(errorText);
+            console.log("- Response body (parsed):", JSON.stringify(errorJson, null, 2));
+          } catch (jsonError) {
+            console.log("- Response is not valid JSON");
+          }
+        } catch (textError) {
+          console.log("- Could not get response as text:", textError);
+        }
+      }
+      
+      // Try to get error data
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (jsonError) {
+        console.error("Failed to parse error response as JSON:", jsonError);
+        
+        // Create a generic network error
+        const error = new Error(`Network error (${response.status}: ${response.statusText})`);
+        (error as any).code = "NETWORK_ERROR";
+        (error as any).httpStatus = response.status;
+        throw error;
+      }
+      
       console.error("Firebase REST signup error:", errorData);
       
       // Map Firebase error codes to more user-friendly messages
@@ -54,14 +102,18 @@ export async function signUpWithEmail(email: string, password: string, displayNa
         case 'TOO_MANY_ATTEMPTS_TRY_LATER':
           errorMessage = "We have blocked all requests from this device due to unusual activity. Try again later.";
           break;
+        case 'INVALID_PASSWORD':
+          errorMessage = "The password is invalid. Please check your password.";
+          break;
         default:
-          errorMessage = errorData.error?.message || 'Signup failed';
+          errorMessage = errorData.error?.message || `Signup failed (${response.status})`;
       }
       
       // Create an error with the right message and add the code for debugging
       const error = new Error(errorMessage);
       (error as any).code = errorCode;
       (error as any).originalError = errorData.error;
+      (error as any).httpStatus = response.status;
       
       throw error;
     }
@@ -99,16 +151,28 @@ export async function signInWithEmail(email: string, password: string) {
   try {
     console.log("Attempting direct REST API login for:", email);
     
+    // Special debug for problematic email
+    if (email === "haumankind@chapsmail.com") {
+      console.log("💥 DIRECT API SIGNIN: Processing login for haumankind@chapsmail.com");
+      console.log("- API Key:", FIREBASE_API_KEY ? FIREBASE_API_KEY.substring(0, 5) + "..." : "undefined");
+      console.log("- Password length:", password?.length);
+    }
+    
+    const requestBody = {
+      email,
+      password,
+      returnSecureToken: true
+    };
+    
+    console.log("Direct API signin request to:", 
+      `${BASE_URL}:signInWithPassword?key=${FIREBASE_API_KEY ? FIREBASE_API_KEY.substring(0, 5) + "..." : "undefined"}`);
+    
     const response = await fetch(`${BASE_URL}:signInWithPassword?key=${FIREBASE_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        email,
-        password,
-        returnSecureToken: true
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
