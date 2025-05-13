@@ -506,6 +506,10 @@ async function processPlayersData(playersData: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up Handlebars as the view engine
+  app.set('view engine', 'hbs');
+  app.set('views', path.join(import.meta.dirname, 'views'));
+  
   // Serve static files from the public directory for certain routes
   app.use(express.static(path.join(import.meta.dirname, 'public')));
   // Set up the force-logout endpoint
@@ -984,13 +988,18 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     `);
   });
   
-  // Redirect the root to our working standalone app
+  // Render the homepage using Handlebars
   app.get('/', (req, res) => {
-    res.redirect('/app');
+    res.render('index');
   });
   
-  // Add a separate page for testing registration
+  // Render the registration test page using Handlebars
   app.get('/debug-register', (req, res) => {
+    res.render('debug-register');
+  });
+  
+  // Keep the old HTML version as a backup
+  app.get('/debug-register-old', (req, res) => {
     res.send(`
       <!DOCTYPE html>
       <html lang="en">
