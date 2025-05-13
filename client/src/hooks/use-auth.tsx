@@ -431,7 +431,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
     },
-    onSuccess: (user: User) => {
+    onSuccess: (response: any) => {
+      console.log("Registration response received:", response);
+      
+      // Handle the direct user object from backend (not wrapped in data property)
+      const user = response;
+      
+      // Store user data in the React Query cache
       queryClient.setQueryData(["/api/user"], user);
       
       // Check if the coach/admin account is pending approval
@@ -450,9 +456,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onError: (error: Error) => {
+      console.error("Registration error:", error);
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: error.message || "Something went wrong during registration",
         variant: "destructive",
       });
     },
