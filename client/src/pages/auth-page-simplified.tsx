@@ -34,6 +34,10 @@ export default function AuthPageSimplified() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("login");
   
+  // Debug logging
+  console.log("Auth Page - User:", user);
+  console.log("Auth Page - IsLoading:", isLoading);
+  
   // Redirect to home if already logged in
   useEffect(() => {
     if (user) {
