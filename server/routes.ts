@@ -862,6 +862,112 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     `);
   });
   
+  // Create a page with inline React code for direct testing
+  app.get('/direct-react-test', (req, res) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Direct React Test</title>
+        <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+        <style>
+          body {
+            font-family: system-ui, sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+          }
+          .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          }
+          h1 {
+            color: #2563eb;
+          }
+          .info-box {
+            background-color: #dbeafe;
+            border: 1px solid #bfdbfe;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>Direct React Test Page</h1>
+          <p>This page loads React directly from CDN and tries to render a simple component.</p>
+          
+          <div id="react-root"></div>
+          
+          <script>
+            console.log('Script running - React available:', typeof React !== 'undefined');
+            console.log('ReactDOM available:', typeof ReactDOM !== 'undefined');
+            
+            // Simple React component using plain JS (no JSX)
+            function App() {
+              const [count, setCount] = React.useState(0);
+              
+              return React.createElement(
+                'div',
+                { className: 'info-box' },
+                React.createElement('h2', null, 'React Component'),
+                React.createElement('p', null, 'This component is rendered directly with React.'),
+                React.createElement('p', null, 'Current count: ' + count),
+                React.createElement(
+                  'button',
+                  { 
+                    onClick: () => setCount(count + 1),
+                    style: {
+                      padding: '8px 16px',
+                      backgroundColor: '#2563eb',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }
+                  },
+                  'Increment'
+                )
+              );
+            }
+            
+            try {
+              // Create root and render
+              const rootElement = document.getElementById('react-root');
+              const root = ReactDOM.createRoot(rootElement);
+              root.render(React.createElement(App));
+              
+              document.getElementById('react-root').insertAdjacentHTML(
+                'afterend',
+                '<div style="margin-top: 20px; padding: 15px; background-color: #d1fae5; border-radius: 4px;">' +
+                '<p style="color: #047857; margin: 0;"><strong>Success:</strong> React rendered correctly!</p>' +
+                '</div>'
+              );
+            } catch (error) {
+              console.error('Error rendering React:', error);
+              
+              document.getElementById('react-root').insertAdjacentHTML(
+                'afterend',
+                '<div style="margin-top: 20px; padding: 15px; background-color: #fee2e2; border-radius: 4px;">' +
+                '<p style="color: #b91c1c; margin: 0;"><strong>Error:</strong> ' + error.message + '</p>' +
+                '</div>'
+              );
+            }
+          </script>
+        </div>
+      </body>
+      </html>
+    `);
+  });
+  
   // Simple test endpoint to check connectivity
   app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
