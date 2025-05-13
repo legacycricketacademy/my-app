@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cricket Academy - Diagnostic Page</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f9fafb;
+      margin: 0;
+      padding: 0;
+      color: #111827;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    header {
+      background-color: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 1rem 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .header-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #4f46e5;
+    }
+    nav a {
+      color: #4b5563;
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-weight: 500;
+    }
+    nav a:hover {
+      color: #111827;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #111827;
+    }
+    h2 {
+      font-size: 1.5rem;
+      margin: 1.5rem 0 1rem 0;
+      color: #1f2937;
+    }
+    p {
+      color: #4b5563;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    .card {
+      background: white;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1.5rem;
+    }
+    .alert {
+      background-color: #fee2e2;
+      border-left: 4px solid #ef4444;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border-radius: 0.25rem;
+    }
+    .button {
+      display: inline-block;
+      background-color: #4f46e5;
+      color: white;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .button:hover {
+      background-color: #4338ca;
+    }
+    .info {
+      background-color: #f3f4f6;
+      padding: 1rem;
+      border-radius: 0.25rem;
+      margin-top: 1rem;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background-color: #f3f4f6;
+      padding: 0.2rem 0.4rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+    }
+    .diagnostic-info {
+      margin-top: 2rem;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 1rem;
+    }
+    #browser-info {
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-container">
+      <div class="logo">Cricket Academy</div>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/auth">Login</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h1>Diagnostic Test Page</h1>
+      <p>This is a standalone HTML page that doesn't rely on the React framework or authentication system. If you can see this page, then the basic web server and routing are working correctly.</p>
+      
+      <div class="alert">
+        <strong>Note:</strong> This is a diagnostic page used to troubleshoot rendering issues with the main application.
+      </div>
+      
+      <h2>Next Steps</h2>
+      <p>Now that we've confirmed this basic page works, we can use it to diagnose issues with the main application:</p>
+      <ul>
+        <li>Check if there are browser console errors</li>
+        <li>Verify Firebase configuration</li>
+        <li>Test individual React components</li>
+        <li>Fix authentication system issues</li>
+      </ul>
+      
+      <div class="info">
+        <strong>Server Status:</strong> If you're seeing this page, the Express server is running properly and serving static HTML content.
+      </div>
+    </div>
+    
+    <div class="card diagnostic-info">
+      <h2>System Information</h2>
+      <div id="browser-info"></div>
+      <div id="js-status">JavaScript is enabled and running correctly.</div>
+    </div>
+  </div>
+
+  <script>
+    // Basic JavaScript test to verify JS is running
+    document.addEventListener('DOMContentLoaded', function() {
+      const browserInfo = document.getElementById('browser-info');
+      if (browserInfo) {
+        browserInfo.innerHTML = `
+          <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+          <p><strong>Browser:</strong> ${navigator.appName}</p>
+          <p><strong>Platform:</strong> ${navigator.platform}</p>
+          <p><strong>Window Size:</strong> ${window.innerWidth}x${window.innerHeight}</p>
+          <p><strong>Date/Time:</strong> ${new Date().toLocaleString()}</p>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
