@@ -61,8 +61,11 @@ function setViewportForMobile() {
 // Call viewport adjustment
 setViewportForMobile();
 
-// Initialize application
-createRoot(document.getElementById("root")!).render(<App />);
+// Load either our normal app or the minimal test app
+// Comment out one of these lines to test
+// createRoot(document.getElementById("root")!).render(<App />);
+import MinimalApp from "./MinimalApp";
+createRoot(document.getElementById("root")!).render(<MinimalApp />);
 
 // Register service worker for PWA if in production
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
