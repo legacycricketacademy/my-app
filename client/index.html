@@ -13,6 +13,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Cricket Academy">
     
+    <!-- Added console logger to debug React rendering issues -->
+    <script>
+      console.log("HTML document loading - Cricket Academy App");
+      
+      // Add global error handler
+      window.addEventListener('error', function(event) {
+        console.error('Global error caught:', event.message, event.filename, event.lineno, event.error);
+      });
+    </script>
+    
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
