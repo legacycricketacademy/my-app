@@ -730,11 +730,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get all pending coach accounts that need admin approval
   app.get("/api/users/pending-coaches", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    // Import response utilities
+    const { createSuccessResponse, createErrorResponse, createUnauthorizedResponse, createForbiddenResponse } = await import('./utils/api-response');
+    
+    if (!req.isAuthenticated()) {
+      return res.status(401).json(createUnauthorizedResponse("You must be logged in to view pending coaches"));
+    }
     
     // Only allow admins and superadmins to view pending coaches
     if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
-      return res.status(403).json({ error: "Not authorized to view pending coaches" });
+      return res.status(403).json(createForbiddenResponse("Not authorized to view pending coaches"));
     }
     
     try {
@@ -753,27 +758,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return coachWithoutPassword;
       });
       
-      res.json(safeCoaches);
+      // Return standardized success response
+      res.json(createSuccessResponse(
+        safeCoaches,
+        "Pending coaches retrieved successfully"
+      ));
     } catch (error) {
       console.error("Error fetching pending coaches:", error);
-      res.status(500).json({ error: "Failed to fetch pending coaches" });
+      res.status(500).json(createErrorResponse(
+        "Failed to fetch pending coaches",
+        "fetch_error",
+        500
+      ));
     }
   });
   
   // Approve or reject a coach account
   app.patch("/api/users/:id/approval", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    // Import response utilities
+    const { createSuccessResponse, createErrorResponse, createUnauthorizedResponse, createForbiddenResponse, createNotFoundResponse } = await import('./utils/api-response');
+    
+    if (!req.isAuthenticated()) {
+      return res.status(401).json(createUnauthorizedResponse("You must be logged in to approve coaches"));
+    }
     
     // Only allow admins and superadmins to approve/reject coaches
     if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
-      return res.status(403).json({ error: "Not authorized to approve/reject coaches" });
+      return res.status(403).json(createForbiddenResponse("Not authorized to approve/reject coaches"));
     }
     
     const { id } = req.params;
     const { approved } = req.body;
     
     if (typeof approved !== 'boolean') {
-      return res.status(400).json({ error: "The 'approved' field must be a boolean" });
+      return res.status(400).json(createErrorResponse(
+        "The 'approved' field must be a boolean",
+        "validation_error",
+        400
+      ));
     }
     
     try {
@@ -783,11 +805,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (!userData) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json(createNotFoundResponse("User not found"));
       }
       
       if (userData.role !== 'coach') {
-        return res.status(400).json({ error: "This user is not a coach" });
+        return res.status(400).json(createErrorResponse(
+          "This user is not a coach",
+          "invalid_role",
+          400
+        ));
       }
       
       // Update the user status based on approval
@@ -855,10 +881,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Remove password from result
       const { password, ...userWithoutPassword } = updatedUser[0];
-      res.json(userWithoutPassword);
+      
+      // Return standardized success response
+      res.json(createSuccessResponse(
+        userWithoutPassword, 
+        approved ? "Coach approved successfully" : "Coach rejected successfully"
+      ));
     } catch (error) {
       console.error("Error updating coach approval status:", error);
-      res.status(500).json({ error: "Failed to update coach approval status" });
+      res.status(500).json(createErrorResponse(
+        "Failed to update coach approval status",
+        "approval_error",
+        500
+      ));
     }
   });
   
@@ -3700,30 +3735,36 @@ ${ACADEMY_NAME} Team
       
       // Handle existing user case (idempotent registration)
       if (!result.isNewUser) {
-        return res.status(200).json({
-          ...result.user,
-          message: "User already registered" 
-        });
+        return res.status(200).json(createSuccessResponse(
+          {
+            user: result.user,
+            emailSent: false
+          },
+          "User already registered"
+        ));
       }
       
       // Log user in
       req.login(result.user, (err) => {
         if (err) {
           console.error("Session login error:", err);
-          return res.status(500).json({ 
-            error: "session_error",
-            message: "Failed to create session" 
-          });
+          return res.status(500).json(createErrorResponse(
+            "Failed to create session",
+            "session_error",
+            500
+          ));
         }
         
-        // Return success with email status
-        const response = {
-          ...result.user,
-          emailSent: result.emailSent
-        };
-        
         console.log("User registered and logged in successfully:", result.user.id);
-        return res.status(201).json(response);
+        
+        // Return standardized success response
+        return res.status(201).json(createSuccessResponse(
+          {
+            user: result.user,
+            emailSent: result.emailSent
+          },
+          "User registered successfully"
+        ));
       });
     } catch (error: any) {
       // Use our custom error types to determine appropriate responses
@@ -3737,12 +3778,13 @@ ${ACADEMY_NAME} Team
         // Get status code from the error or default to 500
         const statusCode = error.statusCode || 500;
         
-        // Return structured error response
-        return res.status(statusCode).json({
-          error: error.code || 'auth_error',
-          message: error.message,
-          details: error.details
-        });
+        // Return standardized error response
+        return res.status(statusCode).json(createErrorResponse(
+          error.message,
+          error.code || 'auth_error',
+          statusCode,
+          error.details
+        ));
       }
       
       // Log unexpected errors
@@ -3843,19 +3885,20 @@ ${ACADEMY_NAME} Team
       
       // Handle PostgreSQL constraint violations as a fallback
       if (error.code === '23505') {
-        return res.status(400).json({ 
-          error: 'unique_violation',
-          message: "Database constraint violation. User might already exist.",
-          details: error.detail || error.message
-        });
+        return res.status(400).json(createErrorResponse(
+          "Database constraint violation. User might already exist.",
+          'unique_violation',
+          400,
+          { details: error.detail || error.message }
+        ));
       }
       
       // Generic error response for unexpected errors
-      res.status(500).json({ 
-        error: 'server_error',
-        message: error.message || "Registration error",
-        code: error.code
-      });
+      res.status(500).json(createErrorResponse(
+        error.message || "Registration error",
+        error.code || 'server_error',
+        500
+      ));
     }
   });
   
