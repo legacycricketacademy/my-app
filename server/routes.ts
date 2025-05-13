@@ -1082,7 +1082,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.login(user, (err) => {
         if (err) {
           console.error("Session login error:", err);
-          return res.status(500).json({ message: "Failed to create session" });
+          return res.status(500).json(createErrorResponse("Failed to create session", "session_error", 500));
         }
         
         console.log("Local registration successful, user logged in:", user.id);
