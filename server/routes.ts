@@ -3405,12 +3405,17 @@ ${ACADEMY_NAME} Team
   
   // Debug Firebase integration - for testing only
   app.post(`${apiPrefix}/auth/debug-firebase`, async (req, res) => {
+    // Import response utility functions
+    const { createSuccessResponse, createErrorResponse } = await import('./utils/api-response');
+    
     try {
       console.log("Debug Firebase endpoint called");
       const { idToken, firebaseUid, email } = req.body;
       
       if (!idToken || !firebaseUid || !email) {
-        return res.status(400).json({ message: "Missing required fields" });
+        return res.status(400).json(
+          createErrorResponse("Missing required fields - idToken, firebaseUid, and email are all required", "missing_fields", 400)
+        );
       }
       
       console.log("Firebase integration debug with UID:", firebaseUid);
@@ -3428,58 +3433,73 @@ ${ACADEMY_NAME} Team
             tokenUid: decodedToken?.uid,
             providedUid: firebaseUid
           });
-          return res.status(400).json({ 
-            message: "Firebase token UID doesn't match provided UID",
-            tokenUid: decodedToken?.uid,
-            providedUid: firebaseUid
-          });
+          return res.status(400).json(
+            createErrorResponse("Firebase token UID doesn't match provided UID", "uid_mismatch", 400, {
+              tokenUid: decodedToken?.uid,
+              providedUid: firebaseUid
+            })
+          );
         }
-      } catch (tokenError) {
+      } catch (tokenError: any) {
         console.error("Error verifying Firebase token:", tokenError);
-        return res.status(401).json({ 
-          message: "Failed to verify Firebase token",
-          error: tokenError instanceof Error ? tokenError.message : String(tokenError)
-        });
+        return res.status(401).json(
+          createErrorResponse("Failed to verify Firebase token", "invalid_firebase_token", 401, {
+            error: tokenError instanceof Error ? tokenError.message : String(tokenError)
+          })
+        );
       }
       
-      // Return success with diagnostic info
-      return res.status(200).json({
-        success: true,
-        message: "Firebase integration check successful",
-        tokenInfo: {
-          uid: decodedToken.uid,
-          email: decodedToken.email,
-          emailVerified: decodedToken.email_verified
-        }
-      });
-    } catch (error) {
+      // Return success with diagnostic info using standardized format
+      return res.status(200).json(
+        createSuccessResponse({
+          tokenInfo: {
+            uid: decodedToken.uid,
+            email: decodedToken.email,
+            emailVerified: decodedToken.email_verified
+          }
+        }, "Firebase integration check successful")
+      );
+    } catch (error: any) {
       console.error("Error in debug Firebase endpoint:", error);
-      return res.status(500).json({ 
-        message: "Server error during Firebase integration check",
-        error: error instanceof Error ? error.message : String(error)
-      });
+      return res.status(500).json(
+        createErrorResponse(
+          "Server error during Firebase integration check", 
+          "firebase_debug_error", 
+          500,
+          { error: error instanceof Error ? error.message : String(error) }
+        )
+      );
     }
   });
   
   // Send verification email endpoint for debugging tool
   app.post(`${apiPrefix}/auth/send-verification-email`, async (req, res) => {
+    // Import response utility functions
+    const { createSuccessResponse, createErrorResponse } = await import('./utils/api-response');
+    
     try {
       console.log("Debug send verification email endpoint called");
       const { userId } = req.body;
       
       if (!userId) {
-        return res.status(400).json({ message: "User ID is required" });
+        return res.status(400).json(
+          createErrorResponse("User ID is required", "missing_user_id", 400)
+        );
       }
       
       // Get user by ID
       const user = await storage.getUser(userId);
       
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json(
+          createErrorResponse("User not found", "user_not_found", 404)
+        );
       }
       
       if (user.isEmailVerified) {
-        return res.status(400).json({ message: "Email already verified" });
+        return res.status(400).json(
+          createErrorResponse("Email already verified", "email_already_verified", 400)
+        );
       }
       
       // Generate verification token
@@ -3503,33 +3523,40 @@ ${ACADEMY_NAME} Team
         
         if (!emailSent) {
           // Return success but with the verification link
-          return res.status(200).json({ 
-            message: "Verification email could not be sent, but verification link is valid",
-            verificationLink,
-            status: "warning"
-          });
+          return res.status(200).json(
+            createSuccessResponse({
+              verificationLink,
+              status: "warning"
+            }, "Verification email could not be sent, but verification link is valid")
+          );
         }
         
-        res.status(200).json({ 
-          message: "Verification email sent", 
-          status: "success",
-          email: user.email
-        });
-      } catch (emailError) {
+        res.status(200).json(
+          createSuccessResponse({
+            email: user.email,
+            status: "success"
+          }, "Verification email sent")
+        );
+      } catch (emailError: any) {
         console.error("Email sending error:", emailError);
         // Return the verification link instead of failing
-        return res.status(200).json({ 
-          message: "Email service unavailable, but here's your verification link",
-          verificationLink,
-          status: "warning"
-        });
+        return res.status(200).json(
+          createSuccessResponse({
+            verificationLink,
+            status: "warning"
+          }, "Email service unavailable, but here's your verification link")
+        );
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending verification email:", error);
-      res.status(500).json({ 
-        message: "Internal server error",
-        error: error instanceof Error ? error.message : String(error)
-      });
+      res.status(500).json(
+        createErrorResponse(
+          "Internal server error", 
+          "verification_email_error", 
+          500,
+          { error: error instanceof Error ? error.message : String(error) }
+        )
+      );
     }
   });
 
