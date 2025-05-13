@@ -10,6 +10,7 @@ import { User as SelectUser, users, userAuditLogs } from "@shared/schema";
 import { db } from "@db";
 import { requireAdmin, requireCoach, requireParent } from "./middleware/require-role";
 import { generateVerificationEmail, sendEmail } from "./email";
+import { createSuccessResponse } from "./utils/api-response";
 import {
   authenticate,
   authorize,
