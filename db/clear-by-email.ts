@@ -42,30 +42,71 @@ async function clearUsersByEmail(emailPattern: string) {
     // Use sanitized input for the query to prevent SQL injection
     const sanitizedPattern = emailPattern.replace(/'/g, "''");
     
-    // First delete any related records in the players table
-    console.log("Checking for related player records...");
-    const playerQuery = `
-      DELETE FROM players
+    // First get the IDs of players associated with these users
+    const playerIdsQuery = `
+      SELECT id FROM players
       WHERE parent_id IN (
         SELECT id FROM users WHERE email LIKE '%${sanitizedPattern}%'
-      )
-      RETURNING id, parent_id;
+      );
     `;
     
-    const playerResult = await pool.query(playerQuery);
-    const deletedPlayers = playerResult.rows || [];
+    const playerIdsResult = await pool.query(playerIdsQuery);
+    const playerIds = playerIdsResult.rows || [];
     
-    if (deletedPlayers.length > 0) {
-      console.log(`Deleted ${deletedPlayers.length} related player records.`);
+    if (playerIds.length > 0) {
+      console.log(`Found ${playerIds.length} related player records that need to be cleaned up.`);
+      
+      // First delete records from the payments table that reference these players
+      console.log("Deleting related payment records...");
+      const paymentQuery = `
+        DELETE FROM payments
+        WHERE player_id IN (
+          SELECT id FROM players
+          WHERE parent_id IN (
+            SELECT id FROM users WHERE email LIKE '%${sanitizedPattern}%'
+          )
+        )
+        RETURNING id;
+      `;
+      
+      const paymentResult = await pool.query(paymentQuery);
+      const deletedPayments = paymentResult.rows || [];
+      
+      if (deletedPayments.length > 0) {
+        console.log(`Deleted ${deletedPayments.length} related payment records.`);
+      } else {
+        console.log("No related payment records found.");
+      }
+      
+      // Now we can delete the player records
+      console.log("Deleting player records...");
+      const playerQuery = `
+        DELETE FROM players
+        WHERE parent_id IN (
+          SELECT id FROM users WHERE email LIKE '%${sanitizedPattern}%'
+        )
+        RETURNING id, parent_id;
+      `;
+      
+      const playerResult = await pool.query(playerQuery);
+      const deletedPlayers = playerResult.rows || [];
+      
+      if (deletedPlayers.length > 0) {
+        console.log(`Deleted ${deletedPlayers.length} related player records.`);
+      } else {
+        console.log("No related player records were deleted.");
+      }
     } else {
       console.log("No related player records found.");
     }
     
-    // Now delete the users
+    // Now delete the users (except admin users to protect against accidental deletion)
+    console.log("Proceeding to delete user accounts (excluding admins)...");
     const query = `
       DELETE FROM users 
       WHERE email LIKE '%${sanitizedPattern}%'
-      RETURNING id, username, email
+      AND role != 'admin'  -- Protect admin accounts
+      RETURNING id, username, email, role
     `;
     
     const result = await pool.query(query);
