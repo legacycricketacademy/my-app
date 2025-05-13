@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { multiTenantStorage } from "./multi-tenant-storage";
 import { setupAuth } from "./auth";
+import { requireAdmin, requireCoach, requireParent } from "./middleware/require-role";
 import { z } from "zod";
 import { db } from "@db";
 import { desc, and, or } from "drizzle-orm";
@@ -729,18 +730,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all pending coach accounts that need admin approval
-  app.get("/api/users/pending-coaches", async (req, res) => {
+  app.get("/api/users/pending-coaches", requireAdmin, async (req, res) => {
     // Import response utilities
-    const { createSuccessResponse, createErrorResponse, createUnauthorizedResponse, createForbiddenResponse } = await import('./utils/api-response');
-    
-    if (!req.isAuthenticated()) {
-      return res.status(401).json(createUnauthorizedResponse("You must be logged in to view pending coaches"));
-    }
-    
-    // Only allow admins and superadmins to view pending coaches
-    if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
-      return res.status(403).json(createForbiddenResponse("Not authorized to view pending coaches"));
-    }
+    const { createSuccessResponse, createErrorResponse } = await import('./utils/api-response');
     
     try {
       const pendingCoaches = await db.query.users.findMany({
@@ -774,18 +766,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Approve or reject a coach account
-  app.patch("/api/users/:id/approval", async (req, res) => {
+  app.patch("/api/users/:id/approval", requireAdmin, async (req, res) => {
     // Import response utilities
-    const { createSuccessResponse, createErrorResponse, createUnauthorizedResponse, createForbiddenResponse, createNotFoundResponse } = await import('./utils/api-response');
-    
-    if (!req.isAuthenticated()) {
-      return res.status(401).json(createUnauthorizedResponse("You must be logged in to approve coaches"));
-    }
-    
-    // Only allow admins and superadmins to approve/reject coaches
-    if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
-      return res.status(403).json(createForbiddenResponse("Not authorized to approve/reject coaches"));
-    }
+    const { createSuccessResponse, createErrorResponse, createNotFoundResponse } = await import('./utils/api-response');
     
     const { id } = req.params;
     const { approved } = req.body;
