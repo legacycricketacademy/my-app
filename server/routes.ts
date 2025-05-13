@@ -1086,11 +1086,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         console.log("Local registration successful, user logged in:", user.id);
-        return res.status(201).json(userWithoutPassword);
+        return res.status(201).json(
+          createSuccessResponse(
+            { user: userWithoutPassword },
+            "Registration successful!"
+          )
+        );
       });
     } catch (error: any) {
       console.error("Local register error:", error);
-      res.status(500).json({ message: error.message || "Registration error" });
+      res.status(500).json(
+        createErrorResponse(
+          error.message || "Registration error",
+          "registration_error",
+          500
+        )
+      );
     }
   });
   
