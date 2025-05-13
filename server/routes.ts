@@ -1164,6 +1164,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Standardized logout endpoint with consistent response format
+  app.post("/api/standard-logout", async (req, res) => {
+    console.log("Standardized logout request received");
+    
+    try {
+      if (req.session) {
+        console.log("Destroying session for standard-logout");
+        req.session.destroy((err) => {
+          if (err) {
+            console.error("Error during session destruction:", err);
+            return res.status(500).json(
+              createErrorResponse("Failed to logout", "server_error", 500)
+            );
+          }
+          
+          // Clear the session cookie
+          res.clearCookie('connect.sid');
+          
+          return res.json(
+            createSuccessResponse(
+              { success: true },
+              "Logged out successfully"
+            )
+          );
+        });
+      } else {
+        console.log("No session found for standard-logout");
+        return res.json(
+          createSuccessResponse(
+            { success: true },
+            "No active session found"
+          )
+        );
+      }
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      return res.status(500).json(
+        createErrorResponse(error.message || "Logout failed", "server_error", 500)
+      );
+    }
+  });
+  
   app.post("/api/auth/local-login", async (req, res) => {
     try {
       const { username, password } = req.body;

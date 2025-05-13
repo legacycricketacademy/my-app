@@ -1,0 +1,234 @@
+Replace this:
+
+return res.status(201).json({
+  success: true,
+  message: "Registration successful!",
+  user: userWithoutPassword
+});
+
+With:
+
+import { createSuccessResponse } from "@/server/utils/api-response";
+
+return res.status(201).json(
+  createSuccessResponse({ user: userWithoutPassword }, "Registration successful!")
+);
+
+
+Make sure all your registration-related endpoints use this standard pattern — this includes /api/register, /api/register-firebase, /api/registerWithStandardCredentials, etc.
+
+⸻
+
+
+Final Checklist
+
+✅ Ensure client uses res.data.user
+✅ Ensure server uses createSuccessResponse({ user })
+✅ Update test cases and Postman scripts if any expect old shape
+✅ Add console.log(response) in the client temporarily to verify structure
+
+⸻
+
+🧪 Next: Test with Sample User
+
+Run the following after deployment:
+
+curl -sS http://localhost:5000/api/registerWithStandardCredentials \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"username":"maddy", "email":"maddy@gmail.com", "password":"Cricket2025!", "role":"coach", "phone":"1234567890"}'
+
+You should now see:
+
+{
+  "success": true,
+  "message": "Registration successful!",
+  "data": {
+    "user": { "id": ..., "email": "maddy@gmail.com", ... }
+  }
+}
+
+generate a single shared registerUser() handler that all your register endpoints (firebase/local/standard) can use to centralize this logic?
+
+ let’s create a shared registerUser() utility function so all your registration endpoints (Firebase, local, standard credentials) reuse:
+
+✅ Common validation
+✅ Role + status setup
+✅ Database insert
+✅ Standardized response with createSuccessResponse()
+✅ Clean error handling
+
+
+ Create registerUser.ts Utility
+
+
+// server/services/registerUser.ts
+import { db } from "@/server/db";
+import { users } from "@/server/schema";
+import { createSuccessResponse, createErrorResponse } from "@/server/utils/api-response";
+import { hashPassword } from "@/server/utils/auth";
+
+interface RegisterUserInput {
+  username: string;
+  email: string;
+  password: string;
+  role: "coach" | "parent" | "admin";
+  phone?: string;
+  provider?: "firebase" | "local" | "standard";
+}
+
+export async function registerUser(req, res, input: RegisterUserInput) {
+  const { username, email, password, role, phone = "", provider = "standard" } = input;
+
+  try {
+    // Check for existing user
+    const existing = await db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.email, email),
+    });
+
+    if (existing) {
+      return res
+        .status(409)
+        .json(createErrorResponse("Email already registered"));
+    }
+
+    const hashedPassword = password ? await hashPassword(password) : undefined;
+
+    const user = await db.insert(users).values({
+      username,
+      email,
+      password: hashedPassword,
+      role,
+      phone,
+      provider,
+      status: role === "coach" ? "pending_approval" : "active",
+    }).returning().then((r) => r[0]);
+
+    // TODO: optionally trigger admin notification or welcome email
+
+    return res
+      .status(201)
+      .json(createSuccessResponse({ user }, "Registration successful!"));
+  } catch (err) {
+    console.error("Registration error:", err);
+    return res
+      .status(500)
+      .json(createErrorResponse("Registration failed. Please try again."));
+  }
+}
+
+2. Use It in Your Server Routes
+
+
+In /api/register, /api/registerWithStandardCredentials, etc.:
+
+import { registerUser } from "@/server/services/registerUser";
+
+app.post("/api/register", async (req, res) => {
+  await registerUser(req, res, {
+    username: req.body.username,
+    email: req.body.email,
+    password: req.body.password,
+    role: req.body.role,
+    phone: req.body.phone,
+    provider: "standard",
+  });
+});
+
+
+You can reuse this in:
+	•	/api/registerWithStandardCredentials
+	•	/api/auth/register-firebase (just omit password)
+	•	/api/auth/local-register
+
+Result
+	•	📦 Reusable logic across all flows
+	•	🧼 Cleaner routes — just parse input and call registerUser()
+	•	🔐 Built-in role/status defaults + hashing
+	•	🧪 Easier testing, mocking, and future logging
+
+like to also create a validateRegisterInput() function with Zod to plug in before calling registerUser() for stronger input safety?
+
+let’s now add validateRegisterInput() with Zod for:
+
+✅ Strong type-safe validation
+✅ Required field checks (email, username, password, etc.)
+✅ Enum enforcement for role and provider
+✅ Clean separation between validation and registration logic
+✅ Reusable across all register endpoints
+
+
+. Install Zod (if not already)
+
+npm install zod
+
+ Create validation/registerSchema.ts
+
+// server/validation/registerSchema.ts
+import { z } from "zod";
+
+export const registerUserSchema = z.object({
+  username: z.string().min(2).max(50),
+  email: z.string().email(),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Must include an uppercase letter")
+    .regex(/[a-z]/, "Must include a lowercase letter")
+    .regex(/[0-9]/, "Must include a number"),
+  role: z.enum(["coach", "parent", "admin"]),
+  phone: z.string().optional(),
+  provider: z.enum(["firebase", "local", "standard"]).optional(),
+});
+
+export type RegisterUserInput = z.infer<typeof registerUserSchema>;
+
+3. Validate in registerUser.ts
+
+import { registerUserSchema, RegisterUserInput } from "@/server/validation/registerSchema";
+
+export async function registerUser(req, res, input: any) {
+  try {
+    // ✅ Validate input first
+    const validated = registerUserSchema.parse(input);
+
+    const { username, email, password, role, phone = "", provider = "standard" } = validated;
+
+    // ...existing logic...
+
+Now if any field is missing or invalid, it throws immediately.
+
+
+4. Handle Zod Errors Gracefully
+
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      const message = err.issues.map(i => i.message).join(", ");
+      return res.status(400).json(createErrorResponse(message));
+    }
+
+    console.error("Registration error:", err);
+    return res.status(500).json(createErrorResponse("Registration failed"));
+  }
+
+5. Your Route Now Looks Like:
+
+
+app.post("/api/register", async (req, res) => {
+  await registerUser(req, res, req.body);
+});
+
+
+Example Validation Failure Response
+
+{
+  "success": false,
+  "message": "Must include an uppercase letter, Must include a number"
+}
+
+You now have:
+	•	🔐 Strong validated inputs
+	•	💬 Helpful user-friendly errors
+	•	🧼 Cleaner server logic
+	•	♻️ Schema reuse in tests or frontend if needed
+
