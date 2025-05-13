@@ -1,5 +1,6 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import { storage } from "./storage";
 import { multiTenantStorage } from "./multi-tenant-storage";
 import { setupAuth } from "./auth";
@@ -860,6 +861,14 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       </body>
       </html>
     `);
+  });
+  
+  // Serve static files from the public directory
+  app.use('/static', express.static(path.resolve(import.meta.dirname, 'public')));
+  
+  // Route to serve our standalone React page
+  app.get('/standalone', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'standalone-react.html'));
   });
   
   // Create a page with inline React code for direct testing
