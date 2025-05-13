@@ -370,8 +370,15 @@ function RouterContent() {
 function Router() {
   const { isLoading, user } = useAuth();
   
+  // Debug logging
+  console.log("Router - User:", user);
+  console.log("Router - IsLoading:", isLoading);
+  
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      <span className="ml-2">Loading authentication...</span>
+    </div>;
   }
 
   return <RouterContent />;
