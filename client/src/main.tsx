@@ -62,9 +62,30 @@ function setViewportForMobile() {
 // Call viewport adjustment
 setViewportForMobile();
 
-// Load our simple React app without any complex dependencies
-import SimpleReactApp from './SimpleReactApp';
-createRoot(document.getElementById("root")!).render(<SimpleReactApp />);
+// Load our minimal React app without ANY dependencies
+import MinimalReactApp from './MinimalReactApp';
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  console.error("Failed to find root element in the DOM");
+} else {
+  try {
+    console.log("Attempting to render React app...");
+    createRoot(rootElement).render(<MinimalReactApp />);
+    console.log("React rendering completed");
+  } catch (error) {
+    console.error("Error rendering React app:", error);
+    
+    // If React rendering fails, display a fallback message directly in the DOM
+    rootElement.innerHTML = `
+      <div style="padding: 20px; font-family: sans-serif;">
+        <h1 style="color: #e53e3e;">React Rendering Error</h1>
+        <p>There was an error rendering the React application.</p>
+        <pre style="background: #f7fafc; padding: 15px; border-radius: 5px; overflow: auto;">${error instanceof Error ? error.message : String(error)}</pre>
+      </div>
+    `;
+  }
+}
 
 // Register service worker for PWA if in production
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
