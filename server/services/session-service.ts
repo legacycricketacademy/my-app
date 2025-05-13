@@ -10,7 +10,17 @@ import { auth as firebaseAuth } from '../firebase-admin';
 import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import jwt from 'jsonwebtoken';
-import { IMultiTenantStorage } from '../multi-tenant-storage';
+import { MultiTenantStorage } from '../multi-tenant-storage';
+
+// Define interface for storage requirements
+interface IMultiTenantStorage {
+  getUser(id: number): Promise<any>;
+  validateSession(userId: number, sessionId: string, tokenVersion: number): Promise<boolean>;
+  createSession(userId: number, sessionId: string): Promise<void>;
+  invalidateSession(userId: number, sessionId: string): Promise<void>;
+  updateLastLogin(userId: number): Promise<void>;
+  createAuditLog(logEntry: any): Promise<void>;
+}
 
 // Promisify scrypt for password comparison
 const scryptAsync = promisify(scrypt);

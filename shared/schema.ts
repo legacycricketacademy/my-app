@@ -302,6 +302,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   academy: one(academies, { fields: [users.academyId], references: [academies.id] }),
   players: many(players),
   sessions: many(sessions),
+  userSessions: many(userSessions),
   announcementViews: many(announcementViews),
   announcements: many(announcements, { relationName: "created_by" }),
   mealPlans: many(mealPlans, { relationName: "created_by" }),
@@ -377,9 +378,15 @@ export const adminInvitationsRelations = relations(adminInvitations, ({ one }) =
   }),
 }));
 
+export const userSessionsRelations = relations(userSessions, ({ one, many }) => ({
+  user: one(users, { fields: [userSessions.userId], references: [users.id] }),
+  auditLogs: many(userAuditLogs)
+}));
+
 export const userAuditLogsRelations = relations(userAuditLogs, ({ one }) => ({
   academy: one(academies, { fields: [userAuditLogs.academyId], references: [academies.id] }),
   user: one(users, { fields: [userAuditLogs.userId], references: [users.id] }),
+  session: one(userSessions, { fields: [userAuditLogs.sessionId], references: [userSessions.sessionId] }),
 }));
 
 // Zod Schemas for validation
@@ -410,6 +417,8 @@ export const insertMealItemSchema = createInsertSchema(mealItems);
 export const insertAnnouncementSchema = createInsertSchema(announcements);
 export const insertPaymentSchema = createInsertSchema(payments);
 export const insertConnectionRequestSchema = createInsertSchema(connectionRequests);
+export const insertUserSessionSchema = createInsertSchema(userSessions);
+export const insertUserAuditLogSchema = createInsertSchema(userAuditLogs);
 
 // Create select schemas
 export const userSchema = createSelectSchema(users);
@@ -421,6 +430,8 @@ export const mealItemSchema = createSelectSchema(mealItems);
 export const announcementSchema = createSelectSchema(announcements);
 export const paymentSchema = createSelectSchema(payments);
 export const connectionRequestSchema = createSelectSchema(connectionRequests);
+export const userSessionSchema = createSelectSchema(userSessions);
+export const userAuditLogSchema = createSelectSchema(userAuditLogs);
 
 // Types for the schemas
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -449,3 +460,9 @@ export type Payment = z.infer<typeof paymentSchema>;
 
 export type InsertConnectionRequest = z.infer<typeof insertConnectionRequestSchema>;
 export type ConnectionRequest = z.infer<typeof connectionRequestSchema>;
+
+export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
+export type UserSession = z.infer<typeof userSessionSchema>;
+
+export type InsertUserAuditLog = z.infer<typeof insertUserAuditLogSchema>;
+export type UserAuditLog = z.infer<typeof userAuditLogSchema>;

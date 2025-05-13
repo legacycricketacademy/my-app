@@ -5,7 +5,12 @@
  */
 
 import { Request, Response } from 'express';
-import { IMultiTenantStorage } from '../multi-tenant-storage';
+import { MultiTenantStorage } from '../multi-tenant-storage';
+
+// Define interface for storage requirements
+interface IMultiTenantStorage {
+  createAuditLog(logEntry: AuditLogEntry): Promise<void>;
+}
 
 // Audit log types
 export type AuditAction = 
@@ -104,8 +109,8 @@ export async function auditSuccessfulLogin(
     userId,
     action: 'login',
     details,
-    ipAddress: res.locals.ipAddress || getClientIp(req),
-    userAgent: res.locals.userAgent || req.headers['user-agent'],
+    ipAddress: req.res?.locals.ipAddress || getClientIp(req),
+    userAgent: req.res?.locals.userAgent || req.headers['user-agent'],
     academyId: req.academyId
   });
 }
