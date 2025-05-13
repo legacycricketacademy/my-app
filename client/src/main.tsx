@@ -62,8 +62,9 @@ function setViewportForMobile() {
 // Call viewport adjustment
 setViewportForMobile();
 
-// Load our minimal app to bypass authentication issues
-createRoot(document.getElementById("root")!).render(<MinimalApp />);
+// Load our simple React app without any complex dependencies
+import SimpleReactApp from './SimpleReactApp';
+createRoot(document.getElementById("root")!).render(<SimpleReactApp />);
 
 // Register service worker for PWA if in production
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
