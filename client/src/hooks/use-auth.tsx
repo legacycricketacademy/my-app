@@ -527,27 +527,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Make sure to send token to backend
           const token = firebaseUser.idToken;
           
-          // Call backend to login with Firebase token
-          const res = await fetch("/api/auth/login-firebase", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ token }),
-            credentials: "include",
-          });
+          // Call backend to login with Firebase token using standardized API client
+          const response = await apiRequest<AuthResponse>("POST", "/api/auth/login-firebase", { token });
           
-          if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            console.error("Backend login failed:", errorData);
-            throw new Error(errorData.message || "Login failed on the server side. Please try again.");
+          // With standardized responses, we expect:
+          // { success: true, message: string, data: { user: User } }
+          if (!response.success) {
+            console.error("Firebase login failed:", response.message);
+            throw new Error(response.message || "Login failed on the server side. Please try again.");
           }
           
-          const userData = await res.json();
-          console.log("Backend login successful:", userData);
+          // Extract and validate user data
+          const user = response.data?.user;
+          if (!user) {
+            throw new Error("User data missing from response");
+          }
           
-          // Return user data instead of Firebase credentials
-          return userData;
+          console.log("Firebase login successful:", user);
+          
+          // Return user data
+          return user;
         } 
         catch (error: any) {
           console.error("Firebase direct API or backend login error:", error);
