@@ -3622,22 +3622,23 @@ ${ACADEMY_NAME} Team
       console.log("=== Direct registration endpoint hit ===");
       console.log("Request body:", JSON.stringify(req.body, null, 2));
       
+      // Import response utility functions
+      const { createSuccessResponse, createErrorResponse, createAuthResponse } = await import('./utils/api-response');
+      
       // Only allow for the problematic email
       if (req.body.email !== "haumankind@chapsmail.com") {
-        return res.status(400).json({ 
-          error: "not_allowed", 
-          message: "This endpoint is only for specific users" 
-        });
+        return res.status(400).json(
+          createErrorResponse("This endpoint is only for specific users", "not_allowed", 400)
+        );
       }
       
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(req.body.email);
       if (existingUser) {
         console.log("User already exists with this email, returning user");
-        return res.status(200).json({
-          user: existingUser,
-          message: "User already exists"
-        });
+        return res.status(200).json(
+          createAuthResponse(existingUser, "User already exists")
+        );
       }
       
       // Import the hashPassword function
@@ -3687,19 +3688,23 @@ ${ACADEMY_NAME} Team
       const newUser = await storage.createUser(userData);
       console.log("Successfully created direct user:", newUser.id);
       
-      // Return success response
-      return res.status(201).json({
-        user: newUser,
-        emailSent: false,
-        message: "User created successfully"
-      });
+      // Return standardized success response
+      return res.status(201).json(
+        createAuthResponse(
+          newUser, 
+          "User created successfully",
+          { emailSent: false }
+        )
+      );
     } catch (error: any) {
       console.error("Error in direct registration:", error);
-      res.status(500).json({ 
-        error: 'server_error',
-        message: error.message || "Registration error",
-        code: error.code || 'unknown'
-      });
+      res.status(500).json(
+        createErrorResponse(
+          error.message || "Registration error", 
+          error.code || 'server_error', 
+          500
+        )
+      );
     }
   });
   
@@ -3950,14 +3955,21 @@ ${ACADEMY_NAME} Team
   
   // Get all pending admin invitations (for admin dashboard)
   app.get(`${apiPrefix}/admin/invitations`, async (req, res) => {
+    // Import response utility functions
+    const { createSuccessResponse, createErrorResponse, createAuthResponse } = await import('./utils/api-response');
+    
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
+        return res.status(401).json(
+          createErrorResponse("Unauthorized", "not_authenticated", 401)
+        );
       }
       
       // Only admin/superadmin can view invitations
       if (req.user.role !== 'superadmin' && req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied" });
+        return res.status(403).json(
+          createErrorResponse("Access denied", "forbidden", 403)
+        );
       }
       
       const { adminInvitations } = require("@shared/schema");
@@ -4005,33 +4017,46 @@ ${ACADEMY_NAME} Team
         .returning();
       
       if (updatedInvitation.length === 0) {
-        return res.status(404).json({ message: "Invitation not found" });
+        return res.status(404).json(
+          createErrorResponse("Invitation not found", "not_found", 404)
+        );
       }
       
-      res.json({ 
-        message: "Invitation revoked successfully",
-        invitation: updatedInvitation[0]
-      });
-    } catch (error) {
+      res.json(
+        createSuccessResponse(
+          { invitation: updatedInvitation[0] },
+          "Invitation revoked successfully"
+        )
+      );
+    } catch (error: any) {
       console.error("Error revoking invitation:", error);
-      res.status(500).json({ message: "Error revoking invitation" });
+      res.status(500).json(
+        createErrorResponse(error.message || "Error revoking invitation", "server_error", 500)
+      );
     }
   });
   
   // Endpoint to verify admin invitation token
   app.get(`${apiPrefix}/admin/verify-invitation`, async (req, res) => {
+    // Import response utility functions
+    const { createSuccessResponse, createErrorResponse } = await import('./utils/api-response');
+    
     try {
       const { token } = req.query;
       
       if (!token || typeof token !== 'string') {
-        return res.status(400).json({ message: "Invalid token" });
+        return res.status(400).json(
+          createErrorResponse("Invalid token", "invalid_token", 400)
+        );
       }
       
       // Decode and verify the token
       const payload = verifyToken(token);
       
       if (!payload.valid || !payload.payload) {
-        return res.status(400).json({ message: "Invalid or expired token" });
+        return res.status(400).json(
+          createErrorResponse("Invalid or expired token", "expired_token", 400)
+        );
       }
       
       // Check if this invitation exists and is still pending
