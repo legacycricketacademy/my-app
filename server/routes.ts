@@ -707,6 +707,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     `);
   });
   
+  // Create a specialized debug endpoint that will let us see React errors in the browser
+  app.get('/react-diagnostic', (req, res) => {
+    // Read the diagnostic.html file and serve it directly
+    const fs = require('fs');
+    const path = require('path');
+    
+    const diagnosticPath = path.join(process.cwd(), 'client', 'src', 'diagnostic.html');
+    
+    fs.readFile(diagnosticPath, 'utf8', (err, data) => {
+      if (err) {
+        console.error('Error reading diagnostic file:', err);
+        return res.status(500).send('Error loading diagnostic tool');
+      }
+      
+      // Serve the HTML content directly
+      res.send(data);
+    });
+  });
+  
   // Simple test endpoint to check connectivity
   app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
