@@ -813,79 +813,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log(`Making registration request to: ${apiEndpoint}`);
           console.log("Request data:", JSON.stringify(firebaseData, null, 2));
           
-          const response = await fetch(apiEndpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(firebaseData),
-            credentials: "include",
-          });
+          // Use standardized API client for consistent response handling
+          const apiResponse = await apiRequest<AuthResponse>("POST", apiEndpoint, firebaseData);
           
-          console.log("Firebase registration response status:", response.status);
-          console.log("Firebase registration response headers:", JSON.stringify(Array.from(response.headers.entries())));
+          console.log("Firebase registration response:", apiResponse);
 
-          // All responses include the user data, even if the account is in a pending state
-          // Both 200 OK (existing user) and 201 Created (new user) are valid success responses
-          if (response.status < 200 || response.status >= 300) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error("Backend registration failed:", {
-              status: response.status,
-              statusText: response.statusText,
-              errorData
-            });
-            
-            // For unique constraint violations and other client errors
-            if (response.status === 400) {
-              throw new Error(errorData.message || errorData.details || "User already exists or invalid data.");
-            }
-            
-            // For duplicate email errors (409 Conflict)
-            if (response.status === 409) {
-              throw new Error(errorData.message || "Email is already registered. Please login instead.");
-            }
-            
-            // For 5xx server errors
-            throw new Error(
-              errorData.message || 
-              `Server error (${response.status}): Registration failed on the server side. Please try again.`
-            );
+          // With standardized responses, check the success flag
+          if (!apiResponse.success) {
+            console.error("Backend registration failed:", apiResponse.message);
+            throw new Error(apiResponse.message || "Registration failed. Please try again.");
           }
-
-          let backendUserData;
-          try {
-            backendUserData = await response.json();
-            
-            console.log("Raw backend response:", backendUserData);
-            
-            // Handle nested user object if present or use direct response
-            if (backendUserData && backendUserData.user && typeof backendUserData.user === 'object') {
-              console.log("Using nested user object from response");
-              backendUserData = backendUserData.user;
-            }
-            
-            // Validate that we have a proper user object
-            if (!backendUserData || typeof backendUserData !== 'object' || !backendUserData.id) {
-              console.error("Invalid backend response:", backendUserData);
-              throw new Error("Invalid response from server. Please try again.");
-            }
-            
-            // Log user data with sensitive fields redacted for debugging
-            console.log("Backend registration successful:", {
-              id: backendUserData.id,
-              username: backendUserData.username,
-              role: backendUserData.role,
-              status: backendUserData.status,
-              isActive: backendUserData.isActive,
-              responseStatus: response.status,
-              fullData: JSON.stringify(backendUserData)
-            });
-          } catch (jsonError) {
-            console.error("Error parsing JSON response:", jsonError);
-            console.error("Response status:", response.status);
-            console.error("Response text:", await response.text().catch(() => "Could not get response text"));
-            throw new Error("Failed to process server response. Please try again.");
+          
+          // Extract user data from the standardized response
+          const user = apiResponse.data?.user;
+          if (!user) {
+            throw new Error("User data missing from response");
           }
+          
+          console.log("Successfully registered user:", user.username);
+          
+          // We now have a standardized user object directly from the response
+          const backendUserData = user;
+            
+          // Validate that we have a proper user object
+          if (!backendUserData || typeof backendUserData !== 'object' || !backendUserData.id) {
+            console.error("Invalid backend response:", backendUserData);
+            throw new Error("Invalid response from server. Please try again.");
+          }
+            
+          // Log user data with sensitive fields redacted for debugging
+          console.log("Backend registration successful:", {
+            id: backendUserData.id,
+            username: backendUserData.username,
+            role: backendUserData.role,
+            status: backendUserData.status,
+            isActive: backendUserData.isActive,
+            fullData: JSON.stringify(backendUserData)
+          });
           
           // Ensure status field is consistent for coach/admin accounts
           if ((backendUserData.role === 'coach' || backendUserData.role === 'admin') && 
