@@ -1,0 +1,81 @@
+ Here’s a complete types/api.ts module you can drop into your project (both frontend and backend shared if applicable). It includes a standardized API response format, the user interface, and auth-specific structures:
+
+⸻
+
+
+1.types/api.ts – Shared API Response Types
+
+// types/api.ts
+
+// Generic API response wrapper
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+  [key: string]: any; // for optional metadata (e.g., emailSent, verificationLink)
+}
+
+// User model shared between backend and frontend
+export interface User {
+  id: string;
+  email: string;
+  role: 'parent' | 'coach' | 'admin' | 'superadmin';
+  academyId: string;
+  status: 'active' | 'pending_approval';
+  firebaseUid?: string;
+  createdAt: string;
+}
+
+// Auth-specific response type
+export interface AuthResponse {
+  user: User;
+  token?: string;
+  emailSent?: boolean;
+  verificationLink?: string;
+}
+
+
+2.Auth-Specific Types
+
+
+import { ApiResponse, AuthResponse } from '@/types/api';
+
+const res = await axios.post<ApiResponse<AuthResponse>>('/api/auth/register-firebase', formData);
+
+if (res.data.success) {
+  const user = res.data.data?.user;
+  toast.success("Welcome! Check your email for confirmation.");
+}
+
+
+
+3. Sample Usage in Frontend
+
+import { ApiResponse, AuthResponse } from '@/types/api';
+
+const res = await axios.post<ApiResponse<AuthResponse>>('/api/auth/register-firebase', formData);
+
+if (res.data.success) {
+  const user = res.data.data?.user;
+  toast.success("Welcome! Check your email for confirmation.");
+}
+
+4.Sample Backend Usage
+
+import { AuthResponse, ApiResponse } from '@/types/api';
+
+const response: ApiResponse<AuthResponse> = {
+  success: true,
+  message: "User registered successfully",
+  data: {
+    user: sanitizedUser,
+    token,
+    emailSent: true,
+    verificationLink,
+  },
+};
+
+return res.status(201).json(response);
+
+By standardizing this ApiResponse<T> pattern, both your backend and frontend can evolve independently while always knowing what shape to expect. 
+
