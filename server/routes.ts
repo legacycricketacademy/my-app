@@ -982,7 +982,7 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     `);
   });
   
-  // Add a temporary redirect from the root to our standalone app
+  // Add a simple home page without JavaScript
   app.get('/', (req, res) => {
     res.send(`
       <!DOCTYPE html>
@@ -991,6 +991,120 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Legacy Cricket Academy</title>
+        <style>
+          body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .alert {
+            background-color: #e0f2fe;
+            border: 1px solid #38bdf8;
+            color: #0369a1;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+          }
+          .alert-success {
+            background-color: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+          }
+          .btn {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 500;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: background-color 0.2s;
+          }
+          .btn:hover {
+            background-color: #4338ca;
+          }
+          h1 {
+            color: #4f46e5;
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+          }
+          .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          }
+          .card h3 {
+            margin-top: 0;
+            color: #4f46e5;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Legacy Cricket Academy</h1>
+        
+        <div class="alert">
+          <strong>Development Mode:</strong> The standard React app is currently experiencing bundling issues. 
+          Please use one of our standalone alternatives below.
+        </div>
+        
+        <div class="grid">
+          <div class="card">
+            <h3>Comprehensive App</h3>
+            <p>Our feature-rich standalone application with authentication and dashboard features.</p>
+            <a href="/app" class="btn">Launch App</a>
+          </div>
+          
+          <div class="card">
+            <h3>Simple App</h3>
+            <p>A basic standalone demo with interactive counter and live clock.</p>
+            <a href="/standalone" class="btn">Launch Demo</a>
+          </div>
+          
+          <div class="card">
+            <h3>Direct React Test</h3>
+            <p>A minimal React test page to verify React functionality.</p>
+            <a href="/direct-react-test" class="btn">View Test</a>
+          </div>
+          
+          <div class="card">
+            <h3>API Status</h3>
+            <p>Check if the backend API is running properly.</p>
+            <a href="/api/ping" class="btn">Check API</a>
+          </div>
+        </div>
+        
+        <div class="card" style="margin-top: 20px;">
+          <h3>Debug Registration</h3>
+          <p>Test registration with these endpoints:</p>
+          <a href="/debug-register" class="btn">Test Registration</a>
+        </div>
+        
+        <div class="alert alert-success" style="margin-top: 30px;">
+          <strong>Note:</strong> All backend API endpoints are fully functional. The issues are limited to the frontend bundling system.
+        </div>
+      </body>
+      </html>
+    `);
+  });
+  
+  // Add a separate page for testing registration
+  app.get('/debug-register', (req, res) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Registration Test</title>
         <style>
           body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1027,7 +1141,7 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
             border-radius: 6px;
             font-weight: 500;
             margin-right: 10px;
-            transition: background-color 0.2s;
+            margin-bottom: 10px;
             border: none;
             cursor: pointer;
           }
@@ -1037,17 +1151,12 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
           h1 {
             color: #4f46e5;
           }
-          .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-          }
           .card {
             background-color: white;
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
           }
           .card h3 {
             margin-top: 0;
@@ -1062,10 +1171,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
           label {
             font-weight: 500;
           }
-          input {
+          input, select {
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 16px;
           }
           pre {
             background-color: #f8f9fa;
@@ -1074,145 +1184,78 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
             overflow-x: auto;
             margin-top: 20px;
           }
-          .tabs {
-            display: flex;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 20px;
-          }
-          .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-          }
-          .tab.active {
-            border-bottom: 2px solid #4f46e5;
+          a.back {
+            display: inline-block;
             color: #4f46e5;
-            font-weight: 500;
+            margin-bottom: 20px;
+            text-decoration: none;
           }
-          .tab-content {
-            display: none;
-          }
-          .tab-content.active {
-            display: block;
+          a.back:hover {
+            text-decoration: underline;
           }
         </style>
       </head>
       <body>
-        <h1>Legacy Cricket Academy</h1>
+        <a href="/" class="back">← Back to Home</a>
+        
+        <h1>Registration Test</h1>
         
         <div class="alert">
-          <strong>Development Mode:</strong> The standard React app is currently experiencing bundling issues. 
-          Please use one of our standalone alternatives below.
+          <strong>Testing Mode:</strong> This form allows direct testing of the registration API.
         </div>
         
-        <div class="tabs">
-          <div class="tab active" onclick="showTab('apps')">App Options</div>
-          <div class="tab" onclick="showTab('register')">Test Registration</div>
-        </div>
-        
-        <div id="apps" class="tab-content active">
-          <div class="grid">
-            <div class="card">
-              <h3>Comprehensive App</h3>
-              <p>Our feature-rich standalone application with authentication and dashboard features.</p>
-              <a href="/app" class="btn">Launch App</a>
-            </div>
-            
-            <div class="card">
-              <h3>Simple App</h3>
-              <p>A basic standalone demo with interactive counter and live clock.</p>
-              <a href="/standalone" class="btn">Launch Demo</a>
-            </div>
-            
-            <div class="card">
-              <h3>Direct React Test</h3>
-              <p>A minimal React test page to verify React functionality.</p>
-              <a href="/direct-react-test" class="btn">View Test</a>
-            </div>
-            
-            <div class="card">
-              <h3>API Status</h3>
-              <p>Check if the backend API is running properly.</p>
-              <a href="/api/ping" class="btn">Check API</a>
-            </div>
-          </div>
+        <div class="card">
+          <h3>Debug Registration</h3>
+          <p>Test registration with the provided coach email to diagnose issues.</p>
           
-          <div class="alert alert-success" style="margin-top: 30px;">
-            <strong>Note:</strong> All backend API endpoints are fully functional. The issues are limited to the frontend bundling system.
-          </div>
-        </div>
-        
-        <div id="register" class="tab-content">
-          <div class="card">
-            <h3>Debug Registration</h3>
-            <p>Test registration with the provided coach email to diagnose issues.</p>
-            
-            <div id="error-message" class="alert alert-error"></div>
-            
-            <form id="registration-form">
-              <div>
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" value="coachcoach20000" required>
-              </div>
-              
-              <div>
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" value="coachcoach20000@yahoo.com" required>
-              </div>
-              
-              <div>
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" value="Cricket2025!" required>
-              </div>
-              
-              <div>
-                <label for="fullName">Full Name</label>
-                <input type="text" id="fullName" name="fullName" value="Test Coach" required>
-              </div>
-              
-              <div>
-                <label for="role">Role</label>
-                <select id="role" name="role">
-                  <option value="coach">Coach</option>
-                  <option value="parent">Parent</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="phone">Phone (optional)</label>
-                <input type="text" id="phone" name="phone" value="555-123-4567">
-              </div>
-              
-              <button type="submit" class="btn" style="margin-top: 10px;">Register</button>
-            </form>
-            
-            <div style="margin-top: 20px;">
-              <h4>Response:</h4>
-              <pre id="response-output">No response yet</pre>
+          <div id="error-message" class="alert alert-error"></div>
+          
+          <form id="registration-form">
+            <div>
+              <label for="username">Username</label>
+              <input type="text" id="username" name="username" value="coachcoach20000" required>
             </div>
+            
+            <div>
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" value="coachcoach20000@yahoo.com" required>
+            </div>
+            
+            <div>
+              <label for="password">Password</label>
+              <input type="password" id="password" name="password" value="Cricket2025!" required>
+            </div>
+            
+            <div>
+              <label for="fullName">Full Name</label>
+              <input type="text" id="fullName" name="fullName" value="Test Coach" required>
+            </div>
+            
+            <div>
+              <label for="role">Role</label>
+              <select id="role" name="role">
+                <option value="coach">Coach</option>
+                <option value="parent">Parent</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            
+            <div>
+              <label for="phone">Phone (optional)</label>
+              <input type="text" id="phone" name="phone" value="555-123-4567">
+            </div>
+            
+            <button type="submit" class="btn" style="margin-top: 10px;">Register</button>
+          </form>
+          
+          <div style="margin-top: 20px;">
+            <h4>Response:</h4>
+            <pre id="response-output">No response yet</pre>
           </div>
         </div>
         
         <script>
-          function showTab(tabId) {
-            // Hide all tab contents
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(content => {
-              content.classList.remove('active');
-            });
-            
-            // Deactivate all tabs
-            const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(tab => {
-              tab.classList.remove('active');
-            });
-            
-            // Activate the selected tab and content
-            document.getElementById(tabId).classList.add('active');
-            document.querySelector('.tab:nth-child(' + (tabId === 'apps' ? '1' : '2') + ')').classList.add('active');
-          }
-          
-          document.getElementById('registration-form').addEventListener('submit', async (e) => {
+          document.getElementById('registration-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const errorElement = document.getElementById('error-message');
@@ -1230,36 +1273,30 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
             const responseOutput = document.getElementById('response-output');
             responseOutput.innerText = 'Submitting...';
             
-            try {
-              console.log('Submitting registration for:', formData.email);
-              
-              const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-              });
-              
-              const result = await response.json();
+            fetch('/api/register', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(formData)
+            })
+            .then(function(response) {
+              return response.json();
+            })
+            .then(function(result) {
               responseOutput.innerText = JSON.stringify(result, null, 2);
-              
-              console.log('Registration response:', result);
               
               if (!result.success) {
                 errorElement.innerText = result.message || 'Registration failed';
                 errorElement.style.display = 'block';
-                
-                // Display detailed error information in the response output
-                console.log('Registration failed with error:', result);
               }
-            } catch (error) {
-              console.error('Registration error:', error);
+            })
+            .catch(function(error) {
               responseOutput.innerText = 'Error: ' + error.message;
               
               errorElement.innerText = 'An error occurred: ' + error.message;
               errorElement.style.display = 'block';
-            }
+            });
           });
         </script>
       </body>
