@@ -28,6 +28,12 @@ import {
   auditPasswordReset,
   auditRegistration
 } from "./services/audit-service";
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  createAuthResponse,
+  createUnauthorizedResponse
+} from "./utils/api-response";
 
 // Define global types for token functions
 declare global {
@@ -96,8 +102,7 @@ export function createAuthMiddleware(storage: typeof multiTenantStorage = multiT
       return next();
     }
     
-    // Import response utilities for standardized responses
-    const { createUnauthorizedResponse } = require('./utils/api-response');
+    // Using imported response utilities for standardized responses
     
     // Otherwise check JWT tokens
     const accessToken = req.cookies?.['access_token'];
