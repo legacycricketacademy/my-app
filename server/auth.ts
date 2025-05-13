@@ -8,6 +8,7 @@ import { storage } from "./storage";
 import { multiTenantStorage } from "./multi-tenant-storage";
 import { User as SelectUser, users, userAuditLogs } from "@shared/schema";
 import { db } from "@db";
+import { requireAdmin, requireCoach, requireParent } from "./middleware/require-role";
 import { generateVerificationEmail, sendEmail } from "./email";
 import {
   authenticate,
@@ -859,6 +860,9 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", authMiddleware, async (req, res) => {
+    // Import response utilities for standardized responses
+    const { createSuccessResponse, createUnauthorizedResponse, createErrorResponse } = await import('./utils/api-response');
+    
     // authMiddleware has already verified the user is authenticated
     // via passport session or JWT token, and set req.user
     try {
@@ -870,41 +874,43 @@ export function setupAuth(app: Express) {
         // Get full user data from storage
         const user = await multiTenantStorage.getUser(userId);
         if (!user) {
-          return res.sendStatus(401);
+          return res.status(401).json(createUnauthorizedResponse(
+            "User not found or session expired"
+          ));
         }
         
         // Don't send password back to client
         const { password, ...userWithoutPassword } = user as any;
-        return res.json(userWithoutPassword);
+        return res.status(200).json(createSuccessResponse(
+          { user: userWithoutPassword },
+          "User data retrieved successfully"
+        ));
       } else if (req.user) {
         // User is authenticated via passport session
         // Don't send password back to client
         const { password, ...userWithoutPassword } = req.user as any;
-        return res.json(userWithoutPassword);
+        return res.status(200).json(createSuccessResponse(
+          { user: userWithoutPassword },
+          "User data retrieved successfully"
+        ));
       } else {
         // No authenticated user found
-        return res.sendStatus(401);
+        return res.status(401).json(createUnauthorizedResponse(
+          "Not authenticated"
+        ));
       }
     } catch (error) {
       console.error("Error in /api/user endpoint:", error);
-      return res.sendStatus(401);
+      return res.status(500).json(createErrorResponse(
+        "Failed to retrieve user data",
+        "user_retrieval_error",
+        500
+      ));
     }
   });
   
-  // Middleware for protecting routes by role
-  app.use("/api/admin", authMiddleware, (req, res, next) => {
-    // Check if user has admin role
-    if (req.user && (req.user.role === "admin" || req.user.role === "superadmin")) {
-      return next();
-    }
-    return res.status(403).json({ message: "Access denied" });
-  });
+  // Middleware for protecting routes by role - using our standardized RBAC middleware
+  app.use("/api/admin", authMiddleware, requireAdmin);
   
-  app.use("/api/coach", authMiddleware, (req, res, next) => {
-    // Check if user has coach, admin, or superadmin role
-    if (req.user && (req.user.role === "coach" || req.user.role === "admin" || req.user.role === "superadmin")) {
-      return next();
-    }
-    return res.status(403).json({ message: "Access denied" });
-  });
+  app.use("/api/coach", authMiddleware, requireCoach);
 }
