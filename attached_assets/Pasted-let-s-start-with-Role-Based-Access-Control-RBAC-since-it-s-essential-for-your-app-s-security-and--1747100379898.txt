@@ -1,0 +1,151 @@
+let’s start with Role-Based Access Control (RBAC), since it’s essential for your app’s security and aligns perfectly with your SaaS model. Here’s a clean plan to implement it both on the backend and frontend using your current JWT structure and shared types.
+
+⸻
+
+✅ Role-Based Access Control Plan
+
+🔒 1. Backend Middleware Enforcement
+
+Create a reusable middleware like:
+
+// server/middleware/require-role.ts
+import { JwtPayload } from "@types/auth";
+
+export const requireRole = (roles: JwtPayload['role'][] = []) => {
+  return (req, res, next) => {
+    const user = req.user as JwtPayload;
+    if (!user || !roles.includes(user.role)) {
+      return res.status(403).json({ success: false, message: "Access denied." });
+    }
+    next();
+  };
+};
+
+
+Usage in route:
+
+app.get("/api/coach/players", requireRole(["coach", "admin"]), handler);
+
+2. Frontend Route Protection (React)
+
+In your AuthContext or router:
+
+
+<Route
+  path="/admin/dashboard"
+  element={
+    user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/not-authorized" />
+  }
+/>
+
+You can also create a wrapper component:
+
+const RequireRole: React.FC<{ allowed: string[] }> = ({ allowed, children }) =>
+  allowed.includes(user?.role) ? children : <Navigate to="/not-authorized" />;
+
+3. Fallback UI
+
+For unauthorized users:
+	•	Show a simple 403 Access Denied page
+	•	Or a toast: “You don’t have access to this page.”
+
+
+ 4.Optional: Backend Role Check Helper
+
+export const isAdmin = (user: JwtPayload) => user.role === "admin";
+export const isCoach = (user: JwtPayload) => user.role === "coach";
+
+
+
+Here’s a complete implementation of a RequireRole React wrapper for the frontend and a backend route middleware using your shared role-based JWT structure.
+
+
+1. RequireRole React Wrapper (Frontend)
+
+This wrapper ensures that only allowed roles (e.g. "admin", "coach") can view a route or component.
+
+// components/auth/RequireRole.tsx
+
+import { useAuth } from "@/context/auth-context";
+import { Navigate } from "react-router-dom";
+
+interface RequireRoleProps {
+  allowed: ("admin" | "coach" | "parent" | "superadmin")[];
+  children: React.ReactNode;
+}
+
+const RequireRole = ({ allowed, children }: RequireRoleProps) => {
+  const { user, loading } = useAuth();
+
+  if (loading) return null; // or a spinner
+
+  if (!user || !allowed.includes(user.role)) {
+    return <Navigate to="/not-authorized" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+export default RequireRole;
+
+How to Use It in Routes
+
+import RequireRole from "@/components/auth/RequireRole";
+import CoachesPendingApprovalPage from "@/pages/admin/CoachesPendingApprovalPage";
+
+<Route
+  path="/admin/coaches-pending-approval"
+  element={
+    <RequireRole allowed={["admin"]}>
+      <CoachesPendingApprovalPage />
+    </RequireRole>
+  }
+/>
+
+
+2. Backend Middleware for Role Checking
+
+// server/middleware/requireRole.ts
+import { JwtPayload } from "@/types/auth";
+import { Request, Response, NextFunction } from "express";
+
+export const requireRole = (allowedRoles: JwtPayload["role"][]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as JwtPayload;
+
+    if (!user || !allowedRoles.includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Insufficient permissions.",
+      });
+    }
+
+    next();
+  };
+};
+
+
+Example Usage in Express Route
+
+// server/routes/admin.ts
+import { requireRole } from "@/middleware/requireRole";
+
+app.get(
+  "/api/admin/coaches-pending-approval",
+  requireAuth,
+  requireRole(["admin"]),
+  async (req, res) => {
+    const coaches = await db.query.users.findMany({
+      where: {
+        role: "coach",
+        status: "pending_approval",
+      },
+    });
+
+    res.json({ success: true, data: coaches });
+  }
+);
+
+This full-stack RBAC flow ensures that only properly scoped users can access sensitive routes, both in your UI and your API.
+
+
