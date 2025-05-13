@@ -3628,7 +3628,7 @@ ${ACADEMY_NAME} Team
       console.log("=== Firebase registration endpoint hit ===");
       console.log("Request body:", JSON.stringify(req.body, null, 2));
       
-      // Import auth service
+      // Import auth service and response utilities
       const { 
         registerFirebaseUser, 
         AuthError,
@@ -3639,6 +3639,8 @@ ${ACADEMY_NAME} Team
         EmailError,
         EmailAlreadyRegisteredError
       } = await import('./services/auth-service');
+      
+      const { createSuccessResponse, createErrorResponse } = await import('./utils/api-response');
       
       // Get app base URL
       const hostname = req.get('host');

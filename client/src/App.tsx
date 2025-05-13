@@ -296,9 +296,16 @@ function RouterContent() {
         redirectTo="/"
       />
       
-      {/* Add alternative path for admin/coaches to handle the URL in the email link */}
+      {/* Add alternative paths for admin/coaches to handle the URL in the email link */}
       <RoleBasedRoute 
         path="/admin/coaches" 
+        component={CoachesPendingApprovalPage} 
+        allowedRoles={["admin"]}
+        redirectTo="/"
+      />
+      
+      <RoleBasedRoute 
+        path="/admin/coaches-pending-approval" 
         component={CoachesPendingApprovalPage} 
         allowedRoles={["admin"]}
         redirectTo="/"
