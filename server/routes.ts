@@ -732,6 +732,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Standardized registration endpoint that uses the expected response format
+  app.post("/api/standard-register", async (req, res) => {
+    try {
+      const { username, password, email, fullName, role, phone, academyId } = req.body;
+      
+      console.log("Standardized registration request received for:", email);
+      
+      if (!username || !password || !email || !fullName) {
+        return res.status(400).json(
+          createErrorResponse("Missing required fields", "validation_error", 400)
+        );
+      }
+      
+      // Check if username already exists
+      const existingUserByUsername = await storage.getUserByUsername(username);
+      if (existingUserByUsername) {
+        return res.status(400).json(
+          createErrorResponse("Username already exists", "username_exists", 400)
+        );
+      }
+      
+      // Check if email already exists
+      const existingUserByEmail = await storage.getUserByEmail(email);
+      if (existingUserByEmail) {
+        return res.status(400).json(
+          createErrorResponse("Email already exists", "email_exists", 400)
+        );
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(password);
+      
+      // Determine status based on role (coaches need admin approval)
+      let status = role === 'coach' ? 'pending' : 'active';
+      let isActive = role !== 'coach'; // Only coaches need approval
+      
+      // Create the user
+      const user = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        fullName,
+        role: role || "parent",
+        phone,
+        academyId: academyId || null,
+        isEmailVerified: false, 
+        status: status,
+        isActive: isActive,
+      });
+      
+      // Remove password before sending response
+      const { password: _, ...userWithoutPassword } = user;
+      
+      // Log user in
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login after registration failed:", err);
+          return res.status(200).json(
+            createSuccessResponse(
+              { user: userWithoutPassword },
+              "Registration successful, but auto-login failed. Please login manually."
+            )
+          );
+        }
+        
+        // Return success response with user data in standardized format
+        return res.status(201).json(
+          createSuccessResponse(
+            { user: userWithoutPassword },
+            "Registration successful!"
+          )
+        );
+      });
+      
+      // For coach registrations, notify administrators
+      if (role === 'coach') {
+        try {
+          // Find all admins to notify
+          const admins = await db.query.users.findMany({
+            where: eq(users.role, 'admin'),
+            columns: {
+              id: true,
+              email: true,
+              username: true
+            }
+          });
+          
+          console.log(`Found ${admins.length} admins to notify about new coach registration`);
+          
+          // Notify each admin
+          for (const admin of admins) {
+            if (admin.email) {
+              try {
+                // Generate and send the approval request email
+                const coachApprovalEmail = generateAdminCoachApprovalRequestEmail(
+                  admin.username,
+                  fullName,
+                  email
+                );
+                
+                const emailSent = await sendEmail({
+                  to: admin.email,
+                  subject: "New Coach Registration Needs Approval",
+                  text: coachApprovalEmail.text,
+                  html: coachApprovalEmail.html
+                });
+                
+                if (emailSent) {
+                  console.log(`Coach approval notification sent to admin ${admin.email}`);
+                }
+              } catch (emailError) {
+                console.error(`Error sending coach approval notification to admin ${admin.email}:`, emailError);
+              }
+            }
+          }
+          
+          // Also notify the coach
+          if (email) {
+            try {
+              // Generate and send the pending approval email to coach
+              const coachPendingEmail = generateCoachPendingApprovalEmail(
+                fullName,
+                "Legacy Cricket Academy" // Default if no academy specified
+              );
+              
+              const emailSent = await sendEmail({
+                to: email,
+                subject: "Your Coach Registration is Pending Approval",
+                text: coachPendingEmail.text,
+                html: coachPendingEmail.html
+              });
+              
+              if (emailSent) {
+                console.log(`Pending approval notification sent to coach ${email}`);
+              }
+            } catch (emailError) {
+              console.error(`Error sending pending approval notification to coach ${email}:`, emailError);
+            }
+          }
+        } catch (notifyError) {
+          console.error("Error notifying admins about new coach registration:", notifyError);
+        }
+      }
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      res.status(500).json(
+        createErrorResponse(error.message || "Registration failed", "server_error", 500)
+      );
+    }
+  });
+  
   // Standard credentials registration endpoint (for mobile app integration)
   app.post("/api/registerWithStandardCredentials", async (req, res) => {
     try {
