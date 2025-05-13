@@ -1012,6 +1012,12 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
             border-color: #10b981;
             color: #065f46;
           }
+          .alert-error {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #b91c1c;
+            display: none;
+          }
           .btn {
             display: inline-block;
             background-color: #4f46e5;
@@ -1022,6 +1028,8 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
             font-weight: 500;
             margin-right: 10px;
             transition: background-color 0.2s;
+            border: none;
+            cursor: pointer;
           }
           .btn:hover {
             background-color: #4338ca;
@@ -1045,6 +1053,47 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
             margin-top: 0;
             color: #4f46e5;
           }
+          form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+          }
+          label {
+            font-weight: 500;
+          }
+          input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+          }
+          pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-top: 20px;
+          }
+          .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+          }
+          .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+          }
+          .tab.active {
+            border-bottom: 2px solid #4f46e5;
+            color: #4f46e5;
+            font-weight: 500;
+          }
+          .tab-content {
+            display: none;
+          }
+          .tab-content.active {
+            display: block;
+          }
         </style>
       </head>
       <body>
@@ -1055,35 +1104,161 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
           Please use one of our standalone alternatives below.
         </div>
         
-        <div class="grid">
-          <div class="card">
-            <h3>Comprehensive App</h3>
-            <p>Our feature-rich standalone application with authentication and dashboard features.</p>
-            <a href="/app" class="btn">Launch App</a>
+        <div class="tabs">
+          <div class="tab active" onclick="showTab('apps')">App Options</div>
+          <div class="tab" onclick="showTab('register')">Test Registration</div>
+        </div>
+        
+        <div id="apps" class="tab-content active">
+          <div class="grid">
+            <div class="card">
+              <h3>Comprehensive App</h3>
+              <p>Our feature-rich standalone application with authentication and dashboard features.</p>
+              <a href="/app" class="btn">Launch App</a>
+            </div>
+            
+            <div class="card">
+              <h3>Simple App</h3>
+              <p>A basic standalone demo with interactive counter and live clock.</p>
+              <a href="/standalone" class="btn">Launch Demo</a>
+            </div>
+            
+            <div class="card">
+              <h3>Direct React Test</h3>
+              <p>A minimal React test page to verify React functionality.</p>
+              <a href="/direct-react-test" class="btn">View Test</a>
+            </div>
+            
+            <div class="card">
+              <h3>API Status</h3>
+              <p>Check if the backend API is running properly.</p>
+              <a href="/api/ping" class="btn">Check API</a>
+            </div>
           </div>
           
-          <div class="card">
-            <h3>Simple App</h3>
-            <p>A basic standalone demo with interactive counter and live clock.</p>
-            <a href="/standalone" class="btn">Launch Demo</a>
-          </div>
-          
-          <div class="card">
-            <h3>Direct React Test</h3>
-            <p>A minimal React test page to verify React functionality.</p>
-            <a href="/direct-react-test" class="btn">View Test</a>
-          </div>
-          
-          <div class="card">
-            <h3>API Status</h3>
-            <p>Check if the backend API is running properly.</p>
-            <a href="/api/ping" class="btn">Check API</a>
+          <div class="alert alert-success" style="margin-top: 30px;">
+            <strong>Note:</strong> All backend API endpoints are fully functional. The issues are limited to the frontend bundling system.
           </div>
         </div>
         
-        <div class="alert alert-success" style="margin-top: 30px;">
-          <strong>Note:</strong> All backend API endpoints are fully functional. The issues are limited to the frontend bundling system.
+        <div id="register" class="tab-content">
+          <div class="card">
+            <h3>Debug Registration</h3>
+            <p>Test registration with the provided coach email to diagnose issues.</p>
+            
+            <div id="error-message" class="alert alert-error"></div>
+            
+            <form id="registration-form">
+              <div>
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" value="coachcoach10050" required>
+              </div>
+              
+              <div>
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="coachcoach10050@yahoo.com" required>
+              </div>
+              
+              <div>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" value="Cricket2025!" required>
+              </div>
+              
+              <div>
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" name="fullName" value="Test Coach" required>
+              </div>
+              
+              <div>
+                <label for="role">Role</label>
+                <select id="role" name="role">
+                  <option value="coach">Coach</option>
+                  <option value="parent">Parent</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="phone">Phone (optional)</label>
+                <input type="text" id="phone" name="phone" value="555-123-4567">
+              </div>
+              
+              <button type="submit" class="btn" style="margin-top: 10px;">Register</button>
+            </form>
+            
+            <div style="margin-top: 20px;">
+              <h4>Response:</h4>
+              <pre id="response-output">No response yet</pre>
+            </div>
+          </div>
         </div>
+        
+        <script>
+          function showTab(tabId) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+              content.classList.remove('active');
+            });
+            
+            // Deactivate all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+              tab.classList.remove('active');
+            });
+            
+            // Activate the selected tab and content
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector('.tab:nth-child(' + (tabId === 'apps' ? '1' : '2') + ')').classList.add('active');
+          }
+          
+          document.getElementById('registration-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const errorElement = document.getElementById('error-message');
+            errorElement.style.display = 'none';
+            
+            const formData = {
+              username: document.getElementById('username').value,
+              email: document.getElementById('email').value,
+              password: document.getElementById('password').value,
+              fullName: document.getElementById('fullName').value,
+              role: document.getElementById('role').value,
+              phone: document.getElementById('phone').value
+            };
+            
+            const responseOutput = document.getElementById('response-output');
+            responseOutput.innerText = 'Submitting...';
+            
+            try {
+              console.log('Submitting registration for:', formData.email);
+              
+              const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+              });
+              
+              const result = await response.json();
+              responseOutput.innerText = JSON.stringify(result, null, 2);
+              
+              console.log('Registration response:', result);
+              
+              if (!result.success) {
+                errorElement.innerText = result.message || 'Registration failed';
+                errorElement.style.display = 'block';
+              }
+            } catch (error) {
+              console.error('Registration error:', error);
+              responseOutput.innerText = 'Error: ' + error.message;
+              
+              errorElement.innerText = 'An error occurred: ' + error.message;
+              errorElement.style.display = 'block';
+            }
+          });
+        </script>
       </body>
       </html>
     `);
