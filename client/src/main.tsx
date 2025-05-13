@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import MinimalApp from "./MinimalApp";
 import "./index.css";
 
 // Enhanced error logging for debugging
@@ -64,7 +65,6 @@ setViewportForMobile();
 // Load either our normal app or the minimal test app
 // Comment out one of these lines to test
 // createRoot(document.getElementById("root")!).render(<App />);
-import MinimalApp from "./MinimalApp";
 createRoot(document.getElementById("root")!).render(<MinimalApp />);
 
 // Register service worker for PWA if in production
