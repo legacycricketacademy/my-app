@@ -507,6 +507,46 @@ async function processPlayersData(playersData: any[]) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up the force-logout endpoint
   setupForceLogoutEndpoint(app);
+  
+  // Serve standalone test page that bypasses React completely
+  app.get('/diagnostic-page', (req, res) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Cricket Academy - Diagnostic Page</title>
+          <style>
+            body { font-family: sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+            .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            h1 { color: #4a5568; }
+            .info { background: #ebf8ff; padding: 15px; border-radius: 5px; margin: 15px 0; }
+            .error { background: #fff5f5; border-left: 4px solid #f56565; padding: 15px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Cricket Academy - Diagnostic Page</h1>
+            <div class="info">
+              <p><strong>Server Time:</strong> ${new Date().toISOString()}</p>
+              <p><strong>Express:</strong> Running correctly</p>
+              <p><strong>Node Version:</strong> ${process.version}</p>
+            </div>
+            <h2>Troubleshooting</h2>
+            <p>The main application is experiencing rendering issues. This page confirms that the server is working correctly.</p>
+            <p>Next steps for debugging:</p>
+            <ul>
+              <li>Check browser console for JavaScript errors</li>
+              <li>Verify Firebase configuration is correct</li>
+              <li>Test alternative rendering approaches</li>
+            </ul>
+          </div>
+        </body>
+      </html>
+    `);
+  });
+  
   // Simple test endpoint to check connectivity
   app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
