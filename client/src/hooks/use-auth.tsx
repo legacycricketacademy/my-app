@@ -76,8 +76,8 @@ type AuthContextType = {
   firebaseLoginMutation: UseMutationResult<any, Error, LoginData>;
   firebaseRegisterMutation: UseMutationResult<any, Error, RegisterData>;
   googleSignInMutation: UseMutationResult<any, Error, void>;
-  resetPasswordMutation: UseMutationResult<boolean, Error, {email: string}>;
-  resendVerificationEmailMutation: UseMutationResult<{message: string}, Error, {userId: number}>;
+  resetPasswordMutation: UseMutationResult<boolean | undefined, Error, {email: string}>;
+  resendVerificationEmailMutation: UseMutationResult<{message: string} | undefined, Error, {userId: number}>;
 };
 
 type LoginData = {
@@ -951,10 +951,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Reset password with Firebase
+  // Reset password with Firebase and fallback to our server
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ email }: { email: string }) => {
-      return await firebaseResetPassword(email);
+      try {
+        // First try with Firebase
+        const firebaseResult = await firebaseResetPassword(email);
+        return firebaseResult;
+      } catch (firebaseError) {
+        console.log("Firebase password reset failed, trying backend:", firebaseError);
+        
+        // If Firebase fails, try our backend with standardized response
+        const response = await apiRequest<{ success: boolean }>('POST', "/api/auth/reset-password", { email });
+        
+        if (!response.success) {
+          throw new Error(response.message || "Password reset failed. Please try again.");
+        }
+        
+        return response.data?.success || true;
+      }
     },
     onSuccess: () => {
       toast({
@@ -978,7 +993,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!response.success) {
         throw new Error(response.message || "Failed to resend verification email");
       }
-      return response.data;
+      // Make sure we always return a valid object with a message property
+      return response.data || { message: "Verification email sent" };
     },
     onSuccess: () => {
       toast({
