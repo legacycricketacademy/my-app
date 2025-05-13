@@ -621,22 +621,39 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/login", async (req, res, next) => {
+    // Import response utilities for standardized responses
+    const { createAuthResponse, createUnauthorizedResponse, createErrorResponse } = await import('./utils/api-response');
+
     passport.authenticate("local", async (err: any, user: Express.User | false, info: { message?: string } = {}) => {
       if (err) {
-        return next(err);
+        console.error("Authentication error:", err);
+        return res.status(500).json(createErrorResponse(
+          "Login failed due to server error",
+          "server_error",
+          500
+        ));
       }
+      
       if (!user) {
         // Audit the failed login attempt
         if (req.body.username) {
           await auditFailedLogin(multiTenantStorage, req, `Login failed for username: ${req.body.username}`);
         }
-        return res.status(401).json({ message: info.message || "Login failed" });
+        
+        return res.status(401).json(createUnauthorizedResponse(
+          info.message || "Invalid credentials"
+        ));
       }
       
       req.login(user, async (loginErr) => {
         if (loginErr) {
-          return next(loginErr);
+          console.error("Session login error:", loginErr);
+          return res.status(500).json(createErrorResponse(
+            "Login session could not be established",
+            "session_error",
+            500
+          ));
         }
         
         try {
@@ -665,20 +682,42 @@ export function setupAuth(app: Express) {
           
           // Don't send password back to client
           const { password, ...userWithoutPassword } = user as any;
-          return res.status(200).json(userWithoutPassword);
+          
+          // Return standardized auth response
+          return res.status(200).json(createAuthResponse(
+            {
+              user: userWithoutPassword,
+              token: tokens.accessToken
+            },
+            "Login successful"
+          ));
         } catch (error) {
           console.error("Error during login:", error);
-          return res.status(500).json({ message: "Internal server error during login" });
+          return res.status(500).json(createErrorResponse(
+            "Internal server error during login",
+            "login_error",
+            500
+          ));
         }
       });
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req, res, next) => {
+  app.post("/api/logout", async (req, res, next) => {
+    // Import response utilities for standardized responses
+    const { createSuccessResponse, createErrorResponse } = await import('./utils/api-response');
+    
     const userId = req.user?.id;
     
     req.logout((err) => {
-      if (err) return next(err);
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json(createErrorResponse(
+          "Error during logout process",
+          "logout_error",
+          500
+        ));
+      }
       
       // Clear session tokens
       clearSessionCookies(res);
@@ -699,7 +738,11 @@ export function setupAuth(app: Express) {
         }
       }
       
-      res.sendStatus(200);
+      // Return standardized success response
+      return res.status(200).json(createSuccessResponse(
+        null,
+        "Logout successful"
+      ));
     });
   });
   
