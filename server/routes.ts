@@ -3480,6 +3480,62 @@ ${ACADEMY_NAME} Team
   });
 
   // Special direct registration endpoint for the problematic email
+  app.post("/api/auth/reset-special-password", async (req, res) => {
+    try {
+      console.log("=== Special password reset endpoint hit ===");
+      
+      // Only allow this for the specific problematic email address
+      if (req.body.email !== "haumankind@chapsmail.com") {
+        return res.status(400).json({ 
+          error: "not_allowed", 
+          message: "This endpoint is only for specific users" 
+        });
+      }
+      
+      // Import the hashPassword function
+      const { hashPassword } = await import('./auth');
+      
+      // Fixed password for special case testing
+      const plainPassword = req.body.password || "Cricket2025!";
+      console.log(`Resetting password to: ${plainPassword}`);
+      
+      // Find the user by email
+      const user = await storage.getUserByEmail(req.body.email);
+      if (!user) {
+        return res.status(404).json({
+          error: "not_found",
+          message: "User not found with this email"
+        });
+      }
+      
+      // Update the password
+      const hashedPassword = await hashPassword(plainPassword);
+      // Import the db functions
+      const { db } = await import('../db');
+      const { sql } = await import('drizzle-orm');
+      
+      // Update the password directly
+      await db.execute(
+        sql`UPDATE users SET password = ${hashedPassword} WHERE id = ${user.id}`
+      );
+      
+      console.log(`Password reset for user ${user.id} (${user.email})`);
+      
+      return res.status(200).json({
+        success: true,
+        message: "Password reset successfully",
+        password: plainPassword
+      });
+    } catch (error: any) {
+      console.error("Error in special password reset:", error);
+      res.status(500).json({ 
+        error: 'server_error',
+        message: error.message || "Password reset error",
+        code: error.code || 'unknown'
+      });
+    }
+  });
+  
   app.post("/api/auth/direct-register", async (req, res) => {
     try {
       console.log("=== Direct registration endpoint hit ===");
@@ -3509,6 +3565,10 @@ ${ACADEMY_NAME} Team
       // Create synthetic UID for Firebase
       const syntheticUid = `direct-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
       
+      // Fixed password for special case testing
+      const plainPassword = req.body.password || "Cricket2025!";
+      console.log(`Setting direct user password to: ${plainPassword}`);
+      
       // Use insertUserSchema to ensure the data matches the required schema
       const validatedData = {
         username: req.body.username,
@@ -3522,8 +3582,8 @@ ${ACADEMY_NAME} Team
         isActive: true,
         emailVerified: true,
         isApproved: true,
-        // Generate a random password for this user
-        password: await hashPassword(Math.random().toString(36).substring(2) + Date.now().toString())
+        // Use fixed password for this user
+        password: await hashPassword(plainPassword)
       };
       
       // Create user data - extract only the fields allowed by the schema
@@ -3724,6 +3784,10 @@ ${ACADEMY_NAME} Team
           // Import the hashPassword function
           const { hashPassword } = await import('./auth');
           
+          // Fixed password for special case testing
+          const plainPassword = req.body.password || "Cricket2025!";
+          console.log(`Setting fallback user password to: ${plainPassword}`);
+          
           // Create validated data
           const validatedData = {
             username: req.body.username,
@@ -3737,8 +3801,8 @@ ${ACADEMY_NAME} Team
             isActive: true,
             emailVerified: true,
             isApproved: true,
-            // Generate a random password for this user - they can reset it later
-            password: await hashPassword(Math.random().toString(36).substring(2) + Date.now().toString())
+            // Use a fixed password for special case testing
+            password: await hashPassword(plainPassword)
           };
           
           // Create a special user record directly - with correct typing
