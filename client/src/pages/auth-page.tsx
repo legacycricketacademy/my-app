@@ -103,12 +103,63 @@ interface InvitationToken {
 }
 
 export default function AuthPage() {
+  console.log('Auth page component rendering...');
+  
+  // Initialize all state outside of try/catch to avoid React hook issues
   const [activeTab, setActiveTab] = useState<string>("login");
   const [invitationToken, setInvitationToken] = useState<InvitationToken | null>(null);
   const [invitationExpired, setInvitationExpired] = useState<boolean>(false);
-  const { user, loginMutation, registerMutation, firebaseRegisterMutation, resendVerificationEmailMutation } = useAuth();
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [isForgotUsernameOpen, setIsForgotUsernameOpen] = useState(false);
+  
+  // State for error handling
+  const [authError, setAuthError] = useState<Error | null>(null);
+  
+  // Attempt to get auth context
+  let auth, firebaseAuthData;
+  try {
+    console.log('About to call useAuth hook...');
+    auth = useAuth();
+    console.log('useAuth returned:', Object.keys(auth));
+    
+    console.log('About to call useFirebaseAuth hook...');
+    firebaseAuthData = useFirebaseAuth();
+    console.log('useFirebaseAuth returned successfully');
+  } catch (error) {
+    console.error('Error in AuthPage component hooks:', error);
+    setAuthError(error instanceof Error ? error : new Error('Unknown authentication error'));
+  }
+  
+  // If there was an error with auth hooks, show error message
+  if (authError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="p-6 bg-white rounded shadow-lg">
+          <h2 className="text-xl font-bold mb-4">Authentication Error</h2>
+          <p className="text-red-600">Failed to initialize authentication components. Please try refreshing the page.</p>
+          <p className="text-gray-600 mt-2">{authError.message}</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // If auth hooks worked but returned no data (shouldn't happen)
+  if (!auth || !firebaseAuthData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="p-6 bg-white rounded shadow-lg">
+          <h2 className="text-xl font-bold mb-4">Authentication Error</h2>
+          <p className="text-red-600">Failed to load authentication data. Please try refreshing the page.</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Destructure the auth data now that we know it exists
+  const { user, loginMutation, registerMutation, firebaseRegisterMutation, resendVerificationEmailMutation } = auth;
   const [location, navigate] = useLocation();
   const { toast } = useToast();
+  
   const { 
     currentUser: firebaseUser, 
     loading: firebaseLoading, 
@@ -116,11 +167,7 @@ export default function AuthPage() {
     signup: firebaseSignup,
     signInWithGoogle,
     resetPassword
-  } = useFirebaseAuth();
-  
-  // State for forgot modals
-  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
-  const [isForgotUsernameOpen, setIsForgotUsernameOpen] = useState(false);
+  } = firebaseAuthData;
   
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
