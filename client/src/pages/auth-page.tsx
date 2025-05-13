@@ -103,63 +103,25 @@ interface InvitationToken {
 }
 
 export default function AuthPage() {
-  console.log('Auth page component rendering...');
+  console.log('Auth page component starting to render');
   
-  // Initialize all state outside of try/catch to avoid React hook issues
+  // Basic hooks and state
   const [activeTab, setActiveTab] = useState<string>("login");
   const [invitationToken, setInvitationToken] = useState<InvitationToken | null>(null);
   const [invitationExpired, setInvitationExpired] = useState<boolean>(false);
+  // State for modals
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [isForgotUsernameOpen, setIsForgotUsernameOpen] = useState(false);
   
-  // State for error handling
-  const [authError, setAuthError] = useState<Error | null>(null);
+  console.log('State initialized, getting auth context');
+  const authContext = useAuth();
+  console.log('Auth context retrieved, properties:', Object.keys(authContext));
   
-  // Attempt to get auth context
-  let auth, firebaseAuthData;
-  try {
-    console.log('About to call useAuth hook...');
-    auth = useAuth();
-    console.log('useAuth returned:', Object.keys(auth));
-    
-    console.log('About to call useFirebaseAuth hook...');
-    firebaseAuthData = useFirebaseAuth();
-    console.log('useFirebaseAuth returned successfully');
-  } catch (error) {
-    console.error('Error in AuthPage component hooks:', error);
-    setAuthError(error instanceof Error ? error : new Error('Unknown authentication error'));
-  }
-  
-  // If there was an error with auth hooks, show error message
-  if (authError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="p-6 bg-white rounded shadow-lg">
-          <h2 className="text-xl font-bold mb-4">Authentication Error</h2>
-          <p className="text-red-600">Failed to initialize authentication components. Please try refreshing the page.</p>
-          <p className="text-gray-600 mt-2">{authError.message}</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // If auth hooks worked but returned no data (shouldn't happen)
-  if (!auth || !firebaseAuthData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="p-6 bg-white rounded shadow-lg">
-          <h2 className="text-xl font-bold mb-4">Authentication Error</h2>
-          <p className="text-red-600">Failed to load authentication data. Please try refreshing the page.</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Destructure the auth data now that we know it exists
-  const { user, loginMutation, registerMutation, firebaseRegisterMutation, resendVerificationEmailMutation } = auth;
+  const { user, loginMutation, registerMutation, firebaseRegisterMutation, resendVerificationEmailMutation } = authContext;
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   
+  console.log('Getting Firebase auth');
   const { 
     currentUser: firebaseUser, 
     loading: firebaseLoading, 
@@ -167,7 +129,8 @@ export default function AuthPage() {
     signup: firebaseSignup,
     signInWithGoogle,
     resetPassword
-  } = firebaseAuthData;
+  } = useFirebaseAuth();
+  console.log('Firebase auth retrieved');
   
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
