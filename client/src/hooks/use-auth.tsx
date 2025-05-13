@@ -914,6 +914,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             backendUserData = await response.json();
             
+            console.log("Raw backend response:", backendUserData);
+            
+            // Handle nested user object if present or use direct response
+            if (backendUserData && backendUserData.user && typeof backendUserData.user === 'object') {
+              console.log("Using nested user object from response");
+              backendUserData = backendUserData.user;
+            }
+            
             // Validate that we have a proper user object
             if (!backendUserData || typeof backendUserData !== 'object' || !backendUserData.id) {
               console.error("Invalid backend response:", backendUserData);
