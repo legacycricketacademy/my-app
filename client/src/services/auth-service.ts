@@ -337,13 +337,26 @@ export async function login(data: LoginData): Promise<AuthResponse<User>> {
           };
         }
         
-        const userData = await linkResponse.json();
+        const responseData = await linkResponse.json();
         
-        return {
-          success: true,
-          message: "Successfully authenticated via Firebase",
-          data: userData
-        };
+        // Handle standardized API response format
+        if (responseData.success !== undefined) {
+          // This is a standardized response
+          return {
+            success: responseData.success,
+            message: responseData.message || "Successfully authenticated via Firebase",
+            data: responseData.data,
+            code: responseData.code,
+            status: responseData.status
+          };
+        } else {
+          // Legacy format - assume it's just the user data
+          return {
+            success: true,
+            message: "Successfully authenticated via Firebase",
+            data: responseData
+          };
+        }
       }
       
       // If Firebase failed, try direct backend login
@@ -529,12 +542,26 @@ export async function registerWithFirebaseAndLink(data: RegisterData): Promise<A
       };
     }
     
-    const userData = await linkResponse.json();
+    const responseData = await linkResponse.json();
     
-    return {
-      success: true,
-      message: "Successfully registered",
-      data: userData.user
+    // Handle standardized API response format
+    if (responseData.success !== undefined) {
+      // This is a standardized response
+      return {
+        success: responseData.success,
+        message: responseData.message || "Successfully registered",
+        data: responseData.data,
+        code: responseData.code,
+        status: responseData.status
+      };
+    } else {
+      // Legacy format
+      return {
+        success: true,
+        message: "Successfully registered",
+        // Check if the data is nested under a user property
+        data: responseData.user || responseData
+      };
     };
   } catch (error: any) {
     return {
