@@ -538,8 +538,9 @@ async function sendCoachEmails(
     // Also notify admin about new coach
     const adminEmail = "madhukar.kcc@gmail.com"; // Administrator email
     
-    // Generate approval link
-    const approvalLink = `${appBaseUrl || ''}/admin/coaches-pending-approval`;
+    // Generate approval link - ensure it works both locally and on deployed sites
+    // Uses the coaches-pending-approval route which is defined in App.tsx
+    const approvalLink = `${appBaseUrl || ''}/coaches-pending-approval`;
     
     const adminEmailContent = generateAdminCoachApprovalRequestEmail(
       "Administrator", // Admin name
