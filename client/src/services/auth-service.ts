@@ -62,11 +62,30 @@ const SPECIAL_EMAILS = [
   'haumankind@chapsmail.com'
 ];
 
+// Special domains that need direct handling
+const SPECIAL_DOMAINS = [
+  'clowmail.com'
+];
+
 /**
  * Check if an email requires special handling
  */
 export function isSpecialEmail(email: string): boolean {
-  return SPECIAL_EMAILS.includes(email.toLowerCase());
+  // Check for exact special email matches first
+  if (SPECIAL_EMAILS.includes(email.toLowerCase())) {
+    return true;
+  }
+  
+  // Then check for special domains
+  const emailParts = email.toLowerCase().split('@');
+  if (emailParts.length === 2) {
+    const domain = emailParts[1];
+    if (SPECIAL_DOMAINS.includes(domain)) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 /**
