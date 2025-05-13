@@ -113,8 +113,17 @@ export default function AuthPageSimplified() {
     });
   };
 
+  // Enhanced loading state with better user feedback
   if (isLoading) {
-    return <div className="p-8 text-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+        <div className="p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <h3 className="text-xl font-medium">Loading authentication state...</h3>
+          <p className="text-muted-foreground mt-2">Please wait while we verify your session.</p>
+        </div>
+      </div>
+    );
   }
 
   return (

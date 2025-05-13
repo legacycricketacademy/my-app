@@ -204,10 +204,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
-  // Extract user from the API response
+  // Extract user from the API response with enhanced error handling
   console.log("Auth - Raw API Response:", userResponse);
   
-  const user = userResponse?.success && userResponse?.data?.user ? userResponse.data.user : null;
+  // Safely extract user data with defensive checks for each property
+  let user = null;
+  if (userResponse) {
+    // Check if response follows our API standard format
+    if (userResponse.success && userResponse.data?.user) {
+      user = userResponse.data.user;
+      console.log("Auth - Standard API response format detected");
+    } 
+    // Fallback: check if response is directly the user object with required fields
+    else if (userResponse.id && userResponse.username && userResponse.role) {
+      user = userResponse;
+      console.log("Auth - Legacy API response format detected (direct user object)");
+    }
+    // Fallback: check if response has a nested user property at the top level
+    else if (userResponse.user && typeof userResponse.user === 'object') {
+      user = userResponse.user;
+      console.log("Auth - Legacy API response format detected (top-level user property)");
+    }
+  }
   
   console.log("Auth - Extracted User:", user);
   
@@ -305,15 +323,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!user) {
         throw new Error("User data missing from response");
       }
-      return user;
+      
+      console.log("Login Mutation - Extracted User:", user);
+      
+      // Return the entire standardized API response
+      return response;
     },
-    onSuccess: (user: User) => {
-      // Store user in standardized API response format
-      queryClient.setQueryData(["/api/user"], {
-        success: true,
-        message: "User data retrieved successfully",
-        data: { user }
-      });
+    onSuccess: (response: ApiResponse<{ user: User }>) => {
+      // Store the entire API response
+      console.log("Login Mutation onSuccess - API Response:", response);
+      queryClient.setQueryData(["/api/user"], response);
       
       // Check if the coach/admin account is pending approval
       if ((user.role === 'coach' || user.role === 'admin') && 
