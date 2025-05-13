@@ -1,0 +1,2445 @@
+Yes — absolutely, you should continue updating the remaining endpoints to follow the standardized ApiResponse<T> format. You’re very close to full consistency across your authentication system, and finishing this will:
+
+✅ Eliminate future mismatches between server and client
+✅ Make debugging and testing much easier
+✅ Allow you to use one unified apiPost / apiGet client everywhere
+✅ Prepare the app for clean role-based redirects and UI states post-auth
+
+⸻
+
+🔧 Suggested Update Priority
+	1.	/api/auth/firebase-auth
+	•	This is part of the core Firebase login flow. Standardizing it will help the frontend clearly interpret login errors like "email not verified" or "account not approved".
+	2.	/api/logout
+	•	Return:
+
+{ "success": true, "message": "Logged out successfully" }
+
+	3.	/api/auth/get-email-by-username
+	•	Should return something like:
+
+
+{
+  "success": true,
+  "message": "Email retrieved successfully",
+  "data": { "email": "user@example.com" }
+}
+
+	4.	/api/auth/reset-special-password
+	•	This one is niche, so save it for last. But still wrap with:
+
+{
+  "success": true/false,
+  "message": "Password reset email sent.",
+  "data": { ...optional }
+}
+
+Once all these are done, you’ll have a truly unified auth backend — ready for centralized logging, analytics, and future admin tools.
+
+ here’s a reusable sendApiResponse() utility you can drop into your Express backend to keep all your routes consistent with the ApiResponse<T> format.
+
+
+1. Create: server/utils/api-response.ts
+
+// server/utils/api-response.ts
+import { Response } from "express";
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+  [key: string]: any; // for optional props like errorCode, meta, etc.
+}
+
+export function sendSuccess<T>(
+  res: Response,
+  message: string,
+  data?: T,
+  statusCode: number = 200
+) {
+  const response: ApiResponse<T> = {
+    success: true,
+    message,
+    data,
+  };
+  return res.status(statusCode).json(response);
+}
+
+export function sendError(
+  res: Response,
+  message: string,
+  statusCode: number = 400,
+  extra?: Record<string, any>
+) {
+  const response: ApiResponse = {
+    success: false,
+    message,
+    ...extra,
+  };
+  return res.status(statusCode).json(response);
+}
+
+2. Use in Any Express Route
+
+Example: Firebase Login Route
+
+import { sendSuccess, sendError } from "@/utils/api-response";
+
+app.post("/api/auth/firebase-auth", async (req, res) => {
+  try {
+    const user = await handleFirebaseAuth(req.body.token);
+    if (!user) return sendError(res, "Authentication failed", 401);
+
+    return sendSuccess(res, "Firebase login successful", { user, token: user.jwt });
+  } catch (err) {
+    return sendError(res, "Server error during login", 500);
+  }
+});
+
+
+3. Example: Logout Route
+
+app.post("/api/logout", (req, res) => {
+  res.clearCookie("refreshToken");
+  return sendSuccess(res, "Logged out successfully");
+});
+
+Benefits
+	•	🔄 Ensures all endpoints return consistent shape
+	•	🧼 Reduces repeated code in routes
+	•	🧪 Makes frontend API client dead-simple to debug and build around
+
+
+here’s an extended version of your sendApiResponse() utility that also supports pagination metadata. This is perfect for endpoints like:
+	•	/api/payments
+	•	/api/coaches
+	•	/api/players
+	•	/api/sessions
+
+
+
+1. Updated: api-response.ts with Pagination Support
+
+// server/utils/api-response.ts
+import { Response } from "express";
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+  meta?: {
+    total?: number;
+    page?: number;
+    pageSize?: number;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+export function sendSuccess<T>(
+  res: Response,
+  message: string,
+  data?: T,
+  statusCode: number = 200,
+  meta?: ApiResponse["meta"]
+) {
+  const response: ApiResponse<T> = {
+    success: true,
+    message,
+    data,
+    ...(meta ? { meta } : {}),
+  };
+  return res.status(statusCode).json(response);
+}
+
+export function sendError(
+  res: Response,
+  message: string,
+  statusCode: number = 400,
+  extra?: Record<string, any>
+) {
+  const response: ApiResponse = {
+    success: false,
+    message,
+    ...extra,
+  };
+  return res.status(statusCode).json(response);
+}
+
+2. Example Usage: Coaches List with Pagination
+
+
+// server/routes/admin.ts
+import { sendSuccess, sendError } from "@/utils/api-response";
+
+app.get("/api/admin/coaches", async (req, res) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const pageSize = parseInt(req.query.pageSize as string) || 10;
+
+  try {
+    const [coaches, total] = await getCoachesPaginated({ page, pageSize });
+
+    return sendSuccess(res, "Coaches fetched successfully", coaches, 200, {
+      total,
+      page,
+      pageSize,
+    });
+  } catch (err) {
+    return sendError(res, "Failed to fetch coaches", 500);
+  }
+});
+
+3. Frontend Example (TypeScript Typing)
+interface Coach {
+  id: string;
+  name: string;
+  status: "approved" | "pending";
+}
+
+interface CoachesResponse {
+  coaches: Coach[];
+}
+
+const res = await apiGet<ApiResponse<Coach[]>>("/admin/coaches?page=1");
+
+if (res.success) {
+  const { data, meta } = res;
+  console.log("Total coaches:", meta?.total);
+}
+
+Benefits of Meta Support
+	•	📊 Easy to add pagination, sorting, filtering
+	•	⚙️ Frontend can reuse layout and tables easily
+	•	🔁 Works with any list-type API
+
+
+
+adding built-in sorting and filtering support in your list endpoints will make them more powerful, reusable, and frontend-friendly.
+
+Let’s build a small utility that:
+	•	✅ Parses query parameters like ?sort=name&order=asc&status=pending
+	•	✅ Handles default values
+	•	✅ Passes clean options to your DB layer (e.g., Prisma or Drizzle)
+
+⸻
+
+✅ 1. Create parseQueryOptions() Utility
+
+
+// server/utils/query-options.ts
+
+export interface QueryOptions {
+  page: number;
+  pageSize: number;
+  sort?: string;
+  order?: "asc" | "desc";
+  filters?: Record<string, string>;
+}
+
+export function parseQueryOptions(query: any): QueryOptions {
+  const page = parseInt(query.page) || 1;
+  const pageSize = parseInt(query.pageSize) || 10;
+  const sort = query.sort || undefined;
+  const order = query.order === "desc" ? "desc" : "asc";
+
+  // Collect filters (any other keys that aren't known fields)
+  const filters: Record<string, string> = {};
+  for (const key in query) {
+    if (!["page", "pageSize", "sort", "order"].includes(key)) {
+      filters[key] = query[key];
+    }
+  }
+
+  return { page, pageSize, sort, order, filters };
+}
+
+ 2. Use It in Your Route
+
+import { parseQueryOptions } from "@/utils/query-options";
+import { sendSuccess, sendError } from "@/utils/api-response";
+
+app.get("/api/admin/coaches", async (req, res) => {
+  const { page, pageSize, sort, order, filters } = parseQueryOptions(req.query);
+
+  try {
+    const [coaches, total] = await getCoachesPaginated({
+      page,
+      pageSize,
+      sortBy: sort,
+      sortOrder: order,
+      filters,
+    });
+
+    return sendSuccess(res, "Coaches fetched", coaches, 200, {
+      total,
+      page,
+      pageSize,
+    });
+  } catch (err) {
+    return sendError(res, "Failed to fetch coaches", 500);
+  }
+});
+
+
+3. Example Frontend Calls
+
+/api/admin/coaches?page=2&pageSize=10&sort=name&order=asc&status=pending
+	•	Sorts by name A–Z
+	•	Filters only coaches with status=pending
+	•	Returns page 2 with 10 per page
+
+
+ 4. Optional — DB Usage Example (e.g., Drizzle or Prisma)
+
+await db.query.coaches.findMany({
+  where: {
+    ...(filters.status ? { status: filters.status } : {}),
+  },
+  orderBy: sort ? { [sort]: order } : undefined,
+  skip: (page - 1) * pageSize,
+  take: pageSize,
+});
+
+With parseQueryOptions + sendSuccess, all your paginated endpoints will:
+	•	🧹 Stay clean and consistent
+	•	🧠 Automatically support sorting/filtering
+	•	📦 Be plug-and-play on frontend tables
+
+here’s a fully reusable usePaginatedApi() React hook that works with your standardized paginated backend endpoints (like /api/coaches, /api/players, etc.).
+
+t supports:
+
+✅ Pagination (page, pageSize)
+✅ Sorting (sort, order)
+✅ Filtering (any custom fields like status=pending)
+✅ Built-in loading, error, and response handling
+
+ 1. usePaginatedApi.ts – Generic Hook
+
+
+// hooks/usePaginatedApi.ts
+import { useState, useEffect } from "react";
+import { apiGet } from "@/lib/api-client";
+import { ApiResponse } from "@/types/api";
+
+export interface UsePaginatedApiOptions {
+  endpoint: string;
+  initialPage?: number;
+  initialPageSize?: number;
+  defaultSort?: string;
+  defaultOrder?: "asc" | "desc";
+  filters?: Record<string, string>;
+}
+
+export function usePaginatedApi<T>({
+  endpoint,
+  initialPage = 1,
+  initialPageSize = 10,
+  defaultSort,
+  defaultOrder = "asc",
+  filters = {},
+}: UsePaginatedApiOptions) {
+  const [data, setData] = useState<T[]>([]);
+  const [meta, setMeta] = useState<{ total: number; page: number; pageSize: number }>({
+    total: 0,
+    page: initialPage,
+    pageSize: initialPageSize,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = async () => {
+    setLoading(true);
+    setError(null);
+
+    const params = new URLSearchParams({
+      page: meta.page.toString(),
+      pageSize: meta.pageSize.toString(),
+      ...(defaultSort ? { sort: defaultSort } : {}),
+      ...(defaultOrder ? { order: defaultOrder } : {}),
+      ...filters,
+    });
+
+    const res = await apiGet<ApiResponse<T[]>>(`${endpoint}?${params.toString()}`);
+
+    if (res.success && res.data) {
+      setData(res.data);
+      if (res.meta) {
+        setMeta({
+          total: res.meta.total || 0,
+          page: res.meta.page || initialPage,
+          pageSize: res.meta.pageSize || initialPageSize,
+        });
+      }
+    } else {
+      setError(res.message || "Failed to load data");
+    }
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetch();
+  }, [meta.page, meta.pageSize, JSON.stringify(filters), defaultSort, defaultOrder]);
+
+  const setPage = (newPage: number) => setMeta((prev) => ({ ...prev, page: newPage }));
+  const setPageSize = (newSize: number) =>
+    setMeta((prev) => ({ ...prev, pageSize: newSize, page: 1 }));
+
+  return {
+    data,
+    meta,
+    loading,
+    error,
+    setPage,
+    setPageSize,
+    refetch: fetch,
+  };
+}
+
+
+ 2. Example Usage (Coaches Table)
+
+const {
+  data: coaches,
+  meta,
+  loading,
+  error,
+  setPage,
+  setPageSize,
+  refetch,
+} = usePaginatedApi<Coach>({
+  endpoint: "/admin/coaches",
+  defaultSort: "name",
+  filters: { status: "pending" },
+});
+
+ 3. UI Controls (Basic Pagination)
+
+<button disabled={meta.page === 1} onClick={() => setPage(meta.page - 1)}>Prev</button>
+<span>Page {meta.page}</span>
+<button onClick={() => setPage(meta.page + 1)}>Next</button>
+
+This  hook can be reused for any paginated data in your admin or coach dashboards.
+
+ here’s a fully reusable PaginatedTable component that works seamlessly with your usePaginatedApi() hook. It supports:
+
+✅ Dynamic column rendering
+✅ Pagination controls
+✅ Sorting by column
+✅ Custom row renderers (if needed later)
+
+
+1. PaginatedTable.tsx
+
+// components/table/PaginatedTable.tsx
+
+import React from "react";
+
+interface Column<T> {
+  key: keyof T;
+  label: string;
+  sortable?: boolean;
+}
+
+interface PaginatedTableProps<T> {
+  columns: Column<T>[];
+  data: T[];
+  loading: boolean;
+  currentPage: number;
+  total: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+}
+
+export function PaginatedTable<T>({
+  columns,
+  data,
+  loading,
+  currentPage,
+  total,
+  pageSize,
+  onPageChange,
+}: PaginatedTableProps<T>) {
+  const totalPages = Math.ceil(total / pageSize);
+
+  return (
+    <div className="border rounded overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-100">
+          <tr>
+            {columns.map((col) => (
+              <th key={col.key as string} className="text-left p-2 font-semibold">
+                {col.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <tr>
+              <td colSpan={columns.length} className="p-4 text-center">
+                Loading...
+              </td>
+            </tr>
+          ) : data.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} className="p-4 text-center">
+                No data available
+              </td>
+            </tr>
+          ) : (
+            data.map((row, idx) => (
+              <tr key={idx} className="border-t">
+                {columns.map((col) => (
+                  <td key={col.key as string} className="p-2">
+                    {String(row[col.key])}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+
+      <div className="flex items-center justify-between p-3 text-sm">
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <div className="space-x-2">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => onPageChange(currentPage - 1)}
+            className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+            className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ 2. How to Use It
+
+import { usePaginatedApi } from "@/hooks/usePaginatedApi";
+import { PaginatedTable } from "@/components/table/PaginatedTable";
+
+const {
+  data: coaches,
+  meta,
+  loading,
+  setPage,
+} = usePaginatedApi<Coach>({
+  endpoint: "/admin/coaches",
+  defaultSort: "name",
+  filters: { status: "pending" },
+});
+
+const columns = [
+  { key: "name", label: "Coach Name" },
+  { key: "email", label: "Email" },
+  { key: "status", label: "Status" },
+];
+
+return (
+  <PaginatedTable
+    columns={columns}
+    data={coaches}
+    loading={loading}
+    currentPage={meta.page}
+    total={meta.total}
+    pageSize={meta.pageSize}
+    onPageChange={setPage}
+  />
+);
+
+With this setup:
+	•	You can plug in any paginated list (players, payments, sessions)
+	•	Columns are dynamic
+	•	Sorting can be added easily by modifying headers
+	•	Supports server-side pagination
+
+
+ let’s upgrade the PaginatedTable to support clickable column headers for sorting, including:
+
+✅ Toggle between ascending and descending
+✅ Highlight the active sort column
+✅ Emit onSortChange(column, direction) back to the parent
+✅ Works seamlessly with your paginated API hook
+
+⸻
+
+✅ 1. Update PaginatedTable.tsx to Support Sorting
+
+
+// components/table/PaginatedTable.tsx
+
+import { useState } from "react";
+
+interface Column<T> {
+  key: keyof T;
+  label: string;
+  sortable?: boolean;
+}
+
+interface PaginatedTableProps<T> {
+  columns: Column<T>[];
+  data: T[];
+  loading: boolean;
+  currentPage: number;
+  total: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onSortChange?: (column: string, direction: "asc" | "desc") => void;
+  currentSort?: string;
+  currentOrder?: "asc" | "desc";
+}
+
+export function PaginatedTable<T>({
+  columns,
+  data,
+  loading,
+  currentPage,
+  total,
+  pageSize,
+  onPageChange,
+  onSortChange,
+  currentSort,
+  currentOrder,
+}: PaginatedTableProps<T>) {
+  const totalPages = Math.ceil(total / pageSize);
+
+  const toggleSort = (key: string) => {
+    const newOrder =
+      currentSort === key ? (currentOrder === "asc" ? "desc" : "asc") : "asc";
+    onSortChange?.(key, newOrder);
+  };
+
+  return (
+    <div className="border rounded overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-100">
+          <tr>
+            {columns.map((col) => (
+              <th
+                key={col.key as string}
+                className="text-left p-2 font-semibold cursor-pointer select-none"
+                onClick={() => col.sortable && toggleSort(col.key as string)}
+              >
+                {col.label}
+                {col.sortable && (
+                  <span className="ml-1 text-xs text-gray-500">
+                    {currentSort === col.key
+                      ? currentOrder === "asc"
+                        ? "▲"
+                        : "▼"
+                      : ""}
+                  </span>
+                )}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <tr>
+              <td colSpan={columns.length} className="p-4 text-center">
+                Loading...
+              </td>
+            </tr>
+          ) : data.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} className="p-4 text-center">
+                No data available
+              </td>
+            </tr>
+          ) : (
+            data.map((row, idx) => (
+              <tr key={idx} className="border-t">
+                {columns.map((col) => (
+                  <td key={col.key as string} className="p-2">
+                    {String(row[col.key])}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+
+      <div className="flex items-center justify-between p-3 text-sm">
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <div className="space-x-2">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => onPageChange(currentPage - 1)}
+            className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+            className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+2. Example Usage with usePaginatedApi()
+
+const [sort, setSort] = useState("name");
+const [order, setOrder] = useState<"asc" | "desc">("asc");
+
+const {
+  data: coaches,
+  meta,
+  loading,
+  setPage,
+} = usePaginatedApi<Coach>({
+  endpoint: "/admin/coaches",
+  defaultSort: sort,
+  defaultOrder: order,
+  filters: { status: "pending" },
+});
+
+return (
+  <PaginatedTable
+    columns={[
+      { key: "name", label: "Coach Name", sortable: true },
+      { key: "email", label: "Email", sortable: true },
+      { key: "status", label: "Status" },
+    ]}
+    data={coaches}
+    loading={loading}
+    currentPage={meta.page}
+    total={meta.total}
+    pageSize={meta.pageSize}
+    onPageChange={setPage}
+    onSortChange={(key, dir) => {
+      setSort(key);
+      setOrder(dir);
+      setPage(1); // Reset to page 1 on sort change
+    }}
+    currentSort={sort}
+    currentOrder={order}
+  />
+);
+
+
+
+With this, you now have:
+	•	🔁 Fully sortable columns
+	•	🔢 Dynamic pagination
+	•	📦 Unified, reusable data presentation
+
+
+
+Perfect — let’s upgrade the PaginatedTable to support custom renderers per column, so you can display:
+
+✅ Action buttons (Edit, Approve, Delete)
+✅ Styled status pills (like “✅ Approved” or “⏳ Pending”)
+✅ Avatars, icons, links, or tooltips
+✅ Any JSX per cell — not just plain text
+
+
+1. Update PaginatedTable.tsx to Support render in Columns
+
+🔧 Add a render function to each column
+
+interface Column<T> {
+  key: keyof T;
+  label: string;
+  sortable?: boolean;
+  render?: (row: T) => React.ReactNode;
+}
+
+Modify the row rendering logic:
+
+{columns.map((col) => (
+  <td key={col.key as string} className="p-2">
+    {col.render ? col.render(row) : String(row[col.key])}
+  </td>
+))}
+
+2. Example: Custom Render for Status + Actions
+
+
+const columns = [
+  {
+    key: "name",
+    label: "Coach Name",
+    sortable: true,
+  },
+  {
+    key: "status",
+    label: "Status",
+    sortable: true,
+    render: (row: Coach) => (
+      <span
+        className={`px-2 py-1 text-xs rounded ${
+          row.status === "approved"
+            ? "bg-green-100 text-green-700"
+            : "bg-yellow-100 text-yellow-700"
+        }`}
+      >
+        {row.status}
+      </span>
+    ),
+  },
+  {
+    key: "actions",
+    label: "Actions",
+    render: (row: Coach) => (
+      <div className="flex gap-2">
+        <button
+          onClick={() => approveCoach(row.id)}
+          className="text-xs text-white bg-blue-500 px-2 py-1 rounded hover:bg-blue-600"
+        >
+          Approve
+        </button>
+        <button
+          onClick={() => deleteCoach(row.id)}
+          className="text-xs text-white bg-red-500 px-2 py-1 rounded hover:bg-red-600"
+        >
+          Delete
+        </button>
+      </div>
+    ),
+  },
+]; 
+
+3. Render the Table
+
+<PaginatedTable
+  columns={columns}
+  data={coaches}
+  loading={loading}
+  currentPage={meta.page}
+  total={meta.total}
+  pageSize={meta.pageSize}
+  onPageChange={setPage}
+  onSortChange={(key, dir) => {
+    setSort(key);
+    setOrder(dir);
+    setPage(1);
+  }}
+  currentSort={sort}
+  currentOrder={order}
+/>
+
+Now every column can display rich JSX, not just strings:
+	•	🧑‍💻 Action buttons
+	•	🏷️ Status pills
+	•	📸 Avatars or profile links
+	•	📅 Formatted dates
+
+let’s now add row selection support with checkboxes so users can:
+
+✅ Select one or more rows
+✅ Perform batch actions (like Approve, Delete, Send Email, etc.)
+✅ Optionally select all on page
+✅ Track selected row IDs in your parent component
+
+
+1. Update PaginatedTable.tsx to Support Selection
+
+Extend Props:
+
+interface PaginatedTableProps<T> {
+  ...
+  selectableRows?: boolean;
+  selectedRowIds?: string[];
+  onSelectRows?: (ids: string[]) => void;
+  getRowId?: (row: T) => string;
+}
+
+
+Update Table Header and Rows:
+
+<thead className="bg-gray-100">
+  <tr>
+    {selectableRows && (
+      <th className="p-2">
+        <input
+          type="checkbox"
+          checked={data.length > 0 && selectedRowIds?.length === data.length}
+          onChange={(e) => {
+            const allIds = data.map((row) => getRowId?.(row) || "");
+            onSelectRows?.(e.target.checked ? allIds : []);
+          }}
+        />
+      </th>
+    )}
+    {columns.map((col) => (
+      <th key={col.key as string} className="text-left p-2 font-semibold">
+        {col.label}
+      </th>
+    ))}
+  </tr>
+</thead>
+
+<tbody>
+  {data.map((row, idx) => {
+    const rowId = getRowId?.(row) || `${idx}`;
+    const isSelected = selectedRowIds?.includes(rowId);
+    return (
+      <tr key={rowId} className="border-t">
+        {selectableRows && (
+          <td className="p-2">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => {
+                const newIds = e.target.checked
+                  ? [...(selectedRowIds || []), rowId]
+                  : (selectedRowIds || []).filter((id) => id !== rowId);
+                onSelectRows?.(newIds);
+              }}
+            />
+          </td>
+        )}
+        {columns.map((col) => (
+          <td key={col.key as string} className="p-2">
+            {col.render ? col.render(row) : String(row[col.key])}
+          </td>
+        ))}
+      </tr>
+    );
+  })}
+</tbody>
+
+
+2. Parent Component: Use Selection
+
+const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+const handleBatchApprove = () => {
+  approveMultipleCoaches(selectedIds);
+};
+
+<PaginatedTable
+  ...
+  selectableRows
+  selectedRowIds={selectedIds}
+  onSelectRows={setSelectedIds}
+  getRowId={(row) => row.id}
+/>
+
+{selectedIds.length > 0 && (
+  <div className="mt-3 flex gap-2">
+    <button
+      onClick={handleBatchApprove}
+      className="bg-blue-600 text-white px-3 py-1 rounded"
+    >
+      Approve {selectedIds.length} Coach(es)
+    </button>
+    <button
+      onClick={() => deleteMultipleCoaches(selectedIds)}
+      className="bg-red-600 text-white px-3 py-1 rounded"
+    >
+      Delete
+    </button>
+  </div>
+)}
+
+ow your table supports:
+	•	🔘 Individual row selection
+	•	📦 “Select all on page”
+	•	🎯 Batch actions via selected IDs
+
+Want to extend this further with server-side 
+
+let’s take it to the next level with:
+
+✅ Select All Across Pages
+✅ Optional Shift+Click for range selection
+✅ Works with large datasets where not all rows are loaded on the current page
+
+1. Support “Select All Across Pages”
+
+Step 1: Extend PaginatedTableProps
+
+interface PaginatedTableProps<T> {
+  ...
+  totalItems?: number; // total rows from server
+  allSelectableRowIds?: string[]; // pass all IDs across pages if available
+  onSelectAllAcrossPages?: (selectAll: boolean) => void;
+  isAllSelectedAcrossPages?: boolean;
+}
+
+Step 2: Update “Select All” Checkbox Logic
+
+{selectableRows && (
+  <th className="p-2">
+    <input
+      type="checkbox"
+      checked={
+        isAllSelectedAcrossPages ||
+        (selectedRowIds?.length === data.length && data.length > 0)
+      }
+      onChange={(e) => {
+        if (e.target.checked && onSelectAllAcrossPages) {
+          onSelectAllAcrossPages(true); // select all across pages
+        } else if (!e.target.checked && onSelectAllAcrossPages) {
+          onSelectAllAcrossPages(false); // deselect all across pages
+        } else {
+          const ids = data.map((row) => getRowId?.(row) || "");
+          onSelectRows?.(e.target.checked ? ids : []);
+        }
+      }}
+    />
+  </th>
+)}
+
+2. Shift+Click Range Selection (Optional)
+
+Step 1: Track Last Selected Index
+
+In PaginatedTable, add:
+
+const [lastCheckedIndex, setLastCheckedIndex] = useState<number | null>(null);
+
+Step 2: Update Row Checkbox Logic
+
+onChange={(e) => {
+  const currentId = rowId;
+  let updated = [...(selectedRowIds || [])];
+
+  if (e.nativeEvent.shiftKey && lastCheckedIndex !== null) {
+    const rangeStart = Math.min(lastCheckedIndex, idx);
+    const rangeEnd = Math.max(lastCheckedIndex, idx);
+    const rangeIds = data.slice(rangeStart, rangeEnd + 1).map((r) => getRowId?.(r) || "");
+    updated = Array.from(new Set([...updated, ...rangeIds]));
+  } else if (e.target.checked) {
+    updated.push(currentId);
+  } else {
+    updated = updated.filter((id) => id !== currentId);
+  }
+
+  setLastCheckedIndex(idx);
+  onSelectRows?.(updated);
+}}
+
+3. In Your Parent Component
+
+Track two states:
+
+const [selectedIds, setSelectedIds] = useState<string[]>([]);
+const [selectAllPages, setSelectAllPages] = useState(false);
+
+Then pass to PaginatedTable:
+
+<PaginatedTable
+  ...
+  selectableRows
+  selectedRowIds={selectAllPages ? allCoachIds : selectedIds}
+  onSelectRows={setSelectedIds}
+  onSelectAllAcrossPages={(all) => setSelectAllPages(all)}
+  isAllSelectedAcrossPages={selectAllPages}
+  allSelectableRowIds={allCoachIds}
+/>
+
+Result
+	•	✅ Users can select all coaches across pages
+	•	✅ Or select range of rows using Shift+Click
+	•	✅ Batch actions work seamlessly
+
+
+here’s a complete useSelectableTable() hook that manages:
+
+✅ Individual row selection
+✅ Select All on current page
+✅ Select All across all pages
+✅ Shift+Click range selection
+✅ Batch-ready selectedIds state
+
+You can plug this into any paginated table setup with minimal wiring.
+
+
+1. useSelectableTable.ts
+
+// hooks/useSelectableTable.ts
+import { useCallback, useEffect, useRef, useState } from "react";
+
+export function useSelectableTable<T>(
+  currentPageData: T[],
+  getRowId: (row: T) => string,
+  allIds?: string[]
+) {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectAllAcrossPages, setSelectAllAcrossPages] = useState(false);
+  const lastCheckedIndex = useRef<number | null>(null);
+
+  const currentIds = currentPageData.map(getRowId);
+
+  const isRowSelected = useCallback(
+    (id: string) =>
+      selectAllAcrossPages
+        ? allIds?.includes(id) ?? false
+        : selectedIds.includes(id),
+    [selectAllAcrossPages, selectedIds, allIds]
+  );
+
+  const toggleRow = (id: string, index: number, shiftKey = false) => {
+    let updated = [...selectedIds];
+    const currentIndex = index;
+
+    if (shiftKey && lastCheckedIndex.current !== null) {
+      const start = Math.min(lastCheckedIndex.current, currentIndex);
+      const end = Math.max(lastCheckedIndex.current, currentIndex);
+      const rangeIds = currentPageData
+        .slice(start, end + 1)
+        .map(getRowId);
+      updated = Array.from(new Set([...updated, ...rangeIds]));
+    } else {
+      updated = updated.includes(id)
+        ? updated.filter((i) => i !== id)
+        : [...updated, id];
+    }
+
+    setSelectedIds(updated);
+    lastCheckedIndex.current = currentIndex;
+    setSelectAllAcrossPages(false);
+  };
+
+  const toggleAllOnPage = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(Array.from(new Set([...selectedIds, ...currentIds])));
+    } else {
+      setSelectedIds((prev) => prev.filter((id) => !currentIds.includes(id)));
+    }
+    setSelectAllAcrossPages(false);
+  };
+
+  const toggleSelectAllAcrossPages = (checked: boolean) => {
+    setSelectAllAcrossPages(checked);
+    if (!checked) setSelectedIds([]);
+  };
+
+  const isAllOnPageSelected =
+    currentIds.length > 0 &&
+    currentIds.every((id) => selectedIds.includes(id));
+
+  return {
+    selectedIds: selectAllAcrossPages ? allIds ?? [] : selectedIds,
+    isRowSelected,
+    toggleRow,
+    toggleAllOnPage,
+    toggleSelectAllAcrossPages,
+    isAllOnPageSelected,
+    selectAllAcrossPages,
+  };
+}
+
+2. Use it in Your Table Page
+
+
+const {
+  selectedIds,
+  isRowSelected,
+  toggleRow,
+  toggleAllOnPage,
+  toggleSelectAllAcrossPages,
+  isAllOnPageSelected,
+  selectAllAcrossPages,
+} = useSelectableTable(coaches, (c) => c.id, allCoachIds);
+
+3. Pass It to PaginatedTable
+
+
+<PaginatedTable
+  ...
+  selectableRows
+  selectedRowIds={selectedIds}
+  onSelectRows={(ids) => setSelectedIds(ids)} // or pass from hook if needed
+  onSelectAllAcrossPages={toggleSelectAllAcrossPages}
+  isAllSelectedAcrossPages={selectAllAcrossPages}
+  getRowId={(row) => row.id}
+/>
+
+ here’s your all-in-one usePaginatedResource<T>() hook, which bundles:
+
+✅ API fetching (usePaginatedApi)
+✅ Row selection across pages (useSelectableTable)
+✅ Sorting, filters, pagination
+✅ Everything you need for a full admin-style resource table
+
+1. usePaginatedResource.ts
+
+// hooks/usePaginatedResource.ts
+import { useState, useEffect } from "react";
+import { apiGet } from "@/lib/api-client";
+import { ApiResponse } from "@/types/api";
+import { useSelectableTable } from "./useSelectableTable";
+
+export interface PaginatedResourceOptions<T> {
+  endpoint: string;
+  getRowId: (row: T) => string;
+  filters?: Record<string, string>;
+  initialSort?: string;
+  initialOrder?: "asc" | "desc";
+  pageSize?: number;
+}
+
+export function usePaginatedResource<T>({
+  endpoint,
+  getRowId,
+  filters = {},
+  initialSort,
+  initialOrder = "asc",
+  pageSize = 10,
+}: PaginatedResourceOptions<T>) {
+  const [data, setData] = useState<T[]>([]);
+  const [allIds, setAllIds] = useState<string[]>([]);
+  const [meta, setMeta] = useState({ total: 0, page: 1, pageSize });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sort, setSort] = useState(initialSort);
+  const [order, setOrder] = useState<"asc" | "desc">(initialOrder);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+
+    const params = new URLSearchParams({
+      page: meta.page.toString(),
+      pageSize: meta.pageSize.toString(),
+      ...(sort ? { sort } : {}),
+      order,
+      ...filters,
+    });
+
+    const res = await apiGet<ApiResponse<T[]>>(`${endpoint}?${params.toString()}`);
+
+    if (res.success && res.data) {
+      setData(res.data);
+      setMeta((prev) => ({
+        ...prev,
+        total: res.meta?.total || 0,
+        page: res.meta?.page || 1,
+        pageSize: res.meta?.pageSize || pageSize,
+      }));
+
+      if (res.meta?.total && getRowId) {
+        const ids = res.data.map(getRowId);
+        setAllIds((prev) =>
+          prev.length === 0 ? ids : Array.from(new Set([...prev, ...ids]))
+        );
+      }
+    } else {
+      setError(res.message || "Failed to load data");
+    }
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [meta.page, meta.pageSize, sort, order, JSON.stringify(filters)]);
+
+  const setPage = (p: number) => setMeta((prev) => ({ ...prev, page: p }));
+  const setPageSize = (s: number) =>
+    setMeta((prev) => ({ ...prev, pageSize: s, page: 1 }));
+
+  const {
+    selectedIds,
+    isRowSelected,
+    toggleRow,
+    toggleAllOnPage,
+    toggleSelectAllAcrossPages,
+    isAllOnPageSelected,
+    selectAllAcrossPages,
+  } = useSelectableTable<T>(data, getRowId, allIds);
+
+  return {
+    data,
+    loading,
+    error,
+    meta,
+    selectedIds,
+    setPage,
+    setPageSize,
+    sort,
+    order,
+    setSort,
+    setOrder,
+    isRowSelected,
+    toggleRow,
+    toggleAllOnPage,
+    toggleSelectAllAcrossPages,
+    isAllOnPageSelected,
+    selectAllAcrossPages,
+    refetch: fetchData,
+  };
+}
+
+2. How to Use It in a Page
+
+const resource = usePaginatedResource<Coach>({
+  endpoint: "/admin/coaches",
+  getRowId: (coach) => coach.id,
+  initialSort: "name",
+  filters: { status: "pending" },
+});
+
+3. Bind to Table
+
+<PaginatedTable
+  columns={[
+    { key: "name", label: "Coach Name", sortable: true },
+    { key: "email", label: "Email" },
+    {
+      key: "status",
+      label: "Status",
+      render: (row) => (
+        <span className="text-xs rounded px-2 py-1 bg-yellow-100 text-yellow-700">
+          {row.status}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (row) => (
+        <button onClick={() => approveCoach(row.id)}>Approve</button>
+      ),
+    },
+  ]}
+  data={resource.data}
+  loading={resource.loading}
+  currentPage={resource.meta.page}
+  total={resource.meta.total}
+  pageSize={resource.meta.pageSize}
+  onPageChange={resource.setPage}
+  onSortChange={(key, dir) => {
+    resource.setSort(key);
+    resource.setOrder(dir);
+    resource.setPage(1);
+  }}
+  currentSort={resource.sort}
+  currentOrder={resource.order}
+  selectableRows
+  selectedRowIds={resource.selectedIds}
+  onSelectAllAcrossPages={resource.toggleSelectAllAcrossPages}
+  isAllSelectedAcrossPages={resource.selectAllAcrossPages}
+  getRowId={(row) => row.id}
+  onSelectRows={() => {}} // optional
+/>
+
+you now have a single hook that drives the entire table, selection, pagination, sorting, and more — fully SaaS-grade.
+
+
+let’s now build a BatchActionBar component that:
+
+✅ Shows up when rows are selected
+✅ Displays the count of selected rows
+✅ Offers batch actions via buttons or dropdown
+✅ Supports any action like Approve, Delete, Email
+✅ Auto-hides when selection is cleared
+
+
+
+1. BatchActionBar.tsx Component
+
+// components/table/BatchActionBar.tsx
+
+import React from "react";
+
+interface BatchActionBarProps {
+  selectedCount: number;
+  onClear: () => void;
+  onApprove?: () => void;
+  onDelete?: () => void;
+  onExport?: () => void;
+  customActions?: React.ReactNode;
+}
+
+export const BatchActionBar: React.FC<BatchActionBarProps> = ({
+  selectedCount,
+  onClear,
+  onApprove,
+  onDelete,
+  onExport,
+  customActions,
+}) => {
+  if (selectedCount === 0) return null;
+
+  return (
+    <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded mt-4 shadow-sm">
+      <span className="text-sm font-medium text-gray-700">
+        {selectedCount} selected
+      </span>
+      <div className="flex items-center gap-2">
+        {customActions}
+        {onExport && (
+          <button
+            onClick={onExport}
+            className="text-sm px-3 py-1 rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+          >
+            Export
+          </button>
+        )}
+        {onApprove && (
+          <button
+            onClick={onApprove}
+            className="text-sm px-3 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200"
+          >
+            Approve
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="text-sm px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
+          >
+            Delete
+          </button>
+        )}
+        <button
+          onClick={onClear}
+          className="text-sm px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+  );
+};
+
+ 2. How to Use It in a Page
+
+<BatchActionBar
+  selectedCount={resource.selectedIds.length}
+  onApprove={() => approveMultipleCoaches(resource.selectedIds)}
+  onDelete={() => deleteMultipleCoaches(resource.selectedIds)}
+  onClear={() => {
+    resource.toggleSelectAllAcrossPages(false);
+  }}
+  onExport={() => exportSelectedCoaches(resource.selectedIds)}
+  customActions={
+    <button
+      onClick={() => notifySelected(resource.selectedIds)}
+      className="text-sm px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
+    >
+      Notify
+    </button>
+  }
+/>
+
+ 3. Add Below Your Table
+
+<>
+  <PaginatedTable {...props} />
+  <BatchActionBar ... />
+</>
+
+Now your UI supports:
+	•	Batch approval, deletion, export, or custom actions
+	•	Clean display only when rows are selected
+	•	Mobile-friendly, Tailwind-styled layout
+
+erfect — let’s make the BatchActionBar responsive so that:
+
+✅ On desktop: it’s inline under the table
+✅ On mobile: it becomes a floating bottom bar
+✅ Always visible while rows are selected
+✅ Mobile-friendly, swipe-safe, touch-optimized
+
+⸻
+
+✅ 1. Update BatchActionBar.tsx to Be Responsive
+
+// components/table/BatchActionBar.tsx
+
+import React from "react";
+import { cn } from "@/lib/utils"; // optional utility for merging classNames
+
+interface BatchActionBarProps {
+  selectedCount: number;
+  onClear: () => void;
+  onApprove?: () => void;
+  onDelete?: () => void;
+  onExport?: () => void;
+  customActions?: React.ReactNode;
+}
+
+export const BatchActionBar: React.FC<BatchActionBarProps> = ({
+  selectedCount,
+  onClear,
+  onApprove,
+  onDelete,
+  onExport,
+  customActions,
+}) => {
+  if (selectedCount === 0) return null;
+
+  return (
+    <div
+      className={cn(
+        "z-50 flex items-center justify-between px-4 py-2 border border-gray-200 shadow-sm text-sm",
+        "bg-white",
+        "md:rounded md:mt-4 md:static md:w-full",
+        "fixed bottom-0 left-0 right-0 md:relative"
+      )}
+    >
+      <span className="text-gray-700">{selectedCount} selected</span>
+      <div className="flex gap-2 flex-wrap justify-end">
+        {customActions}
+        {onExport && (
+          <button
+            onClick={onExport}
+            className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-3 py-1 rounded"
+          >
+            Export
+          </button>
+        )}
+        {onApprove && (
+          <button
+            onClick={onApprove}
+            className="bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1 rounded"
+          >
+            Approve
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1 rounded"
+          >
+            Delete
+          </button>
+        )}
+        <button
+          onClick={onClear}
+          className="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+  );
+};
+
+3. Add Extra Spacing on Mobile
+
+In your layout or table page, add padding bottom to avoid overlap:
+
+<div className="pb-16"> {/* prevent overlap with mobile bottom bar */}
+  <PaginatedTable {...props} />
+  <BatchActionBar {...batchProps} />
+</div>
+
+
+
+You now have:
+	•	A fully responsive, always-visible batch action bar
+	•	Clean mobile UX similar to Gmail or Shopify admin
+	•	Automatic adaptation without extra layout hacks
+
+Awesome — here’s how to show a toast preview confirmation after batch actions like Approve, Delete, or Export:
+
+✅ Works with react-hot-toast
+✅ Dynamically shows what action was taken
+✅ Supports counts, names, or custom messages
+✅ Clean and quick feedback loop for users
+
+⸻
+
+✅ 1. Install (if you haven’t yet)
+
+
+npm install react-hot-toast
+
+And wrap your app:
+
+// App.tsx or root layout
+import { Toaster } from "react-hot-toast";
+
+<Toaster position="top-right" />
+
+ 2. Create a Toast Utility (optional helper)
+
+// lib/toast.ts
+import toast from "react-hot-toast";
+
+export function showBatchToast(action: string, count: number, itemType = "item") {
+  toast.success(`✅ ${count} ${itemType}${count > 1 ? "s" : ""} ${action}`);
+}
+
+3. Use It in Your Batch Actions
+
+const handleApprove = async () => {
+  await approveMultipleCoaches(resource.selectedIds);
+  showBatchToast("approved", resource.selectedIds.length, "coach");
+  resource.toggleSelectAllAcrossPages(false);
+  resource.refetch();
+};
+
+const handleDelete = async () => {
+  await deleteMultipleCoaches(resource.selectedIds);
+  showBatchToast("deleted", resource.selectedIds.length, "coach");
+  resource.toggleSelectAllAcrossPages(false);
+  resource.refetch();
+};
+
+4. Example Messages You’ll See
+	•	✅ 3 coaches approved
+	•	✅ 1 player deleted
+	•	✅ 5 registrations exported
+
+Bonus: Add Icons or Delayed Redirects
+
+If you want to redirect after action:
+
+toast.success("✅ Coaches approved!", {
+  duration: 2000,
+  icon: "🏏",
+});
+
+Now your app feels fast, polished, and reassuring after each action.
+
+here’s how to implement toast-based error handling to show users clear, friendly messages when something fails:
+
+✅ Works alongside your success toasts
+✅ Clean separation of success/error logic
+✅ Shows detailed reasons (if provided by API)
+✅ Instant UX feedback without clutter
+
+
+1. Create Toast Helpers
+
+// lib/toast.ts
+import toast from "react-hot-toast";
+
+export function showBatchToast(action: string, count: number, itemType = "item") {
+  toast.success(`✅ ${count} ${itemType}${count > 1 ? "s" : ""} ${action}`);
+}
+
+export function showErrorToast(message: string = "Something went wrong") {
+  toast.error(`❌ ${message}`);
+}
+
+2. Use Inside Your Batch Action Handlers
+
+🔁 Example: Approve Multiple Coaches
+
+const handleApprove = async () => {
+  try {
+    await approveMultipleCoaches(resource.selectedIds);
+    showBatchToast("approved", resource.selectedIds.length, "coach");
+    resource.toggleSelectAllAcrossPages(false);
+    resource.refetch();
+  } catch (err: any) {
+    showErrorToast(err?.response?.data?.message || "Failed to approve coaches");
+  }
+};
+
+ Example: Delete or Export
+
+const handleDelete = async () => {
+  try {
+    await deleteMultipleCoaches(resource.selectedIds);
+    showBatchToast("deleted", resource.selectedIds.length, "coach");
+    resource.toggleSelectAllAcrossPages(false);
+    resource.refetch();
+  } catch (err) {
+    showErrorToast("Delete failed. Please try again.");
+  }
+};
+
+3. Add Retry Buttons (Optional)
+
+toast.error("❌ Failed to approve coaches", {
+  action: {
+    label: "Retry",
+    onClick: handleApprove,
+  },
+});
+
+Now your users get:
+	•	🎯 Success confirmation on actions
+	•	🚨 Clear failure reasons when things go wrong
+	•	🧼 Clean UI — no modals or alerts required
+
+Perfect — here’s how to automatically clear selection after a batch action — whether it succeeds or fails — so users return to a clean state.
+
+✅ Works with useSelectableTable or usePaginatedResource
+✅ Prevents stale selections after actions
+✅ Ensures clean UI resets for next batch
+
+⸻
+
+✅ 1. Inside Your Action Handler (Approve/Delete/Export)
+
+🔁 Example: Approve Coaches
+
+
+const handleApprove = async () => {
+  try {
+    await approveMultipleCoaches(resource.selectedIds);
+    showBatchToast("approved", resource.selectedIds.length, "coach");
+  } catch (err: any) {
+    showErrorToast(err?.response?.data?.message || "Approval failed");
+  } finally {
+    resource.toggleSelectAllAcrossPages(false); // Deselect all
+    resource.refetch(); // Refresh list
+  }
+};
+
+Example: Delete
+
+const handleDelete = async () => {
+  try {
+    await deleteMultipleCoaches(resource.selectedIds);
+    showBatchToast("deleted", resource.selectedIds.length, "coach");
+  } catch {
+    showErrorToast("Delete failed");
+  } finally {
+    resource.toggleSelectAllAcrossPages(false);
+    resource.refetch();
+  }
+};
+
+
+2. Optional: Disable Action Buttons While Loading
+const [actionLoading, setActionLoading] = useState(false);
+
+const handleApprove = async () => {
+  setActionLoading(true);
+  try {
+    await approveMultipleCoaches(resource.selectedIds);
+    showBatchToast("approved", resource.selectedIds.length, "coach");
+  } catch {
+    showErrorToast("Approve failed");
+  } finally {
+    setActionLoading(false);
+    resource.toggleSelectAllAcrossPages(false);
+    resource.refetch();
+  }
+};
+
+Then in BatchActionBar:
+
+<BatchActionBar
+  ...
+  customActions={
+    <button
+      disabled={actionLoading}
+      className="bg-blue-100 text-blue-700 px-3 py-1 rounded"
+      onClick={handleApprove}
+    >
+      {actionLoading ? "Processing..." : "Approve"}
+    </button>
+  }
+/>
+
+Done! Your table UI now:
+	•	🔄 Resets selection after each action
+	•	🔔 Gives instant feedback on success/failure
+	•	✨ Feels polished and reliable for parents, admins, or coaches
+
+
+
+let’s now wrap everything into a <ResourceTable /> component that gives you:
+
+✅ Reusable table for any resource (coaches, players, payments, etc.)
+✅ Built-in:
+	•	Pagination
+	•	Sorting
+	•	Row selection
+	•	Batch actions
+	•	Toast feedback
+✅ Minimal setup in your page — just pass endpoint, columns, and row ID getter
+
+⸻
+
+✅ 1. ResourceTable.tsx — Full Smart Component
+
+// components/table/ResourceTable.tsx
+
+import { usePaginatedResource } from "@/hooks/usePaginatedResource";
+import { PaginatedTable } from "./PaginatedTable";
+import { BatchActionBar } from "./BatchActionBar";
+import { showBatchToast, showErrorToast } from "@/lib/toast";
+
+interface Column<T> {
+  key: keyof T | string;
+  label: string;
+  sortable?: boolean;
+  render?: (row: T) => React.ReactNode;
+}
+
+interface ResourceTableProps<T> {
+  endpoint: string;
+  columns: Column<T>[];
+  getRowId: (row: T) => string;
+  filters?: Record<string, string>;
+  itemLabel?: string; // e.g., "coach", "player"
+  onApprove?: (ids: string[]) => Promise<void>;
+  onDelete?: (ids: string[]) => Promise<void>;
+  onExport?: (ids: string[]) => Promise<void>;
+  customActions?: (ids: string[]) => React.ReactNode;
+}
+
+export function ResourceTable<T>({
+  endpoint,
+  columns,
+  getRowId,
+  filters,
+  itemLabel = "item",
+  onApprove,
+  onDelete,
+  onExport,
+  customActions,
+}: ResourceTableProps<T>) {
+  const resource = usePaginatedResource<T>({
+    endpoint,
+    getRowId,
+    filters,
+    initialSort: columns.find((c) => c.sortable)?.key as string,
+  });
+
+  const handleBatchAction = async (
+    label: string,
+    fn?: (ids: string[]) => Promise<void>
+  ) => {
+    if (!fn) return;
+    try {
+      await fn(resource.selectedIds);
+      showBatchToast(label, resource.selectedIds.length, itemLabel);
+    } catch (err: any) {
+      showErrorToast(err?.response?.data?.message || `${label} failed`);
+    } finally {
+      resource.toggleSelectAllAcrossPages(false);
+      resource.refetch();
+    }
+  };
+
+  return (
+    <>
+      <PaginatedTable
+        columns={columns}
+        data={resource.data}
+        loading={resource.loading}
+        currentPage={resource.meta.page}
+        total={resource.meta.total}
+        pageSize={resource.meta.pageSize}
+        onPageChange={resource.setPage}
+        onSortChange={(key, dir) => {
+          resource.setSort(key);
+          resource.setOrder(dir);
+          resource.setPage(1);
+        }}
+        currentSort={resource.sort}
+        currentOrder={resource.order}
+        selectableRows
+        selectedRowIds={resource.selectedIds}
+        onSelectAllAcrossPages={resource.toggleSelectAllAcrossPages}
+        isAllSelectedAcrossPages={resource.selectAllAcrossPages}
+        getRowId={getRowId}
+        onSelectRows={() => {}}
+      />
+
+      <BatchActionBar
+        selectedCount={resource.selectedIds.length}
+        onClear={() => resource.toggleSelectAllAcrossPages(false)}
+        onApprove={onApprove ? () => handleBatchAction("approved", onApprove) : undefined}
+        onDelete={onDelete ? () => handleBatchAction("deleted", onDelete) : undefined}
+        onExport={onExport ? () => handleBatchAction("exported", onExport) : undefined}
+        customActions={customActions ? customActions(resource.selectedIds) : undefined}
+      />
+    </>
+  );
+}
+
+2. Minimal Page Usage
+
+<ResourceTable<Coach>
+  endpoint="/admin/coaches"
+  getRowId={(row) => row.id}
+  itemLabel="coach"
+  columns={[
+    { key: "name", label: "Coach", sortable: true },
+    { key: "email", label: "Email" },
+    {
+      key: "status",
+      label: "Status",
+      render: (row) => (
+        <span className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-700">
+          {row.status}
+        </span>
+      ),
+    },
+  ]}
+  onApprove={approveMultipleCoaches}
+  onDelete={deleteMultipleCoaches}
+  onExport={exportCoaches}
+/>
+
+Result
+	•	✅ 1-line resource table setup
+	•	💡 Handles pagination, sorting, selection, batch actions, and toast UX
+	•	✨ Admin-ready and easy to replicate for any resource
+
+
+let’s enhance <ResourceTable /> with optional filter tabs like:
+
+✅ “All”, “Pending”, “Approved”, etc.
+✅ Built-in handling of tab-to-filter mapping
+✅ Auto-reloads data based on selected tab
+✅ Flexible for coaches, players, sessions, payments…
+
+
+1. Extend ResourceTableProps with filterTabs
+
+interface ResourceTableProps<T> {
+  ...
+  filterTabs?: {
+    label: string;
+    value: string;
+    filters: Record<string, string>;
+  }[];
+  defaultTab?: string;
+}
+
+ 2. Add Tab Bar + Filtering Logic
+
+Inside <ResourceTable />:
+
+import { useState } from "react";
+
+export function ResourceTable<T>({
+  ...props
+}: ResourceTableProps<T>) {
+  const [activeTab, setActiveTab] = useState(
+    props.defaultTab || props.filterTabs?.[0]?.value || ""
+  );
+
+  const activeFilters =
+    props.filterTabs?.find((t) => t.value === activeTab)?.filters || props.filters;
+
+  const resource = usePaginatedResource<T>({
+    endpoint: props.endpoint,
+    getRowId: props.getRowId,
+    filters: activeFilters,
+    initialSort: props.columns.find((c) => c.sortable)?.key as string,
+  });
+
+  ...
+
+Add Tab Bar JSX (above the table):
+
+{props.filterTabs && (
+  <div className="mb-4 flex gap-3 border-b">
+    {props.filterTabs.map((tab) => (
+      <button
+        key={tab.value}
+        onClick={() => setActiveTab(tab.value)}
+        className={`px-3 py-2 text-sm font-medium border-b-2 ${
+          activeTab === tab.value
+            ? "border-blue-600 text-blue-700"
+            : "border-transparent text-gray-500 hover:text-blue-600"
+        }`}
+      >
+        {tab.label}
+      </button>
+    ))}
+  </div>
+)}
+
+3. Use It in a Page
+
+<ResourceTable<Coach>
+  endpoint="/admin/coaches"
+  getRowId={(c) => c.id}
+  itemLabel="coach"
+  columns={[
+    { key: "name", label: "Coach", sortable: true },
+    { key: "email", label: "Email" },
+    {
+      key: "status",
+      label: "Status",
+      render: (row) => (
+        <span
+          className={`px-2 py-1 text-xs rounded ${
+            row.status === "approved"
+              ? "bg-green-100 text-green-700"
+              : "bg-yellow-100 text-yellow-700"
+          }`}
+        >
+          {row.status}
+        </span>
+      ),
+    },
+  ]}
+  filterTabs={[
+    { label: "All", value: "all", filters: {} },
+    { label: "Pending", value: "pending", filters: { status: "pending" } },
+    { label: "Approved", value: "approved", filters: { status: "approved" } },
+  ]}
+  defaultTab="pending"
+  onApprove={approveMultipleCoaches}
+  onDelete={deleteMultipleCoaches}
+/>
+
+With this:
+	•	You get built-in status filtering tabs
+	•	Table auto-reloads when tabs switch
+	•	Filters are cleanly scoped to tab definitions
+
+ let’s now extend your <ResourceTable /> with tab-specific counts, like:
+
+✅ “All (57)”, “Pending (12)”, “Approved (45)”
+✅ Dynamically fetched via backend
+✅ Auto-updates when data changes or on reload
+✅ Adds clarity for admins or coaches reviewing statuses
+
+ 1. Update filterTabs Prop to Support Counts
+
+interface ResourceTableProps<T> {
+  ...
+  filterTabs?: {
+    label: string;
+    value: string;
+    filters: Record<string, string>;
+    count?: number; // optional for preloaded
+  }[];
+}
+
+But we’ll dynamically load these counts, so you don’t have to pass them manually.
+
+⸻
+
+✅ 2. Add API Support (if not yet built)
+
+On backend, create a route like:
+
+GET /admin/coaches/status-counts
+
+Returns:
+{
+  success: true,
+  data: {
+    all: 57,
+    pending: 12,
+    approved: 45
+  }
+}
+
+3. Inside <ResourceTable />: Fetch Tab Counts
+
+import { useEffect, useState } from "react";
+import { apiGet } from "@/lib/api-client";
+
+const [tabCounts, setTabCounts] = useState<Record<string, number>>({});
+
+useEffect(() => {
+  const fetchCounts = async () => {
+    try {
+      const res = await apiGet<{ [key: string]: number }>(
+        `/admin/coaches/status-counts`
+      );
+      if (res.success && res.data) {
+        setTabCounts(res.data);
+      }
+    } catch {
+      setTabCounts({});
+    }
+  };
+
+  if (props.filterTabs) fetchCounts();
+}, []);
+
+ 4. Render Tabs with Counts
+
+{props.filterTabs && (
+  <div className="mb-4 flex gap-3 border-b">
+    {props.filterTabs.map((tab) => (
+      <button
+        key={tab.value}
+        onClick={() => setActiveTab(tab.value)}
+        className={`px-3 py-2 text-sm font-medium border-b-2 ${
+          activeTab === tab.value
+            ? "border-blue-600 text-blue-700"
+            : "border-transparent text-gray-500 hover:text-blue-600"
+        }`}
+      >
+        {tab.label}
+        {typeof tabCounts[tab.value] === "number" && (
+          <span className="ml-1 text-xs text-gray-400">
+            ({tabCounts[tab.value]})
+          </span>
+        )}
+      </button>
+    ))}
+  </div>
+)}
+
+
+Final Example Output
+	•	All (57)
+	•	Pending (12)
+	•	Approved (45)
+
+⸻
+
+✅ Optional: Auto-refresh tab counts after batch actions
+
+In handleBatchAction(), after resource.refetch(), re-fetch tab counts too:
+
+await fn(resource.selectedIds);
+showBatchToast("approved", resource.selectedIds.length, "coach");
+resource.toggleSelectAllAcrossPages(false);
+resource.refetch();
+fetchCounts(); // update tab counts
+
+Perfect — let’s now make the status counts API fully generic so you can reuse it for:
+
+✅ Coaches
+✅ Players
+✅ Payments
+✅ Sessions
+✅ Any resource with status or type fields
+
+
+1. Create a Generic Backend Route
+
+// GET /admin/status-counts?resource=coaches&statusField=status
+
+// Example: /admin/status-counts?resource=players&statusField=approval_status
+
+// Response:
+{
+  success: true,
+  data: {
+    all: 47,
+    pending: 12,
+    approved: 35
+  }
+}
+
+ Implementation (Node/Express + Drizzle/Prisma)
+
+app.get("/admin/status-counts", async (req, res) => {
+  const { resource, statusField = "status" } = req.query;
+
+  if (!resource) {
+    return res.status(400).json({ success: false, message: "Missing resource param" });
+  }
+
+  try {
+    const rows = await db.query[resource].findMany({
+      columns: { [statusField]: true },
+    });
+
+    const counts: Record<string, number> = {};
+    for (const row of rows) {
+      const status = row[statusField] || "unknown";
+      counts[status] = (counts[status] || 0) + 1;
+    }
+
+    const total = rows.length;
+    return res.json({ success: true, data: { all: total, ...counts } });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Query failed" });
+  }
+});
+
+ 2. Use It in <ResourceTable />
+
+useEffect(() => {
+  const fetchCounts = async () => {
+    try {
+      const res = await apiGet<{ [key: string]: number }>(
+        `/admin/status-counts?resource=${resourceKey}&statusField=${statusField}`
+      );
+      if (res.success && res.data) {
+        setTabCounts(res.data);
+      }
+    } catch {
+      setTabCounts({});
+    }
+  };
+
+  if (props.filterTabs) fetchCounts();
+}, [resourceKey, statusField]);
+
+3. Pass in Page
+
+<ResourceTable<Coach>
+  endpoint="/admin/coaches"
+  getRowId={(c) => c.id}
+  resourceKey="coaches"
+  statusField="status"
+  itemLabel="coach"
+  ...
+/>
+
+ let’s extend your generic status-count system to support grouping by any field, not just status. This gives you:
+
+✅ Tabs like:
+	•	“Role: Coach / Parent / Admin”
+	•	“Type: Training / Match / Camp”
+	•	“Payment: Paid / Pending / Failed”
+
+✅ Fully dynamic: works with any resource + field
+✅ One backend endpoint for all grouped tab counts
+
+⸻
+
+✅ 1. 🔁 Backend API: Group by Any Field
+
+
+Route:
+GET /admin/group-counts?resource=coaches&field=status
+
+Query Parameters:
+	•	resource: table name (e.g. players, sessions)
+	•	field: field to group by (e.g. role, type, status)
+
+
+Example Response:
+{
+  "success": true,
+  "data": {
+    "all": 42,
+    "pending": 12,
+    "approved": 28,
+    "rejected": 2
+  }
+}
+
+Backend Example (Node + Prisma or Drizzle):
+
+app.get("/admin/group-counts", async (req, res) => {
+  const { resource, field } = req.query;
+  if (!resource || !field) {
+    return res.status(400).json({ success: false, message: "Missing resource or field param" });
+  }
+
+  try {
+    const rows = await db.query[resource].findMany({ columns: { [field]: true } });
+
+    const counts: Record<string, number> = {};
+    for (const row of rows) {
+      const group = row[field] || "unknown";
+      counts[group] = (counts[group] || 0) + 1;
+    }
+
+    const total = rows.length;
+    return res.json({ success: true, data: { all: total, ...counts } });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Failed to group counts" });
+  }
+});
+
+2. Modify <ResourceTable /> Props
+
+
+Add:
+resourceKey: string;
+groupField: string; // dynamic field name like "status", "role", "type"
+
+3. Update Count Fetch Logic
+const fetchCounts = async () => {
+  try {
+    const res = await apiGet<{ [key: string]: number }>(
+      `/admin/group-counts?resource=${resourceKey}&field=${groupField}`
+    );
+    if (res.success && res.data) {
+      setTabCounts(res.data);
+    }
+  } catch {
+    setTabCounts({});
+  }
+};
+
+4. Create Tabs Dynamically from Grouping
+
+(Optional: you can build filterTabs from API response)
+
+const dynamicTabs = Object.keys(tabCounts).map((key) => ({
+  label: key[0].toUpperCase() + key.slice(1),
+  value: key,
+  filters: key === "all" ? {} : { [groupField]: key },
+}));
+
+
+ Final Usage Example
+
+<ResourceTable<Player>
+  endpoint="/admin/players"
+  getRowId={(p) => p.id}
+  resourceKey="players"
+  groupField="role"
+  itemLabel="player"
+  columns={[
+    { key: "name", label: "Player", sortable: true },
+    { key: "email", label: "Email" },
+    { key: "role", label: "Role" },
+  ]}
+  onApprove={approvePlayers}
+  onDelete={deletePlayers}
+/>
+
+This now supports:
+	•	Grouping by status, role, type, payment_status, etc.
+	•	Dynamic tab counts
+	•	One endpoint, many use cases
+
+
+Perfect — let’s enhance the tab system to support:
+
+✅ Custom labels per status/role/type
+✅ 🗣 Internationalization (i18n) ready
+✅ Clean fallback to raw value if no label is given
+✅ Optional integration with libraries like react-i18next later
+
+⸻
+
+✅ 1. Update filterTabs or Grouping Config to Support Labels
+
+Add optional labelMap:
+
+interface ResourceTableProps<T> {
+  ...
+  groupField: string;
+  resourceKey: string;
+  labelMap?: Record<string, string>; // maps internal values → display labels
+}
+
+2. Update Dynamic Tab Renderer
+
+
+const dynamicTabs = Object.keys(tabCounts).map((key) => ({
+  label: props.labelMap?.[key] || capitalize(key),
+  value: key,
+  filters: key === "all" ? {} : { [props.groupField]: key },
+}));
+
+Helper:
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+3. Example: i18n or Custom Status Labels
+
+<ResourceTable<Session>
+  endpoint="/admin/sessions"
+  getRowId={(s) => s.id}
+  resourceKey="sessions"
+  groupField="type"
+  itemLabel="session"
+  labelMap={{
+    all: "All Sessions",
+    match: "Matches",
+    training: "Training",
+    camp: "Camps",
+  }}
+  columns={[
+    { key: "title", label: "Session Name", sortable: true },
+    { key: "type", label: "Type" },
+  ]}
+/>
+
+ 4. Optional: Integrate with react-i18next Later
+
+import { useTranslation } from "react-i18next";
+
+const { t } = useTranslation();
+
+labelMap={{
+  all: t("status.all"),
+  pending: t("status.pending"),
+  approved: t("status.approved"),
+}}
+
+Now you can:
+	•	🏷 Customize tab names to match your UX or brand
+	•	🗺 Localize for multi-language support
+	•	🧼 Fall back to sensible defaults if no label is found
+
+
+Perfect — let’s now use the same labelMap to format row values in the table, so values like:
+	•	"pending" → “Under Review”
+	•	"approved" → “✅ Approved”
+	•	"training" → “🏏 Training Session”
+
+✅ Keeps your UI consistent
+✅ Reuses labelMap from the tab config
+✅ Supports i18n and emoji formatting
+✅ No need to define render manually for every column
+
+
+1. Enhance PaginatedTable to Auto-Format with labelMap
+
+interface PaginatedTableProps<T> {
+  ...
+  labelMap?: Record<string, string>; // Optional
+}
+
+In Row Renderer (<td> block), replace:
+
+{col.render ? col.render(row) : String(row[col.key])}
+
+With:
+
+{col.render
+  ? col.render(row)
+  : props.labelMap?.[String(row[col.key])] || String(row[col.key])}
+
+This lets labelMap override any raw value in the table, without a custom render.
+
+ 2. Pass labelMap from <ResourceTable> → <PaginatedTable>
+
+In your <ResourceTable>:
+
+<PaginatedTable
+  ...
+  labelMap={props.labelMap}
+/>
+
+
+3. Final Usage Example (No Custom Render Needed)
+
+<ResourceTable<Coach>
+  endpoint="/admin/coaches"
+  getRowId={(c) => c.id}
+  resourceKey="coaches"
+  groupField="status"
+  itemLabel="coach"
+  labelMap={{
+    pending: "⏳ Under Review",
+    approved: "✅ Approved",
+    rejected: "❌ Rejected",
+    all: "All Coaches"
+  }}
+  columns={[
+    { key: "name", label: "Coach" },
+    { key: "email", label: "Email" },
+    { key: "status", label: "Status" } // now auto-formatted using labelMap!
+  ]}
+/>
+
+Now your UI is:
+	•	💬 Consistent between tabs and table rows
+	•	🌐 i18n-ready from one config
+	•	💡 Clean — without needing custom renderers everywhere
+
+
+
