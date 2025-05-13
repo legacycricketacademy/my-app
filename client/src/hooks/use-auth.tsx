@@ -789,6 +789,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           hasPassword: !!registerData.password
         });
           
+        // First try the standardized registration endpoint
+        try {
+          console.log("Trying standardized registration endpoint first");
+          const standardResponse = await apiRequest<AuthResponse>('POST', "/api/standard-register", registerData);
+          
+          console.log("Standardized registration response:", standardResponse);
+          
+          // If successful, return the user data directly
+          if (standardResponse.success && standardResponse.data?.user) {
+            console.log("Standardized registration succeeded");
+            return standardResponse.data.user;
+          } else {
+            console.log("Standardized registration failed, falling back to Firebase");
+          }
+        } catch (standardError) {
+          console.error("Standardized registration error, falling back to Firebase:", standardError);
+        }
+          
         console.log("Firebase config check:", {
           apiKeyExists: !!import.meta.env.VITE_FIREBASE_API_KEY,
           projectIdExists: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
