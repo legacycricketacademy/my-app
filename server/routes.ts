@@ -659,19 +659,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.login(user, (err) => {
         if (err) {
           console.error("Login after registration failed:", err);
-          return res.status(200).json({
-            success: true,
-            message: "Registration successful, but auto-login failed. Please login manually.",
-            user: userWithoutPassword
-          });
+          return res.status(200).json(
+            createSuccessResponse(
+              { user: userWithoutPassword },
+              "Registration successful, but auto-login failed. Please login manually."
+            )
+          );
         }
-        
-        // Return success response with user data
-        return res.status(201).json({
-          success: true,
-          message: "Registration successful!",
-          user: userWithoutPassword
-        });
+        // Return success response with user data in standardized format
+        return res.status(201).json(
+          createSuccessResponse(
+            { user: userWithoutPassword },
+            "Registration successful!"
+          )
+        );
       });
       
       // For coach registrations, notify administrators
@@ -949,21 +950,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log user in
       req.login(user, (err) => {
-        if (err) {
-          console.error("Login after registration failed:", err);
-          return res.status(200).json({
-            success: true,
-            message: "Registration successful, but auto-login failed. Please login manually.",
-            user: userWithoutPassword
-          });
-        }
-        
-        // Return success response with user data
-        return res.status(201).json({
-          success: true,
-          message: "Registration successful!",
-          user: userWithoutPassword
-        });
+          return res.status(200).json(
+            createSuccessResponse(
+              { user: userWithoutPassword },
+              "Registration successful, but auto-login failed. Please login manually."
+            )
+          );
+        // Return success response with user data in standardized format
+        return res.status(201).json(
+          createSuccessResponse(
+            { user: userWithoutPassword },
+            "Registration successful!"
+          )
+        );
       });
       
       // For coach registrations, notify administrators
