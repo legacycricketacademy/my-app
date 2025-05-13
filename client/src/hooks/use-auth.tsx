@@ -6,8 +6,8 @@ import {
 } from "@tanstack/react-query";
 import { insertUserSchema, User } from "@shared/schema";
 import { getQueryFn, queryClient } from "../lib/queryClient";
-import { apiRequest, ApiResponse } from "../lib/api-client";
-import { AuthResponse } from "@shared/api-types";
+import { apiRequest } from "../lib/api-client";
+import { ApiResponse, AuthResponse } from "@shared/api-types";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/lib/firebase";
 import { auth } from "@/lib/firebase-init";
@@ -287,7 +287,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       // Return the user from the response data
-      return response.data?.user;
+      const user = response.data?.user;
+      if (!user) {
+        throw new Error("User data missing from response");
+      }
+      return user;
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -328,7 +332,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Step 2: Make the API request using standardized API client
         console.log("Sending registration request to server...");
-        const response = await apiRequest<{ user: User }>('POST', "/api/register", validatedData);
+        const response = await apiRequest<AuthResponse>('POST', "/api/register", validatedData);
         
         // With standardized responses, we expect:
         // { success: true, message: string, data: { user: User } }
@@ -341,7 +345,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Return the user object from response data
         console.log("Registration successful, returning user data...");
-        return response.data?.user;
+        const user = response.data?.user;
+        if (!user) {
+          throw new Error("User data missing from response");
+        }
+        return user;
       } catch (error: any) {
         // Handle Zod validation errors with user-friendly messages
         if (error.name === "ZodError") {
@@ -966,8 +974,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Resend verification email mutation
   const resendVerificationEmailMutation = useMutation({
     mutationFn: async ({ userId }: { userId: number }) => {
-      const res = await apiRequest("POST", "/api/auth/resend-verification", { userId });
-      return await res.json();
+      const response = await apiRequest<{ message: string }>("POST", "/api/auth/resend-verification", { userId });
+      if (!response.success) {
+        throw new Error(response.message || "Failed to resend verification email");
+      }
+      return response.data;
     },
     onSuccess: () => {
       toast({
