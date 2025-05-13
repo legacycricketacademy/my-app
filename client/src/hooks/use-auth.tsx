@@ -558,7 +558,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let serverLogoutSucceeded = false;
       
       try {
-        // First try to logout from backend
+        console.log("Attempting to logout");
+        
+        // First try the standardized logout endpoint
+        try {
+          console.log("Trying standardized logout endpoint first");
+          const standardResponse = await apiRequest<{ success: boolean }>('POST', "/api/standard-logout");
+          
+          console.log("Standardized logout response:", standardResponse);
+          
+          // If successful, mark as succeeded
+          if (standardResponse.success) {
+            console.log("Standardized logout succeeded");
+            serverLogoutSucceeded = true;
+            return { serverLogoutSucceeded };
+          } else {
+            console.log("Standardized logout failed, falling back to regular logout");
+          }
+        } catch (standardError) {
+          console.error("Standardized logout error, falling back to regular logout:", standardError);
+        }
+        
+        // If standardized logout failed, try original endpoint
         const res = await fetch("/api/logout", {
           method: "POST",
           headers: {
@@ -625,6 +646,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const firebaseLoginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       try {
+        console.log("Login attempt with credentials:", { 
+          username: credentials.username, 
+          hasPassword: !!credentials.password 
+        });
+        
+        // First try the standardized login endpoint
+        try {
+          console.log("Trying standardized login endpoint first");
+          const standardResponse = await apiRequest<AuthResponse>('POST', "/api/standard-login", credentials);
+          
+          console.log("Standardized login response:", standardResponse);
+          
+          // If successful, return the user data directly
+          if (standardResponse.success && standardResponse.data?.user) {
+            console.log("Standardized login succeeded");
+            return standardResponse.data.user;
+          } else {
+            console.log("Standardized login failed, falling back to Firebase");
+          }
+        } catch (standardError) {
+          console.error("Standardized login error, falling back to Firebase:", standardError);
+        }
+        
         // Validate Firebase configuration first
         if (!auth) {
           throw new Error("Firebase auth is not configured properly. Please contact support.");
