@@ -13,7 +13,7 @@ import jwt from 'jsonwebtoken';
 import { MultiTenantStorage } from '../multi-tenant-storage';
 
 // Define interface for storage requirements
-interface IMultiTenantStorage {
+export interface IMultiTenantStorage {
   getUser(id: number): Promise<any>;
   validateSession(userId: number, sessionId: string, tokenVersion: number): Promise<boolean>;
   createSession(userId: number, sessionId: string): Promise<void>;

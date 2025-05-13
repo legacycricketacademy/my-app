@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, desc, or, gte } from "drizzle-orm";
 import {
   academies,
   users,

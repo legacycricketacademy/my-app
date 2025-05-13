@@ -8,7 +8,7 @@ import { Request, Response } from 'express';
 import { MultiTenantStorage } from '../multi-tenant-storage';
 
 // Define interface for storage requirements
-interface IMultiTenantStorage {
+export interface IMultiTenantStorage {
   createAuditLog(logEntry: AuditLogEntry): Promise<void>;
 }
 
@@ -148,8 +148,8 @@ export async function auditPasswordReset(
     details: successful
       ? `Password reset requested for email: ${email}`
       : `Failed password reset attempt for email: ${email}`,
-    ipAddress: res.locals.ipAddress || getClientIp(req),
-    userAgent: res.locals.userAgent || req.headers['user-agent']
+    ipAddress: req.res?.locals.ipAddress || getClientIp(req),
+    userAgent: req.res?.locals.userAgent || req.headers['user-agent']
   });
 }
 
@@ -167,8 +167,8 @@ export async function auditRegistration(
     userId,
     action: 'register',
     details: `New user registered with email: ${email}, role: ${role}`,
-    ipAddress: res.locals.ipAddress || getClientIp(req),
-    userAgent: res.locals.userAgent || req.headers['user-agent'],
+    ipAddress: req.res?.locals.ipAddress || getClientIp(req),
+    userAgent: req.res?.locals.userAgent || req.headers['user-agent'],
     academyId: req.academyId
   });
 }
@@ -190,8 +190,8 @@ export async function auditAdminAction(
     userId: adminUserId,
     action: 'admin_action',
     details: `Admin ${action}: ${details}`,
-    ipAddress: req ? (res.locals.ipAddress || getClientIp(req)) : 'server',
-    userAgent: req ? (res.locals.userAgent || req.headers['user-agent']) : 'server',
+    ipAddress: req ? (req.res?.locals.ipAddress || getClientIp(req)) : 'server',
+    userAgent: req ? (req.res?.locals.userAgent || req.headers['user-agent']) : 'server',
     academyId: req?.academyId,
     targetUserId,
     targetResourceId,
