@@ -199,9 +199,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: userResponse,
     error,
     isLoading,
-  } = useQuery<ApiResponse<{ user: User }> | null, Error>({
+  } = useQuery<ApiResponse<{ user: User }> | any, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    retry: 1, // Limit retries for faster feedback
+    staleTime: 30000, // Cache results for 30 seconds
+    onError: (error) => {
+      console.error("Auth query error:", error);
+    }
   });
   
   // Extract user from the API response with enhanced error handling
@@ -209,25 +214,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Safely extract user data with defensive checks for each property
   let user = null;
-  if (userResponse) {
-    // Check if response follows our API standard format
-    if (userResponse.success && userResponse.data?.user) {
-      user = userResponse.data.user;
-      console.log("Auth - Standard API response format detected");
-    } 
-    // Fallback: check if response is directly the user object with required fields
-    else if (userResponse.id && userResponse.username && userResponse.role) {
-      user = userResponse;
-      console.log("Auth - Legacy API response format detected (direct user object)");
+  
+  try {
+    if (userResponse) {
+      // Case 1: Check if response follows our API standard format with success flag
+      if (userResponse.success === true && userResponse.data?.user) {
+        user = userResponse.data.user;
+        console.log("Auth - Standard API response format detected");
+      } 
+      // Case 2: Check if response is failed auth response
+      else if (userResponse.success === false && userResponse.status === 401) {
+        console.log("Auth - Unauthorized response detected");
+        // Leave user as null - not authenticated
+      }
+      // Case 3: Check if response is directly the user object with required fields
+      else if (userResponse.id && typeof userResponse.role === 'string') {
+        user = userResponse;
+        console.log("Auth - Legacy API response format detected (direct user object)");
+      }
+      // Case 4: Check if response has a nested user property at the top level
+      else if (userResponse.user && typeof userResponse.user === 'object') {
+        user = userResponse.user;
+        console.log("Auth - Legacy API response format detected (top-level user property)");
+      }
+      // Case 5: Handle unusual format where user might be nested differently
+      else if (typeof userResponse === 'object') {
+        // Look for properties that might indicate a user object at any level of nesting
+        const findUserObject = (obj: any, depth = 0): any => {
+          if (depth > 2) return null; // Limit recursion depth
+          
+          // Check if this object looks like a user
+          if (obj && typeof obj === 'object' && obj.id && obj.role) {
+            return obj;
+          }
+          
+          // Search nested properties
+          for (const key in obj) {
+            if (obj[key] && typeof obj[key] === 'object') {
+              const found = findUserObject(obj[key], depth + 1);
+              if (found) return found;
+            }
+          }
+          
+          return null;
+        };
+        
+        const possibleUser = findUserObject(userResponse);
+        if (possibleUser) {
+          user = possibleUser;
+          console.log("Auth - User object found through deep search:", user);
+        }
+      }
     }
-    // Fallback: check if response has a nested user property at the top level
-    else if (userResponse.user && typeof userResponse.user === 'object') {
-      user = userResponse.user;
-      console.log("Auth - Legacy API response format detected (top-level user property)");
-    }
+  } catch (err) {
+    console.error("Error extracting user data:", err);
   }
   
-  console.log("Auth - Extracted User:", user);
+  console.log("Auth - Final Extracted User:", user);
   
   // Link Firebase with our backend when Firebase auth state changes
   useEffect(() => {
