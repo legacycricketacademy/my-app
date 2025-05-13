@@ -1042,20 +1042,24 @@ async function sendCoachRegistrationEmails(user: User, appBaseUrl?: string): Pro
   
   try {
     // Send email to coach
+    console.log(`Sending registration confirmation to coach: ${user.email}`);
     await sendEmail({
       to: user.email,
-      from: 'noreply@legacycricketacademy.com',
       subject: coachSubject,
+      text: `Thank you for registering as a coach, ${user.fullName}! Your registration is being reviewed.`,
       html: coachHtml
     });
     
-    // Send email to admin (you'll need to get admin email from storage or config)
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@legacycricketacademy.com';
+    // Send email to admin
+    // Use ADMIN_EMAIL from environment, or fall back to the system's default sender email
+    const adminEmail = process.env.ADMIN_EMAIL || 'madhukar.kcc@gmail.com';
+    
+    console.log(`Sending coach approval notification to admin: ${adminEmail}`);
     
     await sendEmail({
       to: adminEmail,
-      from: 'noreply@legacycricketacademy.com',
       subject: adminSubject,
+      text: `New coach registration: ${user.fullName} (${user.email})`,
       html: adminHtml
     });
     
@@ -1087,10 +1091,11 @@ async function sendPasswordResetEmail(email: string, name: string, resetUrl: str
   `;
   
   try {
+    console.log(`Sending password reset email to: ${email}`);
     await sendEmail({
       to: email,
-      from: 'noreply@legacycricketacademy.com',
       subject,
+      text: `Hello ${name}, we received a request to reset your password.`,
       html
     });
     return true;
