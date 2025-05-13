@@ -1151,12 +1151,12 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
             <form id="registration-form">
               <div>
                 <label for="username">Username</label>
-                <input type="text" id="username" name="username" value="coachcoach10050" required>
+                <input type="text" id="username" name="username" value="coachcoach20000" required>
               </div>
               
               <div>
                 <label for="email">Email</label>
-                <input type="email" id="email" name="email" value="coachcoach10050@yahoo.com" required>
+                <input type="email" id="email" name="email" value="coachcoach20000@yahoo.com" required>
               </div>
               
               <div>
@@ -1249,6 +1249,9 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
               if (!result.success) {
                 errorElement.innerText = result.message || 'Registration failed';
                 errorElement.style.display = 'block';
+                
+                // Display detailed error information in the response output
+                console.log('Registration failed with error:', result);
               }
             } catch (error) {
               console.error('Registration error:', error);
