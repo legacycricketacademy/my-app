@@ -73,14 +73,42 @@ export const getQueryFn: <T>(options: {
           console.log(`Authentication check: User not authenticated (401) for ${queryKey[0]}`);
           
           // For user info endpoint, return standardized "not authenticated" response
+          // This approach ensures that auth checks don't cause errors when not logged in
           return {
             success: false,
             message: "Not authenticated",
-            status: 401
+            status: 401,
+            data: null 
           };
         }
         
+        // Log auth check results
         console.log(`Authentication check: Received status ${res.status} for ${queryKey[0]}`);
+        
+        // Even if the response isn't 401, make sure we clone it before consuming
+        const responseForValidation = res.clone();
+        
+        // Try to parse the response first to check format
+        try {
+          const data = await responseForValidation.json();
+          console.log(`Authentication check: Response data format:`, data);
+          
+          // Check if response is missing success property but has expected user data
+          if (data && data.id && data.role && data.success === undefined) {
+            // If this is a legacy format (direct user object without API wrapper),
+            // wrap it in our standard API response format
+            console.log(`Authentication check: Converting legacy response to standard format`);
+            return {
+              success: true,
+              message: "User data retrieved successfully",
+              status: 200,
+              data: { user: data }
+            };
+          }
+          // Otherwise return the original response which will be parsed again later
+        } catch (e) {
+          console.error(`Authentication check: Error parsing response:`, e);
+        }
       } else if (unauthorizedBehavior === "returnNull" && res.status === 401) {
         console.log(`Returning null for 401 response to ${queryKey[0]}`);
         return null;
