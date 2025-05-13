@@ -547,6 +547,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
     `);
   });
   
+  // Serve a completely static homepage instead of relying on React
+  app.get('/static-home', (req, res) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Cricket Academy - Static Home</title>
+          <style>
+            body { 
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+              margin: 0; 
+              padding: 0; 
+              background: #f8fafc;
+              color: #334155;
+            }
+            header { 
+              background: linear-gradient(to right, #1e40af, #3b82f6);
+              color: white;
+              padding: 1.5rem;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+            .container { 
+              max-width: 1200px; 
+              margin: 0 auto; 
+              padding: 2rem 1rem; 
+            }
+            .hero {
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 2rem;
+              margin-bottom: 3rem;
+            }
+            .hero-content {
+              flex: 1;
+              min-width: 300px;
+            }
+            .hero-image {
+              flex: 1;
+              min-width: 300px;
+              background: #dbeafe;
+              height: 300px;
+              border-radius: 0.5rem;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 1.5rem;
+              color: #1e40af;
+            }
+            h1 { 
+              font-size: 2.5rem;
+              margin-bottom: 1rem;
+              color: #1e3a8a;
+            }
+            h2 {
+              font-size: 1.75rem;
+              margin: 2rem 0 1rem;
+              color: #1e3a8a;
+            }
+            p {
+              line-height: 1.6;
+              margin-bottom: 1rem;
+            }
+            .card-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+              gap: 1.5rem;
+            }
+            .card {
+              background: white;
+              border-radius: 0.5rem;
+              padding: 1.5rem;
+              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+              transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .card:hover {
+              transform: translateY(-3px);
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .card h3 {
+              font-size: 1.25rem;
+              margin-top: 0;
+              color: #1e3a8a;
+            }
+            .btn {
+              display: inline-block;
+              background: #2563eb;
+              color: white;
+              padding: 0.75rem 1.5rem;
+              border-radius: 0.375rem;
+              text-decoration: none;
+              font-weight: 500;
+              transition: background 0.2s;
+            }
+            .btn:hover {
+              background: #1d4ed8;
+            }
+            footer {
+              background: #1e293b;
+              color: #f1f5f9;
+              padding: 2rem 1rem;
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <header>
+            <div class="container">
+              <h1>Legacy Cricket Academy</h1>
+              <p>Developing tomorrow's cricket stars today</p>
+            </div>
+          </header>
+          
+          <main class="container">
+            <section class="hero">
+              <div class="hero-content">
+                <h2>Welcome to Legacy Cricket Academy</h2>
+                <p>Our comprehensive management platform helps players, coaches, and parents track progress, schedule sessions, and manage payments all in one place.</p>
+                <p>This is a <strong>static HTML page</strong> served directly from Express, demonstrating that the server can correctly render content without React.</p>
+                <a href="/diagnostic-page" class="btn">View Diagnostics</a>
+              </div>
+              <div class="hero-image">
+                Cricket Image Placeholder
+              </div>
+            </section>
+            
+            <h2>Key Features</h2>
+            <div class="card-grid">
+              <div class="card">
+                <h3>Player Development</h3>
+                <p>Track progress, set goals, and monitor improvement across all cricket skills.</p>
+              </div>
+              <div class="card">
+                <h3>Schedule Management</h3>
+                <p>Easily view and manage training sessions, matches, and special events.</p>
+              </div>
+              <div class="card">
+                <h3>Performance Analytics</h3>
+                <p>Detailed statistics and visualizations to understand strengths and areas for improvement.</p>
+              </div>
+              <div class="card">
+                <h3>Parent Communication</h3>
+                <p>Keep parents updated with automated notifications and progress reports.</p>
+              </div>
+            </div>
+          </main>
+          
+          <footer>
+            <div class="container">
+              <p>&copy; ${new Date().getFullYear()} Legacy Cricket Academy. All rights reserved.</p>
+              <p>Server Time: ${new Date().toLocaleString()}</p>
+            </div>
+          </footer>
+        </body>
+      </html>
+    `);
+  });
+  
   // Simple test endpoint to check connectivity
   app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
