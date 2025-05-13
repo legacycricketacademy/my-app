@@ -67,7 +67,21 @@ export const getQueryFn: <T>(options: {
 
       console.log(`Fetch response status: ${res.status} for ${queryKey[0]}`);
 
-      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      // Special handling for authentication endpoints
+      if (queryKey[0] === "/api/user") {
+        if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+          console.log(`Authentication check: User not authenticated (401) for ${queryKey[0]}`);
+          
+          // For user info endpoint, return standardized "not authenticated" response
+          return {
+            success: false,
+            message: "Not authenticated",
+            status: 401
+          };
+        }
+        
+        console.log(`Authentication check: Received status ${res.status} for ${queryKey[0]}`);
+      } else if (unauthorizedBehavior === "returnNull" && res.status === 401) {
         console.log(`Returning null for 401 response to ${queryKey[0]}`);
         return null;
       }
