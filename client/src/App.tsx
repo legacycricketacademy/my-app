@@ -362,20 +362,54 @@ function RouterContent() {
 }
 
 function Router() {
-  const { isLoading, user } = useAuth();
+  const { isLoading, error, user } = useAuth();
   
   // Debug logging
   console.log("Router - User:", user);
   console.log("Router - IsLoading:", isLoading);
+  console.log("Router - Error:", error);
   
+  // Show loading spinner while authentication is being verified
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-      <span className="ml-2">Loading authentication...</span>
-    </div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        <span className="ml-2">Loading authentication...</span>
+      </div>
+    );
+  }
+  
+  // Show error message if authentication failed
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Authentication Error</h2>
+          <p className="text-gray-700 mb-4">
+            There was a problem with the authentication system. Please try refreshing the page.
+          </p>
+          <div className="bg-gray-100 p-4 rounded overflow-auto max-h-64 mb-4">
+            <p className="font-mono text-sm text-gray-800">
+              {error.message}
+            </p>
+          </div>
+          <button
+            onClick={() => window.location.href = "/emergency-logout"}
+            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md"
+          >
+            Emergency Logout
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  return <RouterContent />;
+  // Wrap the main content in an error boundary to catch any render errors
+  return (
+    <ErrorBoundary>
+      <RouterContent />
+    </ErrorBoundary>
+  );
 }
 
 
