@@ -3273,9 +3273,14 @@ ${ACADEMY_NAME} Team
   
   // Firebase Authentication endpoints
   app.post("/api/auth/firebase-auth", async (req, res) => {
+    // Import response utility functions
+    const { createSuccessResponse, createErrorResponse, createAuthResponse } = await import('./utils/api-response');
+    
     try {
       if (!req.body.idToken) {
-        return res.status(400).json({ message: "Firebase ID token is required" });
+        return res.status(400).json(
+          createErrorResponse("Firebase ID token is required", "missing_token", 400)
+        );
       }
       
       // Verify Firebase token
@@ -3283,7 +3288,9 @@ ${ACADEMY_NAME} Team
       const decodedToken = await verifyFirebaseToken(req.body.idToken);
       
       if (!decodedToken) {
-        return res.status(401).json({ message: "Invalid Firebase token" });
+        return res.status(401).json(
+          createErrorResponse("Invalid Firebase token", "invalid_token", 401)
+        );
       }
       
       // Get or create user in our database
@@ -3298,24 +3305,39 @@ ${ACADEMY_NAME} Team
         req.login(user, (err) => {
           if (err) {
             console.error("Session login error:", err);
-            return res.status(500).json({ message: "Failed to create session" });
+            return res.status(500).json(
+              createErrorResponse("Failed to create session", "session_error", 500)
+            );
           }
-          return res.status(200).json(user);
+          
+          // Return standardized successful auth response
+          return res.status(200).json(
+            createAuthResponse(user, "Firebase authentication successful")
+          );
         });
       } else {
-        return res.status(400).json({ message: "Could not retrieve or create user" });
+        return res.status(400).json(
+          createErrorResponse("Could not retrieve or create user", "user_creation_failed", 400)
+        );
       }
     } catch (error: any) {
       console.error("Firebase auth error:", error);
-      res.status(500).json({ message: error.message || "Authentication error" });
+      res.status(500).json(
+        createErrorResponse(error.message || "Authentication error", "firebase_auth_error", 500)
+      );
     }
   });
   
   // Login with Firebase token - this route supports both SDK and direct API tokens
   app.post("/api/auth/login-firebase", async (req, res) => {
+    // Import response utility functions
+    const { createSuccessResponse, createErrorResponse, createAuthResponse } = await import('./utils/api-response');
+    
     try {
       if (!req.body.token) {
-        return res.status(400).json({ message: "Firebase token is required" });
+        return res.status(400).json(
+          createErrorResponse("Firebase token is required", "missing_token", 400)
+        );
       }
       
       console.log("Attempting Firebase login with token");
@@ -3328,7 +3350,9 @@ ${ACADEMY_NAME} Team
         const decodedToken = await verifyFirebaseToken(req.body.token);
         
         if (!decodedToken) {
-          return res.status(401).json({ message: "Invalid Firebase token" });
+          return res.status(401).json(
+            createErrorResponse("Invalid Firebase token", "invalid_token", 401)
+          );
         }
         
         console.log("Firebase token verified successfully for:", decodedToken.email);
@@ -3339,7 +3363,9 @@ ${ACADEMY_NAME} Team
         });
         
         if (!user) {
-          return res.status(400).json({ message: "Could not retrieve or create user account" });
+          return res.status(400).json(
+            createErrorResponse("Could not retrieve or create user account", "user_creation_failed", 400)
+          );
         }
         
         // Check account status for coaches and admins
@@ -3352,18 +3378,28 @@ ${ACADEMY_NAME} Team
         req.login(user, (err) => {
           if (err) {
             console.error("Session login error:", err);
-            return res.status(500).json({ message: "Failed to create user session" });
+            return res.status(500).json(
+              createErrorResponse("Failed to create user session", "session_error", 500)
+            );
           }
           console.log("User logged in successfully:", user.id);
-          return res.status(200).json(user);
+          
+          // Return standardized auth response with user data
+          return res.status(200).json(
+            createAuthResponse(user, "Firebase login successful")
+          );
         });
-      } catch (verifyError) {
+      } catch (verifyError: any) {
         console.error("Firebase token verification error:", verifyError);
-        return res.status(401).json({ message: "Failed to authenticate with Firebase token" });
+        return res.status(401).json(
+          createErrorResponse(verifyError.message || "Failed to authenticate with Firebase token", "firebase_verification_error", 401)
+        );
       }
     } catch (error: any) {
       console.error("Firebase login error:", error);
-      res.status(500).json({ message: error.message || "Authentication error" });
+      res.status(500).json(
+        createErrorResponse(error.message || "Authentication error", "firebase_auth_error", 500)
+      );
     }
   });
   
