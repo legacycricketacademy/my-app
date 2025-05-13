@@ -309,43 +309,102 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
       
-      // Use apiRequest from api-client.ts for standardized handling
-      const response = await apiRequest<AuthResponse>('POST', "/api/login", credentials);
+      try {
+        // Use apiRequest from api-client.ts for standardized handling
+        console.log("Login Mutation - Attempting login with credentials:", {
+          ...credentials,
+          password: '[REDACTED]' 
+        });
+        
+        const response = await apiRequest<AuthResponse>('POST', "/api/login", credentials);
+        console.log("Login Mutation - Raw API Response:", response);
 
-      // With standardized responses, we expect:
-      // { success: true, message: string, data: { user: User } }
-      if (!response.success) {
-        throw new Error(response.message || "Login failed. Please try again.");
+        // With standardized responses, we expect:
+        // { success: true, message: string, data: { user: User } }
+        if (!response.success) {
+          throw new Error(response.message || "Login failed. Please try again.");
+        }
+        
+        // Enhanced user data extraction - check multiple possible response formats
+        let user = null;
+        
+        // First try the standard format
+        if (response.data?.user) {
+          user = response.data.user;
+          console.log("Login Mutation - Found user in standard format");
+        } 
+        // Try looking for user directly in response
+        else if (response.user && typeof response.user === 'object') {
+          user = response.user;
+          console.log("Login Mutation - Found user at top level of response");
+        }
+        // Try looking for just data property if it has user fields
+        else if (response.data && typeof response.data === 'object' && 'id' in response.data) {
+          user = response.data;
+          console.log("Login Mutation - Found user in data property");
+        }
+        
+        if (!user || !user.id) {
+          console.error("User data missing or invalid in response:", response);
+          throw new Error("User data missing from response");
+        }
+        
+        console.log("Login Mutation - Extracted User:", user);
+        
+        // If we found a valid user but the response isn't in the standard format,
+        // convert it to the standard format
+        if (!response.data?.user && user) {
+          return {
+            success: true,
+            message: "Login successful",
+            data: { user }
+          };
+        }
+        
+        // Return the standardized API response
+        return response;
+      } catch (error) {
+        console.error("Login error:", error);
+        throw error;
       }
-      
-      // Return the user from the response data
-      const user = response.data?.user;
-      if (!user) {
-        throw new Error("User data missing from response");
-      }
-      
-      console.log("Login Mutation - Extracted User:", user);
-      
-      // Return the entire standardized API response
-      return response;
     },
     onSuccess: (response: ApiResponse<{ user: User }>) => {
       // Store the entire API response
       console.log("Login Mutation onSuccess - API Response:", response);
       queryClient.setQueryData(["/api/user"], response);
       
-      // Check if the coach/admin account is pending approval
-      if ((user.role === 'coach' || user.role === 'admin') && 
-          (user.status === 'pending' || user.isActive === false)) {
-        toast({
-          title: "Account Pending Approval",
-          description: "Your account is awaiting administrator approval. You'll be notified when approved.",
-          duration: 6000, // show for longer
-        });
+      // Safely extract user data from response
+      let userData = null;
+      
+      if (response.data?.user) {
+        userData = response.data.user;
+      } else if (response.user && typeof response.user === 'object') {
+        userData = response.user;
+      }
+      
+      console.log("Login Mutation onSuccess - User Data:", userData);
+      
+      // Only show toast if we have user data
+      if (userData) {
+        // Check if the coach/admin account is pending approval
+        if ((userData.role === 'coach' || userData.role === 'admin') && 
+            (userData.status === 'pending' || userData.isActive === false)) {
+          toast({
+            title: "Account Pending Approval",
+            description: "Your account is awaiting administrator approval. You'll be notified when approved.",
+            duration: 6000, // show for longer
+          });
+        } else {
+          toast({
+            title: "Login successful",
+            description: `Welcome back, ${userData.fullName || userData.username}!`,
+          });
+        }
       } else {
+        console.warn("Login success but no user data found in response");
         toast({
           title: "Login successful",
-          description: `Welcome back, ${user.fullName}!`,
+          description: "You are now logged in.",
         });
       }
     },

@@ -40,10 +40,13 @@ export default function AuthPageSimplified() {
   
   // Redirect to home if already logged in
   useEffect(() => {
-    if (user) {
+    // Only redirect if we have a definite user object
+    // and all loading states are complete
+    if (user && !isLoading && !loginMutation.isPending && !registerMutation.isPending) {
+      console.log("Auth Page - Redirecting to homepage with user:", user);
       navigate("/");
     }
-  }, [user, navigate]);
+  }, [user, isLoading, loginMutation.isPending, registerMutation.isPending, navigate]);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
