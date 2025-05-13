@@ -551,29 +551,114 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: Express.User | false, info: { message?: string } = {}) => {
+    passport.authenticate("local", async (err: any, user: Express.User | false, info: { message?: string } = {}) => {
       if (err) {
         return next(err);
       }
       if (!user) {
+        // Audit the failed login attempt
+        if (req.body.username) {
+          await auditFailedLogin(multiTenantStorage, req, `Login failed for username: ${req.body.username}`);
+        }
         return res.status(401).json({ message: info.message || "Login failed" });
       }
-      req.login(user, (loginErr) => {
+      
+      req.login(user, async (loginErr) => {
         if (loginErr) {
           return next(loginErr);
         }
-        // Don't send password back to client
-        const { password, ...userWithoutPassword } = user as any;
-        return res.status(200).json(userWithoutPassword);
+        
+        try {
+          // Generate unique session ID
+          const sessionId = generateSessionId();
+          
+          // Create and store session in database
+          await multiTenantStorage.createSession(user.id, sessionId);
+          
+          // Generate JWT tokens
+          const tokens = createSessionTokens({
+            userId: user.id,
+            sessionId,
+            role: user.role,
+            academyId: user.academyId
+          });
+          
+          // Set cookies with tokens
+          setSessionCookies(res, tokens);
+          
+          // Audit the successful login
+          await auditSuccessfulLogin(multiTenantStorage, user.id, req);
+          
+          // Update last login timestamp
+          await multiTenantStorage.updateLastLogin(user.id);
+          
+          // Don't send password back to client
+          const { password, ...userWithoutPassword } = user as any;
+          return res.status(200).json(userWithoutPassword);
+        } catch (error) {
+          console.error("Error during login:", error);
+          return res.status(500).json({ message: "Internal server error during login" });
+        }
       });
     })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
+    const userId = req.user?.id;
+    
     req.logout((err) => {
       if (err) return next(err);
+      
+      // Clear session tokens
+      clearSessionCookies(res);
+      
+      if (userId) {
+        try {
+          // Invalidate the session in the database
+          const sessionId = req.cookies['session_id'];
+          if (sessionId) {
+            multiTenantStorage.invalidateSession(userId, sessionId);
+          }
+          
+          // Create an audit log for the logout
+          auditSuccessfulLogin(multiTenantStorage, userId, req, "User logged out");
+        } catch (error) {
+          console.error("Error during logout:", error);
+          // Don't block the logout if audit fails
+        }
+      }
+      
       res.sendStatus(200);
     });
+  });
+  
+  // JWT Token refresh endpoint
+  app.post("/api/refresh-token", async (req, res) => {
+    try {
+      const refreshToken = req.cookies["refresh_token"];
+      
+      if (!refreshToken) {
+        return res.status(401).json({ message: "No refresh token provided" });
+      }
+      
+      const result = await refreshTokens(refreshToken, multiTenantStorage);
+      
+      if (!result.success) {
+        clearSessionCookies(res);
+        return res.status(401).json({ message: result.message || "Invalid refresh token" });
+      }
+      
+      // Set the new tokens in cookies
+      setSessionCookies(res, result.tokens!);
+      
+      return res.status(200).json({ 
+        message: "Token refreshed successfully",
+        user: result.user
+      });
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
   });
   
   // Add a special endpoint to fix Firebase users by adding a password
@@ -659,13 +744,40 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) {
+  app.get("/api/user", authenticate, async (req, res) => {
+    try {
+      // Try to get user from standard authentication first
+      if (req.isAuthenticated() && req.user) {
+        // Don't send password back to client
+        const { password, ...userWithoutPassword } = req.user as SelectUser;
+        return res.json(userWithoutPassword);
+      }
+      
+      // If not authenticated via session, try JWT token
+      const accessToken = req.cookies['access_token'];
+      if (!accessToken) {
+        return res.sendStatus(401);
+      }
+      
+      // Verify the token and get user info
+      const tokenPayload = await verifyAccessToken(accessToken);
+      if (!tokenPayload) {
+        return res.sendStatus(401);
+      }
+      
+      // Get the user from the database
+      const user = await multiTenantStorage.getUser(tokenPayload.userId);
+      if (!user) {
+        return res.sendStatus(401);
+      }
+      
+      // Don't send password back to client
+      const { password, ...userWithoutPassword } = user as any;
+      return res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error in /api/user endpoint:", error);
       return res.sendStatus(401);
     }
-    // Don't send password back to client
-    const { password, ...userWithoutPassword } = req.user as SelectUser;
-    res.json(userWithoutPassword);
   });
   
   // Middleware for protecting routes by role
