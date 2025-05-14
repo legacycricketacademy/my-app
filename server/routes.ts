@@ -878,6 +878,44 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'standalone-react.html'));
   });
   
+  // Debug routes for development and testing
+  
+  // Check if a username exists
+  app.get('/api/check-username', async (req, res) => {
+    try {
+      const { username } = req.query;
+      if (!username || typeof username !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Username is required'
+        });
+      }
+
+      const existingUser = await storage.getUserByUsername(username);
+      
+      if (existingUser) {
+        return res.json({
+          success: false,
+          message: 'Username already exists',
+          exists: true
+        });
+      }
+      
+      return res.json({
+        success: true,
+        message: 'Username is available',
+        exists: false
+      });
+    } catch (error) {
+      console.error('Error checking username:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error checking username',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Route to serve our comprehensive Cricket Academy standalone app
   app.get('/app', (req, res) => {
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'cricket-academy-app.html'));
