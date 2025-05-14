@@ -889,6 +889,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
   app.get('/username-check', (req, res) => {
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'username-check.html'));
   });
+
+  // Serve the advanced registration tool
+  app.get('/advanced-register', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'advanced-register.html'));
+  });
   
   // Detailed admin username check (for debugging)
   app.get('/api/admin/check-username-detail', async (req, res) => {
