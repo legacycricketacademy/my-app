@@ -5342,6 +5342,28 @@ ${ACADEMY_NAME} Team
     }
   });
 
+  // Set up PayPal routes
+  app.get("/paypal/setup", async (req, res) => {
+    await loadPaypalDefault(req, res);
+  });
+
+  app.post("/paypal/order", async (req, res) => {
+    await createPaypalOrder(req, res);
+  });
+
+  app.post("/paypal/order/:orderID/capture", async (req, res) => {
+    await capturePaypalOrder(req, res);
+  });
+
+  // Add basic health check endpoint
+  app.get("/api/ping", (req, res) => {
+    res.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      message: "API is operational"
+    });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
