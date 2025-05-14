@@ -885,6 +885,65 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
   
   // Debug routes for development and testing
   
+  // Serve the username check tool
+  app.get('/username-check', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'username-check.html'));
+  });
+  
+  // Detailed admin username check (for debugging)
+  app.get('/api/admin/check-username-detail', async (req, res) => {
+    try {
+      const { username } = req.query;
+      if (!username || typeof username !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Username is required',
+          exists: false
+        });
+      }
+
+      // First, we'll do a direct check using the storage method
+      const existingUser = await storage.getUserByUsername(username);
+      
+      // Then, we'll do a direct database query to be thorough
+      const dbResult = await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.username, username)
+      });
+      
+      if (existingUser || dbResult) {
+        return res.json({
+          success: false,
+          message: 'Username already exists',
+          exists: true,
+          method1: existingUser ? 'Found via storage.getUserByUsername' : 'Not found via storage method',
+          method2: dbResult ? 'Found via direct DB query' : 'Not found via direct DB query',
+          userDetails: existingUser ? {
+            id: existingUser.id,
+            username: existingUser.username,
+            role: existingUser.role,
+            createdAt: existingUser.createdAt,
+            // Don't include sensitive info like password hash
+          } : null,
+          dbDetails: dbResult || null
+        });
+      }
+      
+      return res.json({
+        success: true,
+        message: 'Username is available',
+        exists: false
+      });
+    } catch (error) {
+      console.error('Error checking username details:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error checking username',
+        error: error instanceof Error ? error.message : String(error),
+        exists: false
+      });
+    }
+  });
+  
   // Check if a username exists
   app.get('/api/check-username', async (req, res) => {
     try {
