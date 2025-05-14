@@ -873,6 +873,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
   // Serve static files from the public directory
   app.use('/static', express.static(path.resolve(import.meta.dirname, 'public')));
   
+  // Serve the debug registration page explicitly
+  app.get('/debug-register', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'debug-register.html'));
+  });
+  
   // Route to serve our standalone React page
   app.get('/standalone', (req, res) => {
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'standalone-react.html'));
