@@ -978,23 +978,15 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
         });
       }
       
-      // Create user audit log
-      try {
-        await db.insert(userAuditLogs).values({
-          action: 'user_created',
-          userId: newUser[0].id,
-          createdAt: new Date(),
-          details: JSON.stringify({
-            method: 'direct_registration',
-            username,
-            email,
-            role
-          })
-        });
-      } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
-        // Continue even if audit log fails
-      }
+      // Skip audit logging for now since table definitions vary
+      // Just log to console instead
+      console.log('User created successfully:', {
+        id: newUser[0].id,
+        username: newUser[0].username,
+        email: newUser[0].email,
+        role: newUser[0].role,
+        method: 'direct_registration'
+      });
       
       // Return success response
       return res.status(201).json({
