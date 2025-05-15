@@ -935,6 +935,21 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'username-check.html'));
   });
   
+  // Serve production-quality registration page
+  app.get('/production-register', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'production-register.html'));
+  });
+  
+  // Serve login page
+  app.get('/login', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'login.html'));
+  });
+  
+  // Serve admin dashboard
+  app.get('/admin-dashboard', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'admin-dashboard.html'));
+  });
+  
   // Handle form-based registration submission
   app.post('/register-form-submit', async (req, res) => {
     try {
