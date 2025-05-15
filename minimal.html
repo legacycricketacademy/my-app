@@ -3,158 +3,230 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Direct Registration Form</title>
+  <title>Minimal Registration - Cricket Academy</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f7fa;
+      color: #1a202c;
+      line-height: 1.5;
+    }
+    h1, h2 {
+      color: #4c1d95;
+    }
+    .container {
       max-width: 600px;
       margin: 0 auto;
-      padding: 20px;
-    }
-    h1 {
-      color: #4a1d96;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 30px;
     }
     .form-group {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
     }
     label {
       display: block;
+      font-weight: 500;
       margin-bottom: 5px;
-      font-weight: bold;
     }
     input, select {
       width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
       border-radius: 4px;
       font-size: 16px;
-      box-sizing: border-box;
+    }
+    .help-text {
+      color: #718096;
+      font-size: 14px;
+      margin-top: 4px;
     }
     button {
-      background-color: #4a1d96;
+      background-color: #4c1d95;
       color: white;
       border: none;
-      padding: 10px 15px;
+      padding: 10px 16px;
       border-radius: 4px;
-      cursor: pointer;
       font-size: 16px;
+      cursor: pointer;
+      width: 100%;
     }
     button:hover {
       background-color: #6d28d9;
     }
-    .note {
-      background-color: #f8fafc;
-      border-left: 4px solid #4a1d96;
-      padding: 12px;
+    .alert {
+      padding: 12px 16px;
+      border-radius: 4px;
       margin-bottom: 20px;
+    }
+    .alert-error {
+      background-color: #fee2e2;
+      border: 1px solid #f87171;
+      color: #b91c1c;
+    }
+    .alert-success {
+      background-color: #dcfce7;
+      border: 1px solid #4ade80;
+      color: #166534;
+    }
+    .hidden {
+      display: none;
     }
     #result {
       margin-top: 20px;
-      padding: 15px;
+    }
+    .user-details {
+      background-color: #f8fafc;
       border-radius: 4px;
-      display: none;
+      padding: 16px;
+      margin-top: 16px;
     }
-    .success {
-      background-color: #d1fae5;
-      border: 1px solid #a7f3d0;
+    .detail-row {
+      display: flex;
+      margin-bottom: 8px;
     }
-    .error {
-      background-color: #fee2e2;
-      border: 1px solid #fca5a5;
+    .detail-label {
+      width: 100px;
+      font-weight: 500;
     }
-    code {
-      font-family: monospace;
+    #loading {
+      text-align: center;
+      font-weight: 500;
+      color: #6d28d9;
+      margin: 20px 0;
+    }
+    pre {
+      white-space: pre-wrap;
       background-color: #f1f5f9;
-      padding: 2px 4px;
-      border-radius: 2px;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #334155;
+      overflow: auto;
     }
   </style>
 </head>
 <body>
-  <h1>Direct Registration Form</h1>
-  
-  <div class="note">
-    <p><strong>Note:</strong> This is a direct registration form that can be saved locally and used to send requests to the Cricket Academy API.</p>
-    <p>Update <code>API_URL</code> in the script if needed.</p>
-  </div>
-  
-  <form id="registration-form">
-    <div class="form-group">
-      <label for="username">Username:</label>
-      <input type="text" id="username" name="username" value="coach12345" required>
-    </div>
+  <div class="container">
+    <h1>Minimal Registration</h1>
+    <p>This is a completely standalone registration form that doesn't depend on the main application.</p>
     
-    <div class="form-group">
-      <label for="email">Email:</label>
-      <input type="email" id="email" name="email" required>
-    </div>
+    <div id="error-message" class="alert alert-error hidden"></div>
     
-    <div class="form-group">
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" value="admin123admin123" required>
-    </div>
-    
-    <div class="form-group">
-      <label for="fullName">Full Name:</label>
-      <input type="text" id="fullName" name="fullName" value="Test User" required>
-    </div>
-    
-    <div class="form-group">
-      <label for="role">Role:</label>
-      <select id="role" name="role">
-        <option value="coach">Coach</option>
-        <option value="parent">Parent</option>
-      </select>
-    </div>
-    
-    <div class="form-group">
-      <label for="phone">Phone (Optional - leave empty to avoid conflicts):</label>
-      <input type="tel" id="phone" name="phone">
-    </div>
-    
-    <button type="submit">Register</button>
-    <button type="button" id="generate-data">Generate Random Data</button>
-  </form>
-  
-  <div id="result"></div>
-  
-  <script>
-    // Update this to the correct API URL if needed
-    const API_URL = '/api/debug/direct-register';
-    
-    // Form elements
-    const form = document.getElementById('registration-form');
-    const generateBtn = document.getElementById('generate-data');
-    const resultDiv = document.getElementById('result');
-    
-    // Generate random form data
-    generateBtn.addEventListener('click', () => {
-      const random = Math.floor(Math.random() * 100000);
-      document.getElementById('username').value = `coach${random}`;
-      document.getElementById('email').value = `coach${random}@example.com`;
-      document.getElementById('fullName').value = `Test User ${random}`;
-      document.getElementById('phone').value = '';
-    });
-    
-    // Form submission
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    <form id="registration-form">
+      <div class="form-group">
+        <label for="username">Username*</label>
+        <input type="text" id="username" name="username" required>
+        <div class="help-text">Choose a unique username</div>
+      </div>
       
-      // Get form data
+      <div class="form-group">
+        <label for="email">Email Address*</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Password*</label>
+        <input type="password" id="password" name="password" value="admin123admin123" required>
+        <div class="help-text">Pre-filled with a safe default</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="fullName">Full Name*</label>
+        <input type="text" id="fullName" name="fullName" value="Test User" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="role">Role*</label>
+        <select id="role" name="role" required>
+          <option value="coach">Coach</option>
+          <option value="parent">Parent</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="phone">Phone (Optional)</label>
+        <input type="tel" id="phone" name="phone">
+        <div class="help-text">Leave empty to avoid conflicts with existing phone numbers</div>
+      </div>
+      
+      <button type="submit" id="submit-btn">Register Account</button>
+    </form>
+    
+    <div id="loading" class="hidden">Registering account...</div>
+    
+    <div id="result" class="hidden">
+      <div id="success-message" class="alert alert-success hidden"></div>
+      <div id="user-details" class="hidden">
+        <h2>Account Details</h2>
+        <div class="user-details">
+          <div class="detail-row">
+            <div class="detail-label">Username:</div>
+            <div id="result-username"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Email:</div>
+            <div id="result-email"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Role:</div>
+            <div id="result-role"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Status:</div>
+            <div id="result-status"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="debug-output" class="hidden">
+        <h3>Debug Info:</h3>
+        <pre id="debug-data"></pre>
+      </div>
+      
+      <button id="reset-btn" class="hidden">Register Another Account</button>
+    </div>
+  </div>
+
+  <script>
+    // DOM elements
+    const form = document.getElementById('registration-form');
+    const errorMessage = document.getElementById('error-message');
+    const loadingIndicator = document.getElementById('loading');
+    const resultSection = document.getElementById('result');
+    const successMessage = document.getElementById('success-message');
+    const userDetails = document.getElementById('user-details');
+    const resetButton = document.getElementById('reset-btn');
+    const debugOutput = document.getElementById('debug-output');
+    const debugData = document.getElementById('debug-data');
+    
+    // Form submission handler
+    form.addEventListener('submit', async function(event) {
+      event.preventDefault();
+      
+      // Clear previous errors
+      errorMessage.textContent = '';
+      errorMessage.classList.add('hidden');
+      
+      // Show loading indicator
+      loadingIndicator.classList.remove('hidden');
+      
+      // Collect form data
       const formData = {
-        username: document.getElementById('username').value.trim(),
-        email: document.getElementById('email').value.trim(),
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
         password: document.getElementById('password').value,
-        fullName: document.getElementById('fullName').value.trim(),
+        fullName: document.getElementById('fullName').value,
         role: document.getElementById('role').value,
-        phone: document.getElementById('phone').value.trim()
+        phone: document.getElementById('phone').value
       };
       
       try {
-        // Send request
-        const response = await fetch(API_URL, {
+        // Attempt to register using direct API call
+        const response = await fetch('/api/debug/direct-register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -162,47 +234,72 @@
           body: JSON.stringify(formData)
         });
         
-        // Get response text
-        const responseText = await response.text();
-        let responseData;
+        // Parse response
+        const result = await response.json();
         
-        // Try to parse JSON response
-        try {
-          responseData = JSON.parse(responseText);
-        } catch (error) {
-          responseData = { success: false, message: 'Non-JSON response received' };
-        }
+        // Hide loading indicator
+        loadingIndicator.classList.add('hidden');
         
-        // Display result
-        resultDiv.style.display = 'block';
-        if (response.ok && responseData.success) {
-          resultDiv.className = 'success';
-          resultDiv.innerHTML = `
-            <h3>Registration Successful!</h3>
-            <p><strong>Username:</strong> ${responseData.user?.username || 'N/A'}</p>
-            <p><strong>Email:</strong> ${responseData.user?.email || 'N/A'}</p>
-            <p><strong>Role:</strong> ${responseData.user?.role || 'N/A'}</p>
-            <p><strong>Status:</strong> ${responseData.user?.status || 'N/A'}</p>
-            <p><strong>ID:</strong> ${responseData.user?.id || 'N/A'}</p>
-          `;
+        // Show appropriate response
+        resultSection.classList.remove('hidden');
+        
+        // Add debug info
+        debugOutput.classList.remove('hidden');
+        debugData.textContent = JSON.stringify(result, null, 2);
+        
+        if (response.ok) {
+          // Hide form
+          form.classList.add('hidden');
+          
+          // Show success message
+          successMessage.textContent = result.message || 'Account created successfully!';
+          successMessage.classList.remove('hidden');
+          
+          // Show user details if available
+          if (result.user) {
+            userDetails.classList.remove('hidden');
+            document.getElementById('result-username').textContent = result.user.username;
+            document.getElementById('result-email').textContent = result.user.email;
+            document.getElementById('result-role').textContent = result.user.role;
+            document.getElementById('result-status').textContent = 
+              result.user.role === 'coach' ? 'Pending approval' : 'Active';
+          }
+          
+          // Show reset button
+          resetButton.classList.remove('hidden');
         } else {
-          resultDiv.className = 'error';
-          resultDiv.innerHTML = `
-            <h3>Registration Failed</h3>
-            <p>${responseData.message || 'Unknown error'}</p>
-            <pre>${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}</pre>
-          `;
+          // Show error message
+          errorMessage.textContent = result.error || 'Unknown error occurred';
+          errorMessage.classList.remove('hidden');
         }
       } catch (error) {
-        // Display fetch error
-        resultDiv.style.display = 'block';
-        resultDiv.className = 'error';
-        resultDiv.innerHTML = `
-          <h3>Connection Error</h3>
-          <p>${error.message}</p>
-          <p>Make sure the API URL is correct and the server is running.</p>
-        `;
+        // Hide loading indicator
+        loadingIndicator.classList.add('hidden');
+        
+        // Show error message
+        errorMessage.textContent = 'Network error or server unavailable';
+        errorMessage.classList.remove('hidden');
+        
+        // Log error
+        console.error('Registration error:', error);
       }
+    });
+    
+    // Reset form handler
+    resetButton.addEventListener('click', function() {
+      // Clear form fields (except pre-filled ones)
+      document.getElementById('username').value = '';
+      document.getElementById('email').value = '';
+      
+      // Hide result section
+      resultSection.classList.add('hidden');
+      successMessage.classList.add('hidden');
+      userDetails.classList.add('hidden');
+      debugOutput.classList.add('hidden');
+      resetButton.classList.add('hidden');
+      
+      // Show form
+      form.classList.remove('hidden');
     });
   </script>
 </body>
