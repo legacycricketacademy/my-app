@@ -900,6 +900,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'simple-register.html'));
   });
   
+  // Serve the basic registration tool with extra debugging
+  app.get('/basic-register', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'basic-register.html'));
+  });
+  
   // Direct registration endpoint for debugging
   app.post('/api/debug/direct-register', async (req, res) => {
     try {
