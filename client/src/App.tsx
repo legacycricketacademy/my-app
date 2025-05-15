@@ -322,6 +322,9 @@ function RouterContent() {
       <Route path="/test-register" component={TestRegister} />
       <Route path="/test-email-tools" component={TestEmailTools} />
       <Route path="/test-page" component={TestPage} />
+      <Route path="/register-fallback">
+        {React.createElement(React.lazy(() => import("@/pages/standalone-register-fallback")))}
+      </Route>
       <Route path="/register-debug">
         <React.Suspense fallback={
           <div className="flex items-center justify-center min-h-screen">

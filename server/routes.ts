@@ -920,6 +920,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, '..', 'basic-landing.html'));
   });
   
+  // Serve the standalone registration page
+  app.get('/standalone-register', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'standalone-register.html'));
+  });
+  
   // Handle form-based registration submission
   app.post('/register-form-submit', async (req, res) => {
     try {
