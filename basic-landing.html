@@ -3,355 +3,199 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Legacy Cricket Academy</title>
+  <title>Cricket Academy Registration Tools</title>
   <style>
-    * {
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    
-    body {
-      background-color: #f9fafb;
-      color: #374151;
+      background-color: #f5f7fa;
+      color: #1a202c;
       line-height: 1.5;
     }
-    
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 20px;
+      padding: 2rem;
     }
-    
     header {
-      background-color: #4f46e5;
+      background-color: #4c1d95;
       color: white;
-      padding: 30px 0;
-      margin-bottom: 40px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      padding: 2rem 0;
+      margin-bottom: 2rem;
     }
-    
-    header .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-    
     h1 {
+      margin: 0;
+      padding: 0 2rem;
       font-size: 2.5rem;
-      margin-bottom: 10px;
-      font-weight: 700;
     }
-    
-    .tagline {
+    .subtitle {
+      padding: 0 2rem;
+      margin-top: 0.5rem;
       font-size: 1.25rem;
-      color: rgba(255, 255, 255, 0.9);
-      margin-bottom: 20px;
+      opacity: 0.9;
     }
-    
-    .cta-button {
-      display: inline-block;
-      background-color: white;
-      color: #4f46e5;
-      font-weight: 600;
-      padding: 12px 24px;
-      border-radius: 6px;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      cursor: pointer;
-    }
-    
-    .cta-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    
-    section {
-      margin-bottom: 60px;
-    }
-    
-    h2 {
-      font-size: 1.875rem;
-      color: #111827;
-      margin-bottom: 20px;
-      font-weight: 700;
-    }
-    
-    .features {
+    .tools-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 30px;
-      margin-top: 30px;
+      gap: 1.5rem;
     }
-    
-    .feature-card {
+    .tool-card {
       background-color: white;
       border-radius: 8px;
-      padding: 30px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    
-    .feature-card:hover {
+    .tool-card:hover {
       transform: translateY(-5px);
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 10px 15px rgba(0,0,0,0.1);
     }
-    
-    .feature-icon {
-      background-color: #eff6ff;
-      width: 60px;
-      height: 60px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      color: #4f46e5;
-      font-size: 24px;
-    }
-    
-    .feature-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 10px;
-      color: #111827;
-    }
-    
-    .options {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 20px;
-      margin-top: 30px;
-    }
-    
-    .option-card {
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 20px;
-      text-align: center;
-      transition: all 0.3s ease;
-    }
-    
-    .option-card:hover {
-      border-color: #4f46e5;
-    }
-    
-    .option-title {
-      font-weight: 600;
-      margin-bottom: 10px;
-      font-size: 1.125rem;
-    }
-    
-    .option-desc {
-      margin-bottom: 15px;
-      color: #6b7280;
-    }
-    
-    .button {
-      display: inline-block;
-      background-color: #4f46e5;
+    .tool-header {
+      background-color: #4c1d95;
       color: white;
-      font-weight: 500;
-      padding: 8px 16px;
+      padding: 1rem;
+    }
+    .tool-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    .tool-body {
+      padding: 1.5rem;
+    }
+    .tool-desc {
+      margin-bottom: 1.5rem;
+    }
+    .tool-links {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.25rem;
       border-radius: 4px;
       text-decoration: none;
-      border: none;
+      font-weight: 500;
       cursor: pointer;
-      font-size: 0.875rem;
+      transition: background-color 0.2s;
     }
-    
-    .button-secondary {
-      background-color: #f3f4f6;
-      color: #374151;
+    .btn-primary {
+      background-color: #4c1d95;
+      color: white;
     }
-    
+    .btn-primary:hover {
+      background-color: #6d28d9;
+    }
+    .btn-secondary {
+      background-color: #e5e7eb;
+      color: #1f2937;
+    }
+    .btn-secondary:hover {
+      background-color: #d1d5db;
+    }
+    .btn-outline {
+      background-color: transparent;
+      color: #4c1d95;
+      border: 1px solid #4c1d95;
+    }
+    .btn-outline:hover {
+      background-color: #f5f3ff;
+    }
     footer {
-      background-color: #1f2937;
-      color: #e5e7eb;
-      padding: 40px 0;
-      margin-top: 60px;
-    }
-    
-    .footer-content {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-    }
-    
-    .footer-column {
-      flex: 1;
-      min-width: 200px;
-      margin-bottom: 20px;
-    }
-    
-    .footer-column h3 {
-      font-size: 1.125rem;
-      margin-bottom: 20px;
-      color: white;
-    }
-    
-    .footer-column ul {
-      list-style: none;
-    }
-    
-    .footer-column ul li {
-      margin-bottom: 10px;
-    }
-    
-    .footer-column ul li a {
-      color: #d1d5db;
-      text-decoration: none;
-      transition: color 0.2s ease;
-    }
-    
-    .footer-column ul li a:hover {
-      color: white;
-    }
-    
-    .copyright {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #374151;
       text-align: center;
-      color: #9ca3af;
+      margin-top: 3rem;
+      padding: 1rem;
+      color: #6b7280;
       font-size: 0.875rem;
-    }
-    
-    @media (max-width: 768px) {
-      h1 {
-        font-size: 2rem;
-      }
-      
-      .tagline {
-        font-size: 1.125rem;
-      }
-      
-      .features {
-        grid-template-columns: 1fr;
-      }
-      
-      .footer-content {
-        flex-direction: column;
-      }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="container">
-      <h1>Legacy Cricket Academy</h1>
-      <p class="tagline">Nurturing cricket talent through innovative training and technology</p>
-      <a href="#options" class="cta-button">Get Started</a>
-    </div>
+    <h1>Cricket Academy Registration</h1>
+    <div class="subtitle">Registration Tools and Utilities</div>
   </header>
   
-  <main class="container">
-    <section id="about">
-      <h2>About Our Academy</h2>
-      <p>Legacy Cricket Academy is dedicated to developing cricket talent through comprehensive training programs, personalized coaching, and cutting-edge technology. Our platform enables coaches, players, and parents to collaborate effectively for optimal player development.</p>
-      
-      <div class="features">
-        <div class="feature-card">
-          <div class="feature-icon">🏏</div>
-          <h3 class="feature-title">Player Development</h3>
-          <p>Comprehensive skills tracking, fitness monitoring, and performance analytics to help players reach their full potential.</p>
+  <div class="container">
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-header">
+          <h2>Form Registration</h2>
         </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3 class="feature-title">Performance Analytics</h3>
-          <p>Advanced statistics and visual reports to track progress, identify strengths, and address areas for improvement.</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">👨‍👩‍👧‍👦</div>
-          <h3 class="feature-title">Parent Engagement</h3>
-          <p>Keep parents informed about their child's progress, upcoming events, and important academy announcements.</p>
-        </div>
-      </div>
-    </section>
-    
-    <section id="options">
-      <h2>Application Options</h2>
-      <p>We offer multiple ways to access our platform to suit your needs and preferences:</p>
-      
-      <div class="options">
-        <div class="option-card">
-          <h3 class="option-title">Web Application</h3>
-          <p class="option-desc">Access all features through our fully-featured web application.</p>
-          <a href="/app" class="button">Launch App</a>
-        </div>
-        
-        <div class="option-card">
-          <h3 class="option-title">Standalone Demo</h3>
-          <p class="option-desc">Try our simplified standalone version without logging in.</p>
-          <a href="/standalone" class="button button-secondary">View Demo</a>
-        </div>
-        
-        <div class="option-card">
-          <h3 class="option-title">Direct React Test</h3>
-          <p class="option-desc">Simple React test page to verify browser compatibility.</p>
-          <a href="/direct-react-test" class="button button-secondary">React Test</a>
-        </div>
-        
-        <div class="option-card">
-          <h3 class="option-title">System Diagnostic</h3>
-          <p class="option-desc">Check your system compatibility and connection status.</p>
-          <a href="/diagnostic" class="button button-secondary">Run Diagnostics</a>
-        </div>
-      </div>
-    </section>
-  </main>
-  
-  <footer>
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-column">
-          <h3>Academy</h3>
-          <ul>
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Programs</a></li>
-            <li><a href="#">Locations</a></li>
-            <li><a href="#">Coaches</a></li>
-          </ul>
-        </div>
-        
-        <div class="footer-column">
-          <h3>Resources</h3>
-          <ul>
-            <li><a href="#">Blog</a></li>
-            <li><a href="#">Training Videos</a></li>
-            <li><a href="#">FAQs</a></li>
-            <li><a href="#">Support</a></li>
-          </ul>
-        </div>
-        
-        <div class="footer-column">
-          <h3>Legal</h3>
-          <ul>
-            <li><a href="#">Terms of Service</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Cookie Policy</a></li>
-          </ul>
-        </div>
-        
-        <div class="footer-column">
-          <h3>Contact</h3>
-          <ul>
-            <li><a href="#">Email Us</a></li>
-            <li><a href="#">Schedule a Visit</a></li>
-            <li><a href="#">Locations</a></li>
-          </ul>
+        <div class="tool-body">
+          <p class="tool-desc">Traditional form submission without JavaScript. Works in all browsers, even with JavaScript disabled.</p>
+          <div class="tool-links">
+            <a href="/form-register" class="btn btn-primary">Open Form</a>
+          </div>
         </div>
       </div>
       
-      <div class="copyright">
-        &copy; 2025 Legacy Cricket Academy. All rights reserved.
+      <div class="tool-card">
+        <div class="tool-header">
+          <h2>Minimal Registration</h2>
+        </div>
+        <div class="tool-body">
+          <p class="tool-desc">Standalone HTML with detailed error handling and debugging. Can be downloaded and run locally.</p>
+          <div class="tool-links">
+            <a href="/minimal" class="btn btn-primary">Open Page</a>
+            <a href="/minimal.html" download class="btn btn-outline">Download</a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="tool-card">
+        <div class="tool-header">
+          <h2>Username Check</h2>
+        </div>
+        <div class="tool-body">
+          <p class="tool-desc">Check if a username already exists in the system before trying to register.</p>
+          <div class="tool-links">
+            <a href="/username-check" class="btn btn-secondary">Check Username</a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="tool-card">
+        <div class="tool-header">
+          <h2>Debug Registration</h2>
+        </div>
+        <div class="tool-body">
+          <p class="tool-desc">Test user registration with randomly generated credentials and detailed diagnostics.</p>
+          <div class="tool-links">
+            <a href="/debug-register" class="btn btn-secondary">Access Debug Tool</a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="tool-card">
+        <div class="tool-header">
+          <h2>Basic Registration</h2>
+        </div>
+        <div class="tool-body">
+          <p class="tool-desc">Extremely simple form with extensive debugging. Provides detailed logs for troubleshooting.</p>
+          <div class="tool-links">
+            <a href="/basic-register" class="btn btn-secondary">Try Basic Tool</a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="tool-card">
+        <div class="tool-header">
+          <h2>API Endpoints</h2>
+        </div>
+        <div class="tool-body">
+          <p class="tool-desc">Direct API endpoints for programmatic access and testing:</p>
+          <ul>
+            <li><code>/api/debug/direct-register</code> - Direct user registration</li>
+            <li><code>/register-form-submit</code> - Form submission endpoint</li>
+          </ul>
+        </div>
       </div>
     </div>
+  </div>
+  
+  <footer>
+    <p>Legacy Cricket Academy - Registration Tools</p>
   </footer>
 </body>
 </html>
