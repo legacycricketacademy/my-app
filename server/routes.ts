@@ -925,6 +925,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'standalone-register.html'));
   });
   
+  // Serve email test tool
+  app.get('/email-test', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'email-test.html'));
+  });
+  
   // Handle form-based registration submission
   app.post('/register-form-submit', async (req, res) => {
     try {
