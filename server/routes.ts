@@ -894,6 +894,130 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
   app.get('/advanced-register', (req, res) => {
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'advanced-register.html'));
   });
+
+  // Serve the simple registration tool
+  app.get('/simple-register', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'simple-register.html'));
+  });
+  
+  // Direct registration endpoint for debugging
+  app.post('/api/debug/direct-register', async (req, res) => {
+    try {
+      console.log('Debug direct registration request:', req.body);
+      
+      const { username, email, password, fullName, role = 'coach', phone = '' } = req.body;
+      
+      // Validate required fields
+      if (!username || !email || !password || !fullName) {
+        return res.status(400).json({
+          success: false,
+          message: 'Required fields missing. Need username, email, password, and fullName.'
+        });
+      }
+      
+      // Check if username exists
+      const existingUserByUsername = await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.username, username)
+      });
+      
+      if (existingUserByUsername) {
+        return res.status(400).json({
+          success: false,
+          message: `Username '${username}' is already taken.`
+        });
+      }
+      
+      // Check if email exists
+      const existingUserByEmail = await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.email, email)
+      });
+      
+      if (existingUserByEmail) {
+        return res.status(400).json({
+          success: false,
+          message: `Email '${email}' is already registered.`
+        });
+      }
+      
+      // Check if phone exists and is not empty
+      if (phone) {
+        const existingUserByPhone = await db.query.users.findFirst({
+          where: (users, { eq }) => eq(users.phone, phone)
+        });
+        
+        if (existingUserByPhone) {
+          return res.status(400).json({
+            success: false,
+            message: `Phone number '${phone}' is already registered.`
+          });
+        }
+      }
+      
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+      
+      // Determine user status based on role
+      const status = role === 'coach' ? 'pending' : 'active';
+      
+      // Create user directly in DB
+      const newUser = await db.insert(users).values({
+        username,
+        email,
+        password: hashedPassword,
+        fullName,
+        phone,
+        role,
+        status,
+        academyId: 1 // Default academy ID
+      }).returning();
+      
+      if (!newUser || newUser.length === 0) {
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to create user record'
+        });
+      }
+      
+      // Create user audit log
+      try {
+        await db.insert(userAuditLogs).values({
+          action: 'user_created',
+          userId: newUser[0].id,
+          createdAt: new Date(),
+          details: JSON.stringify({
+            method: 'direct_registration',
+            username,
+            email,
+            role
+          })
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+        // Continue even if audit log fails
+      }
+      
+      // Return success response
+      return res.status(201).json({
+        success: true,
+        message: 'Registration successful',
+        user: {
+          id: newUser[0].id,
+          username: newUser[0].username,
+          email: newUser[0].email,
+          role: newUser[0].role,
+          status: newUser[0].status
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error in direct registration:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Registration failed due to server error',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
   
   // Detailed admin username check (for debugging)
   app.get('/api/admin/check-username-detail', async (req, res) => {
