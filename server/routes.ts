@@ -905,6 +905,174 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'basic-register.html'));
   });
   
+  // Serve the form-based registration (no JavaScript)
+  app.get('/form-register', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'form-register.html'));
+  });
+  
+  // Handle form-based registration submission
+  app.post('/register-form-submit', async (req, res) => {
+    try {
+      console.log('Form registration request received:', req.body);
+      
+      const { username, email, password, fullName, role = 'coach', phone = '' } = req.body;
+      
+      // Validate required fields
+      if (!username || !email || !password || !fullName) {
+        return res.status(400).send(`
+          <html>
+            <head><title>Registration Error</title></head>
+            <body>
+              <h1>Registration Error</h1>
+              <p>Missing required fields. Please go back and fill in all required fields.</p>
+              <a href="/form-register">Go Back</a>
+            </body>
+          </html>
+        `);
+      }
+      
+      // Check if username exists
+      const existingUserByUsername = await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.username, username)
+      });
+      
+      if (existingUserByUsername) {
+        return res.status(400).send(`
+          <html>
+            <head><title>Registration Error</title></head>
+            <body>
+              <h1>Registration Error</h1>
+              <p>Username '${username}' is already taken. Please choose a different username.</p>
+              <a href="/form-register">Go Back</a>
+            </body>
+          </html>
+        `);
+      }
+      
+      // Check if email exists
+      const existingUserByEmail = await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.email, email)
+      });
+      
+      if (existingUserByEmail) {
+        return res.status(400).send(`
+          <html>
+            <head><title>Registration Error</title></head>
+            <body>
+              <h1>Registration Error</h1>
+              <p>Email '${email}' is already registered. Please use a different email.</p>
+              <a href="/form-register">Go Back</a>
+            </body>
+          </html>
+        `);
+      }
+      
+      // Check if phone exists and is not empty
+      if (phone) {
+        const existingUserByPhone = await db.query.users.findFirst({
+          where: (users, { eq }) => eq(users.phone, phone)
+        });
+        
+        if (existingUserByPhone) {
+          return res.status(400).send(`
+            <html>
+              <head><title>Registration Error</title></head>
+              <body>
+                <h1>Registration Error</h1>
+                <p>Phone number '${phone}' is already registered. Please use a different phone number or leave it empty.</p>
+                <a href="/form-register">Go Back</a>
+              </body>
+            </html>
+          `);
+        }
+      }
+      
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+      
+      // Determine user status based on role
+      const status = role === 'coach' ? 'pending' : 'active';
+      
+      // Create user directly in DB
+      const newUser = await db.insert(users).values({
+        username,
+        email,
+        password: hashedPassword,
+        fullName,
+        phone,
+        role,
+        status,
+        academyId: 1 // Default academy ID
+      }).returning();
+      
+      if (!newUser || newUser.length === 0) {
+        return res.status(500).send(`
+          <html>
+            <head><title>Registration Error</title></head>
+            <body>
+              <h1>Server Error</h1>
+              <p>Failed to create user record. Please try again later.</p>
+              <a href="/form-register">Go Back</a>
+            </body>
+          </html>
+        `);
+      }
+      
+      // Log success
+      console.log('Form registration successful:', {
+        id: newUser[0].id,
+        username: newUser[0].username,
+        email: newUser[0].email,
+        role: newUser[0].role
+      });
+      
+      // Return success page
+      return res.status(201).send(`
+        <html>
+          <head>
+            <title>Registration Successful</title>
+            <style>
+              body { font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 2rem; line-height: 1.6; }
+              h1 { color: #4c1d95; }
+              .success { background-color: #ecfdf5; padding: 1rem; border-radius: 0.5rem; border: 1px solid #a7f3d0; }
+              .user-details { background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; }
+              a { color: #4c1d95; text-decoration: none; }
+              a:hover { text-decoration: underline; }
+            </style>
+          </head>
+          <body>
+            <h1>Registration Successful!</h1>
+            <div class="success">
+              <p>Your account has been created successfully.</p>
+              <p>You can now use your credentials to log in to the system.</p>
+            </div>
+            <div class="user-details">
+              <h2>Account Details</h2>
+              <p><strong>Username:</strong> ${newUser[0].username}</p>
+              <p><strong>Email:</strong> ${newUser[0].email}</p>
+              <p><strong>Role:</strong> ${newUser[0].role}</p>
+              <p><strong>Status:</strong> ${newUser[0].status}</p>
+            </div>
+            <p><a href="/">Return to Home</a></p>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error('Error in form registration:', error);
+      
+      return res.status(500).send(`
+        <html>
+          <head><title>Registration Error</title></head>
+          <body>
+            <h1>Server Error</h1>
+            <p>Registration failed due to server error: ${error instanceof Error ? error.message : String(error)}</p>
+            <a href="/form-register">Go Back</a>
+          </body>
+        </html>
+      `);
+    }
+  });
+  
   // Direct registration endpoint for debugging
   app.post('/api/debug/direct-register', async (req, res) => {
     try {
