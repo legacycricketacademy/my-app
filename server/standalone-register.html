@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legacy Cricket Academy - Standalone Registration</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --accent: #7c3aed;
+      --background: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --border: #e2e8f0;
+      --error: #ef4444;
+      --success: #10b981;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    body {
+      background-color: var(--background);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+      width: 100%;
+    }
+    
+    header {
+      background-color: #1e293b;
+      color: white;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+    }
+    
+    .logo-icon {
+      color: #60a5fa;
+    }
+    
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .form-container {
+      max-width: 600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    h1 {
+      font-size: 1.875rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    
+    .subheading {
+      color: #64748b;
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 1rem;
+    }
+    
+    .card {
+      background-color: var(--card);
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      padding: 2rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-field {
+      margin-bottom: 1.5rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    
+    input, select, textarea {
+      width: 100%;
+      padding: 0.625rem;
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background-color: white;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.625rem 1.25rem;
+      font-weight: 500;
+      border-radius: 0.375rem;
+      text-decoration: none;
+      transition: background-color 0.2s, transform 0.1s;
+      font-size: 0.875rem;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    .btn-primary:active {
+      transform: translateY(1px);
+    }
+    
+    .btn-full {
+      width: 100%;
+    }
+    
+    .error-message {
+      color: var(--error);
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+      display: none;
+    }
+    
+    .has-error input, .has-error select {
+      border-color: var(--error);
+    }
+    
+    .has-error .error-message {
+      display: block;
+    }
+    
+    .role-tabs {
+      display: flex;
+      margin-bottom: 2rem;
+      border-radius: 0.375rem;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    
+    .role-tab {
+      flex: 1;
+      padding: 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+      background-color: #f1f5f9;
+      color: #64748b;
+    }
+    
+    .role-tab.active {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    #studentFields {
+      display: none;
+    }
+    
+    .required-field::after {
+      content: "*";
+      color: var(--error);
+      margin-left: 0.25rem;
+    }
+    
+    .form-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2rem;
+    }
+    
+    .login-link {
+      color: var(--primary);
+      font-size: 0.875rem;
+      text-decoration: none;
+    }
+    
+    .login-link:hover {
+      text-decoration: underline;
+    }
+    
+    .success-message {
+      background-color: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #047857;
+      padding: 1rem;
+      border-radius: 0.375rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+    
+    .form-status {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      display: none;
+    }
+    
+    .form-status.success {
+      background-color: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      display: block;
+    }
+    
+    .form-status.error {
+      background-color: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+      display: block;
+    }
+    
+    pre {
+      background-color: #f1f5f9;
+      padding: 1rem;
+      border-radius: 0.375rem;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 0.875rem;
+      margin-top: 1rem;
+    }
+    
+    .result-card {
+      background-color: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-top: 2rem;
+      display: none;
+    }
+    
+    .result-header {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-size: 1.25rem;
+    }
+    
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    
+    .result-table td {
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .result-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .result-table td:first-child {
+      font-weight: 500;
+      width: 40%;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 1.5rem 0;
+      border-top: 1px solid var(--border);
+      color: #64748b;
+      font-size: 0.875rem;
+      margin-top: 2rem;
+    }
+    
+    @media (max-width: 640px) {
+      .card {
+        padding: 1.5rem;
+      }
+      
+      .role-tabs {
+        flex-direction: column;
+      }
+      
+      .form-footer {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .btn-full {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-content">
+      <a href="/" class="logo">
+        <span class="logo-icon">🏏</span>
+        <span>Legacy Cricket Academy</span>
+      </a>
+    </div>
+  </header>
+  
+  <main class="container">
+    <div class="form-container">
+      <h1>Create Your Account</h1>
+      <p class="subheading">Join Legacy Cricket Academy to manage your cricket training and progress.</p>
+      
+      <div class="role-tabs">
+        <div class="role-tab active" id="parentTab" onclick="changeRole('parent')">Parent</div>
+        <div class="role-tab" id="coachTab" onclick="changeRole('coach')">Coach</div>
+      </div>
+      
+      <div class="card">
+        <form id="registrationForm">
+          <div class="form-field">
+            <label for="username" class="required-field">Username</label>
+            <input type="text" id="username" name="username" required>
+            <div class="error-message" id="username-error">Please enter a valid username (3-20 characters)</div>
+          </div>
+          
+          <div class="form-field">
+            <label for="email" class="required-field">Email Address</label>
+            <input type="email" id="email" name="email" required>
+            <div class="error-message" id="email-error">Please enter a valid email address</div>
+          </div>
+          
+          <div class="form-field">
+            <label for="password" class="required-field">Password</label>
+            <input type="password" id="password" name="password" required>
+            <div class="error-message" id="password-error">Password must be at least 8 characters</div>
+          </div>
+          
+          <div class="form-field">
+            <label for="role" class="required-field">Role</label>
+            <select id="role" name="role" required>
+              <option value="parent">Parent</option>
+              <option value="coach">Coach</option>
+            </select>
+          </div>
+          
+          <div class="form-field">
+            <label for="firstname">First Name</label>
+            <input type="text" id="firstname" name="firstname">
+          </div>
+          
+          <div class="form-field">
+            <label for="lastname">Last Name</label>
+            <input type="text" id="lastname" name="lastname">
+          </div>
+          
+          <div class="form-field">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone">
+            <div class="error-message" id="phone-error">Please enter a valid phone number</div>
+          </div>
+          
+          <div class="form-field" id="studentFields">
+            <label for="studentName">Student Name</label>
+            <input type="text" id="studentName" name="studentName">
+          </div>
+          
+          <div class="form-status" id="formStatus"></div>
+          
+          <div class="form-footer">
+            <a href="/login" class="login-link">Already have an account? Log in</a>
+            <button type="submit" class="btn btn-primary">Register Account</button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="result-card" id="resultCard">
+        <div class="result-header">Registration Simulation Result</div>
+        <p>This is a simulation of what would be created in the database:</p>
+        <table class="result-table" id="resultTable">
+          <!-- Results will be inserted here -->
+        </table>
+        <div class="form-footer" style="margin-top: 1rem;">
+          <button type="button" class="btn btn-primary" onclick="resetForm()">Start Over</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <footer class="container">
+    <p>© 2025 Legacy Cricket Academy. All rights reserved.</p>
+  </footer>
+  
+  <script>
+    // Simulate registration locally without API calls
+    document.getElementById('registrationForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Reset form errors
+      const errorElements = document.querySelectorAll('.error-message');
+      errorElements.forEach(el => {
+        el.style.display = 'none';
+        el.parentElement.classList.remove('has-error');
+      });
+      
+      // Get form values
+      const formData = {
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        role: document.getElementById('role').value,
+        firstname: document.getElementById('firstname').value,
+        lastname: document.getElementById('lastname').value,
+        phone: document.getElementById('phone').value
+      };
+      
+      // Basic validation
+      let hasErrors = false;
+      
+      if (formData.username.length < 3 || formData.username.length > 20) {
+        showError('username', 'Username must be between 3 and 20 characters');
+        hasErrors = true;
+      }
+      
+      if (!isValidEmail(formData.email)) {
+        showError('email', 'Please enter a valid email address');
+        hasErrors = true;
+      }
+      
+      if (formData.password.length < 8) {
+        showError('password', 'Password must be at least 8 characters');
+        hasErrors = true;
+      }
+      
+      if (formData.phone && !isValidPhone(formData.phone)) {
+        showError('phone', 'Please enter a valid phone number');
+        hasErrors = true;
+      }
+      
+      if (hasErrors) {
+        return;
+      }
+      
+      // Simulate successful registration
+      simulateSuccessfulRegistration(formData);
+    });
+    
+    function showError(fieldId, message) {
+      const errorElement = document.getElementById(`${fieldId}-error`);
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+      document.getElementById(fieldId).parentElement.classList.add('has-error');
+    }
+    
+    function isValidEmail(email) {
+      const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return re.test(String(email).toLowerCase());
+    }
+    
+    function isValidPhone(phone) {
+      // Simple validation for demonstration
+      return phone.length >= 10;
+    }
+    
+    function changeRole(role) {
+      document.getElementById('parentTab').classList.toggle('active', role === 'parent');
+      document.getElementById('coachTab').classList.toggle('active', role === 'coach');
+      document.getElementById('role').value = role;
+      
+      document.getElementById('studentFields').style.display = role === 'parent' ? 'block' : 'none';
+    }
+    
+    function simulateSuccessfulRegistration(formData) {
+      // Hide the form
+      document.getElementById('registrationForm').parentElement.style.display = 'none';
+      
+      // Show results
+      const resultCard = document.getElementById('resultCard');
+      resultCard.style.display = 'block';
+      
+      // Create a result table
+      const resultTable = document.getElementById('resultTable');
+      resultTable.innerHTML = '';
+      
+      // Generate a random ID
+      const userId = Math.floor(Math.random() * 10000) + 1;
+      
+      // Create rows for each field
+      const fields = [
+        { label: 'User ID', value: userId },
+        { label: 'Username', value: formData.username },
+        { label: 'Email', value: formData.email },
+        { label: 'Role', value: formData.role },
+        { label: 'First Name', value: formData.firstname || '(not provided)' },
+        { label: 'Last Name', value: formData.lastname || '(not provided)' },
+        { label: 'Phone', value: formData.phone || '(not provided)' },
+        { label: 'Created At', value: new Date().toLocaleString() },
+        { label: 'Status', value: 'Active' }
+      ];
+      
+      fields.forEach(field => {
+        const row = document.createElement('tr');
+        
+        const labelCell = document.createElement('td');
+        labelCell.textContent = field.label;
+        row.appendChild(labelCell);
+        
+        const valueCell = document.createElement('td');
+        valueCell.textContent = field.value;
+        row.appendChild(valueCell);
+        
+        resultTable.appendChild(row);
+      });
+    }
+    
+    function resetForm() {
+      // Reset the form
+      document.getElementById('registrationForm').reset();
+      
+      // Show the form card again
+      document.getElementById('registrationForm').parentElement.style.display = 'block';
+      
+      // Hide the result card
+      document.getElementById('resultCard').style.display = 'none';
+      
+      // Reset error messages
+      const errorElements = document.querySelectorAll('.error-message');
+      errorElements.forEach(el => {
+        el.style.display = 'none';
+        el.parentElement.classList.remove('has-error');
+      });
+      
+      // Reset role tabs
+      changeRole('parent');
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      changeRole('parent');
+    });
+  </script>
+</body>
+</html>
