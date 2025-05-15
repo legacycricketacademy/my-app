@@ -930,6 +930,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'email-test.html'));
   });
   
+  // Serve username check tool
+  app.get('/username-check', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'username-check.html'));
+  });
+  
   // Handle form-based registration submission
   app.post('/register-form-submit', async (req, res) => {
     try {
