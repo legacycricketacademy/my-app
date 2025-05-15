@@ -910,6 +910,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'form-register.html'));
   });
   
+  // Serve the minimal HTML registration page
+  app.get('/minimal', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, '..', 'minimal.html'));
+  });
+  
   // Handle form-based registration submission
   app.post('/register-form-submit', async (req, res) => {
     try {
