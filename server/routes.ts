@@ -1063,7 +1063,10 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
               <p><strong>Role:</strong> ${newUser[0].role}</p>
               <p><strong>Status:</strong> ${newUser[0].status}</p>
             </div>
-            <p><a href="/">Return to Home</a></p>
+            <p>
+              <a href="/form-register" style="display: inline-block; margin-right: 1rem;">Register Another User</a>
+              <a href="/basic-landing" style="display: inline-block;">Back to Tools</a>
+            </p>
           </body>
         </html>
       `);
