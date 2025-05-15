@@ -915,6 +915,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, '..', 'minimal.html'));
   });
   
+  // Serve the basic landing page
+  app.get('/basic-landing', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, '..', 'basic-landing.html'));
+  });
+  
   // Handle form-based registration submission
   app.post('/register-form-submit', async (req, res) => {
     try {
