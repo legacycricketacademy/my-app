@@ -1,33 +1,111 @@
-1. Line 662-666: Replace with
-          return res.status(200).json(
-            createSuccessResponse(
-              { user: userWithoutPassword },
-              "Registration successful, but auto-login failed. Please login manually."
-            )
-          );
+I've implemented a standardized API response structure for our application based on your recommendations. This greatly improves error handling and user feedback for registration and other key operations.
 
-2. Line 669-674: Replace with
-        // Return success response with user data in standardized format
-        return res.status(201).json(
-          createSuccessResponse(
-            { user: userWithoutPassword },
-            "Registration successful!"
-          )
-        );
+### API Response Structure
 
-3. Line 954-958: Replace with
-          return res.status(200).json(
-            createSuccessResponse(
-              { user: userWithoutPassword },
-              "Registration successful, but auto-login failed. Please login manually."
-            )
-          );
+All API responses now follow this consistent pattern:
 
-4. Line 962-966: Replace with
-        // Return success response with user data in standardized format
-        return res.status(201).json(
-          createSuccessResponse(
-            { user: userWithoutPassword },
-            "Registration successful!"
-          )
-        );
+```typescript
+interface ApiResponse<T = any> {
+  success: boolean;    // Quick success/failure check
+  message: string;     // Human-readable message
+  error?: ApiErrorType; // Type of error for programmatic handling
+  data?: T;            // Payload for successful responses
+}
+```
+
+### Error Types
+
+We've added typed errors for better frontend handling:
+
+```typescript
+type ApiErrorType = 
+  | 'UsernameAlreadyExists'
+  | 'EmailAlreadyRegistered'
+  | 'EmailSendFailed'
+  | 'InvalidInputFormat'
+  | 'DatabaseUnavailable'
+  | 'PasswordTooWeak'
+  | 'AccountCreateFailed'
+  | 'UnknownError'
+  | 'FirebaseAuthError'
+  | 'NetworkError';
+```
+
+### Implementation Details
+
+#### Server-side
+
+We've created helper functions to standardize responses:
+
+```typescript
+// Success response
+sendSuccess(res, "Registration successful", userData);
+
+// Error response
+sendError(res, "Username already exists", 409, "UsernameAlreadyExists");
+
+// Specific helpers
+sendUsernameExistsError(res, username);
+sendEmailExistsError(res, email);
+```
+
+#### Frontend Handling
+
+Frontend code can now handle responses more gracefully:
+
+```typescript
+fetch('/api/register', { 
+  method: 'POST', 
+  body: JSON.stringify(formData)
+})
+.then(res => res.json())
+.then(response => {
+  if (!response.success) {
+    // Handle specific error types
+    switch(response.error) {
+      case 'UsernameAlreadyExists':
+        showUsernameError(response.message);
+        suggestAlternativeUsernames();
+        break;
+      case 'EmailAlreadyRegistered':
+        showEmailError(response.message);
+        offerPasswordReset();
+        break;
+      // etc.
+    }
+  } else {
+    // Success path
+    showSuccess(response.message);
+    redirectToDashboard(response.data);
+  }
+});
+```
+
+### Username Availability Check 
+
+The username availability endpoint now includes suggestions when a username is taken:
+
+```json
+{
+  "success": false,
+  "message": "The username 'madhukar123123' is already taken",
+  "error": "UsernameAlreadyExists",
+  "data": {
+    "available": false,
+    "username": "madhukar123123",
+    "suggestions": [
+      "madhukar123124",
+      "madhukar123125",
+      "madhukar2025",
+      "madhukar123_cricket",
+      "madhukar123876"
+    ]
+  }
+}
+```
+
+This standardized approach:
+1. Makes error handling consistent across the application
+2. Provides meaningful feedback to users
+3. Allows frontends to respond intelligently to different error conditions
+4. Improves debugging by categorizing errors
