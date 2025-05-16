@@ -366,14 +366,12 @@ export function setupAuth(app: Express) {
       const existingUser = await multiTenantStorage.getUserByUsername(req.body.username);
       if (existingUser) {
         console.error(`Registration failed: Username '${req.body.username}' already exists`);
-        return res.status(400).json(
-          createErrorResponse(
-            "Username already exists in this academy",
-            "username_in_use", 
-            400,
-            { field: "username" }
-          )
-        );
+        return res.status(409).json({
+          success: false,
+          message: `The username '${req.body.username}' is already taken. Please choose another.`,
+          error: "UsernameAlreadyExists",
+          field: "username"
+        });
       }
 
       // Special handling for clowmail.com and other problematic email domains
@@ -406,14 +404,12 @@ export function setupAuth(app: Express) {
           } else {
             // Regular case - email already in use with direct registration
             console.error(`Registration failed: Email '${email}' already in use`);
-            return res.status(400).json(
-              createErrorResponse(
-                "Email already in use. Please use a different email or try logging in.",
-                "email_in_use",
-                400,
-                { field: "email" }
-              )
-            );
+            return res.status(409).json({
+              success: false,
+              message: `The email '${email}' is already registered. Please use another email or try to log in.`,
+              error: "EmailAlreadyRegistered",
+              field: "email"
+            });
           }
         }
       }
