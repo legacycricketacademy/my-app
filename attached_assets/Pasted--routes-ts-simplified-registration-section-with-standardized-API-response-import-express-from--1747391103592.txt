@@ -1,0 +1,67 @@
+// routes.ts (simplified registration section with standardized API response)
+
+import express from 'express';
+import { sendSuccess, sendError, sendValidationError, sendUsernameExistsError, sendEmailExistsError } from './api-response';
+import storage from './storage'; // Assume this is your data layer
+
+const app = express();
+app.use(express.json());
+
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, email, password, fullName, phone, role } = req.body;
+
+    if (!username || !email || !password || !fullName) {
+      return sendValidationError(res, 'Missing required fields');
+    }
+
+    const existingUser = await storage.getUserByUsername(username);
+    if (existingUser) {
+      return sendUsernameExistsError(res, username);
+    }
+
+    const existingEmail = await storage.getUserByEmail(email);
+    if (existingEmail) {
+      return sendEmailExistsError(res, email);
+    }
+
+    // Simulate user creation (replace with real DB insert logic)
+    const user = await storage.createUser({ username, email, password, fullName, phone, role });
+
+    // Simulate email sending
+    try {
+      await storage.sendVerificationEmail(user);
+    } catch (emailErr) {
+      return sendError(res, 'User created, but failed to send verification email', 'EmailSendFailed', 200);
+    }
+
+    return sendSuccess(res, 'Registration successful!', {
+      userId: user.id,
+      username: user.username,
+    });
+  } catch (err) {
+    console.error('Registration error:', err);
+    return sendError(res, 'Unexpected server error', 'ServerError', 500);
+  }
+});
+
+// Check username availability API
+app.get('/api/check-username', async (req, res) => {
+  const { username } = req.query;
+
+  if (!username || typeof username !== 'string') {
+    return sendValidationError(res, 'Username is required');
+  }
+
+  const existingUser = await storage.getUserByUsername(username);
+  if (existingUser) {
+    return sendUsernameExistsError(res, username);
+  } else {
+    return sendSuccess(res, `Username '${username}' is available`, {
+      available: true,
+      username
+    });
+  }
+});
+
+export default app;
