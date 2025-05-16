@@ -159,9 +159,98 @@
       const loadingElement = document.getElementById('loading');
       const successMessage = document.getElementById('successMessage');
       const formError = document.getElementById('formError');
+      const usernameField = document.getElementById('username');
+      const usernameError = document.getElementById('usernameError');
       
-      // Clear errors when input changes
-      const inputs = document.querySelectorAll('input, select');
+      // Debounce function to limit API calls
+      function debounce(func, wait) {
+        let timeout;
+        return function() {
+          const context = this;
+          const args = arguments;
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+      }
+      
+      // Check username availability
+      let usernameCheckInProgress = false;
+      let usernameTimer = null;
+      let lastCheckedUsername = '';
+      
+      const checkUsernameAvailability = debounce(async function(username) {
+        // Skip check if username is too short or same as last checked
+        if (!username || username.length < 3 || username === lastCheckedUsername) {
+          return;
+        }
+        
+        lastCheckedUsername = username;
+        usernameError.textContent = '';
+        
+        if (usernameCheckInProgress) {
+          clearTimeout(usernameTimer);
+          usernameTimer = setTimeout(() => checkUsernameAvailability(username), 500);
+          return;
+        }
+        
+        usernameCheckInProgress = true;
+        
+        try {
+          // Show checking indicator
+          usernameError.textContent = 'Checking username...';
+          usernameError.style.color = '#3498db'; // Blue color for "in progress"
+          
+          const response = await fetch(`/api/check-username?username=${encodeURIComponent(username)}`);
+          const data = await response.json();
+          
+          // Clear checking indicator
+          usernameError.textContent = '';
+          usernameField.classList.remove('input-error');
+          
+          // Handle the response
+          if (!response.ok) {
+            console.error('Username check failed:', data.message);
+            usernameError.textContent = '';
+            return;
+          }
+          
+          if (data.exists === true || data.success === false) {
+            // Username is taken
+            usernameField.classList.add('input-error');
+            usernameError.style.color = '#e74c3c'; // Red for error
+            usernameError.textContent = data.message || 'This username is already taken. Please choose another.';
+          } else if (data.exists === false && data.success === true) {
+            // Username is available
+            usernameError.style.color = '#27ae60'; // Green for success
+            usernameError.textContent = 'Username is available!';
+          }
+        } catch (error) {
+          console.error('Error checking username:', error);
+          // Clear any messages but don't block form submission on check error
+          usernameError.textContent = '';
+        } finally {
+          usernameCheckInProgress = false;
+        }
+      }, 500); // Debounce for 500ms
+      
+      // Listen for username input
+      usernameField.addEventListener('input', function() {
+        const username = this.value.trim();
+        
+        // Basic validation
+        if (username.length < 3) {
+          this.classList.add('input-error');
+          usernameError.style.color = '#e74c3c';
+          usernameError.textContent = 'Username must be at least 3 characters';
+          return;
+        }
+        
+        // Check availability with API
+        checkUsernameAvailability(username);
+      });
+      
+      // Clear errors when input changes (for other fields)
+      const inputs = document.querySelectorAll('input:not(#username), select');
       inputs.forEach(input => {
         input.addEventListener('input', () => {
           input.classList.remove('input-error');
@@ -170,25 +259,59 @@
         });
       });
       
+      // Add submit handler
       form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        // Validate username first (block submission if username is taken)
+        const username = usernameField.value.trim();
+        if (usernameField.classList.contains('input-error') || 
+            (usernameError.textContent && usernameError.textContent !== 'Username is available!')) {
+          // If there's an error and it's not "Username is available!", prevent submission
+          if (username.length >= 3) {
+            // Final check before submission (only if username is valid length)
+            await checkUsernameAvailability(username);
+            
+            // If after checking, there's still an error, abort submission
+            if (usernameField.classList.contains('input-error')) {
+              usernameField.focus();
+              return;
+            }
+          } else {
+            usernameField.focus();
+            return;
+          }
+        }
+        
         // Clear previous errors
-        document.querySelectorAll('.error').forEach(el => el.textContent = '');
-        document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+        document.querySelectorAll('.error').forEach(el => {
+          if (el.id !== 'usernameError' || el.textContent !== 'Username is available!') {
+            el.textContent = '';
+          }
+        });
+        document.querySelectorAll('.input-error').forEach(el => {
+          if (el.id !== 'username' || usernameError.textContent !== 'Username is available!') {
+            el.classList.remove('input-error');
+          }
+        });
         successMessage.style.display = 'none';
         
         // Show loading indicator
         loadingElement.style.display = 'block';
         
+        // Disable submit button to prevent double submission
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Processing...';
+        
         // Get form data
         const formData = {
-          username: document.getElementById('username').value,
-          email: document.getElementById('email').value,
+          username: username,
+          email: document.getElementById('email').value.trim(),
           password: document.getElementById('password').value,
-          fullName: document.getElementById('fullName').value,
+          fullName: document.getElementById('fullName').value.trim(),
           role: document.getElementById('role').value,
-          phone: document.getElementById('phone').value
+          phone: document.getElementById('phone').value.trim()
         };
         
         try {
@@ -216,8 +339,10 @@
           formError.textContent = 'Connection error. Please try again.';
           console.error('Registration error:', error);
         } finally {
-          // Hide loading indicator
+          // Hide loading indicator and re-enable submit button
           loadingElement.style.display = 'none';
+          submitButton.disabled = false;
+          submitButton.textContent = 'Register';
         }
       });
       
@@ -225,9 +350,8 @@
       function handleRegistrationErrors(errorData) {
         // Handle specific error types
         if (errorData.error === "UsernameAlreadyExists") {
-          const usernameField = document.getElementById('username');
-          const usernameError = document.getElementById('usernameError');
           usernameField.classList.add('input-error');
+          usernameError.style.color = '#e74c3c';
           usernameError.textContent = errorData.message || 'This username is already taken. Please choose another.';
         } else if (errorData.error === "EmailAlreadyRegistered") {
           const emailField = document.getElementById('email');

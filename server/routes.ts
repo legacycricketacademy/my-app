@@ -1320,34 +1320,83 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
   app.get('/api/check-username', async (req, res) => {
     try {
       const { username } = req.query;
+      console.log(`[Username Check] Checking availability for username: "${username}"`);
+      
       if (!username || typeof username !== 'string') {
+        console.log(`[Username Check] Rejected - Invalid username parameter: ${username}`);
         return res.status(400).json({
           success: false,
-          message: 'Username is required'
+          message: 'Username is required',
+          error: 'InvalidInputFormat',
+          exists: false // Explicitly set to false for invalid inputs
         });
       }
 
-      const existingUser = await storage.getUserByUsername(username);
+      // Check for minimum username length
+      if (username.length < 3) {
+        console.log(`[Username Check] Rejected - Username too short: "${username}"`);
+        return res.status(400).json({
+          success: false,
+          message: 'Username must be at least 3 characters long',
+          error: 'InvalidInputFormat',
+          exists: false // Not taken, just invalid
+        });
+      }
+      
+      // Trim the username to ensure consistent comparisons
+      const trimmedUsername = username.trim();
+      console.log(`[Username Check] Searching for username: "${trimmedUsername}"`);
+      
+      // Perform academy-specific search if academy context is available
+      let academyContext = null;
+      if (req.academyId) {
+        academyContext = req.academyId;
+        console.log(`[Username Check] Using academy context: ${academyContext}`);
+      }
+      
+      // Get the user from storage - handle academy context if needed
+      let existingUser = null;
+      
+      // Some implementations may not have academy-specific methods,
+      // so we'll use a more general approach
+      if (academyContext) {
+        console.log(`[Username Check] Using academy ID ${academyContext} for lookup`);
+        // Try to find the user in the specific academy context
+        existingUser = await storage.getUserByUsername(trimmedUsername);
+        
+        // If user exists, verify they belong to the correct academy
+        if (existingUser && existingUser.academyId && existingUser.academyId !== academyContext) {
+          console.log(`[Username Check] User found but in different academy: ${existingUser.academyId}`);
+          existingUser = null; // Not in this academy, so username is available
+        }
+      } else {
+        // No academy context, just check globally
+        existingUser = await storage.getUserByUsername(trimmedUsername);
+      }
       
       if (existingUser) {
+        console.log(`[Username Check] Username "${trimmedUsername}" is taken by user ID: ${existingUser.id}`);
         return res.json({
           success: false,
           message: 'Username already exists',
+          error: 'UsernameAlreadyExists',
           exists: true
         });
       }
       
+      console.log(`[Username Check] Username "${trimmedUsername}" is available`);
       return res.json({
         success: true,
         message: 'Username is available',
         exists: false
       });
     } catch (error) {
-      console.error('Error checking username:', error);
+      console.error('[Username Check] Error checking username:', error);
       return res.status(500).json({
         success: false,
-        message: 'Error checking username',
-        error: error instanceof Error ? error.message : String(error)
+        message: 'An error occurred while checking username availability',
+        error: 'DatabaseUnavailable',
+        exists: false // Default to false on errors to avoid blocking valid usernames
       });
     }
   });
