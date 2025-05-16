@@ -46,7 +46,7 @@ import {
   sendUsernameExistsError,
   sendEmailExistsError,
   sendDatabaseError,
-  sendEmailSendFailure,
+  sendEmailSendError as sendEmailSendFailure,
   sendInvalidCredentialsError,
   sendUserNotVerifiedError,
   sendAccountLockedError,
