@@ -952,7 +952,7 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
   
   // Serve the standardized registration page with improved error handling
   app.get('/standardized-register', (req, res) => {
-    res.sendFile(path.resolve(import.meta.dirname, '..', 'standardized-register.html'));
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'standardized-register.html'));
   });
   
   // Serve the standardized login page with improved error handling
