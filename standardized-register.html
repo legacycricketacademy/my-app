@@ -215,6 +215,9 @@
   </form>
 
   <script>
+    // Global flag to prevent double submissions - must be declared outside any function
+    window.isSubmittingForm = false;
+    
     document.addEventListener('DOMContentLoaded', function() {
       const form = document.getElementById('registrationForm');
       const loadingElement = document.getElementById('loading');
@@ -420,26 +423,17 @@
       // Variable to track submission in progress
       let isSubmitting = false;
       
-      // Track form submission to prevent double submissions
-      let lastSubmitTime = 0;
-      const SUBMIT_COOLDOWN = 2000; // 2 seconds cooldown between submissions
-      
-      // Add submit handler
+      // Add submit handler with our completely new approach
       form.addEventListener('submit', async function(e) {
         e.preventDefault(); // Prevent default form submission
-        
-        // Get current time
-        const now = Date.now();
-        
-        // Check if submission is too soon after previous attempt (prevents double-clicks and automated rapid submissions)
-        if (now - lastSubmitTime < SUBMIT_COOLDOWN) {
-          console.log('Submission attempted too quickly after previous attempt, ignoring');
-          return;
-        }
-        
-        // Prevent double submission
-        if (isSubmitting) {
-          console.log('Submission already in progress, ignoring duplicate request');
+        await handleRegistrationSubmit();
+      });
+      
+      // Completely separate function to handle registration submission
+      const handleRegistrationSubmit = async () => {
+        // If global flag is set, don't proceed (prevents double submission)
+        if (window.isSubmittingForm) {
+          console.log('Global submission lock active, preventing submission');
           return;
         }
         
@@ -449,20 +443,16 @@
           return;
         }
         
-        // Update submission timestamp
-        lastSubmitTime = now;
+        // Set global submission flag
+        window.isSubmittingForm = true;
+        console.log('Setting global submission lock');
         
-        // Set submitting flag to true
-        isSubmitting = true;
-        
-        // Disable submit button to prevent visual double-clicks
+        // Disable submit button
         submitButton.disabled = true;
         submitButton.textContent = 'Processing...';
         
-        // Remove the submit event temporarily to prevent any possibility of double submission
-        const originalForm = form;
-        const clonedForm = originalForm.cloneNode(true);
-        originalForm.replaceWith(clonedForm);
+        // Show loading indicator
+        loadingElement.style.display = 'flex';
         
         // Validate username first (block submission if username is taken)
         const username = usernameField.value.trim();
