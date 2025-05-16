@@ -40,6 +40,9 @@ export async function registerHandler(req: Request, res: Response) {
     return sendSuccess(res, 'Registration successful! Please verify your email.', { userId: user.id });
   } catch (err) {
     console.error('Registration failed:', err);
-    return sendError(res, 'Internal server error');
+    if (err instanceof Error) {
+      return sendError(res, 'Registration failed', 'DatabaseError', 500, err.message);
+    }
+    return sendError(res, 'Internal server error', 'DatabaseError', 500);
   }
 }

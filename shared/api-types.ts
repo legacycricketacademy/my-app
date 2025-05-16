@@ -16,7 +16,12 @@ export type ApiErrorType =
   | 'DuplicateRequest'
   | 'NotFound'
   | 'Unauthorized'
-  | 'Forbidden';
+  | 'Forbidden'
+  | 'AccountLocked'
+  | 'AccountDisabled'
+  | 'TooManyAttempts'
+  | 'SessionExpired'
+  | 'AuthorizationRequired';
 
 /**
  * Base success response structure
@@ -63,4 +68,104 @@ export function isApiError(response: ApiResponse): response is ApiErrorResponse 
  */
 export function hasApiErrorType(response: ApiResponse, errorType: ApiErrorType): boolean {
   return isApiError(response) && response.error === errorType;
+}
+
+/**
+ * Auth related response types
+ */
+export interface AuthResponse {
+  user: {
+    id: number;
+    username: string;
+    fullName: string;
+    email: string;
+    role: string;
+    isVerified: boolean;
+    academyId?: number;
+    academyName?: string;
+  };
+  token?: string;
+}
+
+/**
+ * Player related response types
+ */
+export interface PlayerResponse {
+  id: number;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  ageGroup: string;
+  parentId: number;
+  parentName: string;
+  parentEmail: string;
+  academyId: number;
+  academyName: string;
+}
+
+/**
+ * Session related response types
+ */
+export interface SessionResponse {
+  id: number;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  notes: string;
+  coachId: number;
+  coachName: string;
+  academyId: number;
+  ageGroup: string;
+}
+
+/**
+ * Announcement related response types
+ */
+export interface AnnouncementResponse {
+  id: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  createdById: number;
+  createdByName: string;
+  academyId: number;
+  isPinned: boolean;
+  isPublic: boolean;
+}
+
+/**
+ * Payment related response types
+ */
+export interface PaymentResponse {
+  id: number;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  playerId: number;
+  playerName: string;
+  parentId: number;
+  parentName: string;
+  academyId: number;
+  date: string;
+  notes?: string;
+  paymentMethod?: string;
+  refNumber?: string;
+}
+
+/**
+ * Connection request related response types
+ */
+export interface ConnectionRequestResponse {
+  id: number;
+  playerId: number;
+  playerFirstName: string;
+  playerLastName: string;
+  parentId: number;
+  parentName: string;
+  parentEmail: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  academyId: number;
 }

@@ -3,8 +3,9 @@
 // Standardized API client for making requests to the backend
 // Ensures consistent handling of responses and errors
 
-import { ApiResponse } from '@shared/api-types';
+import { ApiResponse, ApiErrorResponse, isApiError } from '@shared/api-types';
 import { queryClient } from './queryClient';
+import { handleFetchResponse } from './api-helpers';
 
 // Types for request options
 export type ApiRequestOptions = {
@@ -78,35 +79,15 @@ export async function apiRequest<T = any>(
     // Clear timeout
     clearTimeout(timeoutId);
 
-    // Parse response
-    let responseData: ApiResponse<T>;
-    try {
-      responseData = await response.json();
-    } catch (error) {
-      // Handle non-JSON responses
-      throw new ApiError('Invalid response format', {
-        status: response.status,
-        code: 'invalid_response',
-      });
-    }
-
-    // Check if the response follows our API response format
-    if (responseData === undefined || responseData.success === undefined) {
-      // If not, wrap it in our standard format
-      responseData = {
-        success: response.ok,
-        message: response.ok ? 'Success' : 'Error',
-        data: responseData as any,
-        status: response.status,
-      };
-    }
+    // Use the standardized response handler
+    const responseData = await handleFetchResponse<T>(response);
 
     // Handle error responses
-    if (!responseData.success) {
+    if (isApiError(responseData)) {
       throw new ApiError(responseData.message || 'API request failed', {
-        status: responseData.status || response.status,
-        code: responseData.code,
-        data: responseData.data,
+        status: response.status,
+        code: responseData.error,
+        data: responseData
       });
     }
 
