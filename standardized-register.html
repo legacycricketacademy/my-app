@@ -642,8 +642,10 @@
             submitButton.disabled = false;
             submitButton.textContent = 'Register';
             
-            // Reset submission tracking flag if registration failed
+            // Reset all submission tracking flags if registration failed
             isSubmitting = false;
+            window.isSubmittingForm = false;
+            console.log('Reset all submission locks at:', new Date().toISOString());
           }
         }
       });
