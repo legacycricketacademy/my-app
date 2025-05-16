@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cricket Academy Registration</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 15px;
+    }
+    
+    button:hover {
+      background-color: #2980b9;
+    }
+    
+    .error {
+      color: #e74c3c;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    
+    .success {
+      color: #27ae60;
+      padding: 15px;
+      background-color: #d5f5e3;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .input-error {
+      border: 1px solid #e74c3c;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 15px;
+    }
+    
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Cricket Academy Registration</h1>
+  
+  <div id="successMessage" class="success"></div>
+  
+  <form id="registrationForm">
+    <div class="form-group">
+      <label for="username">Username *</label>
+      <input type="text" id="username" name="username" required>
+      <div id="usernameError" class="error"></div>
+    </div>
+    
+    <div class="form-group">
+      <label for="email">Email *</label>
+      <input type="email" id="email" name="email" required>
+      <div id="emailError" class="error"></div>
+    </div>
+    
+    <div class="form-group">
+      <label for="password">Password *</label>
+      <input type="password" id="password" name="password" required>
+      <div id="passwordError" class="error"></div>
+    </div>
+    
+    <div class="form-group">
+      <label for="fullName">Full Name *</label>
+      <input type="text" id="fullName" name="fullName" required>
+      <div id="fullNameError" class="error"></div>
+    </div>
+    
+    <div class="form-group">
+      <label for="role">Role *</label>
+      <select id="role" name="role" required>
+        <option value="">Select Role</option>
+        <option value="parent">Parent</option>
+        <option value="coach">Coach</option>
+        <option value="player">Player</option>
+      </select>
+      <div id="roleError" class="error"></div>
+    </div>
+    
+    <div class="form-group">
+      <label for="phone">Phone Number (Optional)</label>
+      <input type="tel" id="phone" name="phone">
+      <div id="phoneError" class="error"></div>
+    </div>
+    
+    <div id="formError" class="error"></div>
+    
+    <button type="submit">Register</button>
+    
+    <div id="loading" class="loading">
+      <span class="spinner"></span> Processing...
+    </div>
+  </form>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('registrationForm');
+      const loadingElement = document.getElementById('loading');
+      const successMessage = document.getElementById('successMessage');
+      const formError = document.getElementById('formError');
+      
+      // Clear errors when input changes
+      const inputs = document.querySelectorAll('input, select');
+      inputs.forEach(input => {
+        input.addEventListener('input', () => {
+          input.classList.remove('input-error');
+          document.getElementById(`${input.id}Error`).textContent = '';
+          formError.textContent = '';
+        });
+      });
+      
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Clear previous errors
+        document.querySelectorAll('.error').forEach(el => el.textContent = '');
+        document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+        successMessage.style.display = 'none';
+        
+        // Show loading indicator
+        loadingElement.style.display = 'block';
+        
+        // Get form data
+        const formData = {
+          username: document.getElementById('username').value,
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value,
+          fullName: document.getElementById('fullName').value,
+          role: document.getElementById('role').value,
+          phone: document.getElementById('phone').value
+        };
+        
+        try {
+          const response = await fetchWithRetry('/api/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+          }, 3);
+          
+          const data = await response.json();
+          
+          if (response.ok && data.success) {
+            // Registration successful
+            form.reset();
+            successMessage.textContent = data.message || 'Registration successful! Please check your email for verification instructions.';
+            successMessage.style.display = 'block';
+            window.scrollTo(0, 0);
+          } else {
+            // Registration failed with validation errors
+            handleRegistrationErrors(data);
+          }
+        } catch (error) {
+          formError.textContent = 'Connection error. Please try again.';
+          console.error('Registration error:', error);
+        } finally {
+          // Hide loading indicator
+          loadingElement.style.display = 'none';
+        }
+      });
+      
+      // Helper function to handle registration errors based on standardized format
+      function handleRegistrationErrors(errorData) {
+        // Handle specific error types
+        if (errorData.error === "UsernameAlreadyExists") {
+          const usernameField = document.getElementById('username');
+          const usernameError = document.getElementById('usernameError');
+          usernameField.classList.add('input-error');
+          usernameError.textContent = errorData.message || 'This username is already taken. Please choose another.';
+        } else if (errorData.error === "EmailAlreadyRegistered") {
+          const emailField = document.getElementById('email');
+          const emailError = document.getElementById('emailError');
+          emailField.classList.add('input-error');
+          emailError.textContent = errorData.message || 'This email is already registered. Please use another email.';
+        } else if (errorData.error === "InvalidInputFormat" && errorData.fields) {
+          // Handle fields validation
+          errorData.fields.forEach(field => {
+            const fieldElement = document.getElementById(field);
+            const errorElement = document.getElementById(`${field}Error`);
+            if (fieldElement && errorElement) {
+              fieldElement.classList.add('input-error');
+              errorElement.textContent = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+            }
+          });
+        } else {
+          // General error message
+          formError.textContent = errorData.message || 'Registration failed. Please try again.';
+        }
+      }
+      
+      // Fetch with retry functionality for network issues
+      async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+        try {
+          return await fetch(url, options);
+        } catch (err) {
+          if (retries <= 1) throw err;
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchWithRetry(url, options, retries - 1, delay * 2);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

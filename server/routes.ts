@@ -934,6 +934,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'standalone-register.html'));
   });
   
+  // Serve the standardized registration page with improved error handling
+  app.get('/standardized-register', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, '..', 'standardized-register.html'));
+  });
+  
   // Serve email test tool
   app.get('/email-test', (req, res) => {
     res.sendFile(path.resolve(import.meta.dirname, 'public', 'email-test.html'));
