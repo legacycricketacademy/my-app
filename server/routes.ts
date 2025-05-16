@@ -1836,12 +1836,14 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       // ABSOLUTE DUPLICATE PREVENTION: Check if this exact request was already processed
       if (processedRequestIds.has(requestId)) {
         console.log(`DUPLICATE REQUEST BLOCKED: Request ID ${requestId} has already been processed`);
-        return res.status(409).json({
-          success: false,
-          message: "This exact registration was already submitted. Please try a different username or email.",
-          error: "DuplicateRequest",
-          code: "DUPLICATE_REQUEST"
-        });
+        return sendError(
+          res,
+          "This exact registration was already submitted. Please try a different username or email.",
+          409,
+          "DuplicateRequest",
+          `Request ID ${requestId} has already been processed`,
+          "DUPLICATE_REQUEST"
+        );
       }
       
       // Add this request ID to the processed set immediately
@@ -1879,11 +1881,14 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
           
           // If still in progress, return a "processing" message
           console.log(`Registration for ${registrationKey} still in progress, rejecting duplicate`);
-          return res.status(409).json({
-            success: false,
-            message: "Your registration is already being processed. Please wait.",
-            error: "DuplicateSubmission"
-          });
+          return sendError(
+            res,
+            "Your registration is already being processed. Please wait.",
+            409,
+            "DuplicateRequest",
+            `Registration attempt for ${registrationKey} is still being processed`,
+            "DUPLICATE_SUBMISSION"
+          );
         }
       }
       
