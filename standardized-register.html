@@ -22,6 +22,7 @@
     
     .form-group {
       margin-bottom: 15px;
+      position: relative;
     }
     
     label {
@@ -36,6 +37,7 @@
       border: 1px solid #ddd;
       border-radius: 4px;
       font-size: 16px;
+      transition: border-color 0.3s;
     }
     
     button {
@@ -48,10 +50,16 @@
       cursor: pointer;
       width: 100%;
       margin-top: 15px;
+      transition: background-color 0.3s;
     }
     
     button:hover {
       background-color: #2980b9;
+    }
+    
+    button:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
     }
     
     .error {
@@ -67,10 +75,15 @@
       border-radius: 4px;
       margin-bottom: 20px;
       display: none;
+      font-weight: 500;
     }
     
     .input-error {
       border: 1px solid #e74c3c;
+    }
+    
+    .input-success {
+      border: 1px solid #27ae60;
     }
     
     .loading {
@@ -91,9 +104,48 @@
       vertical-align: middle;
     }
     
+    .status-indicator {
+      position: absolute;
+      right: 10px;
+      top: 35px;
+      font-size: 18px;
+    }
+    
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+      display: none;
+    }
+    
+    .login-link a {
+      color: #3498db;
+      text-decoration: none;
+    }
+    
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+    
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+    
+    .form-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    
+    .form-title h2 {
+      margin: 0;
+      color: #2c3e50;
+    }
+    
+    .form-title .icon {
+      margin-right: 10px;
+      color: #3498db;
     }
   </style>
 </head>
@@ -101,29 +153,36 @@
   <h1>Cricket Academy Registration</h1>
   
   <div id="successMessage" class="success"></div>
+  <div id="loginLink" class="login-link">
+    Already registered? <a href="/login">Login here</a>
+  </div>
   
   <form id="registrationForm">
     <div class="form-group">
       <label for="username">Username *</label>
       <input type="text" id="username" name="username" required>
+      <span id="usernameStatusIndicator" class="status-indicator"></span>
       <div id="usernameError" class="error"></div>
     </div>
     
     <div class="form-group">
       <label for="email">Email *</label>
       <input type="email" id="email" name="email" required>
+      <span id="emailStatusIndicator" class="status-indicator"></span>
       <div id="emailError" class="error"></div>
     </div>
     
     <div class="form-group">
       <label for="password">Password *</label>
       <input type="password" id="password" name="password" required>
+      <span id="passwordStatusIndicator" class="status-indicator"></span>
       <div id="passwordError" class="error"></div>
     </div>
     
     <div class="form-group">
       <label for="fullName">Full Name *</label>
       <input type="text" id="fullName" name="fullName" required>
+      <span id="fullNameStatusIndicator" class="status-indicator"></span>
       <div id="fullNameError" class="error"></div>
     </div>
     
@@ -135,18 +194,20 @@
         <option value="coach">Coach</option>
         <option value="player">Player</option>
       </select>
+      <span id="roleStatusIndicator" class="status-indicator"></span>
       <div id="roleError" class="error"></div>
     </div>
     
     <div class="form-group">
       <label for="phone">Phone Number (Optional)</label>
       <input type="tel" id="phone" name="phone">
+      <span id="phoneStatusIndicator" class="status-indicator"></span>
       <div id="phoneError" class="error"></div>
     </div>
     
     <div id="formError" class="error"></div>
     
-    <button type="submit">Register</button>
+    <button type="submit" id="submitButton">Register</button>
     
     <div id="loading" class="loading">
       <span class="spinner"></span> Processing...
@@ -161,6 +222,11 @@
       const formError = document.getElementById('formError');
       const usernameField = document.getElementById('username');
       const usernameError = document.getElementById('usernameError');
+      const usernameStatusIndicator = document.getElementById('usernameStatusIndicator');
+      const submitButton = document.getElementById('submitButton');
+      const loginLink = document.getElementById('loginLink');
+      
+      let registrationSuccessful = false;
       
       // Debounce function to limit API calls
       function debounce(func, wait) {
@@ -171,6 +237,16 @@
           clearTimeout(timeout);
           timeout = setTimeout(() => func.apply(context, args), wait);
         };
+      }
+      
+      // Check if URL has success parameter to show message for redirects
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('success')) {
+        const email = urlParams.get('email') || '';
+        successMessage.textContent = `Registration successful! Verification email sent to ${email}. Please check your inbox.`;
+        successMessage.style.display = 'block';
+        loginLink.style.display = 'block';
+        window.history.replaceState({}, document.title, window.location.pathname); // Remove query params
       }
       
       // Check username availability
@@ -197,36 +273,46 @@
         
         try {
           // Show checking indicator
+          usernameStatusIndicator.textContent = '⏳';
           usernameError.textContent = 'Checking username...';
           usernameError.style.color = '#3498db'; // Blue color for "in progress"
           
-          const response = await fetch(`/api/check-username?username=${encodeURIComponent(username)}`);
+          // Add timestamp to prevent caching issues
+          const url = `/api/check-username?username=${encodeURIComponent(username)}&_=${Date.now()}`;
+          const response = await fetch(url);
           const data = await response.json();
           
           // Clear checking indicator
           usernameError.textContent = '';
           usernameField.classList.remove('input-error');
+          usernameField.classList.remove('input-success');
           
           // Handle the response
           if (!response.ok) {
             console.error('Username check failed:', data.message);
-            usernameError.textContent = '';
+            usernameStatusIndicator.textContent = '';
             return;
           }
           
           if (data.exists === true || data.success === false) {
             // Username is taken
             usernameField.classList.add('input-error');
+            usernameField.classList.remove('input-success');
+            usernameStatusIndicator.textContent = '❌';
             usernameError.style.color = '#e74c3c'; // Red for error
             usernameError.textContent = data.message || 'This username is already taken. Please choose another.';
           } else if (data.exists === false && data.success === true) {
             // Username is available
+            usernameField.classList.add('input-success');
+            usernameField.classList.remove('input-error');
+            usernameStatusIndicator.textContent = '✅';
             usernameError.style.color = '#27ae60'; // Green for success
             usernameError.textContent = 'Username is available!';
           }
         } catch (error) {
           console.error('Error checking username:', error);
           // Clear any messages but don't block form submission on check error
+          usernameStatusIndicator.textContent = '';
           usernameError.textContent = '';
         } finally {
           usernameCheckInProgress = false;
@@ -240,6 +326,8 @@
         // Basic validation
         if (username.length < 3) {
           this.classList.add('input-error');
+          this.classList.remove('input-success');
+          usernameStatusIndicator.textContent = '❌';
           usernameError.style.color = '#e74c3c';
           usernameError.textContent = 'Username must be at least 3 characters';
           return;
@@ -249,35 +337,119 @@
         checkUsernameAvailability(username);
       });
       
-      // Clear errors when input changes (for other fields)
-      const inputs = document.querySelectorAll('input:not(#username), select');
-      inputs.forEach(input => {
-        input.addEventListener('input', () => {
-          input.classList.remove('input-error');
-          document.getElementById(`${input.id}Error`).textContent = '';
+      // Validate and provide feedback for all form fields
+      function validateField(field, validationFn) {
+        const fieldElement = document.getElementById(field);
+        const errorElement = document.getElementById(`${field}Error`);
+        const statusElement = document.getElementById(`${field}StatusIndicator`);
+        
+        fieldElement.addEventListener('input', function() {
+          const value = this.value.trim();
+          const { valid, message } = validationFn(value);
+          
+          // Reset previous state
+          fieldElement.classList.remove('input-error', 'input-success');
+          errorElement.textContent = '';
+          statusElement.textContent = '';
           formError.textContent = '';
+          
+          if (valid) {
+            // Valid input
+            fieldElement.classList.add('input-success');
+            statusElement.textContent = '✅';
+            errorElement.textContent = message || '';
+            errorElement.style.color = '#27ae60';
+          } else if (value && message) {
+            // Invalid input
+            fieldElement.classList.add('input-error');
+            statusElement.textContent = '❌';
+            errorElement.textContent = message;
+            errorElement.style.color = '#e74c3c';
+          }
         });
+      }
+      
+      // Email validation
+      validateField('email', (value) => {
+        if (!value) return { valid: false };
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return {
+          valid: emailRegex.test(value),
+          message: emailRegex.test(value) ? 'Email format is valid' : 'Please enter a valid email address'
+        };
+      });
+      
+      // Password validation
+      validateField('password', (value) => {
+        if (!value) return { valid: false };
+        const isValid = value.length >= 8;
+        return {
+          valid: isValid,
+          message: isValid ? 'Password meets requirements' : 'Password must be at least 8 characters long'
+        };
+      });
+      
+      // Full name validation
+      validateField('fullName', (value) => {
+        if (!value) return { valid: false };
+        const isValid = value.length >= 3;
+        return {
+          valid: isValid,
+          message: isValid ? 'Name is valid' : 'Please enter your full name'
+        };
+      });
+      
+      // Role validation
+      validateField('role', (value) => {
+        return {
+          valid: !!value,
+          message: value ? 'Role selected' : 'Please select a role'
+        };
+      });
+      
+      // Phone validation - optional field
+      validateField('phone', (value) => {
+        if (!value) return { valid: true }; // Optional field
+        const phoneRegex = /^[\d\s\+\-\(\)]{7,15}$/;
+        return {
+          valid: phoneRegex.test(value),
+          message: phoneRegex.test(value) ? 'Phone format is valid' : 'Please enter a valid phone number'
+        };
       });
       
       // Add submit handler
       form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        // If registration was successful, don't allow resubmission
+        if (registrationSuccessful) {
+          alert('You have already registered successfully. Please check your email for verification instructions.');
+          return;
+        }
+        
         // Validate username first (block submission if username is taken)
         const username = usernameField.value.trim();
-        if (usernameField.classList.contains('input-error') || 
-            (usernameError.textContent && usernameError.textContent !== 'Username is available!')) {
-          // If there's an error and it's not "Username is available!", prevent submission
-          if (username.length >= 3) {
-            // Final check before submission (only if username is valid length)
-            await checkUsernameAvailability(username);
-            
-            // If after checking, there's still an error, abort submission
-            if (usernameField.classList.contains('input-error')) {
-              usernameField.focus();
-              return;
-            }
-          } else {
+        if (!username || username.length < 3) {
+          usernameField.focus();
+          usernameStatusIndicator.textContent = '❌';
+          usernameError.style.color = '#e74c3c';
+          usernameError.textContent = 'Username must be at least 3 characters';
+          return;
+        }
+        
+        // If there's an error with the username, don't submit
+        if (usernameField.classList.contains('input-error')) {
+          usernameField.focus();
+          return;
+        }
+        
+        // If we haven't checked the username yet or it's been a while, check again
+        if (usernameStatusIndicator.textContent !== '✅') {
+          // Final check before submission
+          await checkUsernameAvailability(username);
+          
+          // If after checking, there's an error, abort submission
+          if (usernameField.classList.contains('input-error')) {
             usernameField.focus();
             return;
           }
@@ -300,7 +472,6 @@
         loadingElement.style.display = 'block';
         
         // Disable submit button to prevent double submission
-        const submitButton = form.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.textContent = 'Processing...';
         
@@ -315,7 +486,10 @@
         };
         
         try {
-          const response = await fetchWithRetry('/api/register', {
+          // Add timestamp to prevent caching issues
+          const url = `/api/register?_=${Date.now()}`;
+          
+          const response = await fetchWithRetry(url, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -327,9 +501,34 @@
           
           if (response.ok && data.success) {
             // Registration successful
-            form.reset();
-            successMessage.textContent = data.message || 'Registration successful! Please check your email for verification instructions.';
+            registrationSuccessful = true;
+            
+            // Store the registered username to prevent reuse
+            window.localStorage.setItem('registeredUsername', username);
+            window.localStorage.setItem('registeredEmail', formData.email);
+            
+            // Show personalized success message
+            successMessage.innerHTML = `
+              <strong>Welcome ${formData.username}!</strong> Your account has been created successfully.
+              <br>A verification email has been sent to <strong>${formData.email}</strong>.
+              <br>Please check your inbox and follow the instructions to verify your account.
+            `;
             successMessage.style.display = 'block';
+            
+            // Show login link
+            loginLink.style.display = 'block';
+            
+            // Clear the form completely
+            form.reset();
+            document.querySelectorAll('.input-success').forEach(el => el.classList.remove('input-success'));
+            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+            document.querySelectorAll('.status-indicator').forEach(el => el.textContent = '');
+            
+            // Hide form or disable it to prevent resubmission
+            submitButton.disabled = true;
+            submitButton.textContent = 'Registration Complete';
+            
+            // Scroll to top to see message
             window.scrollTo(0, 0);
           } else {
             // Registration failed with validation errors
@@ -339,20 +538,45 @@
           formError.textContent = 'Connection error. Please try again.';
           console.error('Registration error:', error);
         } finally {
-          // Hide loading indicator and re-enable submit button
+          // Hide loading indicator
           loadingElement.style.display = 'none';
-          submitButton.disabled = false;
-          submitButton.textContent = 'Register';
+          
+          // Only re-enable button if registration failed
+          if (!registrationSuccessful) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Register';
+          }
         }
       });
+      
+      // Check if user already registered with stored usernames
+      const checkStoredRegistration = () => {
+        const storedUsername = window.localStorage.getItem('registeredUsername');
+        const storedEmail = window.localStorage.getItem('registeredEmail');
+        
+        if (storedUsername && storedEmail) {
+          // Show alert about previous registration
+          successMessage.textContent = `You have already registered with username "${storedUsername}" and email "${storedEmail}". Please check your email for verification instructions.`;
+          successMessage.style.display = 'block';
+          loginLink.style.display = 'block';
+        }
+      };
+      
+      // Run this check on page load
+      checkStoredRegistration();
       
       // Helper function to handle registration errors based on standardized format
       function handleRegistrationErrors(errorData) {
         // Handle specific error types
         if (errorData.error === "UsernameAlreadyExists") {
           usernameField.classList.add('input-error');
+          usernameField.classList.remove('input-success');
+          usernameStatusIndicator.textContent = '❌';
           usernameError.style.color = '#e74c3c';
           usernameError.textContent = errorData.message || 'This username is already taken. Please choose another.';
+          
+          // Update localStorage to mark this username as taken
+          window.localStorage.setItem('username_' + usernameField.value.trim(), 'taken');
         } else if (errorData.error === "EmailAlreadyRegistered") {
           const emailField = document.getElementById('email');
           const emailError = document.getElementById('emailError');
