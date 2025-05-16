@@ -574,6 +574,9 @@
         console.log(`Submitting registration with ID: ${requestId} for ${formData.username}`);
         
         try {
+          // Show loading indicator
+          loadingElement.style.display = 'flex';
+          
           // Add strong anti-cache headers and request ID
           const response = await fetchWithRetry('/api/register', {
             method: 'POST',
@@ -724,12 +727,17 @@
         }
       }
       
-      // Fetch with retry functionality for network issues
+      // Enhanced fetch with retry functionality for network issues
       async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
         try {
-          return await fetch(url, options);
+          console.log(`Attempting fetch to ${url}, attempt ${4-retries} of 3`);
+          const response = await fetch(url, options);
+          console.log(`Fetch response status: ${response.status}`);
+          return response;
         } catch (err) {
+          console.error(`Fetch error: ${err.message}`);
           if (retries <= 1) throw err;
+          console.log(`Retrying in ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
           return fetchWithRetry(url, options, retries - 1, delay * 2);
         }
