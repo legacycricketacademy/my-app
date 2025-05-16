@@ -2187,11 +2187,33 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       }
     } catch (error: any) {
       console.error("Registration error:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Registration failed: " + (error.message || "Unknown error"),
-        code: error.code || "server_error"
-      });
+      
+      // Check for specific error types
+      if (error.message && error.message.includes("username")) {
+        return res.status(409).json({
+          success: false,
+          error: "UsernameAlreadyExists",
+          message: error.message || "This username is already taken. Please choose another."
+        });
+      } else if (error.message && error.message.includes("email")) {
+        return res.status(409).json({
+          success: false,
+          error: "EmailAlreadyRegistered",
+          message: error.message || "This email is already registered. Please use another email."
+        });
+      } else if (error.message && error.message.includes("database")) {
+        return res.status(503).json({
+          success: false,
+          error: "DatabaseUnavailable",
+          message: "The database is currently unavailable. Please try again later."
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: "UnexpectedError",
+          message: "Something went wrong during registration. Please try again later."
+        });
+      }
     }
   });
   
@@ -2203,7 +2225,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       console.log("Local register request for:", email);
       
       if (!username || !password || !email || !fullName) {
-        return res.status(400).json({ message: "Missing required fields" });
+        return res.status(400).json({
+          success: false,
+          message: "Missing required fields",
+          error: "InvalidInputFormat"
+        });
       }
       
       // Check if username already exists
