@@ -417,15 +417,27 @@
         };
       });
       
+      // Variable to track submission in progress
+      let isSubmitting = false;
+      
       // Add submit handler
       form.addEventListener('submit', async function(e) {
         e.preventDefault();
+        
+        // Prevent double submission
+        if (isSubmitting) {
+          console.log('Submission already in progress, ignoring duplicate request');
+          return;
+        }
         
         // If registration was successful, don't allow resubmission
         if (registrationSuccessful) {
           alert('You have already registered successfully. Please check your email for verification instructions.');
           return;
         }
+        
+        // Set submitting flag to true
+        isSubmitting = true;
         
         // Validate username first (block submission if username is taken)
         const username = usernameField.value.trim();
@@ -530,6 +542,8 @@
             
             // Scroll to top to see message
             window.scrollTo(0, 0);
+            
+            // Flag stays true since registration was successful
           } else {
             // Registration failed with validation errors
             handleRegistrationErrors(data);
@@ -567,6 +581,13 @@
       
       // Helper function to handle registration errors based on standardized format
       function handleRegistrationErrors(errorData) {
+        // Re-enable the submit button
+        submitButton.disabled = false;
+        submitButton.textContent = 'Register';
+        
+        // Hide loading indicator
+        loadingElement.style.display = 'none';
+        
         // Handle specific error types
         if (errorData.error === "UsernameAlreadyExists") {
           usernameField.classList.add('input-error');
@@ -577,21 +598,39 @@
           
           // Update localStorage to mark this username as taken
           window.localStorage.setItem('username_' + usernameField.value.trim(), 'taken');
+          
+          // Focus the username field
+          usernameField.focus();
         } else if (errorData.error === "EmailAlreadyRegistered") {
           const emailField = document.getElementById('email');
           const emailError = document.getElementById('emailError');
+          const emailStatusIndicator = document.getElementById('emailStatusIndicator');
+          
           emailField.classList.add('input-error');
+          emailStatusIndicator.textContent = '❌';
           emailError.textContent = errorData.message || 'This email is already registered. Please use another email.';
+          
+          // Focus the email field
+          emailField.focus();
         } else if (errorData.error === "InvalidInputFormat" && errorData.fields) {
           // Handle fields validation
           errorData.fields.forEach(field => {
             const fieldElement = document.getElementById(field);
             const errorElement = document.getElementById(`${field}Error`);
+            const statusElement = document.getElementById(`${field}StatusIndicator`);
+            
             if (fieldElement && errorElement) {
               fieldElement.classList.add('input-error');
+              if (statusElement) statusElement.textContent = '❌';
               errorElement.textContent = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
             }
           });
+          
+          // Focus the first field with an error
+          if (errorData.fields.length > 0) {
+            const firstField = document.getElementById(errorData.fields[0]);
+            if (firstField) firstField.focus();
+          }
         } else {
           // General error message
           formError.textContent = errorData.message || 'Registration failed. Please try again.';
