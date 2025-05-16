@@ -422,7 +422,7 @@
       
       // Add submit handler
       form.addEventListener('submit', async function(e) {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
         
         // Prevent double submission
         if (isSubmitting) {
@@ -439,6 +439,10 @@
         // Set submitting flag to true
         isSubmitting = true;
         
+        // Disable submit button to prevent visual double-clicks
+        submitButton.disabled = true;
+        submitButton.textContent = 'Processing...';
+        
         // Validate username first (block submission if username is taken)
         const username = usernameField.value.trim();
         if (!username || username.length < 3) {
@@ -449,9 +453,50 @@
           return;
         }
         
+        // Validate all required fields before submission
+        const requiredFields = [
+          { id: 'username', name: 'Username' },
+          { id: 'email', name: 'Email address' },
+          { id: 'password', name: 'Password' },
+          { id: 'fullName', name: 'Full name' },
+          { id: 'role', name: 'Role' }
+        ];
+        
+        let hasErrors = false;
+        
+        // Check each required field
+        requiredFields.forEach(field => {
+          const element = document.getElementById(field.id);
+          const errorElement = document.getElementById(`${field.id}Error`);
+          const statusElement = document.getElementById(`${field.id}StatusIndicator`);
+          
+          if (!element.value.trim()) {
+            element.classList.add('input-error');
+            statusElement.textContent = '❌';
+            errorElement.textContent = `${field.name} is required`;
+            errorElement.style.color = '#e74c3c';
+            hasErrors = true;
+          }
+        });
+        
+        // Focus the first field with an error
+        if (hasErrors) {
+          const firstErrorField = document.querySelector('.input-error');
+          if (firstErrorField) {
+            firstErrorField.focus();
+            isSubmitting = false;
+            submitButton.disabled = false;
+            submitButton.textContent = 'Register';
+            return;
+          }
+        }
+        
         // If there's an error with the username, don't submit
         if (usernameField.classList.contains('input-error')) {
           usernameField.focus();
+          isSubmitting = false;
+          submitButton.disabled = false;
+          submitButton.textContent = 'Register';
           return;
         }
         
@@ -559,6 +604,9 @@
           if (!registrationSuccessful) {
             submitButton.disabled = false;
             submitButton.textContent = 'Register';
+            
+            // Reset submission tracking flag if registration failed
+            isSubmitting = false;
           }
         }
       });
