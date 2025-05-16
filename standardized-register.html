@@ -420,9 +420,22 @@
       // Variable to track submission in progress
       let isSubmitting = false;
       
+      // Track form submission to prevent double submissions
+      let lastSubmitTime = 0;
+      const SUBMIT_COOLDOWN = 2000; // 2 seconds cooldown between submissions
+      
       // Add submit handler
       form.addEventListener('submit', async function(e) {
         e.preventDefault(); // Prevent default form submission
+        
+        // Get current time
+        const now = Date.now();
+        
+        // Check if submission is too soon after previous attempt (prevents double-clicks and automated rapid submissions)
+        if (now - lastSubmitTime < SUBMIT_COOLDOWN) {
+          console.log('Submission attempted too quickly after previous attempt, ignoring');
+          return;
+        }
         
         // Prevent double submission
         if (isSubmitting) {
@@ -436,12 +449,20 @@
           return;
         }
         
+        // Update submission timestamp
+        lastSubmitTime = now;
+        
         // Set submitting flag to true
         isSubmitting = true;
         
         // Disable submit button to prevent visual double-clicks
         submitButton.disabled = true;
         submitButton.textContent = 'Processing...';
+        
+        // Remove the submit event temporarily to prevent any possibility of double submission
+        const originalForm = form;
+        const clonedForm = originalForm.cloneNode(true);
+        originalForm.replaceWith(clonedForm);
         
         // Validate username first (block submission if username is taken)
         const username = usernameField.value.trim();
