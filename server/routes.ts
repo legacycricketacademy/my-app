@@ -1357,17 +1357,18 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       // Get the user from storage - handle academy context if needed
       let existingUser = null;
       
-      // Some implementations may not have academy-specific methods,
-      // so we'll use a more general approach
+      // BUGFIX: Use the exact same lookup method as registration endpoint
       if (academyContext) {
         console.log(`[Username Check] Using academy ID ${academyContext} for lookup`);
-        // Try to find the user in the specific academy context
-        existingUser = await storage.getUserByUsername(trimmedUsername);
         
-        // If user exists, verify they belong to the correct academy
-        if (existingUser && existingUser.academyId && existingUser.academyId !== academyContext) {
-          console.log(`[Username Check] User found but in different academy: ${existingUser.academyId}`);
-          existingUser = null; // Not in this academy, so username is available
+        // Use the new academy-specific search method with debug logs
+        console.log(`[Username Check] Searching for user with username: "${trimmedUsername}" in academy context: ${academyContext}`);
+        existingUser = await storage.getUserByUsernameInAcademy(trimmedUsername, academyContext);
+        
+        if (existingUser) {
+          console.log(`[Username Check] User found: ${existingUser.id} (${existingUser.username})`);
+        } else {
+          console.log(`[Username Check] No user found with username: "${trimmedUsername}"`);
         }
       } else {
         // No academy context, just check globally
