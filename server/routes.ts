@@ -38,6 +38,22 @@ import {
   generateCoachApprovedEmail,
   generateAdminCoachApprovalRequestEmail
 } from "./email";
+import {
+  sendSuccess,
+  sendError,
+  sendValidationError,
+  sendUsernameExistsError,
+  sendEmailExistsError,
+  sendDatabaseError,
+  sendEmailSendFailure,
+  sendInvalidCredentialsError,
+  sendUserNotVerifiedError,
+  sendAccountLockedError,
+  sendAccountDisabledError,
+  sendTooManyAttemptsError,
+  sendSessionExpiredError,
+  sendAuthorizationRequiredError
+} from "./api-response";
 import { hashPassword, comparePasswords } from "./auth";
 import { resendVerificationEmail } from "./services/auth-service";
 import { eq } from "drizzle-orm";
@@ -937,6 +953,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
   // Serve the standardized registration page with improved error handling
   app.get('/standardized-register', (req, res) => {
     res.sendFile(path.resolve(import.meta.dirname, '..', 'standardized-register.html'));
+  });
+  
+  // Serve the standardized login page with improved error handling
+  app.get('/standard-login', (req, res) => {
+    res.sendFile(path.resolve(import.meta.dirname, 'public', 'standard-login.html'));
   });
   
   // Serve email test tool
@@ -2344,39 +2365,64 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       
       console.log("Standardized login request for:", username);
       
+      // Validate required fields
       if (!username || !password) {
-        return res.status(400).json(
-          createErrorResponse("Username and password are required", "validation_error", 400)
-        );
+        return sendValidationError(res, "Username and password are required");
       }
       
       // Find the user by username
       const user = await storage.getUserByUsername(username);
       
+      // Generic error for security (don't tell if username exists or not)
       if (!user) {
-        return res.status(401).json(
-          createErrorResponse("Invalid username or password", "invalid_credentials", 401)
-        );
+        return sendInvalidCredentialsError(res);
       }
       
       // Check if user is active
       if (!user.isActive) {
-        return res.status(403).json(
-          createErrorResponse("Account is not active. Please contact admin.", "account_inactive", 403)
-        );
+        return sendAccountDisabledError(res);
       }
       
-      // Verify password
+      // Check if account is locked due to too many failed attempts
+      if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+        const minutesRemaining = Math.ceil(
+          (new Date(user.lockedUntil).getTime() - new Date().getTime()) / (60 * 1000)
+        );
+        return sendAccountLockedError(res, minutesRemaining);
+      }
+      
+      // Check password
       const isPasswordValid = await comparePasswords(password, user.password);
       
+      // Handle failed login attempts
       if (!isPasswordValid) {
-        return res.status(401).json(
-          createErrorResponse("Invalid username or password", "invalid_credentials", 401)
-        );
+        // Increment failed attempts and potentially lock account
+        const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+        const updates: any = { failedLoginAttempts: failedAttempts };
+        
+        // Lock account after 5 failed attempts (for 30 minutes)
+        if (failedAttempts >= 5) {
+          const lockUntil = new Date();
+          lockUntil.setMinutes(lockUntil.getMinutes() + 30);
+          updates.lockedUntil = lockUntil;
+          
+          await storage.updateUser(user.id, updates);
+          return sendTooManyAttemptsError(res);
+        }
+        
+        await storage.updateUser(user.id, updates);
+        return sendInvalidCredentialsError(res);
       }
       
-      // Update last sign-in info
+      // Check if email verification is required and not completed
+      if (user.emailVerificationRequired && !user.emailVerified) {
+        return sendUserNotVerifiedError(res, user.email);
+      }
+      
+      // Reset failed login attempts on successful login
       await storage.updateUser(user.id, {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
         lastSignInAt: new Date(),
         lastSignInIp: req.ip
       });
@@ -2391,16 +2437,18 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       // Remove sensitive data
       const { password: _, ...userWithoutPassword } = user;
       
-      return res.json(
-        createSuccessResponse(
-          { user: userWithoutPassword, token }, 
-          "Login successful"
-        )
-      );
+      // Send successful response
+      return sendSuccess(res, "Login successful", { 
+        user: userWithoutPassword, 
+        token 
+      });
     } catch (error: any) {
       console.error("Login error:", error);
-      return res.status(500).json(
-        createErrorResponse(error.message || "Login failed", "server_error", 500)
+      return sendError(
+        res, 
+        "An unexpected error occurred during login. Please try again.", 
+        500, 
+        "UnknownError"
       );
     }
   });
@@ -2415,34 +2463,30 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
         req.session.destroy((err) => {
           if (err) {
             console.error("Error during session destruction:", err);
-            return res.status(500).json(
-              createErrorResponse("Failed to logout", "server_error", 500)
+            return sendError(
+              res, 
+              "Failed to complete logout process. Please try again.",
+              500,
+              "UnknownError"
             );
           }
           
           // Clear the session cookie
           res.clearCookie('connect.sid');
           
-          return res.json(
-            createSuccessResponse(
-              { success: true },
-              "Logged out successfully"
-            )
-          );
+          return sendSuccess(res, "Logged out successfully");
         });
       } else {
         console.log("No session found for standard-logout");
-        return res.json(
-          createSuccessResponse(
-            { success: true },
-            "No active session found"
-          )
-        );
+        return sendSuccess(res, "No active session found");
       }
     } catch (error: any) {
       console.error("Logout error:", error);
-      return res.status(500).json(
-        createErrorResponse(error.message || "Logout failed", "server_error", 500)
+      return sendError(
+        res,
+        "An unexpected error occurred during logout. Please try again.",
+        500,
+        "UnknownError"
       );
     }
   });
