@@ -420,13 +420,32 @@
         };
       });
       
-      // Variable to track submission in progress
+      // Variables to track submission in progress - both local and global
       let isSubmitting = false;
+      window.isSubmittingForm = false;
       
-      // Nuclear approach - single submission point with explicit button click handler
-      submitButton.addEventListener('click', async function() {
+      // Track last submission time to prevent rapid resubmissions
+      let lastSubmissionTime = 0;
+      const SUBMISSION_COOLDOWN = 3000; // 3 seconds between submission attempts
+      
+      // Nuclear approach - single submission point with multi-layered protection
+      submitButton.addEventListener('click', async function(e) {
+        // Prevent any default behavior
+        e.preventDefault();
+        
+        // Anti-double-click protection
+        const now = Date.now();
+        if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
+          console.log('Blocked rapid resubmission attempt:', now - lastSubmissionTime, 'ms since last click');
+          return false;
+        }
+        
         console.log('Registration submit button clicked at:', new Date().toISOString());
+        lastSubmissionTime = now;
+        
+        // Process the submission through our protected handler
         await handleRegistrationSubmit();
+        return false;
       });
       
       // Prevent any Enter key submissions
