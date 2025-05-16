@@ -1,5 +1,31 @@
 import { Response } from 'express';
-import { ApiErrorType, ApiResponse } from '@shared/api-types';
+
+// Define the API error types
+export type ApiErrorType = 
+  | 'UsernameAlreadyExists'
+  | 'EmailAlreadyExists'
+  | 'DatabaseError'
+  | 'EmailSendFailure'
+  | 'ValidationError'
+  | 'InvalidCredentials'
+  | 'UserNotVerified'
+  | 'AccountLocked'
+  | 'AccountDisabled'
+  | 'TooManyAttempts'
+  | 'SessionExpired'
+  | 'AuthorizationRequired'
+  | 'DuplicateRequest'
+  | 'UnknownError';
+
+// Define the standard API response structure
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+  error?: ApiErrorType;
+  code?: string;
+  details?: string;
+}
 
 /**
  * Standard success response
@@ -7,9 +33,12 @@ import { ApiErrorType, ApiResponse } from '@shared/api-types';
 export function sendSuccess<T>(res: Response, message: string, data?: T): void {
   const response: ApiResponse<T> = {
     success: true,
-    message,
-    data
+    message
   };
+  
+  if (data !== undefined) {
+    response.data = data;
+  }
   
   res.status(200).json(response);
 }
@@ -20,14 +49,24 @@ export function sendSuccess<T>(res: Response, message: string, data?: T): void {
 export function sendError(
   res: Response, 
   message: string, 
-  statusCode: number = 400, 
-  errorType: ApiErrorType = 'UnknownError'
+  statusCode: number = 400,
+  errorType: ApiErrorType = 'UnknownError',
+  details?: string,
+  code?: string
 ): void {
   const response: ApiResponse = {
     success: false,
     message,
     error: errorType
   };
+  
+  if (details) {
+    response.details = details;
+  }
+  
+  if (code) {
+    response.code = code;
+  }
   
   res.status(statusCode).json(response);
 }
@@ -38,9 +77,11 @@ export function sendError(
 export function sendUsernameExistsError(res: Response, username: string): void {
   sendError(
     res,
-    `The username '${username}' is already taken. Please choose another.`,
+    `This username is already taken`,
     409,
-    'UsernameAlreadyExists'
+    'UsernameAlreadyExists',
+    `Username '${username}' is already registered`,
+    'USERNAME_EXISTS'
   );
 }
 
@@ -50,9 +91,11 @@ export function sendUsernameExistsError(res: Response, username: string): void {
 export function sendEmailExistsError(res: Response, email: string): void {
   sendError(
     res,
-    `The email '${email}' is already registered. Please use another email or try to log in.`,
+    `This email address is already registered`,
     409,
-    'EmailAlreadyRegistered'
+    'EmailAlreadyExists',
+    `Email '${email}' is already in use`,
+    'EMAIL_EXISTS'
   );
 }
 
@@ -60,32 +103,45 @@ export function sendEmailExistsError(res: Response, email: string): void {
  * Helper for database unavailable error
  */
 export function sendDatabaseError(res: Response, details?: string): void {
-  const message = details 
-    ? `Database operation failed: ${details}` 
-    : 'The database is currently unavailable. Please try again later.';
-  
-  sendError(res, message, 503, 'DatabaseUnavailable');
+  sendError(
+    res,
+    `Database operation failed`,
+    500,
+    'DatabaseError',
+    details,
+    'DATABASE_ERROR'
+  );
 }
 
 /**
  * Helper for email sending failure
  */
 export function sendEmailSendFailure(res: Response, accountCreated: boolean = true): void {
-  const message = accountCreated
-    ? 'Your account was created successfully, but we encountered an issue sending the verification email. You can request a new verification email from your profile.'
-    : 'Failed to send verification email. Please try again later.';
-  
-  sendError(res, message, 500, 'EmailSendFailed');
+  sendError(
+    res,
+    accountCreated 
+      ? `Account created, but verification email could not be sent` 
+      : `Email could not be sent`,
+    500,
+    'EmailSendFailure',
+    'Email service unavailable or configuration error',
+    'EMAIL_SEND_FAILURE'
+  );
 }
 
 /**
  * Helper for validation errors
  */
 export function sendValidationError(res: Response, details: string): void {
-  sendError(res, `Validation error: ${details}`, 400, 'InvalidInputFormat');
+  sendError(
+    res,
+    `Validation failed`,
+    400,
+    'ValidationError',
+    details,
+    'VALIDATION_ERROR'
+  );
 }
-
-/* Login Error Helpers */
 
 /**
  * Helper for invalid credentials error
@@ -93,9 +149,11 @@ export function sendValidationError(res: Response, details: string): void {
 export function sendInvalidCredentialsError(res: Response): void {
   sendError(
     res,
-    'The username or password you entered is incorrect. Please try again.',
+    `Invalid username or password`,
     401,
-    'InvalidCredentials'
+    'InvalidCredentials',
+    'The provided credentials do not match our records',
+    'INVALID_CREDENTIALS'
   );
 }
 
@@ -103,22 +161,30 @@ export function sendInvalidCredentialsError(res: Response): void {
  * Helper for unverified user error
  */
 export function sendUserNotVerifiedError(res: Response, email?: string): void {
-  const message = email 
-    ? `Your email (${email}) has not been verified. Please check your inbox or request a new verification email.`
-    : 'Your account has not been verified. Please verify your email before signing in.';
-  
-  sendError(res, message, 403, 'UserNotVerified');
+  sendError(
+    res,
+    `Please verify your email before logging in`,
+    403,
+    'UserNotVerified',
+    email ? `Email '${email}' requires verification` : 'Email verification required',
+    'USER_NOT_VERIFIED'
+  );
 }
 
 /**
  * Helper for locked account error
  */
 export function sendAccountLockedError(res: Response, minutesRemaining?: number): void {
-  const message = minutesRemaining 
-    ? `Your account has been temporarily locked due to too many failed attempts. Please try again in ${minutesRemaining} minutes.`
-    : 'Your account has been temporarily locked due to too many failed attempts. Please try again later.';
-  
-  sendError(res, message, 403, 'AccountLocked');
+  sendError(
+    res,
+    minutesRemaining
+      ? `Account locked. Try again in ${minutesRemaining} minutes`
+      : `Account has been locked for security reasons`,
+    403,
+    'AccountLocked',
+    'Too many failed login attempts',
+    'ACCOUNT_LOCKED'
+  );
 }
 
 /**
@@ -127,9 +193,11 @@ export function sendAccountLockedError(res: Response, minutesRemaining?: number)
 export function sendAccountDisabledError(res: Response): void {
   sendError(
     res,
-    'Your account has been disabled. Please contact support for assistance.',
+    `This account has been disabled`,
     403,
-    'AccountDisabled'
+    'AccountDisabled',
+    'Account disabled by administrator',
+    'ACCOUNT_DISABLED'
   );
 }
 
@@ -139,9 +207,11 @@ export function sendAccountDisabledError(res: Response): void {
 export function sendTooManyAttemptsError(res: Response): void {
   sendError(
     res,
-    'Too many login attempts. Please try again later or reset your password.',
+    `Too many login attempts. Please try again later`,
     429,
-    'TooManyAttempts'
+    'TooManyAttempts',
+    'Rate limit exceeded for login attempts',
+    'TOO_MANY_ATTEMPTS'
   );
 }
 
@@ -151,9 +221,11 @@ export function sendTooManyAttemptsError(res: Response): void {
 export function sendSessionExpiredError(res: Response): void {
   sendError(
     res,
-    'Your session has expired. Please sign in again to continue.',
+    `Your session has expired`,
     401,
-    'SessionExpired'
+    'SessionExpired',
+    'Please log in again to continue',
+    'SESSION_EXPIRED'
   );
 }
 
@@ -163,8 +235,24 @@ export function sendSessionExpiredError(res: Response): void {
 export function sendAuthorizationRequiredError(res: Response): void {
   sendError(
     res,
-    'You must be signed in to access this resource.',
+    `Authorization required`,
     401,
-    'AuthorizationRequired'
+    'AuthorizationRequired',
+    'You must be logged in to access this resource',
+    'AUTHORIZATION_REQUIRED'
+  );
+}
+
+/**
+ * Helper for duplicate request error
+ */
+export function sendDuplicateRequestError(res: Response, requestId?: string): void {
+  sendError(
+    res,
+    `This request has already been processed`,
+    409,
+    'DuplicateRequest',
+    requestId ? `Request with ID '${requestId}' was already processed` : 'Duplicate request detected',
+    'DUPLICATE_REQUEST'
   );
 }
