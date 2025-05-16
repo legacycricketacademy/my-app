@@ -1820,12 +1820,55 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
   
   // Local authentication endpoints (Firebase bypass)
   
+  // In-memory registration tracking to prevent duplicates
+  const registrationTracker = new Map();
+  
   // Unified register endpoint (main entry point for registration)
   app.post("/api/register", async (req, res) => {
     try {
-      const { username, password, email, fullName, role, phone, academyId } = req.body;
+      const { username, password, email, fullName, role, phone, academyId, _requestId } = req.body;
       
-      console.log("Registration request received for:", email);
+      console.log("Registration request received:", {
+        username, email, password: '[REDACTED]', fullName, role, phone
+      });
+      
+      // SERVER-SIDE DUPLICATE PROTECTION
+      // Create a unique key for this registration attempt
+      const registrationKey = `${username}|${email}`;
+      
+      // Check for an in-progress or recently completed registration
+      const existingRegistration = registrationTracker.get(registrationKey);
+      const now = Date.now();
+      
+      if (existingRegistration) {
+        const timeSinceLastAttempt = now - existingRegistration.timestamp;
+        
+        // If another registration is in progress or completed recently (1 minute)
+        if (timeSinceLastAttempt < 60000) {
+          console.log(`DUPLICATE PREVENTION: Registration for ${registrationKey} was processed ${timeSinceLastAttempt}ms ago`);
+          
+          // If we already have a result, return the same result
+          if (existingRegistration.completed) {
+            console.log(`Returning cached result for ${registrationKey}: ${existingRegistration.success ? 'SUCCESS' : 'FAILED'}`);
+            return res.status(existingRegistration.status).json(existingRegistration.response);
+          }
+          
+          // If still in progress, return a "processing" message
+          console.log(`Registration for ${registrationKey} still in progress, rejecting duplicate`);
+          return res.status(409).json({
+            success: false,
+            message: "Your registration is already being processed. Please wait.",
+            error: "DuplicateSubmission"
+          });
+        }
+      }
+      
+      // Track this new registration attempt
+      registrationTracker.set(registrationKey, {
+        timestamp: now,
+        inProgress: true,
+        completed: false
+      });
       
       if (!username || !password || !email || !fullName) {
         return res.status(400).json({
