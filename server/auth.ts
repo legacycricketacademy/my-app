@@ -289,15 +289,20 @@ export function setupAuth(app: Express) {
     // Check for missing required fields early
     if (!req.body.username || !req.body.password || !req.body.email || !req.body.fullName || !req.body.role) {
       clearTimeout(responseTimeout); // Clear timeout since we're responding
-      return res.status(400).json({ 
-        message: "Missing required fields", 
-        missing: Object.entries({
-          username: !req.body.username,
-          password: !req.body.password,
-          email: !req.body.email,
-          fullName: !req.body.fullName,
-          role: !req.body.role
-        }).filter(([_, missing]) => missing).map(([field]) => field)
+      
+      const missingFields = Object.entries({
+        username: !req.body.username,
+        password: !req.body.password,
+        email: !req.body.email,
+        fullName: !req.body.fullName,
+        role: !req.body.role
+      }).filter(([_, missing]) => missing).map(([field]) => field);
+      
+      return res.status(400).json({
+        success: false,
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        error: "InvalidInputFormat",
+        fields: missingFields
       });
     }
     
@@ -309,8 +314,10 @@ export function setupAuth(app: Express) {
       const missingFields = requiredFields.filter(field => !req.body[field]);
       if (missingFields.length > 0) {
         console.error(`Registration failed: Missing required fields: ${missingFields.join(', ')}`);
-        return res.status(400).json({ 
+        return res.status(400).json({
+          success: false,
           message: `Missing required fields: ${missingFields.join(', ')}`,
+          error: "InvalidInputFormat",
           fields: missingFields
         });
       }
