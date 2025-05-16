@@ -1,0 +1,110 @@
+<form id="registerForm" onsubmit="submitForm(event)">
+  <!-- All your form fields go here -->
+  <div class="form-footer d-flex justify-content-between align-items-center">
+    <div>
+      <a href="/login" class="login-link">Already have an account? Log in</a>
+    </div>
+    <button type="submit" class="btn btn-primary">
+      <span class="spinner-border" id="submitSpinner" role="status" aria-hidden="true" style="display:none"></span>
+      Create Account
+    </button>
+  </div>
+</form>
+
+<div id="usernameSuggestions" class="suggestions-container" style="display: none;">
+  <div class="suggestions-title">Try one of these instead:</div>
+  <ul class="suggestions-list" id="suggestionsList"></ul>
+</div>
+
+<script>
+let isSubmitting = false;
+
+document.getElementById("registerForm").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") e.preventDefault();
+});
+
+async function submitForm(e) {
+  e.preventDefault();
+  if (isSubmitting) return;
+  isSubmitting = true;
+
+  const submitBtn = document.querySelector('button[type="submit"]');
+  const spinner = document.getElementById('submitSpinner');
+  submitBtn.disabled = true;
+  spinner.style.display = 'inline-block';
+
+  try {
+    const username = document.getElementById("username").value.trim();
+    const formData = {
+      username,
+      email: document.getElementById("email").value.trim(),
+      password: document.getElementById("password").value,
+      role: document.getElementById("role").value
+    };
+
+    const res = await fetch("/api/register?_=" + Date.now(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(formData)
+    });
+
+    const result = await res.json();
+
+    if (!result.success) {
+      if (result.error === "UsernameAlreadyExists") {
+        showUsernameSuggestions(username);
+      }
+      showFormStatus(result.message || "Registration failed.", "error");
+      return;
+    }
+
+    showFormStatus("Welcome " + formData.username + "! Your account has been created.", "success");
+    document.getElementById("registerForm").reset();
+    document.getElementById("usernameSuggestions").style.display = 'none';
+
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 5000);
+
+  } catch (err) {
+    console.error("Registration error:", err);
+    showFormStatus("Unexpected error: " + err.message, "error");
+  } finally {
+    isSubmitting = false;
+    submitBtn.disabled = false;
+    spinner.style.display = 'none';
+  }
+}
+
+function showFormStatus(message, type) {
+  const statusEl = document.getElementById("formStatus");
+  statusEl.textContent = message;
+  statusEl.className = "form-status " + type;
+  statusEl.style.display = "block";
+  statusEl.scrollIntoView({ behavior: "smooth" });
+}
+
+function showUsernameSuggestions(username) {
+  const suggestions = [
+    username + "123",
+    username + "_cricket",
+    username + Math.floor(Math.random() * 1000)
+  ];
+
+  const list = document.getElementById("suggestionsList");
+  list.innerHTML = "";
+  suggestions.forEach(s => {
+    const li = document.createElement("li");
+    li.className = "suggestion-item";
+    li.textContent = s;
+    li.onclick = () => {
+      document.getElementById("username").value = s;
+      document.getElementById("usernameSuggestions").style.display = 'none';
+    };
+    list.appendChild(li);
+  });
+  document.getElementById("usernameSuggestions").style.display = 'block';
+}
+</script>
