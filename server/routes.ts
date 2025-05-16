@@ -1823,13 +1823,37 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
   // In-memory registration tracking to prevent duplicates
   const registrationTracker = new Map();
   
+  // Request ID tracking to absolutely prevent duplicate requests 
+  // This prevents the race condition where two identical requests arrive almost simultaneously
+  const processedRequestIds = new Set();
+  
   // Unified register endpoint (main entry point for registration)
   app.post("/api/register", async (req, res) => {
     try {
       const { username, password, email, fullName, role, phone, academyId, _requestId } = req.body;
+      const requestId = _requestId || req.headers['x-request-id'] || `${username}|${email}|${Date.now()}`;
+      
+      // ABSOLUTE DUPLICATE PREVENTION: Check if this exact request was already processed
+      if (processedRequestIds.has(requestId)) {
+        console.log(`DUPLICATE REQUEST BLOCKED: Request ID ${requestId} has already been processed`);
+        return res.status(409).json({
+          success: false,
+          message: "This exact registration was already submitted. Please try a different username or email.",
+          error: "DuplicateRequest",
+          code: "DUPLICATE_REQUEST"
+        });
+      }
+      
+      // Add this request ID to the processed set immediately
+      processedRequestIds.add(requestId);
+      
+      // Set a cleanup timeout to prevent memory leaks (remove after 10 minutes)
+      setTimeout(() => {
+        processedRequestIds.delete(requestId);
+      }, 10 * 60 * 1000);
       
       console.log("Registration request received:", {
-        username, email, password: '[REDACTED]', fullName, role, phone
+        username, email, password: '[REDACTED]', fullName, role, phone, requestId
       });
       
       // SERVER-SIDE DUPLICATE PROTECTION
