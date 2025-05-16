@@ -323,6 +323,9 @@ function RouterContent() {
       <Route path="/test-register" component={TestRegister} />
       <Route path="/test-email-tools" component={TestEmailTools} />
       <Route path="/test-page" component={TestPage} />
+      <Route path="/theme-test">
+        {React.createElement(React.lazy(() => import("@/pages/theme-test")))}
+      </Route>
       <Route path="/register-fallback">
         {React.createElement(React.lazy(() => import("@/pages/standalone-register-fallback")))}
       </Route>
