@@ -1102,6 +1102,42 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
         role: newUser[0].role
       });
       
+      // Send emails for coach registrations
+      if (role === 'coach') {
+        try {
+          // Send email to the coach
+          const coachEmailContent = generateCoachPendingApprovalEmail(fullName);
+          await sendEmail({
+            to: email,
+            subject: "Your Coach Registration is Pending Approval",
+            text: coachEmailContent.text,
+            html: coachEmailContent.html
+          });
+          console.log(`Coach notification email sent to: ${email}`);
+          
+          // Send email to admin (assuming madhukar.kcc@gmail.com is the admin)
+          const adminEmail = "madhukar.kcc@gmail.com";
+          const adminEmailContent = generateAdminCoachApprovalRequestEmail(
+            "Administrator",
+            fullName,
+            email,
+            `/coaches-pending-approval`
+          );
+          
+          await sendEmail({
+            to: adminEmail,
+            subject: "New Coach Registration Requires Approval",
+            text: adminEmailContent.text,
+            html: adminEmailContent.html
+          });
+          
+          console.log(`Admin notification email sent to: ${adminEmail}`);
+        } catch (emailError) {
+          console.error('Failed to send registration emails:', emailError);
+          // Don't block registration if emails fail
+        }
+      }
+      
       // Return success page
       return res.status(201).send(`
         <html>
