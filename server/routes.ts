@@ -1,6 +1,7 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import { createServer, type Server } from "http";
 import path from "path";
+import cors from "cors";
 import { storage } from "./storage";
 import { multiTenantStorage } from "./multi-tenant-storage";
 import { setupAuth } from "./auth";
@@ -507,6 +508,14 @@ async function processPlayersData(playersData: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Enable CORS for all routes
+  app.use(cors({
+    origin: true, // Allow requests from any origin
+    credentials: true, // Allow credentials (cookies, authorization headers)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization'] // Allowed headers
+  }));
+  
   // Set up Handlebars as the view engine
   app.set('view engine', 'hbs');
   app.set('views', path.join(import.meta.dirname, 'views'));
