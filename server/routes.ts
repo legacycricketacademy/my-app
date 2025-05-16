@@ -1746,30 +1746,30 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       console.log("Registration request received for:", email);
       
       if (!username || !password || !email || !fullName) {
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           message: "Missing required fields",
-          code: "validation_error"
+          error: "InvalidInputFormat"
         });
       }
       
       // Check if username already exists
       const existingUserByUsername = await storage.getUserByUsername(username);
       if (existingUserByUsername) {
-        return res.status(400).json({ 
+        return res.status(409).json({
           success: false,
-          message: "Username already exists",
-          code: "username_exists"
+          message: `The username '${username}' is already taken. Please choose another.`,
+          error: "UsernameAlreadyExists"
         });
       }
       
       // Check if email already exists
       const existingUserByEmail = await storage.getUserByEmail(email);
       if (existingUserByEmail) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Email already in use",
-          code: "email_exists"
+        return res.status(409).json({
+          success: false,
+          message: `The email '${email}' is already registered. Please use another email or try to log in.`,
+          error: "EmailAlreadyRegistered"
         });
       }
       
@@ -2025,9 +2025,33 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       }
     } catch (error: any) {
       console.error("Registration error:", error);
-      res.status(500).json(
-        createErrorResponse(error.message || "Registration failed", "server_error", 500)
-      );
+      
+      // Check for specific error types
+      if (error.message && error.message.includes("username")) {
+        return res.status(409).json({
+          success: false,
+          error: "UsernameAlreadyExists",
+          message: error.message || "This username is already taken. Please choose another."
+        });
+      } else if (error.message && error.message.includes("email")) {
+        return res.status(409).json({
+          success: false,
+          error: "EmailAlreadyRegistered",
+          message: error.message || "This email is already registered. Please use another email."
+        });
+      } else if (error.message && error.message.includes("database")) {
+        return res.status(503).json({
+          success: false,
+          error: "DatabaseUnavailable",
+          message: "The database is currently unavailable. Please try again later."
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: "UnexpectedError",
+          message: "Something went wrong during registration. Please try again later."
+        });
+      }
     }
   });
   
@@ -2039,30 +2063,30 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       console.log("Standard credentials registration request for:", email);
       
       if (!username || !password || !email) {
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           message: "Missing required fields",
-          code: "validation_error"
+          error: "InvalidInputFormat"
         });
       }
       
       // Check if username already exists
       const existingUserByUsername = await storage.getUserByUsername(username);
       if (existingUserByUsername) {
-        return res.status(400).json({ 
+        return res.status(409).json({
           success: false,
-          message: "Username already exists",
-          code: "username_exists"
+          message: `The username '${username}' is already taken. Please choose another.`,
+          error: "UsernameAlreadyExists"
         });
       }
       
       // Check if email already exists
       const existingUserByEmail = await storage.getUserByEmail(email);
       if (existingUserByEmail) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Email already in use",
-          code: "email_exists"
+        return res.status(409).json({
+          success: false,
+          message: `The email '${email}' is already registered. Please use another email or try to log in.`,
+          error: "EmailAlreadyRegistered"
         });
       }
       
