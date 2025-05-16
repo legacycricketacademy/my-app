@@ -157,7 +157,7 @@
     Already registered? <a href="/login">Login here</a>
   </div>
   
-  <form id="registrationForm">
+  <div id="registrationForm">
     <div class="form-group">
       <label for="username">Username *</label>
       <input type="text" id="username" name="username" required>
@@ -207,12 +207,12 @@
     
     <div id="formError" class="error"></div>
     
-    <button type="submit" id="submitButton">Register</button>
+    <button type="button" id="submitButton">Register</button>
     
     <div id="loading" class="loading">
       <span class="spinner"></span> Processing...
     </div>
-  </form>
+  </div>
 
   <script>
     // Global flag to prevent double submissions - must be declared outside any function
@@ -423,14 +423,26 @@
       // Variable to track submission in progress
       let isSubmitting = false;
       
-      // Add submit handler with our completely new approach
-      form.addEventListener('submit', async function(e) {
-        e.preventDefault(); // Prevent default form submission
+      // Nuclear approach - single submission point with explicit button click handler
+      submitButton.addEventListener('click', async function() {
+        console.log('Registration submit button clicked at:', new Date().toISOString());
         await handleRegistrationSubmit();
       });
       
-      // Completely separate function to handle registration submission
+      // Prevent any Enter key submissions
+      document.querySelectorAll('#registrationForm input, #registrationForm select').forEach(element => {
+        element.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            console.log('Enter key pressed - prevented default submission');
+          }
+        });
+      });
+      
+      // One single submission function with maximum protection
       const handleRegistrationSubmit = async () => {
+        console.log('Registration handler started at:', new Date().toISOString());
+        
         // If global flag is set, don't proceed (prevents double submission)
         if (window.isSubmittingForm) {
           console.log('Global submission lock active, preventing submission');
@@ -496,6 +508,7 @@
           if (firstErrorField) {
             firstErrorField.focus();
             isSubmitting = false;
+            window.isSubmittingForm = false;
             submitButton.disabled = false;
             submitButton.textContent = 'Register';
             return;
@@ -506,6 +519,7 @@
         if (usernameField.classList.contains('input-error')) {
           usernameField.focus();
           isSubmitting = false;
+          window.isSubmittingForm = false;
           submitButton.disabled = false;
           submitButton.textContent = 'Register';
           return;
@@ -553,16 +567,28 @@
           phone: document.getElementById('phone').value.trim()
         };
         
+        // Generate a unique request ID to absolutely prevent duplicate submissions
+        const requestId = Date.now() + '-' + Math.random().toString(36).substring(2, 15);
+        
+        // Log the submission with request ID
+        console.log(`Submitting registration with ID: ${requestId} for ${formData.username}`);
+        
         try {
-          // Add timestamp to prevent caching issues
-          const url = `/api/register?_=${Date.now()}`;
-          
-          const response = await fetchWithRetry(url, {
+          // Add strong anti-cache headers and request ID
+          const response = await fetchWithRetry('/api/register', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'X-Request-ID': requestId,
+              'X-Request-Timestamp': Date.now().toString(),
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify({
+              ...formData,
+              _requestId: requestId // Include request ID in payload for server-side tracking
+            })
           }, 3);
           
           const data = await response.json();
