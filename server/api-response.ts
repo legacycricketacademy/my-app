@@ -84,3 +84,87 @@ export function sendEmailSendFailure(res: Response, accountCreated: boolean = tr
 export function sendValidationError(res: Response, details: string): void {
   sendError(res, `Validation error: ${details}`, 400, 'InvalidInputFormat');
 }
+
+/* Login Error Helpers */
+
+/**
+ * Helper for invalid credentials error
+ */
+export function sendInvalidCredentialsError(res: Response): void {
+  sendError(
+    res,
+    'The username or password you entered is incorrect. Please try again.',
+    401,
+    'InvalidCredentials'
+  );
+}
+
+/**
+ * Helper for unverified user error
+ */
+export function sendUserNotVerifiedError(res: Response, email?: string): void {
+  const message = email 
+    ? `Your email (${email}) has not been verified. Please check your inbox or request a new verification email.`
+    : 'Your account has not been verified. Please verify your email before signing in.';
+  
+  sendError(res, message, 403, 'UserNotVerified');
+}
+
+/**
+ * Helper for locked account error
+ */
+export function sendAccountLockedError(res: Response, minutesRemaining?: number): void {
+  const message = minutesRemaining 
+    ? `Your account has been temporarily locked due to too many failed attempts. Please try again in ${minutesRemaining} minutes.`
+    : 'Your account has been temporarily locked due to too many failed attempts. Please try again later.';
+  
+  sendError(res, message, 403, 'AccountLocked');
+}
+
+/**
+ * Helper for disabled account error
+ */
+export function sendAccountDisabledError(res: Response): void {
+  sendError(
+    res,
+    'Your account has been disabled. Please contact support for assistance.',
+    403,
+    'AccountDisabled'
+  );
+}
+
+/**
+ * Helper for too many login attempts error
+ */
+export function sendTooManyAttemptsError(res: Response): void {
+  sendError(
+    res,
+    'Too many login attempts. Please try again later or reset your password.',
+    429,
+    'TooManyAttempts'
+  );
+}
+
+/**
+ * Helper for session expired error
+ */
+export function sendSessionExpiredError(res: Response): void {
+  sendError(
+    res,
+    'Your session has expired. Please sign in again to continue.',
+    401,
+    'SessionExpired'
+  );
+}
+
+/**
+ * Helper for authorization required error
+ */
+export function sendAuthorizationRequiredError(res: Response): void {
+  sendError(
+    res,
+    'You must be signed in to access this resource.',
+    401,
+    'AuthorizationRequired'
+  );
+}

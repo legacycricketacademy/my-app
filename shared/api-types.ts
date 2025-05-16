@@ -12,6 +12,7 @@ export interface ApiResponse<T = any> {
  * Error types for registration and account-related issues
  */
 export type ApiErrorType = 
+  // Registration errors
   | 'UsernameAlreadyExists'
   | 'EmailAlreadyRegistered'
   | 'EmailSendFailed'
@@ -19,9 +20,20 @@ export type ApiErrorType =
   | 'DatabaseUnavailable'
   | 'PasswordTooWeak'
   | 'AccountCreateFailed'
+  
+  // Login errors
+  | 'InvalidCredentials'
+  | 'UserNotVerified'
+  | 'AccountLocked'
+  | 'AccountDisabled'
+  | 'TooManyAttempts'
+  | 'SessionExpired'
+  
+  // General errors
   | 'UnknownError'
   | 'FirebaseAuthError'
-  | 'NetworkError';
+  | 'NetworkError'
+  | 'AuthorizationRequired';
 
 /**
  * Username availability response
