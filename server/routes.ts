@@ -1117,11 +1117,16 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
           
           // Send email to admin (assuming madhukar.kcc@gmail.com is the admin)
           const adminEmail = "madhukar.kcc@gmail.com";
+          // Get the base URL from request
+          const protocol = req.protocol;
+          const host = req.get('host');
+          const baseUrl = `${protocol}://${host}`;
+          
           const adminEmailContent = generateAdminCoachApprovalRequestEmail(
             "Administrator",
             fullName,
             email,
-            `/coaches-pending-approval`
+            `${baseUrl}/coaches-pending-approval`
           );
           
           await sendEmail({
