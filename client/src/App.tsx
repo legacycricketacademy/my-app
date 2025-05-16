@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { ThemeProvider } from "@/providers/theme-provider";
 import { ProtectedRoute } from "./lib/protected-route";
 import { RoleBasedRoute } from "./lib/role-based-route";
 import { Redirect } from "wouter";
@@ -424,10 +425,13 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Router />
-          <Toaster />
-          <OfflineDetector />
-          <OnlineStatusIndicator />
+          {/* ThemeProvider wraps all components to provide theme context */}
+          <ThemeProvider defaultTheme="system" storageKey="cricket-academy-theme">
+            <Router />
+            <Toaster />
+            <OfflineDetector />
+            <OnlineStatusIndicator />
+          </ThemeProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
