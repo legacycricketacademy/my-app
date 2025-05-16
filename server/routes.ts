@@ -12,6 +12,7 @@ import { desc, and, or } from "drizzle-orm";
 import Stripe from "stripe";
 import { verifyFirebaseToken } from "./firebase-admin";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
+import { registerHandler } from "./routes/register";
 import { 
   insertPlayerSchema, 
   insertSessionSchema, 
@@ -1827,8 +1828,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
   // This prevents the race condition where two identical requests arrive almost simultaneously
   const processedRequestIds = new Set();
   
-  // Unified register endpoint (main entry point for registration)
-  app.post("/api/register", async (req, res) => {
+  // Simplified register endpoint using standardized API response format
+  app.post("/api/register", registerHandler);
+  
+  // Legacy unified register endpoint (kept for backward compatibility)
+  app.post("/api/register-legacy", async (req, res) => {
     try {
       const { username, password, email, fullName, role, phone, academyId, _requestId } = req.body;
       const requestId = _requestId || req.headers['x-request-id'] || `${username}|${email}|${Date.now()}`;
