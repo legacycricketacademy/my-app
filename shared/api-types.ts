@@ -1,60 +1,66 @@
 /**
- * Standardized API response structure
+ * Shared API response types for both frontend and backend
  */
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message: string;
-  data?: T;
-  error?: ApiErrorType;
-}
 
 /**
- * Error types for registration and account-related issues
+ * Common error types that can be returned from the API
  */
 export type ApiErrorType = 
-  // Registration errors
+  | 'InvalidInputFormat'
   | 'UsernameAlreadyExists'
   | 'EmailAlreadyRegistered'
-  | 'EmailSendFailed'
-  | 'InvalidInputFormat'
-  | 'DatabaseUnavailable'
-  | 'PasswordTooWeak'
-  | 'AccountCreateFailed'
-  
-  // Login errors
+  | 'DatabaseError'
+  | 'EmailSendFailure'
   | 'InvalidCredentials'
   | 'UserNotVerified'
-  | 'AccountLocked'
-  | 'AccountDisabled'
-  | 'TooManyAttempts'
-  | 'SessionExpired'
-  
-  // General errors
-  | 'UnknownError'
-  | 'FirebaseAuthError'
-  | 'NetworkError'
-  | 'AuthorizationRequired';
+  | 'DuplicateRequest'
+  | 'NotFound'
+  | 'Unauthorized'
+  | 'Forbidden';
 
 /**
- * Username availability response
+ * Base success response structure
  */
-export interface UsernameAvailabilityResponse {
-  available: boolean;
-  username: string;
-  suggestions?: string[];
+export interface ApiSuccessResponse<T = any> {
+  success: true;
+  message: string;
+  data: T;
 }
 
 /**
- * Registration response with user data
+ * Base error response structure
  */
-export interface RegistrationResponse {
-  user: {
-    id: number;
-    username: string;
-    email: string;
-    role: string;
-    createdAt: string;
-  };
-  emailSent: boolean;
-  verificationNeeded: boolean;
+export interface ApiErrorResponse {
+  success: false;
+  message: string;
+  error?: ApiErrorType | string;
+  details?: string;
+  errorCode?: string;
+  fields?: string[];
+}
+
+/**
+ * Union type for all API responses
+ */
+export type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
+
+/**
+ * Helper to extract the data type from a success response
+ */
+export function isApiSuccess<T>(response: ApiResponse<T>): response is ApiSuccessResponse<T> {
+  return response.success === true;
+}
+
+/**
+ * Helper to check if a response is an error
+ */
+export function isApiError(response: ApiResponse): response is ApiErrorResponse {
+  return response.success === false;
+}
+
+/**
+ * Helper to check for specific error types
+ */
+export function hasApiErrorType(response: ApiResponse, errorType: ApiErrorType): boolean {
+  return isApiError(response) && response.error === errorType;
 }
