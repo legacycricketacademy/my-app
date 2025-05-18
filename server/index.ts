@@ -31,7 +31,6 @@ app.get('/verify-email', (req, res) => {
   // Send back the success page immediately
   res.sendFile('verify-email-success.html', { root: './server/public' });
 });
-});
 
 // Academy context middleware
 app.use(async (req, res, next) => {
