@@ -6,9 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, CheckCircle2 } from "lucide-react";
-import { apiRequest } from "@/lib/api-client";
 import { useLocation } from "wouter";
-import { ApiResponse } from "@shared/api-types";
 
 export default function RegisterPage() {
   const { toast } = useToast();
@@ -32,26 +30,33 @@ export default function RegisterPage() {
         throw new Error('Please fill in all required fields');
       }
       
-      // Send data to the API
-      const response = await apiRequest('POST', '/api/register', {
-        username,
-        email,
-        password,
-        fullName,
-        role,
-        phone: phone || undefined,
+      // Send data to the API directly
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          fullName,
+          role,
+          phone: phone || undefined,
+        }),
       });
-
-      // Handle the response
-      if (response.success) {
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
         // Success
         setSuccess(true);
         toast({
           title: "Registration Successful",
-          description: response.message || "Account created successfully!",
+          description: data.message || "Account created successfully!",
         });
       } else {
-        throw new Error(response.message || 'Registration failed');
+        throw new Error(data.message || 'Registration failed');
       }
     } catch (error) {
       toast({

@@ -321,7 +321,16 @@ function RouterContent() {
       <Route path="/debug-firebase-new" component={DebugFirebaseNew} />
       <Route path="/simple-firebase-debug" component={SimpleFirebaseDebug} />
       {/* Main Registration Route - Use this one */}
-      <Route path="/register" component={React.lazy(() => import("@/pages/register"))} />
+      <Route path="/register">
+        <React.Suspense fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            <span className="ml-2">Loading registration page...</span>
+          </div>
+        }>
+          {React.createElement(React.lazy(() => import("@/pages/register")))}
+        </React.Suspense>
+      </Route>
       
       {/* Test/Debug Routes - Keep for now */}
       <Route path="/test-register" component={TestRegister} />
