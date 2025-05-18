@@ -22,14 +22,89 @@ app.get('/register-now', (req, res) => {
   res.sendFile('simple-fullname-register.html', { root: './server/public' });
 });
 
-// Handle email verification directly to avoid React routing issues
+// Handle email verification directly without React routing
 app.get('/verify-email', (req, res) => {
-  // Get token from query parameters and redirect to the success page
+  // Extract the token from the query parameters
   const token = req.query.token;
-  const role = req.query.role || 'parent';
   
-  // Send back the success page immediately
-  res.sendFile('verify-email-success.html', { root: './server/public' });
+  // Prepare query parameters for the success page
+  // Default to parent role which doesn't require approval
+  let redirectUrl = '/email-verified.html?status=success&role=parent';
+  
+  // Only process verification if token exists
+  if (token && typeof token === 'string') {
+    try {
+      const auth = global;
+      const { verifyVerificationToken } = auth;
+      
+      if (verifyVerificationToken) {
+        // Verify token and extract user info
+        const tokenData = verifyVerificationToken(token);
+        
+        if (tokenData && tokenData.valid && tokenData.userId) {
+          // Process verification asynchronously after sending response
+          process.nextTick(async () => {
+            try {
+              const { storage } = await import('./storage');
+              const { generateAdminCoachApprovalRequestEmail, sendEmail } = await import('./email');
+              
+              // Update user's email verification status
+              const updatedUser = await storage.updateUser(tokenData.userId, { 
+                isEmailVerified: true 
+              });
+              
+              if (updatedUser) {
+                console.log(`Email verified for: ${updatedUser.username} (${updatedUser.email})`);
+                
+                // If this is a coach account, send admin notification
+                if (updatedUser.role === 'coach') {
+                  console.log(`Coach account verified: ${updatedUser.fullName}`);
+                  
+                  const adminEmail = 'madhukar.kcc@gmail.com';
+                  // Use hardcoded URL to ensure it works in all environments
+                  const approvalLink = 'https://legacy-cricket-academy.replit.app/coaches-pending-approval';
+                  
+                  try {
+                    const emailContent = generateAdminCoachApprovalRequestEmail(
+                      'Administrator', 
+                      updatedUser.fullName || 'New Coach',
+                      updatedUser.email,
+                      approvalLink
+                    );
+                    
+                    await sendEmail({
+                      to: adminEmail,
+                      subject: `URGENT: Coach Account Needs Approval - ${updatedUser.fullName || 'New Coach'}`,
+                      text: emailContent.text,
+                      html: emailContent.html
+                    });
+                    
+                    console.log(`Admin notification sent to ${adminEmail} for coach: ${updatedUser.fullName}`);
+                  } catch (emailError) {
+                    console.error('Failed to send admin notification:', emailError);
+                  }
+                }
+              } else {
+                console.error(`User not found for verification, userId: ${tokenData.userId}`);
+              }
+            } catch (processError) {
+              console.error('Error processing verification:', processError);
+            }
+          });
+          
+          // Set the role parameter for the success page based on token data
+          if (tokenData.role === 'coach') {
+            redirectUrl = '/email-verified.html?status=success&role=coach';
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in token verification:', error);
+    }
+  }
+  
+  // Always send the verification success page
+  res.sendFile('email-verified.html', { root: './server/public' });
 });
 
 // Academy context middleware
