@@ -3293,8 +3293,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Return success response
-      return res.status(200).json({ message: "Email verified successfully" });
+      // Get the user's role for conditional message display
+      const userRole = updatedUser.role || 'parent';
+      
+      // Redirect to our email verification success page
+      return res.redirect(`/email-verified.html?status=success&role=${userRole}`);
     } catch (error) {
       console.error("Error verifying email:", error);
       return res.status(500).json({ message: "Internal server error" });
