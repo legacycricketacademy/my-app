@@ -69,6 +69,7 @@
     "hbs": "^4.2.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.453.0",
+    "node-fetch": "^3.3.2",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "pg": "^8.16.0",

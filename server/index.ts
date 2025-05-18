@@ -30,26 +30,19 @@ app.get('/verify-email', (req, res) => {
   if (token && typeof token === 'string') {
     // Make a server-side request to our API to verify the email in the background
     try {
-      const apiUrl = `http://localhost:5000/api/verify-email?token=${token}`;
-      const http = require('http');
-      
-      const req = http.request(apiUrl, {
-        method: 'GET'
-      }, (apiRes) => {
-        let data = '';
-        apiRes.on('data', (chunk) => {
-          data += chunk;
-        });
-        apiRes.on('end', () => {
-          console.log('Background verification process completed');
-        });
+      // Use fetch instead of require to avoid ESM/CJS issues
+      import('node-fetch').then(({ default: fetch }) => {
+        const apiUrl = `http://localhost:5000/api/verify-email?token=${token}`;
+        
+        fetch(apiUrl)
+          .then(response => response.text())
+          .then(() => {
+            console.log('Background verification process completed');
+          })
+          .catch(err => {
+            console.error('Error in fetch for verification:', err);
+          });
       });
-      
-      req.on('error', (e) => {
-        console.error('Error in background verification request:', e.message);
-      });
-      
-      req.end();
     } catch (err) {
       console.error('Failed to make API request:', err);
     }
