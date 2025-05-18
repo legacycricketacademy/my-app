@@ -17,6 +17,11 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Direct, simplified registration that will work properly with the fullName field
+app.get('/register-now', (req, res) => {
+  res.sendFile('simple-fullname-register.html', { root: './server/public' });
+});
+
 // Academy context middleware
 app.use(async (req, res, next) => {
   // Parse academy context from URL path
