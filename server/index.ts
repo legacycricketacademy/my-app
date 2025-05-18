@@ -22,6 +22,17 @@ app.get('/register-now', (req, res) => {
   res.sendFile('simple-fullname-register.html', { root: './server/public' });
 });
 
+// Handle email verification directly to avoid React routing issues
+app.get('/verify-email', (req, res) => {
+  // Get token from query parameters and redirect to the success page
+  const token = req.query.token;
+  const role = req.query.role || 'parent';
+  
+  // Send back the success page immediately
+  res.sendFile('verify-email-success.html', { root: './server/public' });
+});
+});
+
 // Academy context middleware
 app.use(async (req, res, next) => {
   // Parse academy context from URL path
