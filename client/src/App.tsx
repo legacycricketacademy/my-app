@@ -320,24 +320,15 @@ function RouterContent() {
       <Route path="/firebase-debug-enhanced" component={FirebaseDebugEnhanced} />
       <Route path="/debug-firebase-new" component={DebugFirebaseNew} />
       <Route path="/simple-firebase-debug" component={SimpleFirebaseDebug} />
+      {/* Main Registration Route - Use this one */}
+      <Route path="/register" component={React.lazy(() => import("@/pages/register"))} />
+      
+      {/* Test/Debug Routes - Keep for now */}
       <Route path="/test-register" component={TestRegister} />
       <Route path="/test-email-tools" component={TestEmailTools} />
       <Route path="/test-page" component={TestPage} />
       <Route path="/theme-test">
         {React.createElement(React.lazy(() => import("@/pages/theme-test")))}
-      </Route>
-      <Route path="/register-fallback">
-        {React.createElement(React.lazy(() => import("@/pages/standalone-register-fallback")))}
-      </Route>
-      <Route path="/register-debug">
-        <React.Suspense fallback={
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-            <span className="ml-2">Loading registration debug page...</span>
-          </div>
-        }>
-          {React.createElement(React.lazy(() => import("@/pages/register-debug")))}
-        </React.Suspense>
       </Route>
       
       {/* Emergency logout page - accessible even when logged in */}
