@@ -3296,6 +3296,33 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       // Get the user's role for conditional message display
       const userRole = updatedUser.role || 'parent';
       
+      // If this is a coach, send an admin notification
+      if (userRole === 'coach') {
+        try {
+          const adminEmail = 'madhukar.kcc@gmail.com';
+          const approvalLink = `${req.protocol}://${req.get('host')}/coaches-pending-approval`;
+          
+          const emailContent = generateAdminCoachApprovalRequestEmail(
+            'Administrator', 
+            updatedUser.fullName, 
+            updatedUser.email,
+            approvalLink
+          );
+          
+          await sendEmail({
+            to: adminEmail,
+            subject: `Coach Account Needs Approval - ${updatedUser.fullName}`,
+            text: emailContent.text,
+            html: emailContent.html
+          });
+          
+          console.log(`Email verification: Admin notification sent for coach ${updatedUser.fullName}`);
+        } catch (emailErr) {
+          console.error('Failed to send admin notification:', emailErr);
+          // Continue with verification success even if notification fails
+        }
+      }
+      
       // Redirect to our email verification success page
       return res.redirect(`/email-verified.html?status=success&role=${userRole}`);
     } catch (error) {
