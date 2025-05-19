@@ -9,7 +9,7 @@ import { OfflineDetector, OnlineStatusIndicator } from "@/components/offline-det
 import ErrorBoundary from "@/components/error-boundary";
 
 // Pages
-import ParentDashboard from "@/pages/working-parent-dashboard";
+import ParentDashboard from "@/pages/simple-react-dashboard";
 import ParentSchedulePage from "@/pages/parent/parent-schedule";
 import ParentAnnouncementsPage from "@/pages/parent/announcements";
 import ParentPaymentsPage from "@/pages/parent/payments";
@@ -75,6 +75,9 @@ function AppRoutes() {
           <Navigate to="/auth" />
         )
       } />
+      
+      {/* Simple parent route as recommended */}
+      <Route path="/parent" element={<ParentDashboard />} />
       
       <Route path="/parent/schedule" element={
         user ? (
