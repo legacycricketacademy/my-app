@@ -75,7 +75,7 @@ function AppRoutes() {
       <Route path="/parent" element={<DirectParentDashboard />} />
       
       {/* Simple React parent dashboard with minimal dependencies */}
-      <Route path="/simple-parent" element={<SimpleReactDashboard />} />
+      <Route path="/simple-parent" element={<ParentDashboard />} />
       
       <Route path="/parent/schedule" element={
         user ? (
