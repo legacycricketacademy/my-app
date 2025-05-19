@@ -2543,8 +2543,13 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
         return sendValidationError(res, "Username and password are required");
       }
       
-      // Find the user by username
-      const user = await storage.getUserByUsername(username);
+      // Find the user by username first
+      let user = await storage.getUserByUsername(username);
+      
+      // If no user found by username, check if username is an email
+      if (!user && username.includes('@')) {
+        user = await storage.getUserByEmail(username);
+      }
       
       // Generic error for security (don't tell if username exists or not)
       if (!user) {
@@ -2559,9 +2564,10 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       // Check if coach account is pending approval
       if ((user.role === 'coach' || user.role === 'admin') && 
           (user.status === 'pending' || user.status === 'pending_approval')) {
+        console.log(`Account pending approval: ${user.email} (${user.username}) - role: ${user.role}, status: ${user.status}`);
         return res.status(403).json({
           success: false,
-          message: "Your account is pending approval. You will be notified when it's approved.",
+          message: "Your coach account is pending admin approval and cannot be used yet. You will receive an email notification when your account is approved.",
           error: "AccountPendingApproval",
           code: "auth/pending-approval"
         });
@@ -2720,9 +2726,10 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       // Check if the user account is active
       if ((user.role === "coach" || user.role === "admin") && 
           (user.status === "pending" || user.status === "pending_approval" || !user.isActive)) {
+        console.log(`Account pending approval: ${user.email} (${user.username}) - role: ${user.role}, status: ${user.status}`);
         return res.status(403).json({ 
           success: false,
-          message: "Your account is pending approval. You will be notified when it's approved.",
+          message: "Your coach account is pending admin approval and cannot be used yet. You will receive an email notification when your account is approved.",
           error: "AccountPendingApproval",
           code: "auth/pending-approval"
         });
@@ -5424,10 +5431,10 @@ ${ACADEMY_NAME} Team
         // Check account status for coaches and admins
         if ((user.role === 'coach' || user.role === 'admin') && 
             (user.status === 'pending' || user.status === 'pending_approval' || user.isActive === false)) {
-          console.log("Coach/admin account is pending approval:", user.id);
+          console.log(`Account pending approval: ${user.email} (${user.username}) - role: ${user.role}, status: ${user.status}`);
           return res.status(403).json(
             createErrorResponse(
-              "Your account is pending approval. You will be notified when it's approved.",
+              "Your coach account is pending admin approval and cannot be used yet. You will receive an email notification when your account is approved.",
               "auth/pending-approval",
               403
             )
