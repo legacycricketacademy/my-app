@@ -941,10 +941,13 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, '..', 'minimal.html'));
   });
   
-  // Serve the parent dashboard route with the React application
+  // Comment out this specific parent route handler to prevent conflict with static-routes.ts
+  // The main React app routes are handled by setupStaticRoutes() in index.ts
+  /*
   app.get('/parent*', (req, res) => {
     res.sendFile(path.resolve('./dist/public/index.html'));
   });
+  */
   
   // Serve the basic landing page
   app.get('/basic-landing', (req, res) => {
