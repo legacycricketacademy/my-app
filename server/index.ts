@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { multiTenantStorage } from "./multi-tenant-storage";
+import { setupRedirects } from "./redirect"; // Import our redirect middleware
 
 // Add academy context to the request object
 declare global {
