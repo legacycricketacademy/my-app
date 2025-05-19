@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legacy Cricket Academy - Parent Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f7fb;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .navbar {
+      background-color: #4f46e5;
+      color: white;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .stats-card {
+      text-align: center;
+      padding: 15px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .stats-number {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #4f46e5;
+    }
+    .session-item {
+      border-bottom: 1px solid #eee;
+      padding: 12px 0;
+    }
+    .session-item:last-child {
+      border-bottom: none;
+    }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background-color: #4f46e5;
+      color: white;
+    }
+    .btn-outline {
+      border: 1px solid #4f46e5;
+      color: #4f46e5;
+      background-color: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <div class="flex items-center">
+      <span class="text-xl font-bold mr-2">🏏</span>
+      <span class="text-xl font-bold">Legacy Cricket Academy</span>
+    </div>
+    <div>
+      <button class="btn-outline text-white border-white">Logout</button>
+    </div>
+  </div>
+
+  <div class="container mx-auto px-4 py-6">
+    <h1 class="text-3xl font-bold mb-2">Welcome, Parent</h1>
+    <p class="text-gray-600 mb-6">May 19, 2025 | Academy Dashboard</p>
+
+    <!-- Stats Summary -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="stats-card">
+        <div class="stats-number">2</div>
+        <div class="text-sm text-gray-600">Children Enrolled</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-number">3</div>
+        <div class="text-sm text-gray-600">Upcoming Sessions</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-number">12</div>
+        <div class="text-sm text-gray-600">Completed Sessions</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-number">5</div>
+        <div class="text-sm text-gray-600">Achievements</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Schedule Section -->
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold">Upcoming Sessions</h2>
+          <button class="btn btn-outline">View All</button>
+        </div>
+        <div class="space-y-4">
+          <div class="session-item">
+            <div class="flex justify-between items-start">
+              <div>
+                <h4 class="font-semibold">Cricket Training</h4>
+                <p class="text-sm text-gray-600">May 20 at 5:00 PM</p>
+                <p class="text-sm text-gray-600">Legacy Turf</p>
+                <p class="text-sm text-gray-600">Coach: John Smith</p>
+              </div>
+              <button class="btn btn-primary">RSVP</button>
+            </div>
+          </div>
+          <div class="session-item">
+            <div class="flex justify-between items-start">
+              <div>
+                <h4 class="font-semibold">Cricket Training</h4>
+                <p class="text-sm text-gray-600">May 22 at 4:30 PM</p>
+                <p class="text-sm text-gray-600">Central Park</p>
+                <p class="text-sm text-gray-600">Coach: Maria Johnson</p>
+              </div>
+              <button class="btn btn-outline">RSVP</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fitness Section -->
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold">Fitness Progress</h2>
+          <button class="btn btn-outline">View Details</button>
+        </div>
+        <div>
+          <div class="mb-4">
+            <div class="flex justify-between mb-1">
+              <span class="text-sm">Batting</span>
+              <span class="text-sm">75/100</span>
+            </div>
+            <div class="h-2 w-full bg-gray-200 rounded-full">
+              <div class="h-2 bg-blue-500 rounded-full" style="width: 75%"></div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <div class="flex justify-between mb-1">
+              <span class="text-sm">Bowling</span>
+              <span class="text-sm">60/100</span>
+            </div>
+            <div class="h-2 w-full bg-gray-200 rounded-full">
+              <div class="h-2 bg-blue-500 rounded-full" style="width: 60%"></div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <div class="flex justify-between mb-1">
+              <span class="text-sm">Fielding</span>
+              <span class="text-sm">85/100</span>
+            </div>
+            <div class="h-2 w-full bg-gray-200 rounded-full">
+              <div class="h-2 bg-blue-500 rounded-full" style="width: 85%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meal Plan Section -->
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold">Weekly Meal Plan</h2>
+          <button class="btn btn-outline">View Full Plan</button>
+        </div>
+        <div class="space-y-4">
+          <div class="session-item">
+            <div class="flex items-start gap-3">
+              <div class="bg-blue-100 p-2 rounded-full text-blue-600">☕</div>
+              <div class="flex-1">
+                <h4 class="font-semibold">Breakfast <span class="text-sm font-normal text-gray-600">(7:00 AM)</span></h4>
+                <p class="text-sm text-gray-600">Oatmeal with fruits and nuts, 1 boiled egg</p>
+                <div class="flex items-center gap-2 mt-2">
+                  <input type="checkbox" id="meal-1" class="h-4 w-4 text-blue-600">
+                  <label for="meal-1" class="text-sm">Mark as consumed</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="session-item">
+            <div class="flex items-start gap-3">
+              <div class="bg-blue-100 p-2 rounded-full text-blue-600">🍽️</div>
+              <div class="flex-1">
+                <h4 class="font-semibold">Lunch <span class="text-sm font-normal text-gray-600">(12:30 PM)</span></h4>
+                <p class="text-sm text-gray-600">Grilled chicken salad with quinoa</p>
+                <div class="flex items-center gap-2 mt-2">
+                  <input type="checkbox" id="meal-2" class="h-4 w-4 text-blue-600">
+                  <label for="meal-2" class="text-sm">Mark as consumed</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Section -->
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold">Achievements</h2>
+          <button class="btn btn-outline">View All</button>
+        </div>
+        <div class="space-y-4">
+          <div class="flex items-center gap-4 p-3 border rounded-md">
+            <div class="text-2xl">🏆</div>
+            <div>
+              <h4 class="font-medium">Century Maker</h4>
+              <p class="text-sm text-gray-600">Scored 100+ runs in a match</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-3 border rounded-md">
+            <div class="text-2xl">🥇</div>
+            <div>
+              <h4 class="font-medium">Golden Arm</h4>
+              <p class="text-sm text-gray-600">Took 5 wickets in a match</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Box Section -->
+    <div class="card mt-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Coach Communication</h2>
+      </div>
+      <div class="h-64 flex flex-col">
+        <div class="flex-1 overflow-y-auto space-y-4 mb-4 border p-3 rounded-md bg-gray-50">
+          <div class="flex justify-start">
+            <div class="flex gap-3 max-w-[80%]">
+              <div class="bg-blue-100 h-8 w-8 rounded-full flex items-center justify-center text-blue-600 text-sm font-bold">CS</div>
+              <div>
+                <div class="px-4 py-2 bg-white rounded-lg shadow-sm">
+                  Hi there! Just wanted to let you know that Arjun showed great improvement in batting technique today.
+                </div>
+                <div class="text-xs text-gray-500 mt-1">Coach Smith • May 19, 8:30 AM</div>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <div class="flex flex-row-reverse gap-3 max-w-[80%]">
+              <div class="bg-blue-500 h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-bold">PA</div>
+              <div>
+                <div class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-sm">
+                  That's great to hear! He's been practicing at home too. Any specific areas we should focus on?
+                </div>
+                <div class="text-xs text-gray-500 mt-1">Parent • May 19, 9:15 AM</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2 mt-auto">
+          <input type="text" placeholder="Type your message..." class="flex-1 p-2 border rounded-md">
+          <button class="btn btn-primary">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
