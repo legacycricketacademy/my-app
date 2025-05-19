@@ -607,7 +607,8 @@ export async function loginWithCredentials(
     }
     
     // Check if the account needs approval
-    if (user.status === 'pending_approval' && (user.role === 'coach' || user.role === 'admin')) {
+    if ((user.status === 'pending_approval' || user.status === 'pending') && 
+        (user.role === 'coach' || user.role === 'admin')) {
       return {
         success: false,
         message: "Your account is pending approval. You will be notified when it's approved.",
