@@ -5423,8 +5423,15 @@ ${ACADEMY_NAME} Team
         
         // Check account status for coaches and admins
         if ((user.role === 'coach' || user.role === 'admin') && 
-            (user.status === 'pending' || user.isActive === false)) {
+            (user.status === 'pending' || user.status === 'pending_approval' || user.isActive === false)) {
           console.log("Coach/admin account is pending approval:", user.id);
+          return res.status(403).json(
+            createErrorResponse(
+              "Your account is pending approval. You will be notified when it's approved.",
+              "auth/pending-approval",
+              403
+            )
+          );
         }
         
         // Log the user in (create session)
