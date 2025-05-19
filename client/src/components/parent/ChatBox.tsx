@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Send } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { Send, CheckCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { messagesData } from "@/data";
 
 // Types for messages
 interface Message {
@@ -18,36 +17,42 @@ interface Message {
   senderAvatar?: string;
   content: string;
   timestamp: string;
+  isNew?: boolean; // For animation
 }
 
 export function ChatBox() {
   const { user } = useAuth();
   const [message, setMessage] = useState("");
-  const queryClient = useQueryClient();
+  const [chatMessages, setChatMessages] = useState<Message[]>(messagesData);
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Fetch recent messages
-  const { data: messages, isLoading } = useQuery({
-    queryKey: ["/api/messages/recent"],
-    queryFn: () => fetch("/api/messages/recent").then(res => res.json()),
-    enabled: !!user,
-  });
-
-  // Send message mutation
-  const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const response = await apiRequest("POST", "/api/messages", { content });
-      return response.json();
-    },
-    onSuccess: () => {
-      // Clear input and refresh messages
-      setMessage("");
-      queryClient.invalidateQueries({ queryKey: ["/api/messages/recent"] });
+  // Scroll to bottom of messages whenever messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  });
+  }, [chatMessages]);
 
   const handleSendMessage = () => {
     if (message.trim()) {
-      sendMessageMutation.mutate(message);
+      setLoading(true);
+      
+      // Simulate API call delay
+      setTimeout(() => {
+        const newMessage: Message = {
+          id: `msg-${Date.now()}`,
+          sender: user?.fullName || "Parent",
+          senderRole: "parent",
+          content: message,
+          timestamp: new Date().toISOString(),
+          isNew: true
+        };
+        
+        setChatMessages([...chatMessages, newMessage]);
+        setMessage("");
+        setLoading(false);
+      }, 500);
     }
   };
 
@@ -59,37 +64,9 @@ export function ChatBox() {
     }
   };
 
-  // Sample messages for UI development (will be replaced by API data)
-  const sampleMessages: Message[] = [
-    {
-      id: "1",
-      sender: "Coach Smith",
-      senderRole: "coach",
-      content: "Hi there! Just wanted to let you know that Arjun showed great improvement in batting technique during today's session.",
-      timestamp: "2025-05-19T08:30:00Z"
-    },
-    {
-      id: "2",
-      sender: user?.fullName || "Parent",
-      senderRole: "parent",
-      content: "That's great to hear! He's been practicing at home too. Any specific areas we should focus on?",
-      timestamp: "2025-05-19T09:15:00Z"
-    },
-    {
-      id: "3",
-      sender: "Coach Smith",
-      senderRole: "coach",
-      content: "Yes, I'd recommend working on his forward defensive stroke. I've shared some drills in the app that you can try at home.",
-      timestamp: "2025-05-19T09:45:00Z"
-    }
-  ];
-
-  // Use actual messages or sample data
-  const chatMessages = messages?.data || sampleMessages;
-
-  if (isLoading) {
+  if (loading && chatMessages.length === 0) {
     return (
-      <Card className="h-[400px]">
+      <Card className="h-[400px] bg-white shadow-md rounded-lg">
         <CardHeader>
           <CardTitle>Coach Communication</CardTitle>
           <CardDescription>
@@ -108,7 +85,7 @@ export function ChatBox() {
   }
 
   return (
-    <Card className="h-[400px] flex flex-col">
+    <Card className="h-[400px] flex flex-col bg-white shadow-md rounded-lg">
       <CardHeader>
         <CardTitle>Coach Communication</CardTitle>
         <CardDescription>
@@ -120,7 +97,9 @@ export function ChatBox() {
           {chatMessages.map((msg) => (
             <div 
               key={msg.id} 
-              className={`flex ${msg.senderRole === 'parent' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${msg.senderRole === 'parent' ? 'justify-end' : 'justify-start'} ${
+                msg.isNew ? 'animate-fade-in' : ''
+              }`}
             >
               <div 
                 className={`flex gap-3 max-w-[80%] ${
@@ -131,7 +110,7 @@ export function ChatBox() {
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={msg.senderAvatar} />
-                  <AvatarFallback>
+                  <AvatarFallback className={msg.senderRole === 'coach' ? 'bg-blue-100 text-blue-600' : 'bg-primary-50 text-primary-600'}>
                     {msg.sender.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -145,13 +124,17 @@ export function ChatBox() {
                   >
                     {msg.content}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                     <span className="font-medium">{msg.sender}</span> • {format(new Date(msg.timestamp), "MMM d, h:mm a")}
+                    {msg.senderRole === 'parent' && (
+                      <CheckCheck className="h-3 w-3 text-primary ml-1" />
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
         
         <div className="flex gap-2 mt-auto">
@@ -165,7 +148,7 @@ export function ChatBox() {
           />
           <Button 
             onClick={handleSendMessage} 
-            disabled={!message.trim() || sendMessageMutation.isPending}
+            disabled={!message.trim() || loading}
             className="self-end"
           >
             <Send className="h-4 w-4" />

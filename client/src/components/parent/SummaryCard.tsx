@@ -1,29 +1,26 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
 import { ActivitySquare, Users, Calendar, Award } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect } from "react";
+import { summaryData } from "@/data";
 
 export function SummaryCard() {
   const { user } = useAuth();
+  const [stats, setStats] = useState(summaryData);
+  const [loading, setLoading] = useState(true);
   
-  // Fetch children (players) for the parent
-  const { data: children, isLoading: isLoadingChildren } = useQuery({
-    queryKey: ["/api/players/parent"],
-    queryFn: () => fetch("/api/players/parent").then(res => res.json()),
-    enabled: !!user,
-  });
-
-  // Fetch upcoming sessions count
-  const { data: sessionStats, isLoading: isLoadingSessionStats } = useQuery({
-    queryKey: ["/api/sessions/stats"],
-    queryFn: () => fetch("/api/sessions/stats").then(res => res.json()),
-    enabled: !!user,
-  });
-
+  // Simulate data loading with a delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
+      <Card className="bg-white shadow-md rounded-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
             Children Enrolled
@@ -31,20 +28,14 @@ export function SummaryCard() {
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          {isLoadingChildren ? (
-            <Skeleton className="h-8 w-20" />
-          ) : (
-            <>
-              <div className="text-2xl font-bold">{children?.length || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Active cricket players
-              </p>
-            </>
-          )}
+          <div className="text-2xl font-bold">{stats.childrenEnrolled}</div>
+          <p className="text-xs text-muted-foreground">
+            Active cricket players
+          </p>
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="bg-white shadow-md rounded-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
             Upcoming Sessions
@@ -52,20 +43,14 @@ export function SummaryCard() {
           <Calendar className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          {isLoadingSessionStats ? (
-            <Skeleton className="h-8 w-20" />
-          ) : (
-            <>
-              <div className="text-2xl font-bold">{sessionStats?.upcoming || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Next 7 days
-              </p>
-            </>
-          )}
+          <div className="text-2xl font-bold">{stats.upcomingSessions}</div>
+          <p className="text-xs text-muted-foreground">
+            Next 7 days
+          </p>
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="bg-white shadow-md rounded-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
             Completed Sessions
@@ -73,20 +58,14 @@ export function SummaryCard() {
           <ActivitySquare className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          {isLoadingSessionStats ? (
-            <Skeleton className="h-8 w-20" />
-          ) : (
-            <>
-              <div className="text-2xl font-bold">{sessionStats?.completed || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                This month
-              </p>
-            </>
-          )}
+          <div className="text-2xl font-bold">{stats.completedSessions}</div>
+          <p className="text-xs text-muted-foreground">
+            This month
+          </p>
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="bg-white shadow-md rounded-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
             Achievements
@@ -94,16 +73,10 @@ export function SummaryCard() {
           <Award className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          {isLoadingChildren ? (
-            <Skeleton className="h-8 w-20" />
-          ) : (
-            <>
-              <div className="text-2xl font-bold">{sessionStats?.achievements || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Badges earned
-              </p>
-            </>
-          )}
+          <div className="text-2xl font-bold">{stats.achievements}</div>
+          <p className="text-xs text-muted-foreground">
+            Badges earned
+          </p>
         </CardContent>
       </Card>
     </div>
