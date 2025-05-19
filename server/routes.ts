@@ -2556,6 +2556,17 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
         return sendAccountDisabledError(res);
       }
       
+      // Check if coach account is pending approval
+      if ((user.role === 'coach' || user.role === 'admin') && 
+          (user.status === 'pending' || user.status === 'pending_approval')) {
+        return res.status(403).json({
+          success: false,
+          message: "Your account is pending approval. You will be notified when it's approved.",
+          error: "AccountPendingApproval",
+          code: "auth/pending-approval"
+        });
+      }
+      
       // Check if account is locked due to too many failed attempts
       if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
         const minutesRemaining = Math.ceil(
@@ -2707,9 +2718,13 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       }
       
       // Check if the user account is active
-      if (user.role === "coach" && user.status === "pending") {
+      if ((user.role === "coach" || user.role === "admin") && 
+          (user.status === "pending" || user.status === "pending_approval" || !user.isActive)) {
         return res.status(403).json({ 
-          message: "Your coach account is pending approval. Please contact an administrator."
+          success: false,
+          message: "Your account is pending approval. You will be notified when it's approved.",
+          error: "AccountPendingApproval",
+          code: "auth/pending-approval"
         });
       }
       
