@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Apple, Coffee, UtensilsCrossed, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+// Direct navigation with window.location used instead of router links
 import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -82,9 +82,9 @@ export function MealPlan() {
               Nutrition plan to support cricket performance
             </CardDescription>
           </div>
-          <Link href="/parent/meal-plans">
-            <Button variant="outline" size="sm">View Full Plan</Button>
-          </Link>
+          <Button variant="outline" size="sm" onClick={() => window.location.href = "/parent/meal-plans"}>
+            View Full Plan
+          </Button>
         </div>
       </CardHeader>
       <CardContent>

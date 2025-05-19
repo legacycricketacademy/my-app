@@ -1,23 +1,21 @@
 import { useEffect } from 'react';
-import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function DashboardRedirect() {
-  const [, navigate] = useLocation();
   const { user } = useAuth();
 
   useEffect(() => {
     // If user is a parent, redirect to parent dashboard
     if (user && user.role === 'parent') {
-      navigate('/parent');
+      window.location.href = '/parent';
     } else if (user) {
       // If user is admin or coach, redirect to admin dashboard
-      navigate('/');
+      window.location.href = '/';
     } else {
       // If not logged in, redirect to auth page
-      navigate('/auth');
+      window.location.href = '/auth';
     }
-  }, [user, navigate]);
+  }, [user]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
