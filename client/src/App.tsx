@@ -71,11 +71,8 @@ function AppRoutes() {
         )
       } />
       
-      {/* Simple parent route as recommended */}
-      <Route path="/parent" element={<ParentDashboard />} />
-      
-      {/* New enhanced React parent dashboard */}
-      <Route path="/react-parent" element={<DirectParentDashboard />} />
+      {/* Enhanced parent route with the full React dashboard component */}
+      <Route path="/parent" element={<DirectParentDashboard />} />
       
       <Route path="/parent/schedule" element={
         user ? (
