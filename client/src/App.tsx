@@ -10,6 +10,7 @@ import ErrorBoundary from "@/components/error-boundary";
 
 // Pages
 import ParentDashboard from "@/pages/simple-react-dashboard";
+import DirectParentDashboard from "@/pages/direct-parent-dashboard";
 import ParentSchedulePage from "@/pages/parent/parent-schedule";
 import ParentAnnouncementsPage from "@/pages/parent/announcements";
 import ParentPaymentsPage from "@/pages/parent/payments";
@@ -72,6 +73,9 @@ function AppRoutes() {
       
       {/* Simple parent route as recommended */}
       <Route path="/parent" element={<ParentDashboard />} />
+      
+      {/* New enhanced React parent dashboard */}
+      <Route path="/react-parent" element={<DirectParentDashboard />} />
       
       <Route path="/parent/schedule" element={
         user ? (
