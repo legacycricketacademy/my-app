@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+// Direct navigation with window.location used instead of router links
 import { useAuth } from "@/hooks/use-auth";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Award, TrendingUp, Target, ChevronRight } from "lucide-react";
@@ -87,9 +87,9 @@ export function Performance() {
               Track cricket skills and achievements for {performance.name}
             </CardDescription>
           </div>
-          <Link href="/parent/performance">
-            <Button variant="outline" size="sm">View History</Button>
-          </Link>
+          <Button variant="outline" size="sm" onClick={() => window.location.href = "/parent/performance"}>
+            View History
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
