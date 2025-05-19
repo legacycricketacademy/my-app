@@ -2,8 +2,8 @@ import express, { Router } from 'express';
 import path from 'path';
 
 export function setupStaticRoutes(app: express.Express): void {
-  // Serve static files from the client/dist directory
-  app.use(express.static('client/dist'));
+  // Serve static files from the dist/public directory
+  app.use(express.static('dist/public'));
   
   // Handle all paths that should be handled by React Router
   const clientRoutes = [
@@ -33,7 +33,7 @@ export function setupStaticRoutes(app: express.Express): void {
     }
     
     // Let React Router handle the routing by serving index.html
-    res.sendFile(path.resolve('./client/dist/index.html'));
+    res.sendFile(path.resolve('./dist/public/index.html'));
   });
   
   // Catch-all route to handle any other client-side routes
@@ -44,6 +44,6 @@ export function setupStaticRoutes(app: express.Express): void {
     }
     
     // For all other routes, serve the React app
-    res.sendFile(path.resolve('./client/dist/index.html'));
+    res.sendFile(path.resolve('./dist/public/index.html'));
   });
 }
