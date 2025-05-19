@@ -33,6 +33,11 @@ app.get('/direct-parent', (req, res) => {
   res.sendFile('parent-dashboard.html', { root: './server/public' });
 });
 
+// Enhanced interactive parent dashboard with JavaScript functionality
+app.get('/enhanced-parent', (req, res) => {
+  res.sendFile('enhanced-parent-dashboard.html', { root: './server/public' });
+});
+
 // Handle email verification directly without React routing
 app.get('/verify-email', (req, res) => {
   const token = req.query.token;
