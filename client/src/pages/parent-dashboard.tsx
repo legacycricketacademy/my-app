@@ -1,63 +1,54 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
+import { Navbar } from "@/components/parent/Navbar";
+import { SummaryCard } from "@/components/parent/SummaryCard";
+import { Schedule } from "@/components/parent/Schedule";
+import { Fitness } from "@/components/parent/Fitness";
+import { MealPlan } from "@/components/parent/MealPlan";
+import { Performance } from "@/components/parent/Performance";
+import { ChatBox } from "@/components/parent/ChatBox";
+import { Separator } from "@/components/ui/separator";
 
 export default function ParentDashboard() {
   const { user } = useAuth();
   const [currentDate] = useState(new Date());
 
-  // Fetch children (players) for the parent
-  const { data: children, isLoading: isLoadingChildren } = useQuery({
-    queryKey: ["/api/players/parent"],
-    queryFn: () => fetch("/api/players/parent").then(res => res.json()),
-    enabled: !!user,
-  });
-
-  // Fetch upcoming sessions
-  const { data: upcomingSessions, isLoading: isLoadingSessions } = useQuery({
-    queryKey: ["/api/sessions/upcoming", 5],
-    queryFn: () => fetch("/api/sessions/upcoming?limit=5").then(res => res.json()),
-  });
-
-  // Fetch announcements
-  const { data: announcements, isLoading: isLoadingAnnouncements } = useQuery({
-    queryKey: ["/api/announcements/recent"],
-    queryFn: () => fetch("/api/announcements/recent").then(res => res.json()),
-  });
-
-  // First, render just a basic component to check if the issue is with the data loading or layout
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold">Parent Dashboard (Simple Version)</h1>
-      <p className="text-gray-600">Testing direct rendering without complex layout</p>
-      
-      <div className="mt-4 p-4 bg-gray-100 rounded">
-        <p><strong>Username:</strong> {user?.username}</p>
-        <p><strong>Role:</strong> {user?.role}</p>
-        <p><strong>Date:</strong> {format(currentDate, "PPPP")}</p>
-      </div>
-      
-      <button 
-        onClick={() => console.log("Debug user:", user)} 
-        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-      >
-        Log User Data
-      </button>
-      
-      <div className="mt-4">
-        <a href="/debug" className="text-blue-500 hover:underline">Go to Debug Page</a>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <main className="container mx-auto px-4 py-6">
+        <div className="flex flex-col gap-1 mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || 'Parent'}</h1>
+          <p className="text-muted-foreground">
+            {format(currentDate, "EEEE, MMMM d, yyyy")} | Academy Dashboard
+          </p>
+        </div>
 
-      {/* Data loading status */}
-      <div className="mt-6">
-        <h2 className="text-xl font-bold">Data Loading Status:</h2>
-        <ul className="list-disc pl-8 mt-2">
-          <li>Children: {isLoadingChildren ? "Loading..." : (children ? `${children.length} loaded` : "No data")}</li>
-          <li>Sessions: {isLoadingSessions ? "Loading..." : (upcomingSessions ? `${upcomingSessions.length} loaded` : "No data")}</li>
-          <li>Announcements: {isLoadingAnnouncements ? "Loading..." : (announcements ? `${announcements.length} loaded` : "No data")}</li>
-        </ul>
-      </div>
+        <Separator className="my-6" />
+        
+        {/* Summary Cards Section */}
+        <div className="mb-8">
+          <SummaryCard />
+        </div>
+        
+        {/* Two Column Grid for Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <Schedule />
+          <Fitness />
+        </div>
+        
+        {/* Two Column Grid for Secondary Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <MealPlan />
+          <Performance />
+        </div>
+        
+        {/* Chat Section */}
+        <div className="mb-8">
+          <ChatBox />
+        </div>
+      </main>
     </div>
   );
 }
