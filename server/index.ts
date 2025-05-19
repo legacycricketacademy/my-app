@@ -2,7 +2,12 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { multiTenantStorage } from "./multi-tenant-storage";
-import { setupRedirects } from "./redirect"; // Import our redirect middleware
+// Temporarily comment out redirects to get the server running
+// import { setupRedirects } from "./redirect";
+const setupRedirects = (app: any) => {
+  console.log('Setup redirects: temporarily disabled');
+};
+import { setupStaticRoutes } from "./static-routes"; // Import our static routes handler for React Router
 
 // Add academy context to the request object
 declare global {
@@ -118,6 +123,13 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Setup redirects for dashboard routes
+  setupRedirects(app);
+  
+  // Setup static routes for React Router support
+  setupStaticRoutes(app);
+  
+  // Register API routes
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
