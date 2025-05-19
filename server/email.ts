@@ -548,7 +548,9 @@ Coach Details:
 - Name: ${coachName}
 - Email: ${coachEmail}
 
-Please review and approve this account: ${approvalLink}
+Please log in to the admin dashboard and navigate to the Pending Coaches section to review this request.
+
+Direct link (requires admin login): ${approvalLink}
 
 Thanks,
 ${ACADEMY_NAME} System
@@ -585,12 +587,13 @@ ${ACADEMY_NAME} System
         <p><strong>Email:</strong> ${coachEmail}</p>
       </div>
       
-      <p>Please review this request and approve if appropriate:</p>
+      <p>Please log in to the admin dashboard and access the Pending Coaches section to review this request:</p>
+      <p><strong>Note:</strong> You must be logged in as an admin before using the link below.</p>
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td align="center" style="border-radius: 4px;" bgcolor="#4f46e5">
             <a href="${approvalLink}" target="_blank" style="padding: 12px 24px; font-size: 16px; color: #ffffff; font-weight: bold; text-decoration: none; display: inline-block; border-radius: 4px; font-family: Arial, sans-serif;">
-              Review Coach Account
+              Go to Coach Approval Page
             </a>
           </td>
         </tr>
