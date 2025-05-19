@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   Home, 
@@ -31,7 +31,7 @@ export function ParentLayout({
   children,
   title = "Dashboard"
 }: ParentLayoutProps) {
-  const [location] = useLocation();
+  const location = useLocation();
   const { user, logoutMutation } = useAuth();
   const isMobile = useMobile();
   
@@ -40,7 +40,7 @@ export function ParentLayout({
   };
   
   const navigation = [
-    { name: "Dashboard", href: "/parent", icon: Home },
+    { name: "Dashboard", href: "/dashboard/parent", icon: Home },
     { name: "Schedule", href: "/parent/schedule", icon: Calendar },
     { name: "Announcements", href: "/parent/announcements", icon: Bell },
     { name: "Connect Child", href: "/parent/connect-child", icon: Users },
@@ -49,7 +49,7 @@ export function ParentLayout({
   ];
   
   const Logo = () => (
-    <Link href="/">
+    <Link to="/">
       <div className="flex items-center gap-2 font-bold text-xl text-primary cursor-pointer">
         <span className="bg-primary text-white p-1 rounded">
           🏏
@@ -67,10 +67,10 @@ export function ParentLayout({
       <div className="flex-1 px-3 py-4 space-y-1">
         {navigation.map((item) => {
           const Icon = item.icon;
-          const isActive = location === item.href;
+          const isActive = location.pathname === item.href;
           
           return (
-            <Link key={item.name} href={item.href}>
+            <Link key={item.name} to={item.href}>
               <div
                 className={cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
@@ -150,8 +150,8 @@ export function ParentLayout({
           {/* Notification Dropdown */}
           <NotificationDropdown />
           
-          <Button variant="ghost" size="icon" asChild className="md:hidden">
-            <Link href="/profile">
+          <Button variant="ghost" size="icon" className="md:hidden">
+            <Link to="/profile" className="flex items-center justify-center">
               <User className="h-5 w-5" />
               <span className="sr-only">Profile</span>
             </Link>
