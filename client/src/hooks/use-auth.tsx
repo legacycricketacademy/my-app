@@ -427,6 +427,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       console.log("Login Mutation onSuccess - User Data:", userData);
       
+      // Redirect user to correct dashboard based on role
+      if (userData) {
+        if (userData.role === 'parent') {
+          // Redirect to parent dashboard
+          window.location.href = '/parent';
+        } else if (userData.role === 'coach' || userData.role === 'admin') {
+          // Redirect to admin/coach dashboard
+          window.location.href = '/';
+        }
+      }
+      
       // Only show toast if we have user data
       if (userData) {
         // Check if the coach/admin account is pending approval
