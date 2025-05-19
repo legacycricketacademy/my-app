@@ -1,7 +1,7 @@
-// Direct navigation with window.location used instead of router links
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { Bell, Menu, User, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,7 @@ import { useState } from 'react';
 export function Navbar() {
   const { user, logoutMutation } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -26,7 +27,7 @@ export function Navbar() {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center">
-            <div onClick={() => window.location.href = "/dashboard/parent"} className="cursor-pointer">
+            <div onClick={() => navigate("/dashboard/parent")} className="cursor-pointer">
               <div className="flex items-center gap-2 font-bold text-xl text-primary cursor-pointer">
                 <span className="bg-primary text-white p-1 rounded">
                   🏏
@@ -39,19 +40,19 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            <div onClick={() => window.location.href = "/dashboard/parent"} className="cursor-pointer">
+            <div onClick={() => navigate("/dashboard/parent")} className="cursor-pointer">
               <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary cursor-pointer">Dashboard</span>
             </div>
-            <div onClick={() => window.location.href = "/parent/schedule"} className="cursor-pointer">
+            <div onClick={() => navigate("/parent/schedule")} className="cursor-pointer">
               <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary cursor-pointer">Schedule</span>
             </div>
-            <div onClick={() => window.location.href = "/parent/fitness"} className="cursor-pointer">
+            <div onClick={() => navigate("/parent/fitness")} className="cursor-pointer">
               <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary cursor-pointer">Fitness</span>
             </div>
-            <div onClick={() => window.location.href = "/parent/meal-plans"} className="cursor-pointer">
+            <div onClick={() => navigate("/parent/meal-plans")} className="cursor-pointer">
               <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary cursor-pointer">Meal Plans</span>
             </div>
-            <div onClick={() => window.location.href = "/parent/performance"} className="cursor-pointer">
+            <div onClick={() => navigate("/parent/performance")} className="cursor-pointer">
               <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary cursor-pointer">Performance</span>
             </div>
           </div>
