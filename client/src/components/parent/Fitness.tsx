@@ -4,7 +4,7 @@ import { Dumbbell, TrendingUp, Activity } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+// Direct navigation with window.location used instead of router links
 import {
   LineChart,
   Line,
@@ -69,9 +69,9 @@ export function Fitness() {
               Track improvements in strength, agility and endurance
             </CardDescription>
           </div>
-          <Link href="/parent/fitness">
-            <Button variant="outline" size="sm">View Details</Button>
-          </Link>
+          <Button variant="outline" size="sm" onClick={() => window.location.href = "/parent/fitness"}>
+            View Details
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
