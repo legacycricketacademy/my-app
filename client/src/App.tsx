@@ -125,6 +125,11 @@ function RouterContent() {
         </ErrorBoundary>
       </Route>
       
+      {/* Add a special redirect route for dashboard that handles both /dashboard and / */}
+      <Route path="/dashboard">
+        {React.createElement(React.lazy(() => import("@/pages/dashboard-redirect")))}
+      </Route>
+      
       {/* Admin and Coach Routes */}
       <RoleBasedRoute 
         path="/" 
