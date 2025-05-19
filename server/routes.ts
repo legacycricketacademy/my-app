@@ -941,9 +941,9 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, '..', 'minimal.html'));
   });
   
-  // Direct parent dashboard route - serve the React app's index.html
+  // Direct parent dashboard route - serve our standalone dashboard HTML
   app.get('/parent*', (req, res) => {
-    res.sendFile(path.resolve('./dist/public/index.html'));
+    res.sendFile(path.resolve(import.meta.dirname, '..', 'direct-parent-dashboard.html'));
   });
   
   // Serve the basic landing page
