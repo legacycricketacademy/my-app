@@ -14,8 +14,9 @@ export default function ParentDashboard() {
   const { user } = useAuth();
   const [currentDate] = useState(new Date());
 
-  return (
-    <ParentLayout title="Dashboard">
+  // Dashboard content that will be passed to layout
+  const dashboardContent = (
+    <>
       <div className="flex flex-col gap-1 mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || 'Parent'}</h1>
         <p className="text-muted-foreground">
@@ -46,6 +47,12 @@ export default function ParentDashboard() {
       <div className="mb-8">
         <ChatBox />
       </div>
+    </>
+  );
+
+  return (
+    <ParentLayout title="Dashboard">
+      {dashboardContent}
     </ParentLayout>
   );
 }
