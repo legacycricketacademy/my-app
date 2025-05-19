@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+// Direct navigation with window.location used instead of router links
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { Bell, Menu, User, LogOut } from 'lucide-react';
@@ -26,7 +26,7 @@ export function Navbar() {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/parent">
+            <div onClick={() => window.location.href = "/dashboard/parent"} className="cursor-pointer">
               <div className="flex items-center gap-2 font-bold text-xl text-primary cursor-pointer">
                 <span className="bg-primary text-white p-1 rounded">
                   🏏
@@ -34,26 +34,26 @@ export function Navbar() {
                 <span className="hidden md:inline">Legacy Cricket Academy</span>
                 <span className="md:hidden">LCA</span>
               </div>
-            </Link>
+            </div>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link href="/parent">
+            <div onClick={() => window.location.href = "/dashboard/parent"} className="cursor-pointer">
               <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary cursor-pointer">Dashboard</span>
-            </Link>
-            <Link href="/parent/schedule">
+            </div>
+            <div onClick={() => window.location.href = "/parent/schedule"} className="cursor-pointer">
               <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary cursor-pointer">Schedule</span>
-            </Link>
-            <Link href="/parent/fitness">
+            </div>
+            <div onClick={() => window.location.href = "/parent/fitness"} className="cursor-pointer">
               <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary cursor-pointer">Fitness</span>
-            </Link>
-            <Link href="/parent/meal-plans">
+            </div>
+            <div onClick={() => window.location.href = "/parent/meal-plans"} className="cursor-pointer">
               <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary cursor-pointer">Meal Plans</span>
-            </Link>
-            <Link href="/parent/performance">
+            </div>
+            <div onClick={() => window.location.href = "/parent/performance"} className="cursor-pointer">
               <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary cursor-pointer">Performance</span>
-            </Link>
+            </div>
           </div>
 
           {/* User Menu & Notifications */}
@@ -103,21 +103,21 @@ export function Navbar() {
         {mobileMenuOpen && (
           <div className="md:hidden pt-3 pb-2 border-t border-gray-200 dark:border-gray-800 mt-3">
             <div className="flex flex-col space-y-3">
-              <Link href="/parent">
+              <div onClick={() => window.location.href = "/dashboard/parent"} className="cursor-pointer">
                 <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary block px-3 py-2">Dashboard</span>
-              </Link>
-              <Link href="/parent/schedule">
+              </div>
+              <div onClick={() => window.location.href = "/parent/schedule"} className="cursor-pointer">
                 <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary block px-3 py-2">Schedule</span>
-              </Link>
-              <Link href="/parent/fitness">
+              </div>
+              <div onClick={() => window.location.href = "/parent/fitness"} className="cursor-pointer">
                 <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary block px-3 py-2">Fitness</span>
-              </Link>
-              <Link href="/parent/meal-plans">
+              </div>
+              <div onClick={() => window.location.href = "/parent/meal-plans"} className="cursor-pointer">
                 <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary block px-3 py-2">Meal Plans</span>
-              </Link>
-              <Link href="/parent/performance">
+              </div>
+              <div onClick={() => window.location.href = "/parent/performance"} className="cursor-pointer">
                 <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary block px-3 py-2">Performance</span>
-              </Link>
+              </div>
             </div>
           </div>
         )}
