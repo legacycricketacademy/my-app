@@ -77,7 +77,7 @@ export function Navbar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => window.location.href = '/profile'}>
+                <DropdownMenuItem onSelect={() => navigate('/profile')}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
@@ -104,19 +104,19 @@ export function Navbar() {
         {mobileMenuOpen && (
           <div className="md:hidden pt-3 pb-2 border-t border-gray-200 dark:border-gray-800 mt-3">
             <div className="flex flex-col space-y-3">
-              <div onClick={() => window.location.href = "/dashboard/parent"} className="cursor-pointer">
+              <div onClick={() => navigate("/dashboard/parent")} className="cursor-pointer">
                 <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary block px-3 py-2">Dashboard</span>
               </div>
-              <div onClick={() => window.location.href = "/parent/schedule"} className="cursor-pointer">
+              <div onClick={() => navigate("/parent/schedule")} className="cursor-pointer">
                 <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary block px-3 py-2">Schedule</span>
               </div>
-              <div onClick={() => window.location.href = "/parent/fitness"} className="cursor-pointer">
+              <div onClick={() => navigate("/parent/fitness")} className="cursor-pointer">
                 <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary block px-3 py-2">Fitness</span>
               </div>
-              <div onClick={() => window.location.href = "/parent/meal-plans"} className="cursor-pointer">
+              <div onClick={() => navigate("/parent/meal-plans")} className="cursor-pointer">
                 <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary block px-3 py-2">Meal Plans</span>
               </div>
-              <div onClick={() => window.location.href = "/parent/performance"} className="cursor-pointer">
+              <div onClick={() => navigate("/parent/performance")} className="cursor-pointer">
                 <span className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary block px-3 py-2">Performance</span>
               </div>
             </div>
