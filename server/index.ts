@@ -28,6 +28,11 @@ app.get('/register-now', (req, res) => {
   res.sendFile('simple-fullname-register.html', { root: './server/public' });
 });
 
+// Direct route to parent dashboard that bypasses React and authentication
+app.get('/direct-parent', (req, res) => {
+  res.sendFile('parent-dashboard.html', { root: './server/public' });
+});
+
 // Handle email verification directly without React routing
 app.get('/verify-email', (req, res) => {
   const token = req.query.token;
