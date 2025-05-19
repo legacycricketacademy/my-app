@@ -4,9 +4,9 @@ import { Calendar, Clock, MapPin, UserCircle, CheckCircle2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { scheduleData } from "@/data";
+import { scheduleData, Schedule as ScheduleType } from "../../../src/data";
 
 interface SessionItem {
   id: number;
@@ -20,7 +20,18 @@ interface SessionItem {
 
 export function Schedule() {
   const { user } = useAuth();
-  const [sessions, setSessions] = useState<SessionItem[]>(scheduleData);
+  // Convert scheduleData to add coachName property
+  const initialSessions = scheduleData.map(item => ({
+    id: item.id,
+    date: item.date,
+    time: item.time,
+    location: item.location,
+    coachName: "Coach Smith", // Default coach name
+    status: item.status,
+    rsvp: false
+  }));
+  
+  const [sessions, setSessions] = useState<SessionItem[]>(initialSessions);
   const [loading, setLoading] = useState(false);
   
   // Function to handle RSVP toggle
@@ -77,9 +88,10 @@ export function Schedule() {
               Next scheduled cricket training sessions
             </CardDescription>
           </div>
-          <Link href="/parent/schedule">
-            <Button variant="outline" size="sm">View All</Button>
-          </Link>
+          {/* Using Button directly instead of problematic Link */}
+          <Button variant="outline" size="sm" onClick={() => window.location.href = "/parent/schedule"}>
+            View All
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -91,7 +103,7 @@ export function Schedule() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold text-md">Cricket Training</h4>
-                      <Badge variant={session.status === "Confirmed" ? "success" : "outline"}>
+                      <Badge variant={session.status === "Confirmed" ? "secondary" : "outline"}>
                         {session.status}
                       </Badge>
                     </div>
