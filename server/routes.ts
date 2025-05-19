@@ -941,9 +941,9 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     res.sendFile(path.resolve(import.meta.dirname, '..', 'minimal.html'));
   });
   
-  // Direct parent dashboard route - serve our simple parent dashboard HTML
+  // Direct parent dashboard route - serve our static dashboard HTML
   app.get('/parent', (req, res) => {
-    res.sendFile(path.resolve(import.meta.dirname, '..', 'simple-parent.html'));
+    res.sendFile(path.resolve(import.meta.dirname, '..', 'static-parent-dashboard.html'));
   });
   
   // Serve the basic landing page
