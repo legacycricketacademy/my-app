@@ -10,8 +10,15 @@ import ErrorBoundary from "@/components/error-boundary";
 
 // Pages
 import ParentDashboard from "@/pages/parent-dashboard";
+import ParentSchedulePage from "@/pages/parent/parent-schedule";
+import ParentAnnouncementsPage from "@/pages/parent/announcements";
+import ParentPaymentsPage from "@/pages/parent/payments";
 import AuthPageLocal from "@/pages/auth-page-local";
 import Dashboard from "@/pages/dashboard";
+import PlayersPage from "@/pages/players-page";
+import SchedulePage from "@/pages/schedule-page";
+import AnnouncementsPage from "@/pages/announcements-page";
+import ProfilePage from "@/pages/profile-page";
 import NotFound from "@/pages/not-found";
 import ForceLogoutPage from "@/pages/force-logout";
 
@@ -33,7 +40,12 @@ function AppRoutes() {
     );
   }
   
+  // Check if user is a parent or testing parent view
   const isParentUser = user && (user.role === "parent" || isTestingParentView);
+  
+  // Debug logging to help troubleshoot routing
+  console.log("App Routing - User:", user);
+  console.log("App Routing - Is Parent View:", isParentUser);
   
   return (
     <Routes>
@@ -55,7 +67,7 @@ function AppRoutes() {
         )
       } />
       
-      {/* Parent Dashboard */}
+      {/* Parent Dashboard Routes */}
       <Route path="/dashboard/parent" element={
         user ? (
           isParentUser ? <ParentDashboard /> : <Navigate to="/" />
@@ -64,8 +76,62 @@ function AppRoutes() {
         )
       } />
       
+      <Route path="/parent/schedule" element={
+        user ? (
+          isParentUser ? <ParentSchedulePage /> : <Navigate to="/schedule" />
+        ) : (
+          <Navigate to="/auth" />
+        )
+      } />
+      
+      <Route path="/parent/announcements" element={
+        user ? (
+          isParentUser ? <ParentAnnouncementsPage /> : <Navigate to="/announcements" />
+        ) : (
+          <Navigate to="/auth" />
+        )
+      } />
+      
+      <Route path="/parent/payments" element={
+        user ? (
+          isParentUser ? <ParentPaymentsPage /> : <Navigate to="/" />
+        ) : (
+          <Navigate to="/auth" />
+        )
+      } />
+      
       {/* Legacy parent route for backward compatibility */}
       <Route path="/parent" element={<Navigate to="/dashboard/parent" />} />
+      
+      {/* Admin/Coach Routes */}
+      <Route path="/players" element={
+        user ? (
+          !isParentUser ? <PlayersPage /> : <Navigate to="/dashboard/parent" />
+        ) : (
+          <Navigate to="/auth" />
+        )
+      } />
+      
+      <Route path="/schedule" element={
+        user ? (
+          !isParentUser ? <SchedulePage /> : <Navigate to="/parent/schedule" />
+        ) : (
+          <Navigate to="/auth" />
+        )
+      } />
+      
+      <Route path="/announcements" element={
+        user ? (
+          !isParentUser ? <AnnouncementsPage /> : <Navigate to="/parent/announcements" />
+        ) : (
+          <Navigate to="/auth" />
+        )
+      } />
+      
+      {/* Common routes for all users */}
+      <Route path="/profile" element={
+        user ? <ProfilePage /> : <Navigate to="/auth" />
+      } />
       
       {/* Public routes */}
       <Route path="/emergency-logout" element={<ForceLogoutPage />} />
