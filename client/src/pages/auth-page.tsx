@@ -171,6 +171,7 @@ export default function AuthPage() {
   const [emailVerified, setEmailVerified] = useState<boolean>(false);
   const [registeredUser, setRegisteredUser] = useState<{ id: number; email: string } | null>(null);
   const [emailVerificationStatus, setEmailVerificationStatus] = useState<"pending" | "sent" | "failed" | null>(null);
+  const [registrationLoading, setRegistrationLoading] = useState<boolean>(false);
   
   // Parse URL for invitation token and verification success
   useEffect(() => {
@@ -321,7 +322,14 @@ export default function AuthPage() {
         body: JSON.stringify(data),
         credentials: 'include'
       })
-      .then(response => response.json().then(data => ({ status: response.status, data })))
+      .then(response => 
+        response.json()
+          .then(data => ({ status: response.status, data }))
+          .catch(err => {
+            console.error("Error parsing JSON response:", err);
+            return { status: response.status, data: { message: "Invalid server response" } };
+          })
+      )
       .then(({ status, data }) => {
         setRegistrationLoading(false);
         
@@ -350,14 +358,68 @@ export default function AuthPage() {
         // Success case
         const userData = data.data?.user;
         console.log("Registration succeeded with status:", userData?.status);
+        
+        // Store registered user for verification status display
+        if (userData) {
+          setRegisteredUser({
+            id: userData.id,
+            email: userData.email
+          });
           
-          // Log the user data for debugging
-          console.log("User registration completed with data:", {
-            id: userData?.id,
-            username: userData?.username,
-            role: userData?.role,
-            status: userData?.status,
-            isActive: userData?.isActive !== false, // Convert to boolean for logging
+          // Set email verification status based on the response
+          if (userData.emailStatus) {
+            setEmailVerificationStatus(userData.emailStatus === "sent" ? "sent" : 
+                                      userData.emailStatus === "failed" ? "failed" : "pending");
+          }
+        }
+        
+        // Different message based on status (for coach/admin that need approval)
+        if ((userData?.role === 'coach' || userData?.role === 'admin') && 
+            (userData?.status === 'pending_approval' || userData?.status === 'pending' || 
+             userData?.isActive === false)) {
+          toast({
+            title: "Registration Successful",
+            description: "Your account is awaiting administrator approval. You'll be notified when approved.",
+            duration: 6000, // show for longer
+          });
+        } else {
+          toast({
+            title: "Registration Successful",
+            description: "Your account has been created successfully! Please check your email for verification.",
+          });
+        }
+      })
+      .catch(err => {
+        setRegistrationLoading(false);
+        console.error("Registration network error:", err);
+        
+        toast({
+          title: "Registration Failed",
+          description: "Unable to connect to the server. Please check your internet connection and try again.",
+          variant: "destructive",
+        });
+      });
+      
+    } catch (error) {
+      setRegistrationLoading(false);
+      console.error("Registration error:", error);
+      
+      toast({
+        title: "Registration Failed",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive", 
+      });
+    }
+  }
+  
+  // Log the user data for debugging (moved outside the registration function)
+  function logRegistrationSuccess(userData: any) {
+    console.log("User registration completed with data:", {
+      id: userData?.id,
+      username: userData?.username,
+      role: userData?.role,
+      status: userData?.status,
+      isActive: userData?.isActive !== false, // Convert to boolean for logging
             emailStatus: userData?.emailStatus
           });
           
