@@ -1,0 +1,129 @@
+ POST /api/register → 409 Conflict
+❗ Message: "Server responded with status: 409"
+🔎 Email used: corissconfidential@dcpa.l...
+
+
+Let’s Fix the User Experience
+
+🔹 1. Backend Already Works! ✅
+
+In your backend (auth.ts), you likely already have:
+
+
+
+return res.status(409).json({
+  success: false,
+  message: "Email already registered"
+});
+
+
+2. Update Your Frontend to Handle 409 Gracefully
+
+Update your frontend fetch code like this:
+
+
+const res = await fetch("/api/register", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(formData)
+});
+
+const data = await res.json();
+
+if (!res.ok) {
+  throw new Error(data.message || "Registration failed");
+}
+
+
+
+
+Then in your catch() or error handler:
+
+catch (err) {
+  setErrorMessage(err.message); // Show user-friendly error
+}
+
+Example Fix in UI Component
+
+{errorMessage && (
+  <div className="bg-red-100 text-red-700 p-2 rounded mb-4">
+    {errorMessage}
+  </div>
+)}
+
+Now instead of:
+
+❌ Server responded with 409
+
+You get:
+
+❌ “Email already registered”
+What’s Really Happening
+
+You’re likely doing something like this in auth.ts:
+
+const existingUser = await db.user.findFirst({
+  where: {
+    email: formData.email
+  }
+});
+
+if (existingUser) {
+  return res.status(409).json({ message: "Email already registered" });
+}
+
+But if:
+	•	Your email is stored in lowercase in DB
+	•	And you’re checking with case-sensitive logic
+	•	Or your DB already has corissconfidential@dcpa.net but you’re passing CorissConfidential@dcpa.net
+
+→ it will still match as a duplicate if not normalized.
+
+
+ Fixes to Try Immediately
+
+⸻
+
+🔧 1. Normalize Email on Insert and Check
+
+✅ Always lowercase the email when checking for existing users:
+
+
+const email = formData.email.toLowerCase();
+
+const existingUser = await db.user.findFirst({
+  where: {
+    email
+  }
+});
+
+Then store it the same way:
+
+await db.user.create({
+  data: {
+    email,
+    username: formData.username,
+    ...
+  }
+});
+
+2. Confirm You’re Checking the Right Table
+
+You may accidentally be querying users but inserting into coaches, or vice versa. Check that the findFirst() call is on the same table you’re inserting into.
+
+
+ 3. Inspect the Database Directly
+
+Run this query in your DB to confirm if any record already exists:
+
+
+SELECT email FROM users WHERE LOWER(email) = 'corissconfidential@dcpa.net';
+
+4. Debug Log It
+
+Add this just before the 409 check:
+
+console.log("Checking for existing user with email:", email);
+console.log("Found:", existingUser);
+
+
