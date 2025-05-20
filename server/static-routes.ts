@@ -21,7 +21,9 @@ export function setupStaticRoutes(app: express.Express): void {
     '/parent/meal-plans',
     '/parent/performance',
     '/parent/payments',
-    '/emergency-logout'
+    '/emergency-logout',
+    '/simple-parent',
+    '/independent-parent'
   ];
   
   // Create a single route handler for all client routes
