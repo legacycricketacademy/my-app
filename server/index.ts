@@ -38,6 +38,11 @@ app.get('/enhanced-parent', (req, res) => {
   res.sendFile('enhanced-parent-dashboard.html', { root: './server/public' });
 });
 
+// Standalone React dashboard that runs directly without the React app
+app.get('/standalone-react', (req, res) => {
+  res.sendFile('standalone-react-dashboard.html', { root: './server/public' });
+});
+
 // Handle email verification directly without React routing
 app.get('/verify-email', (req, res) => {
   const token = req.query.token;

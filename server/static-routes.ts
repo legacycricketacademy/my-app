@@ -1,48 +1,36 @@
 import express, { Router } from 'express';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// In ES modules, __dirname is not available, so we need to create it
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export function setupStaticRoutes(app: express.Express): void {
   // Serve static files from the dist/public directory
   app.use(express.static('dist/public'));
   
-  // Handle all paths that should be handled by React Router
-  const clientRoutes = [
-    '/parent',
-    '/dashboard/parent',
-    '/parent/*',
-    '/profile',
-    '/auth',
-    '/schedule',
-    '/announcements',
-    '/players',
-    '/parent/schedule',
-    '/parent/announcements',
-    '/parent/fitness',
-    '/parent/meal-plans',
-    '/parent/performance',
-    '/parent/payments',
-    '/emergency-logout',
-    '/simple-parent',
-    '/independent-parent'
-  ];
+  // Specific routes that should be directly handled by the server, not React
+  // These need to be defined BEFORE the catch-all route
   
-  // Create a single route handler for all client routes
-  app.get(clientRoutes, (req, res) => {
-    // For testing purposes, allow direct access to all routes
-    // without requiring authentication
-    
-    // Let React Router handle the routing by serving index.html
-    res.sendFile(path.resolve('./dist/public/index.html'));
-  });
-  
-  // Catch-all route to handle any other client-side routes
-  app.get('*', (req, res) => {
-    // If the request is for an API endpoint, skip this handler
+  // Any other routes not starting with /api/ should be handled by React Router
+  app.get('*', (req, res, next) => {
+    // Skip API routes
     if (req.path.startsWith('/api/')) {
-      return;
+      return next();
     }
     
-    // For all other routes, serve the React app
+    // Skip specific server-handled routes like /direct-parent and /enhanced-parent
+    if (
+      req.path === '/direct-parent' || 
+      req.path === '/enhanced-parent' || 
+      req.path === '/register-now' || 
+      req.path === '/verify-email'
+    ) {
+      return next();
+    }
+    
+    // For ALL other routes, serve the React app
     res.sendFile(path.resolve('./dist/public/index.html'));
   });
 }
