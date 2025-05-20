@@ -847,14 +847,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // First try the standardized registration endpoint
         try {
           console.log("Trying standardized registration endpoint first");
-          const standardResponse = await apiRequest<AuthResponse>('POST', "/api/standard-register", registerData);
+          // Use fetch directly to handle error responses more explicitly
+          const response = await fetch("/api/standard-register", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(registerData),
+            credentials: 'include'
+          });
           
-          console.log("Standardized registration response:", standardResponse);
+          // Parse the response
+          const data = await response.json();
+          console.log("Standardized registration response:", data);
+          
+          // If the response is not OK, throw a detailed error
+          if (!response.ok) {
+            const errorMessage = data.message || `Registration failed with status: ${response.status}`;
+            console.error("Registration error:", errorMessage);
+            throw new Error(errorMessage);
+          }
           
           // If successful, return the user data directly
-          if (standardResponse.success && standardResponse.data?.user) {
+          if (data.success && data.data?.user) {
             console.log("Standardized registration succeeded");
-            return standardResponse.data.user;
+            return data.data.user;
           } else {
             console.log("Standardized registration failed, falling back to Firebase");
           }
