@@ -590,16 +590,15 @@ export function setupAuth(app: Express) {
           // Don't send password back to client
           const { password, ...userWithoutPassword } = user;
           console.log("Registration process completed successfully");
-          return res.status(201).json(
-            createSuccessResponse(
-              { 
-                user: userWithoutPassword,
-                verificationLink: verificationLink || undefined,
-                emailSent: !!verificationLink
-              },
-              "Registration successful!"
-            )
-          );
+          return res.status(201).json({
+            success: true,
+            message: "Registration successful",
+            data: { 
+              user: userWithoutPassword,
+              verificationLink: verificationLink || undefined,
+              emailSent: !!verificationLink
+            }
+          });
         });
       } catch (dbError: any) {
         // Clear the timeout since we're about to respond
