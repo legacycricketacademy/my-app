@@ -270,7 +270,8 @@ export const userAuditLogs = pgTable("user_audit_logs", {
   id: serial("id").primaryKey(),
   academyId: integer("academy_id").references(() => academies.id),
   userId: integer("user_id").references(() => users.id),
-  sessionId: text("session_id").references(() => userSessions.sessionId),
+  // Removing reference to userSessions.sessionId to fix the error
+  sessionId: text("session_id"),
   action: text("action").notNull(), // login, logout, register, update, delete, approve, reject, etc.
   details: text("details"),
   targetUserId: integer("target_user_id").references(() => users.id),

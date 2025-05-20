@@ -562,8 +562,8 @@ export function setupAuth(app: Express) {
             await db.insert(userAuditLogs).values({
               userId: user.id,
               academyId: user.academyId,
-              actionType: 'register',
-              actionDetails: { role: user.role, status: user.status },
+              action: 'register',
+              details: JSON.stringify({ role: user.role, status: user.status }),
               ipAddress: req.ip,
               userAgent: req.headers['user-agent']
             });
