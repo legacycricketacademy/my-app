@@ -481,22 +481,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const validatedData = insertUserSchema.parse(data);
         console.log("Validation successful");
         
-        // Step 2: Make the API request using standardized API client
+        // Step 2: Make the API request using direct fetch for better error handling
         console.log("Sending registration request to server...");
-        const response = await apiRequest<AuthResponse>('POST', "/api/register", validatedData);
         
-        // With standardized responses, we expect:
-        // { success: true, message: string, data: { user: User } }
-        console.log(`Registration response success: ${response.success}`);
+        // Use fetch directly to handle error responses more explicitly
+        const response = await fetch("/api/register", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(validatedData),
+          credentials: 'include'
+        });
         
-        if (!response.success) {
-          console.log("Registration failed:", response.message);
-          throw new Error(response.message || "Registration failed. Please try again.");
+        // Parse the response
+        const data = await response.json();
+        console.log("Registration response:", data);
+        
+        // If the response is not OK, throw a detailed error
+        if (!response.ok) {
+          const errorMessage = data.message || `Registration failed with status: ${response.status}`;
+          console.error("Registration error:", errorMessage);
+          throw new Error(errorMessage);
         }
         
         // Return the user object from response data
         console.log("Registration successful, returning user data...");
-        const user = response.data?.user;
+        const user = data.data?.user;
         if (!user) {
           throw new Error("User data missing from response");
         }
