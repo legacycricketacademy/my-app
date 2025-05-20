@@ -80,7 +80,9 @@ app.get('/verify-email', (req, res) => {
     try {
       // Use fetch instead of require to avoid ESM/CJS issues
       import('node-fetch').then(({ default: fetch }) => {
-        const apiUrl = `http://localhost:5000/api/verify-email?token=${token}`;
+        // Use the full server URL instead of localhost
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const apiUrl = `${baseUrl}/api/verify-email?token=${token}`;
         
         fetch(apiUrl)
           .then(response => response.text())
