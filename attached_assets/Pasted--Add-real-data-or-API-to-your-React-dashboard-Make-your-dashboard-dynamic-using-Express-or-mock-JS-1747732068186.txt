@@ -1,0 +1,173 @@
+. Add real data or API to your React dashboard
+
+Make your dashboard dynamic using Express or mock JSON.
+
+Example:
+
+useEffect(() => {
+  fetch('/api/stats')
+    .then(res => res.json())
+    .then(data => setStats(data));
+}, []);
+
+Then in server/index.ts:
+
+app.get("/api/stats", (req, res) => {
+  res.json({
+    sessions: 12,
+    attendance: "94%",
+    batting: "Excellent",
+  });
+});
+
+ 2. Make / route redirect to /standalone-react
+
+In server/index.ts:
+
+app.get("/", (req, res) => {
+  res.redirect("/standalone-react");
+});
+
+That way you can just share the base Replit URL with parents.
+
+Set up parent dashboard tabs:
+
+Inside /standalone-react, break content into:
+	•	🗓️ Schedule
+	•	🏏 Player Stats
+	•	🧮 Payments
+	•	🥗 Meal Plan
+
+Use basic state or tab navigation:
+
+const [activeTab, setActiveTab] = useState('schedule');
+
+
+
+Goal: Functional Tab-Based Parent Dashboard
+
+You want a UI like:
+
++--------------------------+
+| Schedule | Stats | Meals |
++--------------------------+
+|     [Component loads here]     |
++--------------------------+
+
+Each tab should:
+	•	Update the UI without page reload
+	•	Show real mock data
+	•	Be easily extendable later (e.g., connect to API)
+
+
+STEP 1: Create the Tab Layout in React
+
+Here’s a minimal setup using React useState:
+
+
+import React, { useState } from 'react';
+
+const StandaloneReactDashboard = () => {
+  const [tab, setTab] = useState("schedule");
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto font-sans">
+      <h1 className="text-2xl font-bold mb-4">📊 Parent Dashboard</h1>
+
+      {/* Tab Navigation */}
+      <div className="flex space-x-4 mb-6">
+        {["schedule", "stats", "meals"].map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 rounded ${
+              tab === t ? "bg-blue-600 text-white" : "bg-gray-200"
+            }`}
+          >
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="bg-white p-4 rounded shadow">
+        {tab === "schedule" && <Schedule />}
+        {tab === "stats" && <Stats />}
+        {tab === "meals" && <Meals />}
+      </div>
+    </div>
+  );
+};
+
+export default StandaloneReactDashboard;
+
+
+ STEP 2: Create the Individual Components
+
+✅ Schedule.tsx
+
+const Schedule = () => (
+  <div>
+    <h2 className="text-lg font-semibold mb-2">Upcoming Sessions</h2>
+    <ul className="list-disc pl-6">
+      <li>Saturday, 10:00 AM - Indoor Center</li>
+      <li>Tuesday, 5:30 PM - Outdoor Turf</li>
+    </ul>
+  </div>
+);
+export default Schedule;
+
+
+Stats.tsx
+
+
+const Stats = () => (
+  <div>
+    <h2 className="text-lg font-semibold mb-2">Player Stats</h2>
+    <p>Attendance: 92%</p>
+    <p>Batting Skill: ⭐⭐⭐⭐</p>
+    <p>Bowling Skill: ⭐⭐⭐</p>
+  </div>
+);
+export default Stats;
+
+
+Meals.tsx
+
+const Meals = () => (
+  <div>
+    <h2 className="text-lg font-semibold mb-2">Suggested Meals</h2>
+    <ul className="list-disc pl-6">
+      <li>Breakfast: Protein oats + banana</li>
+      <li>Lunch: Rice, dal, boiled egg</li>
+      <li>Snack: Greek yogurt + almonds</li>
+    </ul>
+  </div>
+);
+export default Meals;
+
+
+Step3 . Connect These in Replit
+	1.	Create files under /client/src/pages/components/:
+	•	Schedule.tsx
+	•	Stats.tsx
+	•	Meals.tsx
+	2.	Import them in StandaloneReactDashboard.tsx
+
+
+Import them in StandaloneReactDashboard.tsx
+
+import Schedule from './components/Schedule';
+import Stats from './components/Stats';
+import Meals from './components/Meals';
+
+Confirm your route /standalone-react is still loading this main component.
+
+
+STEP 4: Optional Enhancements
+	•	Connect to real /api/ endpoints later
+	•	Add tab animations with Framer Motion
+	•	Make tabs responsive for mobile
+
+
+

@@ -23,6 +23,11 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Redirect root path to the standalone React dashboard for easy access
+app.get('/', (req, res) => {
+  res.redirect('/standalone-react');
+});
+
 // Direct, simplified registration that will work properly with the fullName field
 app.get('/register-now', (req, res) => {
   res.sendFile('simple-fullname-register.html', { root: './server/public' });
@@ -41,6 +46,28 @@ app.get('/enhanced-parent', (req, res) => {
 // Standalone React dashboard that runs directly without the React app
 app.get('/standalone-react', (req, res) => {
   res.sendFile('standalone-react-dashboard.html', { root: './server/public' });
+});
+
+// API endpoints for the dashboard data
+import { playerSchedule, playerStats, mealPlan, paymentHistory, upcomingPayment } from './api-data';
+
+app.get('/api/dashboard/schedule', (req, res) => {
+  res.json(playerSchedule);
+});
+
+app.get('/api/dashboard/stats', (req, res) => {
+  res.json(playerStats);
+});
+
+app.get('/api/dashboard/meals', (req, res) => {
+  res.json(mealPlan);
+});
+
+app.get('/api/dashboard/payments', (req, res) => {
+  res.json({
+    history: paymentHistory,
+    upcoming: upcomingPayment
+  });
 });
 
 // Handle email verification directly without React routing
