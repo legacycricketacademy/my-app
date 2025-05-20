@@ -26,6 +26,7 @@ import AnnouncementsPage from "@/pages/announcements-page";
 import ProfilePage from "@/pages/profile-page";
 import NotFound from "@/pages/not-found";
 import ForceLogoutPage from "@/pages/force-logout";
+import RegisterDebug from "@/pages/register-debug";
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -71,7 +72,7 @@ function AppRoutes() {
       />
 
       {/* Home Route - show simple parent dashboard for testing */}
-      <Route path="/" element={<ParentDashboard />} />
+      <Route path="/" element={<SimpleReactDashboard />} />
 
       {/* Parent Dashboard Routes */}
       <Route
@@ -79,7 +80,7 @@ function AppRoutes() {
         element={
           user ? (
             isParentUser ? (
-              <ParentDashboard />
+              <SimpleReactDashboard />
             ) : (
               <Navigate to="/" />
             )
@@ -90,7 +91,7 @@ function AppRoutes() {
       />
 
       {/* Simple React parent dashboard with minimal dependencies */}
-      <Route path="/simple-parent" element={<ParentDashboard />} />
+      <Route path="/simple-parent" element={<SimpleReactDashboard />} />
 
       {/* Independent parent dashboard that uses no external dependencies */}
       <Route path="/independent-parent" element={<IndependentDashboard />} />
@@ -197,6 +198,9 @@ function AppRoutes() {
 
       {/* Public routes */}
       <Route path="/emergency-logout" element={<ForceLogoutPage />} />
+      
+      {/* Debug routes - accessible without login */}
+      <Route path="/register-debug" element={<RegisterDebug />} />
 
       {/* Catch-all route */}
       <Route path="*" element={<NotFound />} />
