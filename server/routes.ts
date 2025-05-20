@@ -2983,7 +2983,7 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
   // Add a public route for coaches pending approval that doesn't require authentication
   // This helps fix the "Access to localhost was denied" issue
   app.get("/coaches-pending-approval", (req, res) => {
-    res.sendFile('admin-pages/coaches-pending-approval.html', { root: './server/public' });
+    res.sendFile('coaches-pending-approval.html', { root: './server/public' });
   });
   
   // Approve or reject a coach account
