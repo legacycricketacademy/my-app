@@ -11,6 +11,7 @@ import ErrorBoundary from "@/components/error-boundary";
 // Pages
 import ParentDashboard from "@/pages/simple-react-dashboard";
 import DirectParentDashboard from "@/pages/direct-parent-dashboard";
+import IndependentDashboard from "@/pages/independent-dashboard";
 import ParentSchedulePage from "@/pages/parent/parent-schedule";
 import ParentAnnouncementsPage from "@/pages/parent/announcements";
 import ParentPaymentsPage from "@/pages/parent/payments";
@@ -71,11 +72,11 @@ function AppRoutes() {
         )
       } />
       
-      {/* Enhanced parent route with the full React dashboard component */}
-      <Route path="/parent" element={<DirectParentDashboard />} />
-      
       {/* Simple React parent dashboard with minimal dependencies */}
       <Route path="/simple-parent" element={<ParentDashboard />} />
+      
+      {/* Independent parent dashboard that uses no external dependencies */}
+      <Route path="/independent-parent" element={<IndependentDashboard />} />
       
       <Route path="/parent/schedule" element={
         user ? (
@@ -101,7 +102,7 @@ function AppRoutes() {
         )
       } />
       
-      {/* Legacy parent route for backward compatibility */}
+      {/* Legacy parent route redirects to dashboard */}
       <Route path="/parent" element={<Navigate to="/dashboard/parent" />} />
       
       {/* Admin/Coach Routes */}
