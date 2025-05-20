@@ -297,7 +297,7 @@ export default function AuthPage() {
   }
   
   function onRegisterSubmit(data: RegisterFormValues) {
-    // Use Firebase registration for all new users
+    // Use direct API call for better error handling
     try {
       console.log("Starting registration process with data:", {
         email: data.email,
@@ -311,9 +311,45 @@ export default function AuthPage() {
       (window as any)._lastRegistrationEmail = data.email;
       (window as any)._lastRegistrationAttempt = new Date().toISOString();
       
-      firebaseRegisterMutation.mutate(data, {
-        onSuccess: (userData) => {
-          console.log("Registration succeeded with status:", userData?.status);
+      // Using direct fetch for better error handling
+      setRegistrationLoading(true);
+      
+      // Make direct API call instead of using mutation
+      fetch("/api/register", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include'
+      })
+      .then(response => response.json().then(data => ({ status: response.status, data })))
+      .then(({ status, data }) => {
+        setRegistrationLoading(false);
+        
+        if (status === 409) {
+          // Handle conflict - duplicate username or email
+          const errorMessage = data.message || "Username or email already exists";
+          toast({
+            title: "Registration Failed",
+            description: errorMessage,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (status !== 201 && status !== 200) {
+          // Handle other errors
+          const errorMessage = data.message || `Registration failed with status: ${status}`;
+          toast({
+            title: "Registration Failed",
+            description: errorMessage,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Success case
+        const userData = data.data?.user;
+        console.log("Registration succeeded with status:", userData?.status);
           
           // Log the user data for debugging
           console.log("User registration completed with data:", {
