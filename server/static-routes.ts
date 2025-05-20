@@ -7,30 +7,36 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export function setupStaticRoutes(app: express.Express): void {
-  // Serve static files from the dist/public directory
-  app.use(express.static('dist/public'));
+  // Skip certain routes that are directly handled by the server
+  const directServerRoutes = [
+    '/api',
+    '/direct-parent',
+    '/enhanced-parent',
+    '/standalone-react',
+    '/register-now',
+    '/verify-email'
+  ];
   
-  // Specific routes that should be directly handled by the server, not React
-  // These need to be defined BEFORE the catch-all route
-  
-  // Any other routes not starting with /api/ should be handled by React Router
-  app.get('*', (req, res, next) => {
-    // Skip API routes
-    if (req.path.startsWith('/api/')) {
+  // Serve static files from the dist/public directory for all other routes
+  app.use((req, res, next) => {
+    // For routes specifically handled by the server, don't try to serve static files
+    if (directServerRoutes.some(route => req.path.startsWith(route))) {
       return next();
     }
     
-    // Skip specific server-handled routes like /direct-parent and /enhanced-parent
-    if (
-      req.path === '/direct-parent' || 
-      req.path === '/enhanced-parent' || 
-      req.path === '/register-now' || 
-      req.path === '/verify-email'
-    ) {
+    // For all other routes, try to serve static files
+    express.static('dist/public')(req, res, next);
+  });
+  
+  // Catch-all route to handle client-side routes (SPA routing)
+  app.use((req, res, next) => {
+    // Skip API routes and direct server routes
+    if (req.path.startsWith('/api/') || 
+        directServerRoutes.some(route => req.path.startsWith(route))) {
       return next();
     }
     
-    // For ALL other routes, serve the React app
+    // For all other routes, serve the React app index.html
     res.sendFile(path.resolve('./dist/public/index.html'));
   });
 }
