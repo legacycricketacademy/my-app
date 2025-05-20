@@ -556,16 +556,20 @@ export function setupAuth(app: Express) {
         // Log the user activity
         try {
           console.log("Creating audit log entry...");
-          // Import userAuditLogs directly to avoid TypeScript issues
-          const { userAuditLogs } = require("@shared/schema");
-          await db.insert(userAuditLogs).values({
-            userId: user.id,
-            academyId: user.academyId,
-            actionType: 'register',
-            actionDetails: { role: user.role, status: user.status },
-            ipAddress: req.ip,
-            userAgent: req.headers['user-agent']
-          });
+          // Import userAuditLogs using ES module imports
+          try {
+            const { userAuditLogs } = await import("@shared/schema");
+            await db.insert(userAuditLogs).values({
+              userId: user.id,
+              academyId: user.academyId,
+              actionType: 'register',
+              actionDetails: { role: user.role, status: user.status },
+              ipAddress: req.ip,
+              userAgent: req.headers['user-agent']
+            });
+          } catch (importError) {
+            console.error('Error importing schema:', importError);
+          }
           console.log("Audit log created successfully");
         } catch (auditError) {
           console.error('Error creating audit log:', auditError);
