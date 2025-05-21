@@ -48,6 +48,11 @@ app.get('/standalone-react', (req, res) => {
   res.sendFile('standalone-react-dashboard.html', { root: './server/public' });
 });
 
+// Registration debugging tool
+app.get('/register-debug', (req, res) => {
+  res.sendFile('register-debug.html', { root: './server/public' });
+});
+
 // API endpoints for the dashboard data
 import { playerSchedule, playerStats, mealPlan, paymentHistory, upcomingPayment } from './api-data';
 
