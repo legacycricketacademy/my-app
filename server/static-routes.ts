@@ -14,7 +14,8 @@ export function setupStaticRoutes(app: express.Express): void {
     '/enhanced-parent',
     '/standalone-react',
     '/register-now',
-    '/verify-email'
+    '/verify-email',
+    '/register-debug'
   ];
   
   // Serve static files from the dist/public directory for all other routes
