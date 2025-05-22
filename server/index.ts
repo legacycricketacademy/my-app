@@ -59,6 +59,11 @@ app.get('/register-debug', (req, res) => {
   res.sendFile(path.resolve('./server/public/register-debug.html'));
 });
 
+// Simple reliable registration form (without network errors)
+app.get('/register-simple', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'simple-reliable-register.html'));
+});
+
 // Login page after email verification
 app.get('/login.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
