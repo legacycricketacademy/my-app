@@ -88,6 +88,49 @@ app.get('/api/ping', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Coach approval API endpoints
+app.post('/api/coaches/:id/approve', async (req, res) => {
+  try {
+    const coachId = parseInt(req.params.id);
+    
+    // In a real implementation, we would update the coach's status in the database
+    // For now, we'll just return a success response
+    console.log(`Coach ${coachId} approved by admin`);
+    
+    return res.json({
+      success: true,
+      message: `Coach ${coachId} approved successfully`
+    });
+  } catch (error) {
+    console.error('Error approving coach:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to approve coach. Please try again.'
+    });
+  }
+});
+
+app.post('/api/coaches/:id/reject', async (req, res) => {
+  try {
+    const coachId = parseInt(req.params.id);
+    
+    // In a real implementation, we would update the coach's status in the database
+    // For now, we'll just return a success response
+    console.log(`Coach ${coachId} rejected by admin`);
+    
+    return res.json({
+      success: true,
+      message: `Coach ${coachId} rejected successfully`
+    });
+  } catch (error) {
+    console.error('Error rejecting coach:', error);
+    return res.status(500).json({
+      success: false, 
+      message: 'Failed to reject coach. Please try again.'
+    });
+  }
+});
+
 // API endpoints for the dashboard data
 import { playerSchedule, playerStats, mealPlan, paymentHistory, upcomingPayment } from './api-data';
 
