@@ -53,6 +53,16 @@ app.get('/register-debug', (req, res) => {
   res.sendFile('register-debug.html', { root: './server/public' });
 });
 
+// Login page after email verification
+app.get('/login', (req, res) => {
+  res.sendFile('login.html', { root: './server/public' });
+});
+
+// Coach approval page for administrators
+app.get('/coaches-pending-approval', (req, res) => {
+  res.sendFile('coaches-pending-approval.html', { root: './server/public' });
+});
+
 // API endpoints for the dashboard data
 import { playerSchedule, playerStats, mealPlan, paymentHistory, upcomingPayment } from './api-data';
 
