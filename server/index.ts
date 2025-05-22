@@ -2,6 +2,12 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { multiTenantStorage } from "./multi-tenant-storage";
+import path from "path";
+import { fileURLToPath } from 'url';
+
+// These two lines allow us to use __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // Temporarily comment out redirects to get the server running
 // import { setupRedirects } from "./redirect";
 const setupRedirects = (app: any) => {
@@ -50,17 +56,22 @@ app.get('/standalone-react', (req, res) => {
 
 // Registration debugging tool
 app.get('/register-debug', (req, res) => {
-  res.sendFile('register-debug.html', { root: './server/public' });
+  res.sendFile(path.resolve('./server/public/register-debug.html'));
 });
 
 // Login page after email verification
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Login page with shorter path
 app.get('/login', (req, res) => {
-  res.sendFile('login.html', { root: './server/public' });
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 // Coach approval page for administrators
 app.get('/coaches-pending-approval', (req, res) => {
-  res.sendFile('coaches-pending-approval.html', { root: './server/public' });
+  res.sendFile(path.join(__dirname, 'public', 'coaches-pending-approval.html'));
 });
 
 // API endpoints for the dashboard data
