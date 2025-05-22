@@ -17,7 +17,11 @@ export function setupStaticRoutes(app: express.Express): void {
     '/verify-email',
     '/register-debug',
     '/login',
-    '/coaches-pending-approval'
+    '/login.html',
+    '/coaches-pending-approval',
+    '/coaches-pending-approval.html',
+    '/admin',
+    '/admin/coaches'
   ];
   
   // Serve static files from the dist/public directory for all other routes

@@ -74,6 +74,15 @@ app.get('/coaches-pending-approval', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'coaches-pending-approval.html'));
 });
 
+// Admin pages - direct routes to avoid React router
+app.get('/admin', (req, res) => {
+  res.redirect('/admin/dashboard');
+});
+
+app.get('/admin/coaches', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'coaches-pending-approval.html'));
+});
+
 // Simple ping endpoint to check server connectivity
 app.get('/api/ping', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
