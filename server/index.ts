@@ -74,6 +74,11 @@ app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
+// Auth page for login and registration
+app.get('/auth', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'auth.html'));
+});
+
 // Coach approval page for administrators
 app.get('/coaches-pending-approval', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'coaches-pending-approval.html'));
