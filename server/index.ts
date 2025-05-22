@@ -74,6 +74,11 @@ app.get('/coaches-pending-approval', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'coaches-pending-approval.html'));
 });
 
+// Simple ping endpoint to check server connectivity
+app.get('/api/ping', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // API endpoints for the dashboard data
 import { playerSchedule, playerStats, mealPlan, paymentHistory, upcomingPayment } from './api-data';
 
