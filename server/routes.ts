@@ -8,7 +8,7 @@ import { setupAuth } from "./auth";
 import { requireAdmin, requireCoach, requireParent } from "./middleware/require-role";
 import { z } from "zod";
 import { db } from "@db";
-import { desc, and, or } from "drizzle-orm";
+import { desc, and, or, sql } from "drizzle-orm";
 import Stripe from "stripe";
 import { verifyFirebaseToken } from "./firebase-admin";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
