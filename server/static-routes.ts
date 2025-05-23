@@ -21,6 +21,8 @@ export function setupStaticRoutes(app: express.Express): void {
     '/login.html',
     '/auth',
     '/auth.html',
+    '/coach',
+    '/coach-dashboard',
     '/coaches-pending-approval',
     '/coaches-pending-approval.html',
     '/admin',
