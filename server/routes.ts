@@ -2950,14 +2950,19 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     const { createSuccessResponse, createErrorResponse } = await import('./utils/api-response');
     
     try {
+      // Get the column names right AND query for the right status values 
+      // Check the database schema in shared/schema.ts
+      console.log("Fetching pending coaches for approval page");
       const pendingCoaches = await db.query.users.findMany({
         where: (users, { and, eq }) => and(
           eq(users.role, 'coach'),
           eq(users.status, 'pending'),
-          eq(users.is_active, false) // Fixed: Use is_active (snake_case) to match DB column
+          eq(users.isActive, false) // Match schema.ts definition (uses camelCase in schema)
         ),
-        orderBy: (users, { desc }) => [desc(users.created_at)] // Fixed: Use created_at (snake_case)
+        orderBy: (users, { desc }) => [desc(users.createdAt)] // Match schema.ts definition
       });
+      
+      console.log(`Found ${pendingCoaches.length} pending coaches`);
       
       // Remove password from results
       const safeCoaches = pendingCoaches.map(coach => {
@@ -3029,13 +3034,15 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       const newStatus = approved ? 'active' : 'rejected';
       console.log(`Updating coach ${userData.username} (${userData.id}) to status: ${newStatus}, isActive: ${approved}`);
       
-      // We need to use the correct column names that match the database schema
-      // The database uses is_active (snake_case) not isActive (camelCase)
+      // We need to use the correct column names that match the schema definition
+      // isActive is camelCase in the schema.ts but snake_case in SQL
+      console.log(`CRITICAL FIX: Updating coach status from ${userData.status} to ${approved ? 'active' : 'rejected'}`);
+      
       const updatedUser = await db.update(users)
         .set({
-          status: newStatus,
-          is_active: approved,
-          updated_at: new Date()
+          status: approved ? 'active' : 'rejected', 
+          isActive: approved,
+          updatedAt: new Date()
         })
         .where(eq(users.id, userId))
         .returning();
