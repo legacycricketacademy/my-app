@@ -47,12 +47,22 @@ export default function CoachesPendingApprovalPage() {
       });
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Get the coach's name from the response if available
+      const coachName = data?.data?.fullName || data?.data?.username || "Coach";
+      
       toast({
         title: "Coach approved",
-        description: "The coach has been successfully approved and notified via email.",
+        description: `${coachName} has been successfully approved and notified via email.`,
       });
+      
+      // This will refresh the pending coaches list
       queryClient.invalidateQueries({ queryKey: ["/api/users/pending-coaches"] });
+      
+      // Force immediate refresh to update UI right away
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ["/api/users/pending-coaches"] });
+      }, 500);
     },
     onError: (error: Error) => {
       toast({

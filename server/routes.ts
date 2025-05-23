@@ -2994,6 +2994,8 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     const { id } = req.params;
     const { approved } = req.body;
     
+    console.log(`Coach approval request received - coachId: ${id}, approved: ${approved}`);
+    
     if (typeof approved !== 'boolean') {
       return res.status(400).json(createErrorResponse(
         "The 'approved' field must be a boolean",
@@ -3009,8 +3011,11 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       });
       
       if (!userData) {
+        console.log(`Coach with id ${userId} not found`);
         return res.status(404).json(createNotFoundResponse("User not found"));
       }
+      
+      console.log(`Found coach: ${userData.username} (${userData.id}), current status: ${userData.status}, isActive: ${userData.isActive}`);
       
       if (userData.role !== 'coach') {
         return res.status(400).json(createErrorResponse(
@@ -3021,9 +3026,12 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       }
       
       // Update the user status based on approval
+      const newStatus = approved ? 'active' : 'rejected';
+      console.log(`Updating coach ${userData.username} (${userData.id}) to status: ${newStatus}, isActive: ${approved}`);
+      
       const updatedUser = await db.update(users)
         .set({
-          status: approved ? 'active' : 'rejected',
+          status: newStatus,
           isActive: approved,
           updatedAt: new Date()
         })
@@ -3083,13 +3091,24 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
         userAgent: req.headers['user-agent']
       });
       
+      // Double-check that the update was successful by fetching the coach again
+      const verifyUpdate = await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.id, userId)
+      });
+      
+      console.log(`Verification - coach ${userData.username} (${userData.id}) updated status: ${verifyUpdate?.status}, isActive: ${verifyUpdate?.isActive}`);
+      
+      if (!verifyUpdate || (approved && verifyUpdate.status !== 'active') || (!approved && verifyUpdate.status !== 'rejected')) {
+        console.error(`Database update verification failed for coach ${userId}! Current status: ${verifyUpdate?.status}`);
+      }
+      
       // Remove password from result
       const { password, ...userWithoutPassword } = updatedUser[0];
       
       // Return standardized success response
       res.json(createSuccessResponse(
         userWithoutPassword, 
-        approved ? "Coach approved successfully" : "Coach rejected successfully"
+        approved ? `Coach ${userData.username} approved successfully` : `Coach ${userData.username} rejected successfully`
       ));
     } catch (error) {
       console.error("Error updating coach approval status:", error);
