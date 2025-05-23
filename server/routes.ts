@@ -6361,6 +6361,187 @@ ${ACADEMY_NAME} Team
       message: "API is operational"
     });
   });
+  
+  // API endpoint to fetch pending coaches (used by the coach approval page)
+  app.get("/api/coaches/pending", async (req, res) => {
+    try {
+      console.log("Fetching pending coaches...");
+      
+      // Query coaches with pending status using either the storage API or direct DB query
+      const pendingCoaches = await db.query.users.findMany({
+        where: and(
+          eq(users.role, 'coach'),
+          eq(users.status, 'pending')
+        )
+      });
+      
+      console.log(`Found ${pendingCoaches.length} pending coaches`);
+      
+      // Return coaches without sensitive information
+      const sanitizedCoaches = pendingCoaches.map(coach => ({
+        id: coach.id,
+        username: coach.username,
+        email: coach.email,
+        fullName: coach.fullName,
+        createdAt: coach.createdAt,
+        status: coach.status
+      }));
+      
+      res.json(sanitizedCoaches);
+    } catch (error) {
+      console.error("Error fetching pending coaches:", error);
+      res.status(500).json({
+        error: true,
+        message: "Failed to fetch pending coaches"
+      });
+    }
+  });
+  
+  // API endpoint to approve a coach
+  app.post("/api/coaches/:id/approve", async (req, res) => {
+    try {
+      const coachId = parseInt(req.params.id);
+      
+      if (isNaN(coachId)) {
+        return res.status(400).json({
+          error: true,
+          message: "Invalid coach ID"
+        });
+      }
+      
+      // Get the coach to approve
+      const coach = await db.query.users.findFirst({
+        where: and(
+          eq(users.id, coachId),
+          eq(users.role, 'coach'),
+          eq(users.status, 'pending')
+        )
+      });
+      
+      if (!coach) {
+        return res.status(404).json({
+          error: true,
+          message: "Coach not found or already approved"
+        });
+      }
+      
+      // Update coach status to active
+      await db.update(users)
+        .set({ status: 'active' })
+        .where(eq(users.id, coachId));
+        
+      // Send approval email to the coach
+      if (coach.email) {
+        try {
+          await sendEmail({
+            to: coach.email,
+            subject: "Your Coach Account Has Been Approved",
+            text: `Congratulations ${coach.fullName || coach.username}! Your coach account has been approved. You can now log in to the Cricket Academy system.`,
+            html: `<p>Congratulations ${coach.fullName || coach.username}!</p><p>Your coach account has been approved. You can now <a href="${req.protocol}://${req.get('host')}/login">log in</a> to the Cricket Academy system.</p>`
+          });
+        } catch (emailError) {
+          console.error("Failed to send approval email:", emailError);
+          // Continue with the approval process even if email fails
+        }
+      }
+      
+      // Record this action in audit logs
+      await db.insert(userAuditLogs).values({
+        userId: coachId,
+        action: 'status_change',
+        details: JSON.stringify({
+          from: 'pending',
+          to: 'active',
+          approvedBy: req.session?.userId || 'system',
+          timestamp: new Date().toISOString()
+        })
+      });
+      
+      res.json({
+        success: true,
+        message: "Coach approved successfully"
+      });
+    } catch (error) {
+      console.error("Error approving coach:", error);
+      res.status(500).json({
+        error: true,
+        message: "Failed to approve coach"
+      });
+    }
+  });
+  
+  // API endpoint to reject a coach
+  app.post("/api/coaches/:id/reject", async (req, res) => {
+    try {
+      const coachId = parseInt(req.params.id);
+      
+      if (isNaN(coachId)) {
+        return res.status(400).json({
+          error: true,
+          message: "Invalid coach ID"
+        });
+      }
+      
+      // Get the coach to reject
+      const coach = await db.query.users.findFirst({
+        where: and(
+          eq(users.id, coachId),
+          eq(users.role, 'coach'),
+          eq(users.status, 'pending')
+        )
+      });
+      
+      if (!coach) {
+        return res.status(404).json({
+          error: true,
+          message: "Coach not found or already processed"
+        });
+      }
+      
+      // Update coach status to rejected
+      await db.update(users)
+        .set({ status: 'rejected' })
+        .where(eq(users.id, coachId));
+        
+      // Send rejection email to the coach
+      if (coach.email) {
+        try {
+          await sendEmail({
+            to: coach.email,
+            subject: "Coach Application Status",
+            text: `Dear ${coach.fullName || coach.username}, we regret to inform you that your coach application has not been approved at this time. If you have any questions, please contact the academy administration.`,
+            html: `<p>Dear ${coach.fullName || coach.username},</p><p>We regret to inform you that your coach application has not been approved at this time. If you have any questions, please contact the academy administration.</p>`
+          });
+        } catch (emailError) {
+          console.error("Failed to send rejection email:", emailError);
+          // Continue with the rejection process even if email fails
+        }
+      }
+      
+      // Record this action in audit logs
+      await db.insert(userAuditLogs).values({
+        userId: coachId,
+        action: 'status_change',
+        details: JSON.stringify({
+          from: 'pending',
+          to: 'rejected',
+          rejectedBy: req.session?.userId || 'system',
+          timestamp: new Date().toISOString()
+        })
+      });
+      
+      res.json({
+        success: true,
+        message: "Coach rejected successfully"
+      });
+    } catch (error) {
+      console.error("Error rejecting coach:", error);
+      res.status(500).json({
+        error: true,
+        message: "Failed to reject coach"
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
