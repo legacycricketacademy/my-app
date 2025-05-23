@@ -373,10 +373,8 @@ export default function AuthPage() {
           }
         }
         
-        // Different message based on status (for coach/admin that need approval)
-        if ((userData?.role === 'coach' || userData?.role === 'admin') && 
-            (userData?.status === 'pending_approval' || userData?.status === 'pending' || 
-             userData?.isActive === false)) {
+        // Different message based on role (for coach/admin that need approval)
+        if (userData?.role === 'coach' || userData?.role === 'admin') {
           toast({
             title: "Registration Successful",
             description: "Your account is awaiting administrator approval. You'll be notified when approved.",
