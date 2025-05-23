@@ -4,6 +4,9 @@ import { setupVite, serveStatic, log } from "./vite";
 import { multiTenantStorage } from "./multi-tenant-storage";
 import path from "path";
 import { fileURLToPath } from 'url';
+import { db } from "@db";
+import { users } from "@shared/schema";
+import { eq, and, desc } from "drizzle-orm";
 
 // These two lines allow us to use __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -92,6 +95,41 @@ app.get('/coach', (req, res) => {
 // Coach dashboard with alternative path
 app.get('/coach-dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'coach-dashboard.html'));
+});
+
+// API endpoint to fetch pending coaches
+app.get('/api/coaches/pending', async (req, res) => {
+  try {
+    console.log('Fetching pending coaches for approval page');
+    
+    const pendingCoaches = await db.select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      fullName: users.fullName,
+      status: users.status,
+      createdAt: users.createdAt
+    })
+    .from(users)
+    .where(
+      and(
+        eq(users.role, 'coach'),
+        eq(users.status, 'pending')
+      )
+    )
+    .orderBy(desc(users.createdAt));
+    
+    console.log(`Found ${pendingCoaches.length} pending coaches`);
+    
+    return res.status(200).json(pendingCoaches);
+  } catch (error) {
+    console.error('Error fetching pending coaches:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch pending coaches',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 // Admin pages - direct routes to avoid React router
