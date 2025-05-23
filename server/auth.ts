@@ -220,9 +220,15 @@ export function setupAuth(app: Express) {
         const { password: pw, ...userDebug } = user;
         console.log(`Login successful for ${username}, user details:`, userDebug);
         
-        // Check if the user account is active
+        // Check if the coach account is approved
         if (user.role === "coach" && user.status === "pending") {
+          console.log(`Coach ${username} login denied - account is still pending approval`);
           return done(null, false, { message: "Your coach account is pending approval. Please contact an administrator." });
+        }
+        
+        // Log coach status for debugging
+        if (user.role === "coach") {
+          console.log(`Coach ${username} login status check: ${user.status}`);
         }
         
         // If all checks pass, allow login
