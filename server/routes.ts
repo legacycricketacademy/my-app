@@ -6425,10 +6425,29 @@ ${ACADEMY_NAME} Team
         });
       }
       
+      const coachName = coach.fullName || coach.username || `ID: ${coachId}`;
+      console.log(`Coach ${coachId} (${coachName}) approved by admin`);
+      
       // Update coach status to active
       await db.update(users)
-        .set({ status: 'active' })
+        .set({ 
+          status: 'active', 
+          isActive: true,
+          updatedAt: new Date()
+        })
         .where(eq(users.id, coachId));
+      
+      // Double check that the update was successful
+      const updatedCoach = await db.query.users.findFirst({
+        where: eq(users.id, coachId)
+      });
+      
+      if (!updatedCoach || updatedCoach.status !== 'active') {
+        console.error(`Failed to update coach status: Database shows ${updatedCoach?.status || 'unknown'}`);
+        throw new Error("Database update failed");
+      }
+      
+      console.log(`Coach ${coachId} status updated to: ${updatedCoach.status}`);
         
       // Send approval email to the coach
       if (coach.email) {
@@ -6436,9 +6455,10 @@ ${ACADEMY_NAME} Team
           await sendEmail({
             to: coach.email,
             subject: "Your Coach Account Has Been Approved",
-            text: `Congratulations ${coach.fullName || coach.username}! Your coach account has been approved. You can now log in to the Cricket Academy system.`,
-            html: `<p>Congratulations ${coach.fullName || coach.username}!</p><p>Your coach account has been approved. You can now <a href="${req.protocol}://${req.get('host')}/login">log in</a> to the Cricket Academy system.</p>`
+            text: `Congratulations ${coachName}! Your coach account has been approved. You can now log in to the Cricket Academy system.`,
+            html: `<p>Congratulations ${coachName}!</p><p>Your coach account has been approved. You can now <a href="${req.protocol}://${req.get('host')}/login">log in</a> to the Cricket Academy system.</p>`
           });
+          console.log(`Approval email sent to ${coach.email}`);
         } catch (emailError) {
           console.error("Failed to send approval email:", emailError);
           // Continue with the approval process even if email fails
@@ -6446,20 +6466,30 @@ ${ACADEMY_NAME} Team
       }
       
       // Record this action in audit logs
-      await db.insert(userAuditLogs).values({
-        userId: coachId,
-        action: 'status_change',
-        details: JSON.stringify({
-          from: 'pending',
-          to: 'active',
-          approvedBy: req.session?.userId || 'system',
-          timestamp: new Date().toISOString()
-        })
-      });
+      try {
+        await db.insert(userAuditLogs).values({
+          userId: coachId,
+          action: 'status_change',
+          details: JSON.stringify({
+            from: 'pending',
+            to: 'active',
+            approvedBy: req.session?.userId || 'system',
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (logError) {
+        console.error("Failed to create audit log:", logError);
+        // Continue with the approval process even if logging fails
+      }
       
       res.json({
         success: true,
-        message: "Coach approved successfully"
+        message: `Coach ${coachName} approved successfully`,
+        coach: {
+          id: coach.id,
+          name: coachName,
+          email: coach.email
+        }
       });
     } catch (error) {
       console.error("Error approving coach:", error);
