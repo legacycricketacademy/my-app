@@ -3034,18 +3034,24 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       const newStatus = approved ? 'active' : 'rejected';
       console.log(`Updating coach ${userData.username} (${userData.id}) to status: ${newStatus}, isActive: ${approved}`);
       
-      // We need to use the correct column names that match the schema definition
-      // isActive is camelCase in the schema.ts but snake_case in SQL
-      console.log(`CRITICAL FIX: Updating coach status from ${userData.status} to ${approved ? 'active' : 'rejected'}`);
+      // Use direct SQL for update - this is the most reliable way to handle this
+      console.log(`Approving coach ${userData.username} (${userId}) - setting status from ${userData.status} to ${approved ? 'active' : 'rejected'}`);
       
-      const updatedUser = await db.update(users)
-        .set({
-          status: approved ? 'active' : 'rejected', 
-          isActive: approved,
-          updatedAt: new Date()
-        })
-        .where(eq(users.id, userId))
-        .returning();
+      // Execute a direct SQL update query with proper column names
+      await db.execute(sql`
+        UPDATE users 
+        SET status = ${approved ? 'active' : 'rejected'}, 
+            is_active = ${approved}, 
+            updated_at = NOW() 
+        WHERE id = ${userId}
+      `);
+      
+      // Fetch the updated user to confirm the changes
+      const updatedUser = await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.id, userId)
+      });
+      
+      console.log(`Coach ${userData.username} updated successfully: status=${updatedUser?.status}, is_active=${updatedUser?.isActive}`);
       
       // Send email notification to the coach about their account status
       if (approved) {
