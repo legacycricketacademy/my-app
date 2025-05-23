@@ -84,6 +84,16 @@ app.get('/coaches-pending-approval', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'coaches-pending-approval.html'));
 });
 
+// Coach dashboard
+app.get('/coach', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'coach-dashboard.html'));
+});
+
+// Coach dashboard with alternative path
+app.get('/coach-dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'coach-dashboard.html'));
+});
+
 // Admin pages - direct routes to avoid React router
 app.get('/admin', (req, res) => {
   res.redirect('/admin/dashboard');
