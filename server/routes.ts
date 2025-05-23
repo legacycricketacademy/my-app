@@ -6528,10 +6528,28 @@ ${ACADEMY_NAME} Team
         });
       }
       
+      const coachName = coach.fullName || coach.username || `ID: ${coachId}`;
+      console.log(`Coach ${coachId} (${coachName}) rejected by admin`);
+      
       // Update coach status to rejected
       await db.update(users)
-        .set({ status: 'rejected' })
+        .set({ 
+          status: 'rejected',
+          updatedAt: new Date()
+        })
         .where(eq(users.id, coachId));
+        
+      // Double check the update was successful  
+      const updatedCoach = await db.query.users.findFirst({
+        where: eq(users.id, coachId)
+      });
+      
+      if (!updatedCoach || updatedCoach.status !== 'rejected') {
+        console.error(`Failed to update coach status: Database shows ${updatedCoach?.status || 'unknown'}`);
+        throw new Error("Database update failed");
+      }
+      
+      console.log(`Coach ${coachId} status updated to: ${updatedCoach.status}`);
         
       // Send rejection email to the coach
       if (coach.email) {
@@ -6539,9 +6557,10 @@ ${ACADEMY_NAME} Team
           await sendEmail({
             to: coach.email,
             subject: "Coach Application Status",
-            text: `Dear ${coach.fullName || coach.username}, we regret to inform you that your coach application has not been approved at this time. If you have any questions, please contact the academy administration.`,
-            html: `<p>Dear ${coach.fullName || coach.username},</p><p>We regret to inform you that your coach application has not been approved at this time. If you have any questions, please contact the academy administration.</p>`
+            text: `Dear ${coachName}, we regret to inform you that your coach application has not been approved at this time. If you have any questions, please contact the academy administration.`,
+            html: `<p>Dear ${coachName},</p><p>We regret to inform you that your coach application has not been approved at this time. If you have any questions, please contact the academy administration.</p>`
           });
+          console.log(`Rejection email sent to ${coach.email}`);
         } catch (emailError) {
           console.error("Failed to send rejection email:", emailError);
           // Continue with the rejection process even if email fails
@@ -6549,20 +6568,30 @@ ${ACADEMY_NAME} Team
       }
       
       // Record this action in audit logs
-      await db.insert(userAuditLogs).values({
-        userId: coachId,
-        action: 'status_change',
-        details: JSON.stringify({
-          from: 'pending',
-          to: 'rejected',
-          rejectedBy: req.session?.userId || 'system',
-          timestamp: new Date().toISOString()
-        })
-      });
+      try {
+        await db.insert(userAuditLogs).values({
+          userId: coachId,
+          action: 'status_change',
+          details: JSON.stringify({
+            from: 'pending',
+            to: 'rejected',
+            rejectedBy: req.session?.userId || 'system',
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (logError) {
+        console.error("Failed to create audit log:", logError);
+        // Continue with the rejection process even if logging fails
+      }
       
       res.json({
         success: true,
-        message: "Coach rejected successfully"
+        message: `Coach ${coachName} rejected successfully`,
+        coach: {
+          id: coach.id,
+          name: coachName,
+          email: coach.email
+        }
       });
     } catch (error) {
       console.error("Error rejecting coach:", error);
