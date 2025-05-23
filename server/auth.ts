@@ -730,11 +730,22 @@ export function setupAuth(app: Express) {
           // Don't send password back to client
           const { password, ...userWithoutPassword } = user as any;
           
-          // Return standardized auth response
+          // Determine redirect URL based on user role
+          let redirectUrl = '/';
+          if (user.role === 'coach') {
+            redirectUrl = '/coach';
+          } else if (user.role === 'parent') {
+            redirectUrl = '/parent';
+          } else if (user.role === 'admin') {
+            redirectUrl = '/admin';
+          }
+          
+          // Return standardized auth response with redirect URL
           return res.status(200).json(createAuthResponse(
             {
               user: userWithoutPassword,
-              token: tokens.accessToken
+              token: tokens.accessToken,
+              redirectUrl: redirectUrl
             },
             "Login successful"
           ));
