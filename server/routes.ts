@@ -2954,9 +2954,9 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
         where: (users, { and, eq }) => and(
           eq(users.role, 'coach'),
           eq(users.status, 'pending'),
-          eq(users.isActive, false)
+          eq(users.is_active, false) // Fixed: Use is_active (snake_case) to match DB column
         ),
-        orderBy: (users, { desc }) => [desc(users.createdAt)]
+        orderBy: (users, { desc }) => [desc(users.created_at)] // Fixed: Use created_at (snake_case)
       });
       
       // Remove password from results
@@ -3029,11 +3029,13 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       const newStatus = approved ? 'active' : 'rejected';
       console.log(`Updating coach ${userData.username} (${userData.id}) to status: ${newStatus}, isActive: ${approved}`);
       
+      // We need to use the correct column names that match the database schema
+      // The database uses is_active (snake_case) not isActive (camelCase)
       const updatedUser = await db.update(users)
         .set({
           status: newStatus,
-          isActive: approved,
-          updatedAt: new Date()
+          is_active: approved,
+          updated_at: new Date()
         })
         .where(eq(users.id, userId))
         .returning();
