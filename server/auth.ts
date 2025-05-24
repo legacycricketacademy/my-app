@@ -221,9 +221,14 @@ export function setupAuth(app: Express) {
         console.log(`Login successful for ${username}, user details:`, userDebug);
         
         // Check if the coach account is approved
-        if (user.role === "coach" && user.status === "pending") {
-          console.log(`Coach ${username} login denied - account is still pending approval`);
+        if (user.role === "coach" && user.status !== "active") {
+          console.log(`Coach ${username} login denied - account is not active (status: ${user.status})`);
           return done(null, false, { message: "Your coach account is pending approval. Please contact an administrator." });
+        }
+        
+        // Additional logging for coach approval debug
+        if (user.role === "coach") {
+          console.log(`Coach ${username} approval status check: status=${user.status}, isActive=${user.isActive}`);
         }
         
         // Log coach status for debugging
