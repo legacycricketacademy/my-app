@@ -42,13 +42,51 @@ export default function CoachesPendingApprovalPage() {
   
   // Extract the actual coaches array from the API response
   // The API returns { success: true, data: [...coaches], message: "..." }
-  const pendingCoaches = apiResponse?.data || [];
+  console.log("API response for pending coaches:", apiResponse);
+  // Extract the actual coaches array from the API response
+  // This handles both standard API response format and direct array returns
+  // Extract coaches from any response format to handle API inconsistencies
+  let pendingCoaches = [];
+  
+  if (Array.isArray(apiResponse)) {
+    // Direct array response format
+    pendingCoaches = apiResponse;
+    console.log("Using direct array response format with", pendingCoaches.length, "coaches");
+  } else if (apiResponse?.data && Array.isArray(apiResponse.data)) {
+    // Standard API response format with data property
+    pendingCoaches = apiResponse.data;
+    console.log("Using standard API response format with", pendingCoaches.length, "coaches");
+  } else if (apiResponse?.coaches && Array.isArray(apiResponse.coaches)) {
+    // Alternative API response format with coaches property
+    pendingCoaches = apiResponse.coaches;
+    console.log("Using alternative API response format with", pendingCoaches.length, "coaches");
+  } else {
+    console.warn("Unexpected API response format:", apiResponse);
+    pendingCoaches = [];
+  }
 
   const approveMutation = useMutation({
     mutationFn: async (coachId: number) => {
-      // Use the correct endpoint that matches the backend implementation
-      const res = await apiRequest("POST", `/api/coaches/${coachId}/approve`);
-      return await res.json();
+      console.log(`Approving coach with ID: ${coachId}`);
+      try {
+        // Try primary endpoint first
+        const res = await apiRequest("POST", `/api/coaches/${coachId}/approve`);
+        const data = await res.json();
+        console.log("Coach approval response (primary endpoint):", data);
+        return data;
+      } catch (error) {
+        console.warn("Primary endpoint failed, trying fallback endpoint", error);
+        // Fallback to alternate endpoint if primary fails
+        try {
+          const res = await apiRequest("POST", `/api/admin/coaches/${coachId}/approve`);
+          const data = await res.json();
+          console.log("Coach approval response (fallback endpoint):", data);
+          return data;
+        } catch (secondError) {
+          console.error("Both approval endpoints failed:", secondError);
+          throw secondError || error;
+        }
+      }
     },
     onSuccess: (data) => {
       // Get the coach's name from the response if available
@@ -84,9 +122,26 @@ export default function CoachesPendingApprovalPage() {
 
   const rejectMutation = useMutation({
     mutationFn: async (coachId: number) => {
-      // Use the correct endpoint that matches the backend implementation
-      const res = await apiRequest("POST", `/api/coaches/${coachId}/reject`);
-      return await res.json();
+      console.log(`Rejecting coach with ID: ${coachId}`);
+      try {
+        // Try primary endpoint first
+        const res = await apiRequest("POST", `/api/coaches/${coachId}/reject`);
+        const data = await res.json();
+        console.log("Coach rejection response (primary endpoint):", data);
+        return data;
+      } catch (error) {
+        console.warn("Primary endpoint failed, trying fallback endpoint", error);
+        // Fallback to alternate endpoint if primary fails
+        try {
+          const res = await apiRequest("POST", `/api/admin/coaches/${coachId}/reject`);
+          const data = await res.json();
+          console.log("Coach rejection response (fallback endpoint):", data);
+          return data;
+        } catch (secondError) {
+          console.error("Both rejection endpoints failed:", secondError);
+          throw secondError || error;
+        }
+      }
     },
     onSuccess: () => {
       toast({
