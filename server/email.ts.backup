@@ -63,6 +63,47 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
       subject: params.subject,
       text: params.text,
       html: params.html,
+      mailSettings: {
+        sandboxMode: {
+          enable: false  // Make sure sandbox mode is disabled in production
+        },
+        bypassListManagement: {
+          enable: false // Respect unsubscribe lists
+        },
+        footer: {
+          enable: true, // Add footer to comply with anti-spam laws
+        },
+        spamCheck: {
+          enable: false // Disabling spam check as it requires post_to_url parameter
+        }
+      },
+      trackingSettings: {
+        clickTracking: {
+          enable: true
+        },
+        openTracking: {
+          enable: true
+        },
+        subscriptionTracking: {
+          enable: true
+        }
+      },
+      // Add categories for better tracking in SendGrid dashboard
+      categories: ['cricket-academy', 'system-notification', 'account-action'],
+      // Adding custom headers to prevent spam filters
+      headers: {
+        'X-Priority': '1',
+        'Importance': 'high',
+        'X-MSMail-Priority': 'High',
+        'X-Entity-Ref-ID': `cricket-academy-${Date.now()}`, // Unique ID helps deliverability
+        'List-Unsubscribe': `<mailto:unsubscribe@${ACADEMY_EMAIL.split('@')[1]}?subject=Unsubscribe>`,
+        'Precedence': 'bulk'
+      },
+      customArgs: {
+        app: 'cricket-academy',
+        email_type: 'notification',
+        system_generated: 'true'
+      },
     };
     
     // Show more details about what we're trying to send
@@ -352,6 +393,80 @@ ${ACADEMY_NAME} Team
   return { text, html };
 }
 
+// This function was updated to unify the different versions and make parameters consistent
+export function generateAdminCoachApprovalRequestEmail(
+  coachName: string,
+  coachEmail: string,
+  coachId: number,
+  approvalLink: string = `${ACADEMY_WEBSITE}/coaches-pending-approval`
+): { text: string; html: string } {
+  // Plain text version
+  const text = `
+Hello Admin,
+
+A new coach has registered and is awaiting approval:
+
+Coach Name: ${coachName}
+Email: ${coachEmail}
+ID: ${coachId}
+
+Please login to the admin dashboard to approve or reject this coach: ${approvalLink}
+
+Thanks,
+${ACADEMY_NAME} System
+`;
+
+  // HTML version
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
+    .content { padding: 20px; }
+    .coach-info { padding: 15px; background-color: #f5f5f5; border-radius: 4px; margin: 20px 0; }
+    .button { display: inline-block; padding: 10px 20px; color: white; background-color: #4f46e5; 
+              text-decoration: none; border-radius: 4px; margin: 20px 0; }
+    .important { color: #d32f2f; font-weight: bold; }
+    .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${ACADEMY_NAME}</h1>
+    </div>
+    <div class="content">
+      <p>Hello Admin,</p>
+      <p><strong>A new coach has registered and is awaiting your approval.</strong></p>
+      
+      <div class="coach-info">
+        <p><strong>Coach Name:</strong> ${coachName}</p>
+        <p><strong>Email:</strong> ${coachEmail}</p>
+        <p><strong>ID:</strong> ${coachId}</p>
+      </div>
+      
+      <p>Please log in to the admin dashboard to review and approve or reject this coach:</p>
+      <a href="${approvalLink}" class="button">Go to Admin Dashboard</a>
+      
+      <p class="important">This requires your immediate attention to ensure smooth onboarding.</p>
+      
+      <p>Thanks,<br>${ACADEMY_NAME} System</p>
+    </div>
+    <div class="footer">
+      <p>This is an automated message, please do not reply to this email.</p>
+      <p>&copy; ${new Date().getFullYear()} ${ACADEMY_NAME}</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  return { text, html };
+}
+
 export function generateCoachPendingApprovalEmail(
   coachName: string
 ): { text: string; html: string } {
@@ -449,10 +564,10 @@ ${ACADEMY_NAME} Team
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
     .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
     .content { padding: 20px; }
-    .success-box { padding: 15px; background-color: #e6f7e6; border-left: 4px solid #4caf50; 
+    .status-box { padding: 15px; background-color: #e6f7e6; border-left: 4px solid #4caf50; 
                  border-radius: 4px; margin: 20px 0; }
-    .button { display: inline-block; padding: 10px 20px; color: white; background-color: #4f46e5; 
-              text-decoration: none; border-radius: 4px; margin: 20px 0; }
+    .button { display: inline-block; padding: 10px 20px; color: white !important; background-color: #4f46e5; 
+              text-decoration: none; border-radius: 4px; margin: 20px 0; font-weight: bold; }
     .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
   </style>
 </head>
@@ -463,12 +578,20 @@ ${ACADEMY_NAME} Team
     </div>
     <div class="content">
       <p>Hello ${coachName},</p>
-      <div class="success-box">
-        <p><strong>Congratulations!</strong> Your coach account has been approved.</p>
-        <p>You now have full access to the coaching features and can log in using your credentials.</p>
+      <div class="status-box">
+        <p><strong>🎉 Great news! Your coach account has been approved.</strong></p>
+        <p>You now have full access to all coaching features on our platform.</p>
       </div>
-      <p>Click the button below to access your coach dashboard:</p>
-      <a href="${loginLink}" class="button">Login to Your Account</a>
+      <p>You can now log in using your credentials and start managing your students, sessions, and more.</p>
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td align="center" style="border-radius: 4px;" bgcolor="#4f46e5">
+            <a href="${loginLink}" target="_blank" style="padding: 12px 24px; font-size: 16px; color: #ffffff; font-weight: bold; text-decoration: none; display: inline-block; border-radius: 4px; font-family: Arial, sans-serif;">
+              Login to Your Account
+            </a>
+          </td>
+        </tr>
+      </table>
       <p>Thanks,<br>${ACADEMY_NAME} Team</p>
     </div>
     <div class="footer">
@@ -483,70 +606,16 @@ ${ACADEMY_NAME} Team
   return { text, html };
 }
 
-// Admin notification for new coach registrations
-export function generateAdminCoachApprovalRequestEmail(
-  coachName: string,
-  coachEmail: string,
-  coachId: number,
-  approvalLink: string = `${ACADEMY_WEBSITE}/coaches-pending-approval`
-): { text: string; html: string } {
-  // Plain text version
-  const text = `
-Hello Admin,
-
-A new coach has registered and is awaiting approval:
-
-Coach Name: ${coachName}
-Email: ${coachEmail}
-ID: ${coachId}
-
-Please login to the admin dashboard to approve or reject this coach: ${approvalLink}
-
-Thanks,
-${ACADEMY_NAME} System
-`;
-
-  // HTML version
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background-color: #4f46e5; padding: 20px; text-align: center; color: white; }
-    .content { padding: 20px; }
-    .coach-info { padding: 15px; background-color: #f5f5f5; border-radius: 4px; margin: 20px 0; }
-    .button { display: inline-block; padding: 10px 20px; color: white; background-color: #4f46e5; 
-              text-decoration: none; border-radius: 4px; margin: 20px 0; }
-    .important { color: #d32f2f; font-weight: bold; }
-    .footer { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>${ACADEMY_NAME}</h1>
-    </div>
-    <div class="content">
-      <p>Hello Admin,</p>
-      <p><strong>A new coach has registered and is awaiting your approval.</strong></p>
-      
-      <div class="coach-info">
-        <p><strong>Coach Name:</strong> ${coachName}</p>
-        <p><strong>Email:</strong> ${coachEmail}</p>
-        <p><strong>ID:</strong> ${coachId}</p>
-      </div>
-      
-      <p>Please log in to the admin dashboard to review and approve or reject this coach:</p>
-      <a href="${approvalLink}" class="button">Go to Admin Dashboard</a>
-      
-      <p class="important">This requires your immediate attention to ensure smooth onboarding.</p>
+// No duplicate functions here
+            </a>
+          </td>
+        </tr>
+      </table>
       
       <p>Thanks,<br>${ACADEMY_NAME} System</p>
     </div>
     <div class="footer">
-      <p>This is an automated message, please do not reply to this email.</p>
+      <p>This is an automated message from your system.</p>
       <p>&copy; ${new Date().getFullYear()} ${ACADEMY_NAME}</p>
     </div>
   </div>
