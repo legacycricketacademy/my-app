@@ -2953,19 +2953,25 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       // Get the column names right AND query for the right status values 
       // Check the database schema in shared/schema.ts
       console.log("Fetching pending coaches for approval page");
-      const pendingCoaches = await db.query.users.findMany({
-        where: (users, { and, eq }) => and(
-          eq(users.role, 'coach'),
-          eq(users.status, 'pending'),
-          eq(users.isActive, false) // Match schema.ts definition (uses camelCase in schema)
-        ),
-        orderBy: (users, { desc }) => [desc(users.createdAt)] // Match schema.ts definition
-      });
+      // Add additional logging to help diagnose the pending coaches list issue
+      console.log("Querying for coaches with status 'pending' and isActive false");
       
-      console.log(`Found ${pendingCoaches.length} pending coaches`);
+      // Use a raw SQL query to ensure we're using the correct column names
+      const pendingCoaches = await db.execute(sql`
+        SELECT * FROM users 
+        WHERE role = 'coach' 
+        AND status = 'pending' 
+        AND is_active = false
+        ORDER BY created_at DESC
+      `);
       
-      // Remove password from results
-      const safeCoaches = pendingCoaches.map(coach => {
+      // Convert the result to an array of objects
+      const coachesArray = pendingCoaches.rows || [];
+      
+      console.log(`Found ${coachesArray.length} pending coaches`);
+      
+      // Remove password from results and convert to proper format
+      const safeCoaches = coachesArray.map((coach: any) => {
         const { password, ...coachWithoutPassword } = coach;
         return coachWithoutPassword;
       });
