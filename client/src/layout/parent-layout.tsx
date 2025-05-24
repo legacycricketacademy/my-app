@@ -156,6 +156,17 @@ export function ParentLayout({
             <h1 className="text-lg font-semibold hidden md:block">{title}</h1>
           </div>
 
+          {/* Sign Out Button */}
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="mr-2 hidden md:flex items-center"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+
           {/* Notification Dropdown */}
           <NotificationDropdown />
           
