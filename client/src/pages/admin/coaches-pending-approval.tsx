@@ -63,9 +63,15 @@ export default function CoachesPendingApprovalPage() {
       // This will refresh the pending coaches list
       queryClient.invalidateQueries({ queryKey: ["/api/users/pending-coaches"] });
       
-      // Force immediate refresh to update UI right away
+      // Force immediate refresh to update UI right away - use multiple refresh attempts
+      // to ensure database changes are reflected in the UI
       setTimeout(() => {
         queryClient.refetchQueries({ queryKey: ["/api/users/pending-coaches"] });
+        
+        // Second refresh after a bit longer in case the first one was too quick
+        setTimeout(() => {
+          queryClient.refetchQueries({ queryKey: ["/api/users/pending-coaches"] });
+        }, 1000);
       }, 500);
     },
     onError: (error: Error) => {

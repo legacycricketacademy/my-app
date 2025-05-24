@@ -2956,7 +2956,10 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       // Add additional logging to help diagnose the pending coaches list issue
       console.log("Querying for coaches with status 'pending' and isActive false");
       
-      // Use a raw SQL query to ensure we're using the correct column names
+      // Clear any database query cache
+      await db.execute(sql`DISCARD ALL`);
+      
+      // Use a raw SQL query to ensure we're getting fresh data with correct column names
       const pendingCoaches = await db.execute(sql`
         SELECT * FROM users 
         WHERE role = 'coach' 
@@ -6421,6 +6424,22 @@ ${ACADEMY_NAME} Team
       
       console.log(`Found ${pendingCoaches.length} pending coaches`);
       
+      // Add additional logging for debugging
+      console.log(`Raw pending coaches count: ${pendingCoaches.length}`);
+      
+      // Query directly for duplicate coaches to troubleshoot
+      const duplicateCheck = await db.execute(sql`
+        SELECT id, username, COUNT(*) 
+        FROM users 
+        WHERE role = 'coach'
+        GROUP BY id, username
+        HAVING COUNT(*) > 1
+      `);
+      
+      if (duplicateCheck.rows && duplicateCheck.rows.length > 0) {
+        console.warn("Found duplicate coach entries:", duplicateCheck.rows);
+      }
+      
       // Return coaches without sensitive information
       const sanitizedCoaches = pendingCoaches.map(coach => ({
         id: coach.id,
@@ -6472,8 +6491,8 @@ ${ACADEMY_NAME} Team
       const coachName = coach.fullName || coach.username || `ID: ${coachId}`;
       console.log(`Coach ${coachId} (${coachName}) approved by admin`);
       
-      // Update coach status to active using direct SQL for consistency
-      // This ensures we use the same column names as in the other approval endpoint
+      // Use a consistent SQL update for coach approval
+      // This addresses the mismatch between column names and ORM vs SQL
       const updateResult = await db.execute(sql`
         UPDATE users 
         SET status = 'active', 
@@ -6482,6 +6501,9 @@ ${ACADEMY_NAME} Team
         WHERE id = ${coachId}
         RETURNING *
       `);
+      
+      // Force clear database cache to ensure fresh queries
+      await db.execute(sql`DISCARD ALL`);
       
       console.log(`Direct SQL update executed for coach ID ${coachId}`);
       
