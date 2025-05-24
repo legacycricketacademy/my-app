@@ -72,8 +72,14 @@ function AppRoutes() {
         }
       />
 
-      {/* Home Route - show simple parent dashboard for testing */}
-      <Route path="/" element={<SimpleReactDashboard />} />
+      {/* Home Route - redirects based on authentication */}
+      <Route path="/" element={
+        user ? (
+          isParentUser ? <Navigate to="/dashboard/parent" /> : <Dashboard />
+        ) : (
+          <SimpleReactDashboard />
+        )
+      } />
 
       {/* Parent Dashboard Routes */}
       <Route
@@ -96,6 +102,9 @@ function AppRoutes() {
 
       {/* Independent parent dashboard that uses no external dependencies */}
       <Route path="/independent-parent" element={<IndependentDashboard />} />
+      
+      {/* Direct testing route for enhanced parent dashboard - no auth required */}
+      <Route path="/test-enhanced-parent" element={<EnhancedParentDashboard />} />
 
       <Route
         path="/parent/schedule"
