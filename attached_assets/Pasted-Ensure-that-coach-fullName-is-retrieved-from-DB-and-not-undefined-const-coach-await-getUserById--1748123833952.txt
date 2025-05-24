@@ -1,0 +1,81 @@
+Ensure that coach.fullName is retrieved from DB and not undefined:
+
+const coach = await getUserById(coachId); // or however you fetch the coach
+
+if (coach && coach.fullName && coach.email) {
+  await sendApprovalEmail(coach.email, coach.fullName);
+}
+
+Also verify inside email.ts:
+
+export async function sendApprovalEmail(to: string, name: string) {
+  await sendEmail(to, 'Your Coach Account is Approved', `Hi ${name}, your coach account has been approved and activated.`);
+}
+
+Issue 2: Approved Coaches Still See “Pending Approval” at Login
+
+Root Cause:
+
+Your login/auth check is likely using a stale or incorrect condition, e.g., checking status !== 'approved' or isActive !== true.
+
+Fix:
+
+In auth.ts or the login endpoint (or auth-page.tsx if done in frontend):
+
+if (user.role === 'coach' && (user.status !== 'approved' || !user.isActive)) {
+  return res.status(403).json({
+    message: "Your coach account is pending approval."
+  });
+}
+
+Make sure both fields are correctly updated during approval:
+
+await db.query(
+  'UPDATE users SET status = $1, is_active = $2 WHERE id = $3',
+  ['approved', true, coachId]
+);
+
+Check DB:
+
+SELECT full_name, email, status, is_active FROM users WHERE role = 'coach';
+
+
+
+The coach approval UI shows success, but the database still shows status: 'pending' and isActive: false. That means the DB update query inside your approveCoach route handler isn’t executing properly — or it’s using incorrect column names or logic.
+
+
+ Here’s the Exact Fix You Need
+
+In your server/routes.ts, locate the approveCoach handler. You’re likely seeing something like:
+
+router.post('/approve-coach', async (req, res) => {
+  const { coachId } = req.body;
+
+  try {
+    await db.query(
+      `UPDATE users SET status = 'approved', isActive = true WHERE id = $1`,
+      [coachId]
+    );
+
+    const coach = await getUserById(coachId);
+    await sendApprovalEmail(coach.email, coach.fullName);
+
+    return res.json({ success: true, message: 'Coach approved successfully' });
+  } catch (err) {
+    console.error('Error approving coach:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});Common Mistake:
+
+If your column names in the database are status and is_active (PostgreSQL/SQL snake_case), then the query above won’t work as intended.
+
+⸻
+
+✅ Corrected SQL (if using snake_case column names):
+
+
+await db.query(
+  `UPDATE users SET status = 'approved', is_active = true WHERE id = $1`,
+  [coachId]
+);
+
