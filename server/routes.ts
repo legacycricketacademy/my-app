@@ -6474,15 +6474,24 @@ ${ACADEMY_NAME} Team
       
       // Update coach status to active using direct SQL for consistency
       // This ensures we use the same column names as in the other approval endpoint
-      await db.execute(sql`
+      const updateResult = await db.execute(sql`
         UPDATE users 
         SET status = 'active', 
             is_active = true,
             updated_at = NOW() 
         WHERE id = ${coachId}
+        RETURNING *
       `);
       
       console.log(`Direct SQL update executed for coach ID ${coachId}`);
+      
+      // Log the update result to verify it worked
+      if (updateResult && updateResult.rows && updateResult.rows.length > 0) {
+        const updatedCoach = updateResult.rows[0];
+        console.log(`Coach updated successfully - New Status: ${updatedCoach.status}, Is Active: ${updatedCoach.is_active}`);
+      } else {
+        console.error(`Failed to update coach ID ${coachId} - no rows returned`);
+      }
       
       // Double check that the update was successful
       const updatedCoach = await db.query.users.findFirst({
