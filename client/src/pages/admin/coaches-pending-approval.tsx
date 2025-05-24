@@ -32,13 +32,17 @@ type Coach = {
 export default function CoachesPendingApprovalPage() {
   const { toast } = useToast();
   
-  const { data: pendingCoaches, isLoading, error } = useQuery<Coach[]>({
+  const { data: apiResponse, isLoading, error } = useQuery({
     queryKey: ["/api/users/pending-coaches"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/users/pending-coaches");
       return await res.json();
     },
   });
+  
+  // Extract the actual coaches array from the API response
+  // The API returns { success: true, data: [...coaches], message: "..." }
+  const pendingCoaches = apiResponse?.data || [];
 
   const approveMutation = useMutation({
     mutationFn: async (coachId: number) => {
