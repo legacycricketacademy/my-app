@@ -44,8 +44,14 @@ const playerSkills: SkillRating[] = [
 ];
 
 export default function EnhancedParentDashboard() {
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("schedule");
+  
+  // Handle sign out
+  const handleSignOut = () => {
+    logoutMutation.mutate();
+    window.location.href = "/auth";
+  };
   
   // Fetch upcoming sessions - in a real implementation this would use the API
   const { data: sessions, isLoading: isLoadingSessions } = useQuery({
@@ -393,54 +399,51 @@ export default function EnhancedParentDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg border p-4 mb-6">
+                <div className="rounded-lg border p-4 mb-6 bg-green-50 dark:bg-green-900/20">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h3 className="font-semibold">Current Plan</h3>
-                      <p className="text-sm text-muted-foreground">Advanced Training Package</p>
+                      <h3 className="font-semibold text-lg">May 2025 Payment Status</h3>
+                      <p className="text-sm text-muted-foreground">Regular Training Package</p>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold">₹12,000</div>
-                      <div className="text-xs text-muted-foreground">Next payment due: June 15, 2023</div>
+                      <div className="text-lg font-bold text-green-600 dark:text-green-400">PAID</div>
+                      <div className="text-xs text-muted-foreground">Next payment: June 1, 2025</div>
                     </div>
-                  </div>
-                  <div className="mt-4">
-                    <Button>Make Payment</Button>
                   </div>
                 </div>
                 
-                <h3 className="font-semibold mb-4">Recent Payments</h3>
+                <h3 className="font-semibold mb-4">Payment History</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 border rounded-lg">
                     <div>
-                      <div className="font-medium">Advanced Training Package</div>
-                      <div className="text-sm text-muted-foreground">March 15, 2023</div>
+                      <div className="font-medium">May 2025</div>
+                      <div className="text-sm text-muted-foreground">Regular Training Fee</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">₹12,000</div>
-                      <div className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Paid</div>
+                      <div className="font-medium">₹8,500</div>
+                      <div className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-0.5 rounded">Paid</div>
                     </div>
                   </div>
                   
                   <div className="flex justify-between items-center p-3 border rounded-lg">
                     <div>
-                      <div className="font-medium">Equipment Fee</div>
-                      <div className="text-sm text-muted-foreground">February 10, 2023</div>
+                      <div className="font-medium">April 2025</div>
+                      <div className="text-sm text-muted-foreground">Regular Training Fee</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">₹5,000</div>
-                      <div className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Paid</div>
+                      <div className="font-medium">₹8,500</div>
+                      <div className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-0.5 rounded">Paid</div>
                     </div>
                   </div>
                   
                   <div className="flex justify-between items-center p-3 border rounded-lg">
                     <div>
-                      <div className="font-medium">Registration Fee</div>
-                      <div className="text-sm text-muted-foreground">January 5, 2023</div>
+                      <div className="font-medium">March 2025</div>
+                      <div className="text-sm text-muted-foreground">Regular Training Fee</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">₹2,000</div>
-                      <div className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Paid</div>
+                      <div className="font-medium">₹8,500</div>
+                      <div className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-0.5 rounded">Paid</div>
                     </div>
                   </div>
                   
