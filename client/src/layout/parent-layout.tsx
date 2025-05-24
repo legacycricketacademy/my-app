@@ -159,12 +159,46 @@ export function ParentLayout({
           {/* Notification Dropdown */}
           <NotificationDropdown />
           
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Link to="/profile" className="flex items-center justify-center">
-              <User className="h-5 w-5" />
-              <span className="sr-only">Profile</span>
-            </Link>
-          </Button>
+          {/* User Profile Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={user?.profileImage || ""} alt={user?.fullName || "User"} />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {user?.fullName ? user.fullName.substring(0, 2).toUpperCase() : "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <Link to="/profile">
+                <DropdownMenuItem className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>View Profile</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link to="/parent/academy-location">
+                <DropdownMenuItem className="cursor-pointer">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  <span>Academy Location</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link to="/parent/payments">
+                <DropdownMenuItem className="cursor-pointer">
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  <span>Payment History</span>
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign Out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
         
         <main className="flex-1 overflow-auto">

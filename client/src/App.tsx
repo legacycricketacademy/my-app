@@ -15,6 +15,7 @@ import ErrorBoundary from "@/components/error-boundary";
 import SimpleReactDashboard from "./pages/simple-react-dashboard";
 import DirectParentDashboard from "@/pages/direct-parent-dashboard";
 import IndependentDashboard from "@/pages/independent-dashboard";
+import EnhancedParentDashboard from "@/pages/parent/enhanced-dashboard";
 import ParentSchedulePage from "@/pages/parent/parent-schedule";
 import ParentAnnouncementsPage from "@/pages/parent/announcements";
 import ParentPaymentsPage from "@/pages/parent/payments";
@@ -80,7 +81,7 @@ function AppRoutes() {
         element={
           user ? (
             isParentUser ? (
-              <SimpleReactDashboard />
+              <EnhancedParentDashboard />
             ) : (
               <Navigate to="/" />
             )
