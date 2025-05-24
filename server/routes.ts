@@ -3037,15 +3037,13 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       // Use direct SQL for update - this is the most reliable way to handle this
       console.log(`Approving coach ${userData.username} (${userId}) - setting status from ${userData.status} to ${approved ? 'active' : 'rejected'}`);
       
-      // Execute a direct SQL update query with proper column names
-      // IMPORTANT: We use camelCase column names (isActive) in the database but snake_case (is_active) in SQL
-      // This query ensures both formats work by updating both potential column names
+      // Execute a direct SQL update query to set both status and isActive
+      // Note: We're deliberately setting only the camelCase version of the column
       await db.execute(sql`
         UPDATE users 
         SET status = ${approved ? 'active' : 'rejected'}, 
             "isActive" = ${approved},
-            is_active = ${approved}, 
-            updated_at = NOW() 
+            "updatedAt" = NOW() 
         WHERE id = ${userId}
       `);
       
