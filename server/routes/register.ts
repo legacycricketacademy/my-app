@@ -53,10 +53,9 @@ export async function registerHandler(req: Request, res: Response) {
         
         // Generate admin notification
         const adminEmailContent = generateAdminCoachApprovalRequestEmail(
-          adminName,
           fullName,
           email,
-          approvalLink
+          user.id
         );
         
         // Send guaranteed admin notification
