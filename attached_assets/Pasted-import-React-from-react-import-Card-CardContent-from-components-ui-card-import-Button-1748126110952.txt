@@ -1,0 +1,59 @@
+import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Bell, LogOut, MapPin, User } from 'lucide-react';
+
+export default function ParentDashboard() {
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Top Nav */}
+      <div className="flex justify-between items-center bg-white p-4 shadow-md">
+        <h1 className="text-xl font-bold text-blue-700">Legacy <span className="text-black">Cricket Academy</span></h1>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost"><Bell /></Button>
+          <div className="relative group">
+            <Avatar>
+              <AvatarFallback>P</AvatarFallback>
+            </Avatar>
+            <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md hidden group-hover:block z-10">
+              <div className="p-2 text-sm border-b"><User className="inline mr-2" />Profile</div>
+              <div className="p-2 text-sm border-b"><MapPin className="inline mr-2" />Locations</div>
+              <div className="p-2 text-sm border-b"><LogOut className="inline mr-2" />Sign Out</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="p-6">
+        <Tabs defaultValue="schedule">
+          <TabsList>
+            <TabsTrigger value="schedule">Schedule</TabsTrigger>
+            <TabsTrigger value="profile">Player Profile</TabsTrigger>
+            <TabsTrigger value="fitness">Fitness & Meal Plan</TabsTrigger>
+            <TabsTrigger value="location">Location Info</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="schedule">
+            <Card><CardContent className="p-4">📅 Upcoming sessions list or calendar here</CardContent></Card>
+          </TabsContent>
+          <TabsContent value="profile">
+            <Card><CardContent className="p-4">👨‍👧 Player details, emergency contact, and progress</CardContent></Card>
+          </TabsContent>
+          <TabsContent value="fitness">
+            <Card><CardContent className="p-4">🍽 Fitness scores and meal plan by week</CardContent></Card>
+          </TabsContent>
+          <TabsContent value="location">
+            <Card><CardContent className="p-4">📍 Map and saved cricket locations</CardContent></Card>
+          </TabsContent>
+          <TabsContent value="payments">
+            <Card><CardContent className="p-4">💳 Payment history and upcoming dues</CardContent></Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+} 
