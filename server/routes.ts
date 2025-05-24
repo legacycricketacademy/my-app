@@ -4897,7 +4897,76 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
     if (req.user.role !== 'parent' && req.user.role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
+  });
+  
+  // Parent - Get upcoming sessions for a parent's children
+  app.get(`${apiPrefix}/parent/sessions`, async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in" });
+    }
+    
+    if (req.user.role !== 'parent' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      // Get the parent's ID from the authenticated user
+      const parentId = req.user.id;
+      
+      // For demo purposes - if no session data exists, return mock data
+      const sessions = [
+        {
+          id: 1,
+          title: "Batting Practice",
+          dateTime: new Date(Date.now() + 86400000), // Tomorrow
+          location: "Main Cricket Ground",
+          status: "confirmed",
+          playerName: "Arjun Sharma",
+          coachName: "Coach Anil"
+        },
+        {
+          id: 2,
+          title: "Bowling Technique",
+          dateTime: new Date(Date.now() + 172800000), // Day after tomorrow
+          location: "Academy Training Center",
+          status: "confirmed",
+          playerName: "Arjun Sharma",
+          coachName: "Coach Priya"
+        },
+        {
+          id: 3,
+          title: "Team Practice Match",
+          dateTime: new Date(Date.now() + 432000000), // 5 days from now
+          location: "City Cricket Stadium",
+          status: "tentative",
+          playerName: "Arjun Sharma",
+          coachName: "Coach Rakesh"
+        }
+      ];
+      
+      return res.status(200).json({ 
+        success: true, 
+        data: sessions 
+      });
+    } catch (error) {
+      console.error("Error fetching parent sessions:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Error fetching sessions" 
+      });
+    }
+  });
 
+  app.get(`${apiPrefix}/parent/players`, async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in" });
+    }
+    
+    // Allow both parents and admins
+    if (req.user.role !== 'parent' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    
     try {
       console.log(`Getting players for parent ${req.user.id}`);
       const players = await storage.getPlayersByParentId(req.user.id);
