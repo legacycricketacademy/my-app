@@ -3038,13 +3038,19 @@ Window Size: \${window.innerWidth}x\${window.innerHeight}
       console.log(`Approving coach ${userData.username} (${userId}) - setting status from ${userData.status} to ${approved ? 'active' : 'rejected'}`);
       
       // Execute a direct SQL update query with proper column names
+      // IMPORTANT: We use camelCase column names (isActive) in the database but snake_case (is_active) in SQL
+      // This query ensures both formats work by updating both potential column names
       await db.execute(sql`
         UPDATE users 
         SET status = ${approved ? 'active' : 'rejected'}, 
+            "isActive" = ${approved},
             is_active = ${approved}, 
             updated_at = NOW() 
         WHERE id = ${userId}
       `);
+      
+      // Log a confirmation of the SQL update
+      console.log(`SQL update executed for coach ID ${userId} - Set to ${approved ? 'active' : 'rejected'} status`);
       
       // Fetch the updated user to confirm the changes
       const updatedUser = await db.query.users.findFirst({
