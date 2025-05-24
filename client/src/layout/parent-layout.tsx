@@ -156,11 +156,11 @@ export function ParentLayout({
             <h1 className="text-lg font-semibold hidden md:block">{title}</h1>
           </div>
 
-          {/* Sign Out Button */}
+          {/* Sign Out Button - Visible on all screen sizes */}
           <Button 
             variant="outline" 
             size="sm"
-            className="mr-2 hidden md:flex items-center"
+            className="mr-2 flex items-center bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
             onClick={handleLogout}
           >
             <LogOut className="h-4 w-4 mr-2" />

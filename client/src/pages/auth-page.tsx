@@ -315,6 +315,8 @@ export default function AuthPage() {
       // Using direct fetch for better error handling
       setRegistrationLoading(true);
       
+      console.log("Sending registration request to server...");
+      
       // Make direct API call instead of using mutation
       fetch("/api/register", {
         method: 'POST',
@@ -322,16 +324,38 @@ export default function AuthPage() {
         body: JSON.stringify(data),
         credentials: 'include'
       })
-      .then(response => 
-        response.json()
+      .then(response => {
+        console.log(`Server responded with status: ${response.status}`);
+        
+        // Even if server returns success, let's consider the registration successful
+        // This handles cases where the JSON parsing might fail but registration succeeded
+        if (response.status === 201 || response.status === 200) {
+          setRegistrationLoading(false);
+          // Registration succeeded
+          toast({
+            title: "Registration Successful",
+            description: "Your account has been created! Please check your email for verification instructions.",
+            variant: "default",
+          });
+          
+          // Switch to login tab
+          setActiveTab("login");
+          return { status: response.status, data: { success: true } };
+        }
+        
+        // For error responses, try to parse the JSON response
+        return response.json()
           .then(data => ({ status: response.status, data }))
           .catch(err => {
             console.error("Error parsing JSON response:", err);
             return { status: response.status, data: { message: "Invalid server response" } };
-          })
-      )
+          });
+      })
       .then(({ status, data }) => {
         setRegistrationLoading(false);
+        
+        // Skip further processing if we already handled the success case
+        if (data.success === true) return;
         
         if (status === 409) {
           // Handle conflict - duplicate username or email
@@ -356,34 +380,24 @@ export default function AuthPage() {
         }
         
         // Success case
-        const userData = data.data?.user;
-        console.log("Registration succeeded with status:", userData?.status);
+        const userData = data.data?.user || data.user || data;
+        console.log("Registration succeeded with user data:", userData);
         
-        // Store registered user for verification status display
-        if (userData) {
-          setRegisteredUser({
-            id: userData.id,
-            email: userData.email
-          });
-          
-          // Set email verification status based on the response
-          if (userData.emailStatus) {
-            setEmailVerificationStatus(userData.emailStatus === "sent" ? "sent" : 
-                                      userData.emailStatus === "failed" ? "failed" : "pending");
-          }
-        }
+        // Switch to login tab
+        setActiveTab("login");
         
         // Different message based on role (for coach/admin that need approval)
         if (userData?.role === 'coach' || userData?.role === 'admin') {
           toast({
             title: "Registration Successful",
             description: "Your account is awaiting administrator approval. You'll be notified when approved.",
-            duration: 6000, // show for longer
+            variant: "default",
           });
         } else {
           toast({
             title: "Registration Successful",
-            description: "Your account has been created successfully! Please check your email for verification.",
+            description: "Your account has been created! Please check your email for verification instructions.",
+            variant: "default",
           });
         }
       })
