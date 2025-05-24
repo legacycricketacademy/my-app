@@ -46,9 +46,8 @@ export default function CoachesPendingApprovalPage() {
 
   const approveMutation = useMutation({
     mutationFn: async (coachId: number) => {
-      const res = await apiRequest("PATCH", `/api/users/${coachId}/approval`, {
-        approved: true,
-      });
+      // Use the correct endpoint that matches the backend implementation
+      const res = await apiRequest("POST", `/api/coaches/${coachId}/approve`);
       return await res.json();
     },
     onSuccess: (data) => {
@@ -85,9 +84,8 @@ export default function CoachesPendingApprovalPage() {
 
   const rejectMutation = useMutation({
     mutationFn: async (coachId: number) => {
-      const res = await apiRequest("PATCH", `/api/users/${coachId}/approval`, {
-        approved: false,
-      });
+      // Use the correct endpoint that matches the backend implementation
+      const res = await apiRequest("POST", `/api/coaches/${coachId}/reject`);
       return await res.json();
     },
     onSuccess: () => {
