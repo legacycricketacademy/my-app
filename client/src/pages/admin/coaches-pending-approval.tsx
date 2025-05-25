@@ -35,8 +35,16 @@ export default function CoachesPendingApprovalPage() {
   const { data: apiResponse, isLoading, error } = useQuery({
     queryKey: ["/api/users/pending-coaches"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/users/pending-coaches");
-      return await res.json();
+      try {
+        // Try the primary endpoint first
+        const res = await apiRequest("GET", "/api/users/pending-coaches");
+        return await res.json();
+      } catch (error) {
+        console.log("Primary endpoint failed, trying fallback endpoint");
+        // Try the fallback endpoint
+        const res = await apiRequest("GET", "/api/coaches/pending");
+        return await res.json();
+      }
     },
   });
   
