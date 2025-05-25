@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legacy Cricket Academy - Parent Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #1a202c;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2c5282;
+        }
+        .sign-out-btn {
+            padding: 10px 15px;
+            border-radius: 4px;
+            background-color: #fed7d7;
+            color: #e53e3e;
+            border: 1px solid #e53e3e;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sign-out-btn:hover {
+            background-color: #feb2b2;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .content {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            border-bottom-color: #3182ce;
+            color: #3182ce;
+            font-weight: 500;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .card {
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        .card p {
+            margin: 4px 0;
+            color: #4a5568;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+        .status-confirmed {
+            background-color: #c6f6d5;
+            color: #2f855a;
+        }
+        .payment-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .payment-status {
+            font-weight: bold;
+        }
+        .paid {
+            color: #2f855a;
+        }
+        .unpaid {
+            color: #e53e3e;
+        }
+        /* Mobile responsiveness */
+        @media (max-width: 640px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .sign-out-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Legacy Cricket Academy</div>
+        <button class="sign-out-btn" onclick="alert('Sign out button clicked!')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Sign Out
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="content">
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('schedule')">Schedule</div>
+                <div class="tab" onclick="showTab('profile')">Profile</div>
+                <div class="tab" onclick="showTab('payments')">Payments</div>
+            </div>
+
+            <div id="schedule" class="tab-content active">
+                <h2>Upcoming Cricket Sessions</h2>
+                <div class="card">
+                    <h3>Batting Practice</h3>
+                    <p>Date: June 1, 2025</p>
+                    <p>Time: 4:00 PM - 6:00 PM</p>
+                    <p>Location: Main Cricket Ground</p>
+                    <span class="status-badge status-confirmed">Confirmed</span>
+                </div>
+                <div class="card">
+                    <h3>Team Match Practice</h3>
+                    <p>Date: June 5, 2025</p>
+                    <p>Time: 9:00 AM - 12:00 PM</p>
+                    <p>Location: Main Cricket Ground</p>
+                    <span class="status-badge status-confirmed">Confirmed</span>
+                </div>
+            </div>
+            
+            <div id="profile" class="tab-content">
+                <h2>Player Profile</h2>
+                <div class="card">
+                    <h3>Player Information</h3>
+                    <p><strong>Name:</strong> Raj Patel</p>
+                    <p><strong>Age:</strong> 12</p>
+                    <p><strong>Team:</strong> Junior Cubs</p>
+                    <p><strong>Coach:</strong> John Smith</p>
+                </div>
+            </div>
+            
+            <div id="payments" class="tab-content">
+                <h2>Payment History</h2>
+                <div class="payment-card">
+                    <div>
+                        <h3>June 2025 Membership</h3>
+                        <p>Due: June 1, 2025</p>
+                    </div>
+                    <div class="payment-status unpaid">UNPAID</div>
+                </div>
+                <div class="payment-card">
+                    <div>
+                        <h3>May 2025 Membership</h3>
+                        <p>Paid: May 2, 2025</p>
+                    </div>
+                    <div class="payment-status paid">PAID</div>
+                </div>
+                <div class="payment-card">
+                    <div>
+                        <h3>April 2025 Membership</h3>
+                        <p>Paid: April 1, 2025</p>
+                    </div>
+                    <div class="payment-status paid">PAID</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Deactivate all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show the selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Activate the clicked tab
+            Array.from(document.querySelectorAll('.tab')).find(tab => 
+                tab.textContent.toLowerCase().includes(tabId)).classList.add('active');
+        }
+    </script>
+</body>
+</html>
