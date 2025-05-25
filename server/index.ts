@@ -52,6 +52,11 @@ app.get('/enhanced-parent', (req, res) => {
   res.sendFile('enhanced-parent-dashboard.html', { root: './server/public' });
 });
 
+// Quick parent dashboard with improved sign out button
+app.get('/quick-parent', (req, res) => {
+  res.sendFile('quick-parent.html', { root: './server/public' });
+});
+
 // Standalone React dashboard that runs directly without the React app
 app.get('/standalone-react', (req, res) => {
   res.sendFile('standalone-react-dashboard.html', { root: './server/public' });
