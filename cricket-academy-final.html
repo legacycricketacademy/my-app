@@ -166,7 +166,7 @@
                     
                     <button type="button" class="btn btn-secondary" onclick="addChild()">Add Another Child</button>
                     
-                    <button type="submit" class="btn" id="registerBtn">Register Family</button>
+                    <button type="submit" class="btn" id="registerBtn">Register Kid</button>
                 </form>
                 
                 <div id="registrationMessage"></div>
@@ -603,6 +603,10 @@
 
         function register() {
             const messageDiv = document.getElementById('registrationMessage');
+            const btn = document.getElementById('registerBtn');
+            
+            btn.disabled = true;
+            btn.textContent = 'Registering...';
             
             // Get parent info
             const parentName = document.getElementById('parentName').value;
@@ -613,12 +617,16 @@
             const password = document.getElementById('regPassword').value;
 
             if (!parentName || !parentEmail || !parentPhone || !username || !password) {
-                messageDiv.innerHTML = '<div class="error-message">Please fill in all required fields</div>';
+                messageDiv.innerHTML = '<div class="error-message">Please fill in all required parent and account fields</div>';
+                btn.disabled = false;
+                btn.textContent = 'Register Kid';
                 return;
             }
 
             if (users[username]) {
-                messageDiv.innerHTML = '<div class="error-message">Username already exists</div>';
+                messageDiv.innerHTML = '<div class="error-message">Username already exists. Please choose a different username.</div>';
+                btn.disabled = false;
+                btn.textContent = 'Register Kid';
                 return;
             }
 
@@ -642,7 +650,9 @@
             }
 
             if (children.length === 0) {
-                messageDiv.innerHTML = '<div class="error-message">Please add at least one child</div>';
+                messageDiv.innerHTML = '<div class="error-message">Please fill in at least one child\'s information (name and age are required)</div>';
+                btn.disabled = false;
+                btn.textContent = 'Register Kid';
                 return;
             }
 
@@ -660,12 +670,18 @@
                 }
             };
 
-            messageDiv.innerHTML = '<div class="success-message">Registration successful! You can now login with your credentials.</div>';
+            messageDiv.innerHTML = '<div class="success-message">Registration successful! Redirecting to login...</div>';
             
             setTimeout(() => {
                 showLogin();
                 document.getElementById('loginUsername').value = username;
+                // Clear registration form
+                document.getElementById('registrationForm').reset();
+                messageDiv.innerHTML = '';
             }, 2000);
+            
+            btn.disabled = false;
+            btn.textContent = 'Register Kid';
         }
 
         function addChild() {
