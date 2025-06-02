@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Legacy Cricket Academy - Complete Test Version</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: #f5f5f5; }
+        .header { background: #1e40af; color: white; padding: 1rem; text-align: center; }
+        .container { max-width: 600px; margin: 2rem auto; padding: 1rem; }
+        .card { background: white; border-radius: 8px; padding: 2rem; margin: 1rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin: 1rem 0; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .btn { background: #2563eb; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; width: 100%; font-size: 1rem; }
+        .btn:hover { background: #1d4ed8; }
+        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+        .btn-logout { background: #dc2626; width: auto; margin-left: 1rem; }
+        .btn-secondary { background: #6b7280; }
+        .btn-success { background: #10b981; }
+        .tabs { display: flex; border-bottom: 1px solid #ddd; margin-bottom: 1rem; }
+        .tab { flex: 1; padding: 1rem; text-align: center; background: none; border: none; cursor: pointer; }
+        .tab.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 500; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .schedule-item { background: #f8fafc; padding: 1rem; margin: 0.5rem 0; border-radius: 6px; border-left: 4px solid #2563eb; }
+        .schedule-item h4 { color: #1e40af; margin-bottom: 0.5rem; }
+        .payment-item { background: #f9fafb; padding: 1rem; margin: 0.5rem 0; border-radius: 6px; border: 1px solid #e5e7eb; }
+        .payment-status { padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-weight: 500; }
+        .status-paid { background: #dcfce7; color: #166534; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-overdue { background: #fee2e2; color: #dc2626; }
+        .hidden { display: none; }
+        .user-header { display: flex; justify-content: space-between; align-items: center; }
+        .success-message { background: #dcfce7; border: 1px solid #10b981; color: #065f46; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+        .error-message { background: #fee2e2; border: 1px solid #f87171; color: #dc2626; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+        .info-note { background: #dbeafe; border: 1px solid #3b82f6; color: #1e40af; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+        .test-accounts { background: #f3f4f6; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+        .profile-section { margin: 1rem 0; padding: 1rem; background: #f8fafc; border-radius: 6px; }
+        .child-profile { border: 1px solid #e5e7eb; padding: 1rem; margin: 0.5rem 0; border-radius: 6px; }
+        @media (max-width: 768px) {
+            .header { padding: 1rem 0.5rem; }
+            .container { margin: 1rem auto; padding: 0.5rem; }
+            .user-header { flex-direction: column; gap: 1rem; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen">
+        <div class="header">
+            <h1>🏏 Legacy Cricket Academy</h1>
+            <p>Parent Access Portal - Complete Test Version</p>
+        </div>
+        
+        <div class="container">
+            <div class="card">
+                <h2>Parent Sign In</h2>
+                
+                <div class="test-accounts">
+                    <h4>Test Accounts Available:</h4>
+                    <p><strong>Demo Parent:</strong> Username: demo | Password: demo123</p>
+                    <p><strong>Admin:</strong> Username: admin | Password: admin123</p>
+                    <p>Or register a new parent account below</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter your username">
+                </div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password">
+                </div>
+                
+                <button class="btn" onclick="login()">Sign In</button>
+                
+                <div id="loginMessage"></div>
+                
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="showRegistration()">Register New Parent Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Screen -->
+    <div id="registrationScreen" class="hidden">
+        <div class="header">
+            <h1>🏏 Legacy Cricket Academy</h1>
+            <p>Parent Registration</p>
+        </div>
+        
+        <div class="container">
+            <div class="card">
+                <h2>Register Your Family</h2>
+                
+                <div class="info-note">
+                    Register as a parent to access your child's training schedules, performance stats, and payment history.
+                </div>
+                
+                <form id="registrationForm">
+                    <h3>Parent Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" id="parentName" required placeholder="Your full name">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number *</label>
+                            <input type="tel" id="parentPhone" required placeholder="Your phone number">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <input type="email" id="parentEmail" required placeholder="your.email@example.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Address</label>
+                        <textarea id="parentAddress" rows="3" placeholder="Your full address"></textarea>
+                    </div>
+                    
+                    <h3>Account Details</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Username *</label>
+                            <input type="text" id="regUsername" required placeholder="Choose a username">
+                        </div>
+                        <div class="form-group">
+                            <label>Password *</label>
+                            <input type="password" id="regPassword" required placeholder="Choose a password">
+                        </div>
+                    </div>
+                    
+                    <h3>Child Information</h3>
+                    <div id="childrenSection">
+                        <div class="child-profile">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Child's Name *</label>
+                                    <input type="text" class="child-name" required placeholder="Child's full name">
+                                </div>
+                                <div class="form-group">
+                                    <label>Age *</label>
+                                    <input type="number" class="child-age" required min="5" max="18" placeholder="Age">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Skill Level</label>
+                                    <select class="child-skill">
+                                        <option value="beginner">Beginner</option>
+                                        <option value="intermediate">Intermediate</option>
+                                        <option value="advanced">Advanced</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Previous Experience</label>
+                                    <select class="child-experience">
+                                        <option value="none">No experience</option>
+                                        <option value="some">Some experience</option>
+                                        <option value="club">Club player</option>
+                                        <option value="school">School team</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-secondary" onclick="addChild()">Add Another Child</button>
+                    
+                    <button type="submit" class="btn" id="registerBtn">Register Family</button>
+                </form>
+                
+                <div id="registrationMessage"></div>
+                
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="showLogin()">Back to Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboardScreen" class="hidden">
+        <div class="header">
+            <div class="user-header">
+                <div>
+                    <h1>🏏 Legacy Cricket Academy</h1>
+                    <p id="welcomeMessage">Welcome back!</p>
+                </div>
+                <button class="btn btn-logout" onclick="logout()">Sign Out</button>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab('profile')">Profile</button>
+                    <button class="tab" onclick="showTab('schedule')">Schedule</button>
+                    <button class="tab" onclick="showTab('payments')">Payments</button>
+                    <button class="tab" onclick="showTab('performance')">Performance</button>
+                </div>
+                
+                <!-- Profile Tab -->
+                <div id="profileTab" class="tab-content active">
+                    <h3>Family Profile</h3>
+                    <div id="profileContent">
+                        <div class="profile-section">
+                            <h4>Parent Information</h4>
+                            <div id="parentInfo"></div>
+                        </div>
+                        
+                        <div class="profile-section">
+                            <h4>Children Enrolled</h4>
+                            <div id="childrenInfo"></div>
+                        </div>
+                        
+                        <button class="btn btn-secondary" onclick="editProfile()">Edit Profile</button>
+                    </div>
+                </div>
+                
+                <!-- Schedule Tab -->
+                <div id="scheduleTab" class="tab-content">
+                    <h3>Training Schedule</h3>
+                    <div id="scheduleContent">
+                        <!-- Schedule items will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Payments Tab -->
+                <div id="paymentsTab" class="tab-content">
+                    <h3>Payment History & Billing</h3>
+                    <div id="paymentsContent">
+                        <!-- Payment items will be populated here -->
+                    </div>
+                    
+                    <div style="margin-top: 2rem;">
+                        <button class="btn btn-success" onclick="makePayment()">Make Payment</button>
+                    </div>
+                </div>
+                
+                <!-- Performance Tab -->
+                <div id="performanceTab" class="tab-content">
+                    <h3>Performance Analytics</h3>
+                    <div id="performanceContent">
+                        <!-- Performance data will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let users = {
+            'demo': {
+                username: 'demo',
+                password: 'demo123',
+                role: 'parent',
+                profile: {
+                    name: 'Sarah Johnson',
+                    email: 'sarah.johnson@email.com',
+                    phone: '+1 (555) 123-4567',
+                    address: '123 Cricket Lane, Sports City, SC 12345',
+                    children: [
+                        {
+                            name: 'Alex Johnson',
+                            age: 12,
+                            skill: 'intermediate',
+                            experience: 'school',
+                            memberId: 'AC001'
+                        },
+                        {
+                            name: 'Emma Johnson',
+                            age: 10,
+                            skill: 'beginner',
+                            experience: 'none',
+                            memberId: 'AC002'
+                        }
+                    ]
+                }
+            },
+            'admin': {
+                username: 'admin',
+                password: 'admin123',
+                role: 'admin',
+                profile: {
+                    name: 'Academy Administrator',
+                    email: 'admin@legacycricket.com',
+                    phone: '+1 (555) 999-0001'
+                }
+            }
+        };
+
+        // Sample data
+        const scheduleData = [
+            {
+                title: 'Junior Batting Practice',
+                date: '2025-06-05',
+                time: '4:00 PM - 6:00 PM',
+                coach: 'Coach Michael Smith',
+                location: 'Main Training Ground A',
+                level: 'Beginner to Intermediate',
+                spots: '8/12 enrolled'
+            },
+            {
+                title: 'Advanced Bowling Techniques',
+                date: '2025-06-07',
+                time: '10:00 AM - 12:00 PM',
+                coach: 'Coach David Wilson',
+                location: 'Indoor Practice Nets',
+                level: 'Advanced',
+                spots: '6/8 enrolled'
+            },
+            {
+                title: 'Team Match Practice',
+                date: '2025-06-09',
+                time: '2:00 PM - 5:00 PM',
+                coach: 'Coach Sarah Davis',
+                location: 'Championship Field',
+                level: 'All Levels',
+                spots: '15/20 enrolled'
+            }
+        ];
+
+        const paymentData = [
+            {
+                date: '2025-05-01',
+                description: 'Monthly Training Fee - May 2025',
+                amount: '$120.00',
+                status: 'paid',
+                method: 'Credit Card'
+            },
+            {
+                date: '2025-06-01',
+                description: 'Monthly Training Fee - June 2025',
+                amount: '$120.00',
+                status: 'pending',
+                dueDate: '2025-06-15'
+            },
+            {
+                date: '2025-04-15',
+                description: 'Equipment Rental - Bat & Pads',
+                amount: '$45.00',
+                status: 'paid',
+                method: 'Bank Transfer'
+            }
+        ];
+
+        const performanceData = [
+            {
+                child: 'Alex Johnson',
+                metrics: {
+                    'Batting Average': '34.5',
+                    'Bowling Speed': '55 mph',
+                    'Fielding Score': '8.2/10',
+                    'Attendance': '95%',
+                    'Last Assessment': '2025-05-20'
+                }
+            },
+            {
+                child: 'Emma Johnson',
+                metrics: {
+                    'Batting Improvement': '+25%',
+                    'Catching Success': '78%',
+                    'Running Speed': 'Good',
+                    'Attendance': '100%',
+                    'Last Assessment': '2025-05-22'
+                }
+            }
+        ];
+
+        function showLogin() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('registrationScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.add('hidden');
+        }
+
+        function showRegistration() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('registrationScreen').classList.remove('hidden');
+            document.getElementById('dashboardScreen').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('registrationScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.remove('hidden');
+            populateDashboard();
+        }
+
+        function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const messageDiv = document.getElementById('loginMessage');
+
+            if (!username || !password) {
+                messageDiv.innerHTML = '<div class="error-message">Please enter username and password</div>';
+                return;
+            }
+
+            const user = users[username];
+            if (user && user.password === password) {
+                currentUser = user;
+                messageDiv.innerHTML = '<div class="success-message">Login successful! Redirecting...</div>';
+                setTimeout(() => {
+                    showDashboard();
+                }, 1000);
+            } else {
+                messageDiv.innerHTML = '<div class="error-message">Invalid username or password</div>';
+            }
+        }
+
+        function register() {
+            const messageDiv = document.getElementById('registrationMessage');
+            
+            // Get parent info
+            const parentName = document.getElementById('parentName').value;
+            const parentEmail = document.getElementById('parentEmail').value;
+            const parentPhone = document.getElementById('parentPhone').value;
+            const parentAddress = document.getElementById('parentAddress').value;
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+
+            if (!parentName || !parentEmail || !parentPhone || !username || !password) {
+                messageDiv.innerHTML = '<div class="error-message">Please fill in all required fields</div>';
+                return;
+            }
+
+            if (users[username]) {
+                messageDiv.innerHTML = '<div class="error-message">Username already exists</div>';
+                return;
+            }
+
+            // Get children info
+            const children = [];
+            const childNames = document.querySelectorAll('.child-name');
+            const childAges = document.querySelectorAll('.child-age');
+            const childSkills = document.querySelectorAll('.child-skill');
+            const childExperiences = document.querySelectorAll('.child-experience');
+
+            for (let i = 0; i < childNames.length; i++) {
+                if (childNames[i].value && childAges[i].value) {
+                    children.push({
+                        name: childNames[i].value,
+                        age: parseInt(childAges[i].value),
+                        skill: childSkills[i].value,
+                        experience: childExperiences[i].value,
+                        memberId: 'AC' + String(Math.floor(Math.random() * 1000)).padStart(3, '0')
+                    });
+                }
+            }
+
+            if (children.length === 0) {
+                messageDiv.innerHTML = '<div class="error-message">Please add at least one child</div>';
+                return;
+            }
+
+            // Create new user
+            users[username] = {
+                username: username,
+                password: password,
+                role: 'parent',
+                profile: {
+                    name: parentName,
+                    email: parentEmail,
+                    phone: parentPhone,
+                    address: parentAddress,
+                    children: children
+                }
+            };
+
+            messageDiv.innerHTML = '<div class="success-message">Registration successful! You can now login with your credentials.</div>';
+            
+            setTimeout(() => {
+                showLogin();
+                document.getElementById('loginUsername').value = username;
+            }, 2000);
+        }
+
+        function addChild() {
+            const childrenSection = document.getElementById('childrenSection');
+            const newChild = document.createElement('div');
+            newChild.className = 'child-profile';
+            newChild.innerHTML = `
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Child's Name *</label>
+                        <input type="text" class="child-name" required placeholder="Child's full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Age *</label>
+                        <input type="number" class="child-age" required min="5" max="18" placeholder="Age">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Skill Level</label>
+                        <select class="child-skill">
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Previous Experience</label>
+                        <select class="child-experience">
+                            <option value="none">No experience</option>
+                            <option value="some">Some experience</option>
+                            <option value="club">Club player</option>
+                            <option value="school">School team</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="removeChild(this)">Remove Child</button>
+            `;
+            childrenSection.appendChild(newChild);
+        }
+
+        function removeChild(button) {
+            button.parentElement.remove();
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to sign out?')) {
+                currentUser = null;
+                showLogin();
+                clearForms();
+                document.getElementById('loginMessage').innerHTML = '';
+            }
+        }
+
+        function clearForms() {
+            document.querySelectorAll('input').forEach(input => input.value = '');
+            document.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+        }
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function populateDashboard() {
+            document.getElementById('welcomeMessage').textContent = `Welcome back, ${currentUser.profile.name}!`;
+            
+            populateProfile();
+            populateSchedule();
+            populatePayments();
+            populatePerformance();
+        }
+
+        function populateProfile() {
+            const profile = currentUser.profile;
+            
+            document.getElementById('parentInfo').innerHTML = `
+                <p><strong>Name:</strong> ${profile.name}</p>
+                <p><strong>Email:</strong> ${profile.email}</p>
+                <p><strong>Phone:</strong> ${profile.phone}</p>
+                <p><strong>Address:</strong> ${profile.address || 'Not provided'}</p>
+            `;
+            
+            const childrenHtml = profile.children.map(child => `
+                <div class="child-profile">
+                    <h5>${child.name} (Age ${child.age})</h5>
+                    <p><strong>Member ID:</strong> ${child.memberId}</p>
+                    <p><strong>Skill Level:</strong> ${child.skill}</p>
+                    <p><strong>Experience:</strong> ${child.experience}</p>
+                </div>
+            `).join('');
+            
+            document.getElementById('childrenInfo').innerHTML = childrenHtml;
+        }
+
+        function populateSchedule() {
+            const scheduleHtml = scheduleData.map(session => `
+                <div class="schedule-item">
+                    <h4>${session.title}</h4>
+                    <p><strong>Date:</strong> ${new Date(session.date).toLocaleDateString()}</p>
+                    <p><strong>Time:</strong> ${session.time}</p>
+                    <p><strong>Coach:</strong> ${session.coach}</p>
+                    <p><strong>Location:</strong> ${session.location}</p>
+                    <p><strong>Level:</strong> ${session.level}</p>
+                    <p><strong>Enrollment:</strong> ${session.spots}</p>
+                </div>
+            `).join('');
+            
+            document.getElementById('scheduleContent').innerHTML = scheduleHtml;
+        }
+
+        function populatePayments() {
+            const paymentsHtml = paymentData.map(payment => `
+                <div class="payment-item">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h4>${payment.description}</h4>
+                            <p>Date: ${new Date(payment.date).toLocaleDateString()}</p>
+                            ${payment.dueDate ? `<p>Due: ${new Date(payment.dueDate).toLocaleDateString()}</p>` : ''}
+                            ${payment.method ? `<p>Method: ${payment.method}</p>` : ''}
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="font-size: 1.2rem; font-weight: bold;">${payment.amount}</p>
+                            <span class="payment-status status-${payment.status}">${payment.status.toUpperCase()}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('paymentsContent').innerHTML = paymentsHtml;
+        }
+
+        function populatePerformance() {
+            const performanceHtml = performanceData.map(data => `
+                <div class="child-profile">
+                    <h4>${data.child} - Performance Metrics</h4>
+                    ${Object.entries(data.metrics).map(([metric, value]) => `
+                        <p><strong>${metric}:</strong> ${value}</p>
+                    `).join('')}
+                </div>
+            `).join('');
+            
+            document.getElementById('performanceContent').innerHTML = performanceHtml;
+        }
+
+        function editProfile() {
+            alert('Profile editing feature would redirect to a detailed form. This demo shows the current profile data.');
+        }
+
+        function makePayment() {
+            alert('Payment processing would integrate with Stripe or PayPal. This demo shows the payment history and pending amounts.');
+        }
+
+        // Form submission handler
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            register();
+        });
+
+        // Enter key handlers
+        document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
+    </script>
+</body>
+</html>
