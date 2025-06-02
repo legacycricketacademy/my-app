@@ -67,6 +67,63 @@ app.get('/api/ping', (req, res) => {
   });
 });
 
+// Email verification functionality
+import { MailService } from '@sendgrid/mail';
+
+const mailService = new MailService();
+if (process.env.SENDGRID_API_KEY) {
+  mailService.setApiKey(process.env.SENDGRID_API_KEY);
+}
+
+async function sendVerificationEmail(email: string, parentName: string, verificationToken: string) {
+  if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+    console.log('SendGrid not configured, skipping email send');
+    return false;
+  }
+
+  const verificationUrl = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${process.env.REPLIT_URL || 'localhost:5000'}/verify-email?token=${verificationToken}`;
+  
+  const emailContent = {
+    to: email,
+    from: process.env.SENDGRID_FROM_EMAIL,
+    subject: 'Welcome to Legacy Cricket Academy - Verify Your Email',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #1e40af; color: white; padding: 20px; text-align: center;">
+          <h1>🏏 Legacy Cricket Academy</h1>
+        </div>
+        <div style="padding: 20px; background: #f8fafc;">
+          <h2>Welcome, ${parentName}!</h2>
+          <p>Thank you for registering your child with Legacy Cricket Academy. To complete your registration and access your parent dashboard, please verify your email address.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+              Verify Email Address
+            </a>
+          </div>
+          
+          <p>If the button doesn't work, copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; color: #2563eb;">${verificationUrl}</p>
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+          
+          <p style="color: #6b7280; font-size: 14px;">
+            This verification link will expire in 24 hours. If you didn't create this account, please ignore this email.
+          </p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    await mailService.send(emailContent);
+    return true;
+  } catch (error) {
+    console.error('Email sending failed:', error);
+    return false;
+  }
+}
+
 // Serve the dashboard with authentication check
 app.get('/', (req, res) => {
   if (req.isAuthenticated() && req.user?.role === 'parent') {

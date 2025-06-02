@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Legacy Cricket Academy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: #f5f5f5; }
+        .header { background: #1e40af; color: white; padding: 1rem; text-align: center; }
+        .container { max-width: 600px; margin: 2rem auto; padding: 1rem; }
+        .card { background: white; border-radius: 8px; padding: 2rem; margin: 1rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin: 1rem 0; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; }
+        .btn { background: #2563eb; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; width: 100%; font-size: 1rem; }
+        .btn:hover { background: #1d4ed8; }
+        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+        .btn-logout { background: #dc2626; width: auto; margin-left: 1rem; }
+        .tabs { display: flex; border-bottom: 1px solid #ddd; margin-bottom: 1rem; }
+        .tab { flex: 1; padding: 1rem; text-align: center; background: none; border: none; cursor: pointer; }
+        .tab.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 500; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .schedule-item { background: #f8fafc; padding: 1rem; margin: 0.5rem 0; border-radius: 6px; border-left: 4px solid #2563eb; }
+        .payment-status { padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-weight: 500; }
+        .status-paid { background: #dcfce7; color: #166534; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .hidden { display: none; }
+        .user-header { display: flex; justify-content: space-between; align-items: center; }
+        .success-message { background: #dcfce7; border: 1px solid #10b981; color: #065f46; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+        .error-message { background: #fef2f2; border: 1px solid #ef4444; color: #dc2626; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+        .loading { color: #6b7280; }
+    </style>
+</head>
+<body>
+    <!-- Login Screen (Main) -->
+    <div id="loginScreen">
+        <div class="header">
+            <h1>🏏 Legacy Cricket Academy</h1>
+            <p>Parent Sign In</p>
+        </div>
+        
+        <div class="container">
+            <div class="card">
+                <h2>Sign In</h2>
+                
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUsername">
+                </div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword">
+                </div>
+                
+                <button class="btn" onclick="login()" id="loginBtn">Sign In</button>
+                
+                <div id="loginMessage"></div>
+                
+                <p style="text-align: center; margin-top: 1rem;">
+                    <button style="background: none; border: none; color: #2563eb; cursor: pointer; text-decoration: underline;" onclick="showRegistration()">
+                        Need to register? Create account
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Registration Screen -->
+    <div id="registrationScreen" class="hidden">
+        <div class="header">
+            <h1>🏏 Legacy Cricket Academy</h1>
+            <p>Parent Registration</p>
+        </div>
+        
+        <div class="container">
+            <div class="card">
+                <h2>Register Your Child</h2>
+                
+                <div class="form-group">
+                    <label>Parent Name</label>
+                    <input type="text" id="parentName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="parentEmail" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="parentPhone" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                
+                <hr style="margin: 1.5rem 0;">
+                
+                <div class="form-group">
+                    <label>Player Name</label>
+                    <input type="text" id="playerName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Player Age</label>
+                    <select id="playerAge" required>
+                        <option value="">Select Age Group</option>
+                        <option value="8-10">8-10 years</option>
+                        <option value="11-13">11-13 years</option>
+                        <option value="14-16">14-16 years</option>
+                    </select>
+                </div>
+                
+                <button class="btn" onclick="register()" id="registerBtn">Register</button>
+                
+                <div id="registerMessage"></div>
+                
+                <p style="text-align: center; margin-top: 1rem;">
+                    <button style="background: none; border: none; color: #2563eb; cursor: pointer; text-decoration: underline;" onclick="showLogin()">
+                        Already have an account? Sign in
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dashboard -->
+    <div id="dashboardScreen" class="hidden">
+        <div class="header">
+            <div class="user-header">
+                <div>
+                    <h1>🏏 Legacy Cricket Academy</h1>
+                    <p id="welcomeMessage">Welcome back</p>
+                </div>
+                <button class="btn btn-logout" onclick="logout()">Sign Out</button>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab('profile')">Profile</button>
+                    <button class="tab" onclick="showTab('schedule')">Schedule</button>
+                    <button class="tab" onclick="showTab('payments')">Payments</button>
+                </div>
+                
+                <!-- Profile Tab -->
+                <div id="profile" class="tab-content active">
+                    <h3>Player Profile</h3>
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 6px; margin: 1rem 0;">
+                        <p><strong>Name:</strong> <span id="profilePlayerName">-</span></p>
+                        <p><strong>Age Group:</strong> <span id="profilePlayerAge">-</span></p>
+                        <p><strong>Parent:</strong> <span id="profileParentName">-</span></p>
+                        <p><strong>Contact:</strong> <span id="profileParentContact">-</span></p>
+                    </div>
+                </div>
+                
+                <!-- Schedule Tab -->
+                <div id="schedule" class="tab-content">
+                    <h3>Upcoming Training</h3>
+                    <div id="scheduleContent" class="loading">Loading schedule...</div>
+                </div>
+                
+                <!-- Payments Tab -->
+                <div id="payments" class="tab-content">
+                    <h3>Payment Status</h3>
+                    <div id="paymentsContent" class="loading">Loading payment information...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const SERVER_URL = window.location.protocol === 'file:' ? 'http://localhost:5000' : '';
+        let currentUser = null;
+        
+        async function makeRequest(url, options = {}) {
+            const fullUrl = SERVER_URL + url;
+            return fetch(fullUrl, {
+                credentials: 'include',
+                ...options
+            });
+        }
+        
+        function showRegistration() {
+            document.getElementById('registrationScreen').classList.remove('hidden');
+            document.getElementById('loginScreen').classList.add('hidden');
+        }
+        
+        function showLogin() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('registrationScreen').classList.add('hidden');
+        }
+        
+        async function register() {
+            const btn = document.getElementById('registerBtn');
+            const messageDiv = document.getElementById('registerMessage');
+            
+            const parentName = document.getElementById('parentName').value;
+            const parentEmail = document.getElementById('parentEmail').value;
+            const parentPhone = document.getElementById('parentPhone').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const playerName = document.getElementById('playerName').value;
+            const playerAge = document.getElementById('playerAge').value;
+            
+            if (!parentName || !parentEmail || !parentPhone || !username || !password || !playerName || !playerAge) {
+                messageDiv.innerHTML = '<div class="error-message">Please fill in all fields</div>';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Registering...';
+            messageDiv.innerHTML = '';
+            
+            try {
+                const response = await makeRequest('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fullName: parentName,
+                        email: parentEmail,
+                        phone: parentPhone,
+                        username: username,
+                        password: password,
+                        role: 'parent',
+                        playerName: playerName,
+                        playerAge: playerAge
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    messageDiv.innerHTML = `
+                        <div class="success-message">
+                            <strong>Registration successful!</strong><br>
+                            A verification email has been sent to: <strong>${parentEmail}</strong><br>
+                            Please check your email and click the verification link to activate your account.
+                        </div>
+                    `;
+                    
+                    // Auto-switch to login after 3 seconds
+                    setTimeout(() => {
+                        showLogin();
+                        document.getElementById('loginUsername').value = username;
+                    }, 3000);
+                } else {
+                    messageDiv.innerHTML = `<div class="error-message">${data.message || 'Registration failed'}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error-message">Network error. Please check if the server is running.</div>`;
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Register';
+        }
+        
+        async function login() {
+            const btn = document.getElementById('loginBtn');
+            const messageDiv = document.getElementById('loginMessage');
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                messageDiv.innerHTML = '<div class="error-message">Please enter username and password</div>';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+            messageDiv.innerHTML = '';
+            
+            try {
+                const response = await makeRequest('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    currentUser = userData;
+                    showDashboard();
+                } else {
+                    const data = await response.json();
+                    messageDiv.innerHTML = `<div class="error-message">${data.message || 'Invalid username or password'}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error-message">Network error. Please check if the server is running.</div>`;
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Sign In';
+        }
+        
+        async function logout() {
+            if (confirm('Are you sure you want to sign out?')) {
+                try {
+                    await makeRequest('/api/logout', { method: 'POST' });
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+                
+                document.getElementById('dashboardScreen').classList.add('hidden');
+                showLogin();
+                clearForms();
+            }
+        }
+        
+        function clearForms() {
+            document.querySelectorAll('input').forEach(input => input.value = '');
+            document.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+        }
+        
+        async function showDashboard() {
+            document.getElementById('registrationScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.remove('hidden');
+            
+            // Update welcome message
+            document.getElementById('welcomeMessage').textContent = `Welcome back, ${currentUser.fullName || currentUser.username}`;
+            
+            // Load dashboard data
+            await loadDashboardData();
+        }
+        
+        async function loadDashboardData() {
+            // Load schedule
+            try {
+                const scheduleResponse = await makeRequest('/api/dashboard/schedule');
+                if (scheduleResponse.ok) {
+                    const schedule = await scheduleResponse.json();
+                    displaySchedule(schedule);
+                }
+            } catch (error) {
+                document.getElementById('scheduleContent').innerHTML = '<div class="error-message">Failed to load schedule</div>';
+            }
+            
+            // Load payments
+            try {
+                const paymentsResponse = await makeRequest('/api/dashboard/payments');
+                if (paymentsResponse.ok) {
+                    const payments = await paymentsResponse.json();
+                    displayPayments(payments);
+                }
+            } catch (error) {
+                document.getElementById('paymentsContent').innerHTML = '<div class="error-message">Failed to load payment information</div>';
+            }
+        }
+        
+        function displaySchedule(schedule) {
+            const scheduleContent = document.getElementById('scheduleContent');
+            if (schedule && schedule.length > 0) {
+                scheduleContent.innerHTML = schedule.map(item => `
+                    <div class="schedule-item">
+                        <strong>${item.day} - ${item.activity}</strong><br>
+                        <strong>Time:</strong> ${item.time}<br>
+                        <strong>Location:</strong> ${item.location}<br>
+                        <strong>Address:</strong> Legacy Cricket Academy, Sports Complex
+                    </div>
+                `).join('');
+            } else {
+                scheduleContent.innerHTML = '<p>No upcoming training sessions scheduled.</p>';
+            }
+        }
+        
+        function displayPayments(payments) {
+            const paymentsContent = document.getElementById('paymentsContent');
+            if (payments && payments.current) {
+                paymentsContent.innerHTML = `
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 6px; margin: 1rem 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span><strong>${payments.current.period} Training Fee</strong></span>
+                            <span class="payment-status ${payments.current.status === 'paid' ? 'status-paid' : 'status-pending'}">
+                                ${payments.current.status.toUpperCase()}
+                            </span>
+                        </div>
+                        <p>Amount: $${payments.current.amount} | ${payments.current.description}</p>
+                    </div>
+                    
+                    <h4 style="margin-top: 2rem; margin-bottom: 1rem;">Payment History</h4>
+                    <div style="background: #f9fafb; padding: 1rem; border-radius: 6px;">
+                        ${payments.history ? payments.history.map(payment => 
+                            `<p><strong>${payment.date}:</strong> $${payment.amount} - ${payment.description}</p>`
+                        ).join('') : '<p>No payment history available.</p>'}
+                    </div>
+                `;
+            } else {
+                paymentsContent.innerHTML = '<p>No payment information available.</p>';
+            }
+        }
+        
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
