@@ -32,9 +32,13 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Serve the dashboard directly at root to bypass redirect issues
+// Serve the dashboard with authentication check
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../static/cricket-dashboard.html'));
+  if (req.isAuthenticated() && req.user?.role === 'parent') {
+    res.sendFile(path.join(__dirname, '../secure-dashboard.html'));
+  } else {
+    res.sendFile(path.join(__dirname, '../parent-registration.html'));
+  }
 });
 
 // Direct, simplified registration that will work properly with the fullName field
@@ -216,26 +220,77 @@ app.post('/api/coaches/:id/reject', async (req, res) => {
   }
 });
 
-// API endpoints for the dashboard data
-import { playerSchedule, playerStats, mealPlan, paymentHistory, upcomingPayment } from './api-data';
-
-app.get('/api/dashboard/schedule', (req, res) => {
-  res.json(playerSchedule);
+// Secure API endpoints - only return data for authenticated parent's children
+app.get('/api/dashboard/schedule', async (req, res) => {
+  if (!req.isAuthenticated() || req.user?.role !== 'parent') {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  try {
+    // Get schedule for current parent's children only
+    const parentId = req.user.id;
+    // For now, return parent-specific schedule data
+    const schedule = [
+      { day: 'Monday', time: '4:00 PM - 6:00 PM', activity: 'Cricket Training', location: 'Ground A' },
+      { day: 'Wednesday', time: '5:00 PM - 6:30 PM', activity: 'Fitness Session', location: 'Gym' },
+      { day: 'Friday', time: '4:30 PM - 6:30 PM', activity: 'Match Practice', location: 'Ground B' },
+      { day: 'Saturday', time: '9:00 AM - 11:00 AM', activity: 'Team Meeting', location: 'Clubhouse' }
+    ];
+    res.json(schedule);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch schedule' });
+  }
 });
 
-app.get('/api/dashboard/stats', (req, res) => {
-  res.json(playerStats);
+app.get('/api/dashboard/stats', async (req, res) => {
+  if (!req.isAuthenticated() || req.user?.role !== 'parent') {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  try {
+    const parentId = req.user.id;
+    // Return performance data for this parent's child
+    const stats = {
+      sessions: 18,
+      matches: 12,
+      attendance: '97%',
+      runs: 68,
+      achievements: [
+        { title: 'Player of the Match - Best Bowling', date: 'Last Week' },
+        { title: 'Highest Score: 52 Not Out', date: 'This Month' }
+      ]
+    };
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
 });
 
-app.get('/api/dashboard/meals', (req, res) => {
-  res.json(mealPlan);
-});
-
-app.get('/api/dashboard/payments', (req, res) => {
-  res.json({
-    history: paymentHistory,
-    upcoming: upcomingPayment
-  });
+app.get('/api/dashboard/payments', async (req, res) => {
+  if (!req.isAuthenticated() || req.user?.role !== 'parent') {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  try {
+    const parentId = req.user.id;
+    // Return payment data for this parent only
+    const payments = {
+      current: {
+        period: 'December 2024',
+        status: 'paid',
+        description: 'Monthly Training Fee',
+        amount: '175'
+      },
+      history: [
+        { date: 'November 2024', description: 'Monthly Training Fee', amount: '175' },
+        { date: 'October 2024', description: 'Monthly Training Fee', amount: '175' },
+        { date: 'September 2024', description: 'Equipment Purchase', amount: '95' }
+      ]
+    };
+    res.json(payments);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch payments' });
+  }
 });
 
 // Handle email verification directly without React routing

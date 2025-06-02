@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Legacy Cricket Academy - Parent Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: #f8fafc; }
+        .header { background: #1e40af; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.25rem; font-weight: 600; }
+        .user-info { display: flex; align-items: center; gap: 1rem; }
+        .btn { background: #dc2626; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500; }
+        .btn:hover { background: #b91c1c; }
+        .container { max-width: 1000px; margin: 1rem auto; padding: 1rem; }
+        .card { background: white; border-radius: 8px; padding: 1.5rem; margin: 1rem 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .loading { text-align: center; color: #6b7280; padding: 2rem; }
+        .error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+        .schedule-item { padding: 1rem; margin: 0.5rem 0; background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 4px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .stat { text-align: center; padding: 1rem; background: #f0f9ff; border-radius: 6px; }
+        .stat-number { font-size: 1.5rem; font-weight: bold; color: #1d4ed8; display: block; }
+        .payment-item { padding: 0.75rem; margin: 0.5rem 0; background: #f9fafb; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .tabs { display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 1rem; }
+        .tab { padding: 1rem; background: none; border: none; cursor: pointer; font-weight: 500; color: #6b7280; }
+        .tab.active { color: #2563eb; border-bottom: 2px solid #2563eb; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 1rem; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .payment-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🏏 Legacy Cricket Academy</div>
+        <div class="user-info">
+            <span id="welcomeText">Loading...</span>
+            <button class="btn" onclick="signOut()">Sign Out</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('schedule')">Schedule</button>
+                <button class="tab" onclick="showTab('performance')">Performance</button>
+                <button class="tab" onclick="showTab('payments')">Payments</button>
+            </div>
+            
+            <div id="schedule-content" class="tab-content active">
+                <h2>Training Schedule</h2>
+                <div id="schedule-data" class="loading">Loading schedule...</div>
+            </div>
+            
+            <div id="performance-content" class="tab-content">
+                <h2>Player Performance</h2>
+                <div id="stats-data" class="loading">Loading performance data...</div>
+            </div>
+            
+            <div id="payments-content" class="tab-content">
+                <h2>Payment Information</h2>
+                <div id="payments-data" class="loading">Loading payment data...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentUser = null;
+        
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/user');
+                if (response.ok) {
+                    currentUser = await response.json();
+                    document.getElementById('welcomeText').textContent = `Welcome, ${currentUser.fullName}`;
+                    loadDashboardData();
+                } else {
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/';
+            }
+        }
+        
+        async function loadDashboardData() {
+            await Promise.all([
+                loadSchedule(),
+                loadStats(),
+                loadPayments()
+            ]);
+        }
+        
+        async function loadSchedule() {
+            try {
+                const response = await fetch('/api/dashboard/schedule');
+                if (response.ok) {
+                    const schedule = await response.json();
+                    displaySchedule(schedule);
+                } else {
+                    throw new Error('Failed to load schedule');
+                }
+            } catch (error) {
+                document.getElementById('schedule-data').innerHTML = 
+                    '<div class="error">Unable to load schedule. Please try again later.</div>';
+            }
+        }
+        
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/dashboard/stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    displayStats(stats);
+                } else {
+                    throw new Error('Failed to load stats');
+                }
+            } catch (error) {
+                document.getElementById('stats-data').innerHTML = 
+                    '<div class="error">Unable to load performance data. Please try again later.</div>';
+            }
+        }
+        
+        async function loadPayments() {
+            try {
+                const response = await fetch('/api/dashboard/payments');
+                if (response.ok) {
+                    const payments = await response.json();
+                    displayPayments(payments);
+                } else {
+                    throw new Error('Failed to load payments');
+                }
+            } catch (error) {
+                document.getElementById('payments-data').innerHTML = 
+                    '<div class="error">Unable to load payment data. Please try again later.</div>';
+            }
+        }
+        
+        function displaySchedule(schedule) {
+            if (!schedule || schedule.length === 0) {
+                document.getElementById('schedule-data').innerHTML = 
+                    '<p>No training sessions scheduled at this time.</p>';
+                return;
+            }
+            
+            let html = '';
+            schedule.forEach(session => {
+                html += `
+                    <div class="schedule-item">
+                        <strong>${session.day} ${session.time}</strong><br>
+                        ${session.activity} • ${session.location}
+                    </div>
+                `;
+            });
+            
+            document.getElementById('schedule-data').innerHTML = html;
+        }
+        
+        function displayStats(stats) {
+            if (!stats) {
+                document.getElementById('stats-data').innerHTML = 
+                    '<p>Performance data will be available after training sessions.</p>';
+                return;
+            }
+            
+            let html = `
+                <div class="stats">
+                    <div class="stat">
+                        <span class="stat-number">${stats.sessions || 0}</span>
+                        <span>Sessions</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">${stats.matches || 0}</span>
+                        <span>Matches</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">${stats.attendance || '0%'}</span>
+                        <span>Attendance</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">${stats.runs || 0}</span>
+                        <span>Runs</span>
+                    </div>
+                </div>
+            `;
+            
+            if (stats.achievements && stats.achievements.length > 0) {
+                html += '<h3>Recent Achievements</h3>';
+                stats.achievements.forEach(achievement => {
+                    html += `
+                        <div class="payment-item">
+                            <span>${achievement.title}</span>
+                            <span style="color: #059669; font-weight: 600;">${achievement.date}</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('stats-data').innerHTML = html;
+        }
+        
+        function displayPayments(payments) {
+            if (!payments) {
+                document.getElementById('payments-data').innerHTML = 
+                    '<p>Payment information will be updated shortly.</p>';
+                return;
+            }
+            
+            let html = '';
+            
+            if (payments.current) {
+                const statusClass = payments.current.status === 'paid' ? 'background: #ecfdf5; border: 2px solid #10b981;' : 'background: #fef2f2; border: 2px solid #ef4444;';
+                const statusText = payments.current.status === 'paid' ? 'PAID ✓' : 'PENDING';
+                
+                html += `
+                    <div style="${statusClass} padding: 1rem; border-radius: 6px; margin: 1rem 0;">
+                        <strong>${payments.current.period} - ${statusText}</strong><br>
+                        ${payments.current.description}: $${payments.current.amount}
+                    </div>
+                `;
+            }
+            
+            if (payments.history && payments.history.length > 0) {
+                html += '<h3>Payment History</h3>';
+                payments.history.forEach(payment => {
+                    html += `
+                        <div class="payment-item">
+                            <div>
+                                <strong>${payment.date}</strong><br>
+                                ${payment.description}
+                            </div>
+                            <span style="color: #059669; font-weight: 600;">$${payment.amount} ✓</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('payments-data').innerHTML = html;
+        }
+        
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-content').classList.add('active');
+        }
+        
+        async function signOut() {
+            if (confirm('Are you sure you want to sign out?')) {
+                try {
+                    await fetch('/api/logout', { method: 'POST' });
+                    window.location.href = '/';
+                } catch (error) {
+                    console.error('Logout failed:', error);
+                    window.location.href = '/';
+                }
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
+</body>
+</html>
