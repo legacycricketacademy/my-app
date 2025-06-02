@@ -197,6 +197,7 @@
                     <button class="tab" onclick="showTab('schedule')">Schedule</button>
                     <button class="tab" onclick="showTab('payments')">Payments</button>
                     <button class="tab" onclick="showTab('performance')">Performance</button>
+                    <button class="tab" id="usersTab" onclick="showTab('users')" style="display: none;">Users</button>
                 </div>
                 
                 <!-- Profile Tab -->
@@ -382,6 +383,58 @@
                     <h3>Performance Analytics</h3>
                     <div id="performanceContent">
                         <!-- Performance data will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Users Tab (Admin Only) -->
+                <div id="usersTab" class="tab-content">
+                    <h3>User Management</h3>
+                    <div id="usersContent">
+                        <div id="usersList">
+                            <!-- Users will be populated here -->
+                        </div>
+                        
+                        <div style="margin-top: 2rem;">
+                            <button class="btn btn-success" onclick="addNewUser()">Add New User</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Add User Form -->
+                    <div id="addUserForm" class="hidden card">
+                        <h4>Add New User</h4>
+                        <form id="newUserForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Full Name</label>
+                                    <input type="text" id="newUserName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" id="newUserEmail" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Username</label>
+                                    <input type="text" id="newUserUsername" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Role</label>
+                                    <select id="newUserRole" required>
+                                        <option value="">Select role</option>
+                                        <option value="parent">Parent</option>
+                                        <option value="coach">Coach</option>
+                                        <option value="admin">Administrator</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone</label>
+                                <input type="tel" id="newUserPhone" required>
+                            </div>
+                            <button type="button" class="btn btn-success" onclick="saveNewUser()">Create User</button>
+                            <button type="button" class="btn btn-secondary" onclick="cancelAddUser()">Cancel</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -693,12 +746,17 @@
                 document.getElementById('profileTitle').textContent = 'Admin Dashboard';
                 document.getElementById('profileInfoTitle').textContent = 'Administrator Information';
                 document.getElementById('childrenSection').classList.add('hidden');
+                document.getElementById('usersTab').style.display = 'block';
             }
             
             populateProfile();
             populateSchedule();
             populatePayments();
             populatePerformance();
+            
+            if (currentUser.role === 'admin') {
+                populateUsers();
+            }
         }
 
         function populateProfile() {
@@ -872,7 +930,82 @@
         }
 
         function manageUsers() {
-            alert('User management interface would show all registered users with options to approve, suspend, or manage their accounts.');
+            showTab('users');
+        }
+
+        function populateUsers() {
+            const usersHtml = Object.entries(users).map(([username, user]) => `
+                <div class="child-profile" style="margin: 1rem 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h4>${user.profile.name}</h4>
+                            <p><strong>Username:</strong> ${username}</p>
+                            <p><strong>Email:</strong> ${user.profile.email}</p>
+                            <p><strong>Role:</strong> ${user.role}</p>
+                            <p><strong>Phone:</strong> ${user.profile.phone || 'Not provided'}</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-secondary" onclick="editUser('${username}')" style="margin: 0.25rem; width: auto;">Edit</button>
+                            <button class="btn" onclick="suspendUser('${username}')" style="margin: 0.25rem; width: auto; background: #dc2626;">Suspend</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('usersList').innerHTML = usersHtml;
+        }
+
+        function addNewUser() {
+            document.getElementById('addUserForm').classList.remove('hidden');
+        }
+
+        function cancelAddUser() {
+            document.getElementById('addUserForm').classList.add('hidden');
+            document.getElementById('newUserForm').reset();
+        }
+
+        function saveNewUser() {
+            const name = document.getElementById('newUserName').value;
+            const email = document.getElementById('newUserEmail').value;
+            const username = document.getElementById('newUserUsername').value;
+            const role = document.getElementById('newUserRole').value;
+            const phone = document.getElementById('newUserPhone').value;
+
+            if (!name || !email || !username || !role || !phone) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            if (users[username]) {
+                alert('Username already exists');
+                return;
+            }
+
+            users[username] = {
+                username: username,
+                password: 'temp123', // Temporary password
+                role: role,
+                profile: {
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    children: role === 'parent' ? [] : undefined
+                }
+            };
+
+            alert(`User created successfully! Temporary password: temp123`);
+            cancelAddUser();
+            populateUsers();
+        }
+
+        function editUser(username) {
+            alert(`Edit user interface would open for: ${users[username].profile.name}`);
+        }
+
+        function suspendUser(username) {
+            if (confirm(`Are you sure you want to suspend ${users[username].profile.name}?`)) {
+                alert(`User ${users[username].profile.name} has been suspended.`);
+            }
         }
 
         function showPaymentForm() {
