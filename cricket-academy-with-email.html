@@ -313,9 +313,21 @@
                     console.error('Logout error:', error);
                 }
                 
+                // Clear user data
+                currentUser = null;
+                
+                // Hide all screens first
                 document.getElementById('dashboardScreen').classList.add('hidden');
-                showLogin();
+                document.getElementById('registrationScreen').classList.add('hidden');
+                
+                // Show login screen
+                document.getElementById('loginScreen').classList.remove('hidden');
+                
+                // Clear forms
                 clearForms();
+                
+                // Clear any messages
+                document.getElementById('loginMessage').innerHTML = '';
             }
         }
         
