@@ -102,8 +102,8 @@
                             <input type="text" id="parentName" required placeholder="Your full name">
                         </div>
                         <div class="form-group">
-                            <label>Phone Number *</label>
-                            <input type="tel" id="parentPhone" required placeholder="Your phone number">
+                            <label>Phone Number</label>
+                            <input type="tel" id="parentPhone" placeholder="Your phone number (optional)">
                         </div>
                     </div>
                     
@@ -616,7 +616,7 @@
             const username = document.getElementById('regUsername').value;
             const password = document.getElementById('regPassword').value;
 
-            if (!parentName || !parentEmail || !parentPhone || !username || !password) {
+            if (!parentName || !parentEmail || !username || !password) {
                 messageDiv.innerHTML = '<div class="error-message">Please fill in all required parent and account fields</div>';
                 btn.disabled = false;
                 btn.textContent = 'Register Kid';
