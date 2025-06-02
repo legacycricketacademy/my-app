@@ -34,7 +34,7 @@ app.use(express.urlencoded({ extended: false }));
 
 // Serve the dashboard directly at root to bypass redirect issues
 app.get('/', (req, res) => {
-  res.sendFile('working-dashboard.html', { root: './server/public' });
+  res.sendFile(path.join(__dirname, '../index.html'));
 });
 
 // Direct, simplified registration that will work properly with the fullName field
