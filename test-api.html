@@ -111,16 +111,25 @@
     
     <script>
         let testResults = {};
+        const SERVER_URL = window.location.protocol === 'file:' ? 'http://localhost:5000' : '';
+        
+        async function makeRequest(url, options = {}) {
+            const fullUrl = SERVER_URL + url;
+            return fetch(fullUrl, {
+                credentials: 'include',
+                ...options
+            });
+        }
         
         async function testConnectivity() {
             updateStatus('connectivity', 'pending');
             const result = document.getElementById('connectivity-result');
             
             try {
-                const response = await fetch('/api/ping');
+                const response = await makeRequest('/api/ping');
                 if (response.ok) {
                     const data = await response.json();
-                    result.innerHTML = `✓ Server is running\nResponse: ${JSON.stringify(data, null, 2)}`;
+                    result.innerHTML = `✓ Server is running\nURL: ${SERVER_URL || 'same origin'}\nResponse: ${JSON.stringify(data, null, 2)}`;
                     result.className = 'result success';
                     updateStatus('connectivity', 'success');
                     testResults.connectivity = true;
@@ -128,7 +137,7 @@
                     throw new Error(`Server responded with status ${response.status}`);
                 }
             } catch (error) {
-                result.innerHTML = `✗ Server connection failed\nError: ${error.message}`;
+                result.innerHTML = `✗ Server connection failed\nURL: ${SERVER_URL || 'same origin'}\nError: ${error.message}\n\nTip: Make sure server is running on port 5000`;
                 result.className = 'result error';
                 updateStatus('connectivity', 'error');
                 testResults.connectivity = false;
@@ -151,7 +160,7 @@
             };
             
             try {
-                const response = await fetch('/api/register', {
+                const response = await makeRequest('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(registrationData)
@@ -188,7 +197,7 @@
             };
             
             try {
-                const response = await fetch('/api/login', {
+                const response = await makeRequest('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(loginData)
@@ -219,7 +228,7 @@
             const result = document.getElementById('dashboard-result');
             
             try {
-                const response = await fetch('/api/dashboard/schedule');
+                const response = await makeRequest('/api/dashboard/schedule');
                 if (response.ok) {
                     const data = await response.json();
                     result.innerHTML += `✓ Schedule API working\nData: ${JSON.stringify(data, null, 2)}\n\n`;
@@ -238,7 +247,7 @@
             const result = document.getElementById('dashboard-result');
             
             try {
-                const response = await fetch('/api/dashboard/stats');
+                const response = await makeRequest('/api/dashboard/stats');
                 if (response.ok) {
                     const data = await response.json();
                     result.innerHTML += `✓ Stats API working\nData: ${JSON.stringify(data, null, 2)}\n\n`;
@@ -254,7 +263,7 @@
             const result = document.getElementById('dashboard-result');
             
             try {
-                const response = await fetch('/api/dashboard/payments');
+                const response = await makeRequest('/api/dashboard/payments');
                 if (response.ok) {
                     const data = await response.json();
                     result.innerHTML += `✓ Payments API working\nData: ${JSON.stringify(data, null, 2)}\n\n`;
@@ -277,10 +286,10 @@
             const result = document.getElementById('auth-result');
             
             // First logout to test unauthorized access
-            await fetch('/api/logout', { method: 'POST' });
+            await makeRequest('/api/logout', { method: 'POST' });
             
             try {
-                const response = await fetch('/api/dashboard/schedule');
+                const response = await makeRequest('/api/dashboard/schedule');
                 if (response.status === 401) {
                     result.innerHTML = `✓ Authentication protection working\nUnauthorized access properly blocked (401)`;
                     result.className = 'result success';
@@ -305,7 +314,7 @@
             const result = document.getElementById('logout-result');
             
             try {
-                const response = await fetch('/api/logout', { method: 'POST' });
+                const response = await makeRequest('/api/logout', { method: 'POST' });
                 if (response.ok) {
                     result.innerHTML = `✓ Logout successful\nStatus: ${response.status}`;
                     result.className = 'result success';
