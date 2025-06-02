@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+parent<!DOCTYPE html>
 <html>
 <head>
     <title>Legacy Cricket Academy</title>
@@ -353,14 +353,8 @@
                                 <label>Payment Method</label>
                                 <select id="paymentMethod" required>
                                     <option value="">Select payment method</option>
-                                    <option value="credit_card">Credit Card</option>
-                                    <option value="debit_card">Debit Card</option>
-                                    <option value="bank_transfer">Bank Transfer</option>
-                                    <option value="paypal">PayPal</option>
                                     <option value="zelle">Zelle</option>
                                     <option value="cash_app">Cash App</option>
-                                    <option value="venmo">Venmo</option>
-                                    <option value="apple_pay">Apple Pay</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -513,29 +507,24 @@
             }
         ];
 
-        let paymentData = [
-            {
-                date: '2025-05-01',
-                description: 'Monthly Training Fee - May 2025',
-                amount: '$120.00',
-                status: 'paid',
-                method: 'Credit Card'
-            },
-            {
-                date: '2025-06-01',
-                description: 'Monthly Training Fee - June 2025',
-                amount: '$120.00',
-                status: 'pending',
-                dueDate: '2025-06-15'
-            },
-            {
-                date: '2025-04-15',
-                description: 'Equipment Rental - Bat & Pads',
-                amount: '$45.00',
-                status: 'paid',
-                method: 'Bank Transfer'
-            }
-        ];
+        let paymentData = {
+            'demo': [
+                {
+                    date: '2025-05-01',
+                    description: 'Monthly Training Fee - May 2025',
+                    amount: '$120.00',
+                    status: 'paid',
+                    method: 'Zelle'
+                },
+                {
+                    date: '2025-04-15',
+                    description: 'Equipment Rental - Bat & Pads',
+                    amount: '$45.00',
+                    status: 'paid',
+                    method: 'Cash App'
+                }
+            ]
+        };
 
         const performanceData = [
             {
@@ -815,7 +804,18 @@
         }
 
         function populatePayments() {
-            const paymentsHtml = paymentData.map(payment => `
+            const userPayments = paymentData[currentUser.username] || [];
+            
+            if (userPayments.length === 0) {
+                document.getElementById('paymentsContent').innerHTML = `
+                    <div class="info-note">
+                        <p>No payment history yet. When you make your first payment, it will appear here.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const paymentsHtml = userPayments.map(payment => `
                 <div class="payment-item">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
@@ -1052,7 +1052,12 @@
                 method: document.getElementById('paymentMethod').options[document.getElementById('paymentMethod').selectedIndex].text
             };
 
-            paymentData.unshift(newPayment); // Add to beginning of array
+            // Initialize payment data for user if it doesn't exist
+            if (!paymentData[currentUser.username]) {
+                paymentData[currentUser.username] = [];
+            }
+            
+            paymentData[currentUser.username].unshift(newPayment); // Add to beginning of user's payment array
             alert('Payment processed successfully!');
             cancelPayment();
             populatePayments();
