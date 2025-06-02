@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Legacy Cricket Academy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: #f5f5f5; }
+        .header { background: #1e40af; color: white; padding: 1rem; text-align: center; }
+        .container { max-width: 600px; margin: 2rem auto; padding: 1rem; }
+        .card { background: white; border-radius: 8px; padding: 2rem; margin: 1rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin: 1rem 0; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; }
+        .btn { background: #2563eb; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; width: 100%; font-size: 1rem; }
+        .btn:hover { background: #1d4ed8; }
+        .btn-logout { background: #dc2626; width: auto; margin-left: 1rem; }
+        .tabs { display: flex; border-bottom: 1px solid #ddd; margin-bottom: 1rem; }
+        .tab { flex: 1; padding: 1rem; text-align: center; background: none; border: none; cursor: pointer; }
+        .tab.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 500; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .schedule-item { background: #f8fafc; padding: 1rem; margin: 0.5rem 0; border-radius: 6px; border-left: 4px solid #2563eb; }
+        .payment-status { padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-weight: 500; }
+        .status-paid { background: #dcfce7; color: #166534; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .hidden { display: none; }
+        .user-header { display: flex; justify-content: space-between; align-items: center; }
+        .success-message { background: #dcfce7; border: 1px solid #10b981; color: #065f46; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+        .info-note { background: #dbeafe; border: 1px solid #3b82f6; color: #1e40af; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+        @media (max-width: 768px) {
+            .header { padding: 1rem 0.5rem; }
+            .container { margin: 1rem auto; padding: 0.5rem; }
+            .user-header { flex-direction: column; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen">
+        <div class="header">
+            <h1>🏏 Legacy Cricket Academy</h1>
+            <p>Parent Access Portal</p>
+        </div>
+        
+        <div class="container">
+            <div class="card">
+                <h2>Parent Sign In</h2>
+                
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter your username">
+                </div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password">
+                </div>
+                
+                <button class="btn" onclick="login()">Sign In</button>
+                
+                <p style="text-align: center; margin-top: 1.5rem;">
+                    <button style="background: none; border: none; color: #2563eb; cursor: pointer; text-decoration: underline; font-size: 1rem;" onclick="showRegistration()">
+                        New parent? Register your child
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Registration Screen -->
+    <div id="registrationScreen" class="hidden">
+        <div class="header">
+            <h1>🏏 Legacy Cricket Academy</h1>
+            <p>New Parent Registration</p>
+        </div>
+        
+        <div class="container">
+            <div class="card">
+                <h2>Register Your Child for Cricket Training</h2>
+                
+                <div class="info-note">
+                    <strong>Registration Process:</strong> After completing this form, you'll receive a verification email. Click the link in that email to activate your account and access the parent dashboard.
+                </div>
+                
+                <h3 style="margin: 1.5rem 0 1rem 0; color: #374151;">Parent Information</h3>
+                
+                <div class="form-group">
+                    <label>Parent Full Name</label>
+                    <input type="text" id="parentName" placeholder="Your full name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="parentEmail" placeholder="your.email@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="parentPhone" placeholder="Your contact number" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Choose Username</label>
+                    <input type="text" id="username" placeholder="Create a username for login" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Create Password</label>
+                    <input type="password" id="password" placeholder="Create a secure password" required>
+                </div>
+                
+                <h3 style="margin: 1.5rem 0 1rem 0; color: #374151;">Player Information</h3>
+                
+                <div class="form-group">
+                    <label>Player Name</label>
+                    <input type="text" id="playerName" placeholder="Your child's full name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Player Age Group</label>
+                    <select id="playerAge" required>
+                        <option value="">Select your child's age group</option>
+                        <option value="6-8">6-8 years (Mini Cricket)</option>
+                        <option value="9-11">9-11 years (Junior Development)</option>
+                        <option value="12-14">12-14 years (Youth Training)</option>
+                        <option value="15-17">15-17 years (Advanced Youth)</option>
+                    </select>
+                </div>
+                
+                <button class="btn" onclick="register()">Complete Registration</button>
+                
+                <p style="text-align: center; margin-top: 1.5rem;">
+                    <button style="background: none; border: none; color: #2563eb; cursor: pointer; text-decoration: underline; font-size: 1rem;" onclick="showLogin()">
+                        Already have an account? Sign in
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dashboard -->
+    <div id="dashboardScreen" class="hidden">
+        <div class="header">
+            <div class="user-header">
+                <div>
+                    <h1>🏏 Legacy Cricket Academy</h1>
+                    <p id="welcomeMessage">Welcome back</p>
+                </div>
+                <button class="btn btn-logout" onclick="logout()">Sign Out</button>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab('profile')">Profile</button>
+                    <button class="tab" onclick="showTab('schedule')">Schedule</button>
+                    <button class="tab" onclick="showTab('payments')">Payments</button>
+                </div>
+                
+                <!-- Profile Tab -->
+                <div id="profile" class="tab-content active">
+                    <h3>Player Profile</h3>
+                    <div style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; margin: 1rem 0;">
+                        <div style="display: grid; gap: 0.75rem;">
+                            <p><strong>Player Name:</strong> <span id="profilePlayerName">-</span></p>
+                            <p><strong>Age Group:</strong> <span id="profilePlayerAge">-</span></p>
+                            <p><strong>Parent:</strong> <span id="profileParentName">-</span></p>
+                            <p><strong>Contact:</strong> <span id="profileParentContact">-</span></p>
+                            <p><strong>Registration Date:</strong> <span id="profileRegDate">-</span></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Schedule Tab -->
+                <div id="schedule" class="tab-content">
+                    <h3>Weekly Training Schedule</h3>
+                    
+                    <div class="schedule-item">
+                        <strong>Tuesday - Batting Fundamentals</strong><br>
+                        <strong>Time:</strong> 4:00 PM - 5:30 PM<br>
+                        <strong>Location:</strong> Main Training Ground<br>
+                        <strong>Address:</strong> Legacy Cricket Academy, 123 Sports Complex Drive<br>
+                        <strong>Coach:</strong> Michael Rodriguez<br>
+                        <strong>Focus:</strong> Stance, grip, and basic strokes
+                    </div>
+                    
+                    <div class="schedule-item">
+                        <strong>Thursday - Bowling & Fielding</strong><br>
+                        <strong>Time:</strong> 4:00 PM - 5:30 PM<br>
+                        <strong>Location:</strong> Indoor Practice Nets<br>
+                        <strong>Address:</strong> Legacy Cricket Academy, Building A<br>
+                        <strong>Coach:</strong> Sarah Chen<br>
+                        <strong>Focus:</strong> Bowling action and catching techniques
+                    </div>
+                    
+                    <div class="schedule-item">
+                        <strong>Saturday - Match Simulation</strong><br>
+                        <strong>Time:</strong> 9:00 AM - 12:00 PM<br>
+                        <strong>Location:</strong> Championship Field<br>
+                        <strong>Address:</strong> Riverside Sports Park, 456 Victory Lane<br>
+                        <strong>Coach:</strong> Team of 3 coaches<br>
+                        <strong>Focus:</strong> Game scenarios and team coordination
+                    </div>
+                    
+                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 6px; margin-top: 1rem; border-left: 4px solid #0ea5e9;">
+                        <strong>Upcoming Events:</strong><br>
+                        • Parent-Player Day - Next Saturday<br>
+                        • Inter-Academy Tournament - June 15th<br>
+                        • Skills Assessment - Last week of June
+                    </div>
+                </div>
+                
+                <!-- Payments Tab -->
+                <div id="payments" class="tab-content">
+                    <h3>Payment Information</h3>
+                    
+                    <div style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; margin: 1rem 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <div>
+                                <strong>June 2025 Training Fee</strong><br>
+                                <span style="color: #6b7280;">Monthly training program</span>
+                            </div>
+                            <span class="payment-status status-paid">PAID</span>
+                        </div>
+                        <p><strong>Amount:</strong> $175.00 | <strong>Paid:</strong> June 1, 2025</p>
+                    </div>
+                    
+                    <div style="background: #fefdf8; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; border: 1px solid #f59e0b;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <div>
+                                <strong>July 2025 Training Fee</strong><br>
+                                <span style="color: #6b7280;">Monthly training program</span>
+                            </div>
+                            <span class="payment-status status-pending">DUE SOON</span>
+                        </div>
+                        <p><strong>Amount:</strong> $175.00 | <strong>Due:</strong> July 1, 2025</p>
+                    </div>
+                    
+                    <h4 style="margin: 2rem 0 1rem 0;">Payment History</h4>
+                    <div style="background: #f9fafb; padding: 1.5rem; border-radius: 8px;">
+                        <div style="display: grid; gap: 0.75rem;">
+                            <p><strong>May 2025:</strong> $175.00 - Monthly Training (Paid May 1)</p>
+                            <p><strong>April 2025:</strong> $175.00 - Monthly Training (Paid April 1)</p>
+                            <p><strong>March 2025:</strong> $195.00 - Training + Equipment (Paid March 1)</p>
+                            <p><strong>February 2025:</strong> $175.00 - Monthly Training (Paid February 1)</p>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #ecfdf5; padding: 1rem; border-radius: 6px; margin-top: 1.5rem; border-left: 4px solid #10b981;">
+                        <strong>Payment Methods:</strong> We accept bank transfer, credit cards, and online payments. Contact the academy office for payment assistance.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let registeredUsers = JSON.parse(localStorage.getItem('cricketAcademyUsers') || '[]');
+        let currentUser = null;
+        
+        function showRegistration() {
+            document.getElementById('registrationScreen').classList.remove('hidden');
+            document.getElementById('loginScreen').classList.add('hidden');
+        }
+        
+        function showLogin() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('registrationScreen').classList.add('hidden');
+        }
+        
+        function register() {
+            const parentName = document.getElementById('parentName').value.trim();
+            const parentEmail = document.getElementById('parentEmail').value.trim();
+            const parentPhone = document.getElementById('parentPhone').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const playerName = document.getElementById('playerName').value.trim();
+            const playerAge = document.getElementById('playerAge').value;
+            
+            if (!parentName || !parentEmail || !parentPhone || !username || !password || !playerName || !playerAge) {
+                alert('Please fill in all fields to complete registration.');
+                return;
+            }
+            
+            // Check if username or email already exists
+            const existingUser = registeredUsers.find(u => u.username === username || u.email === parentEmail);
+            if (existingUser) {
+                alert('Username or email already registered. Please use different credentials or sign in with existing account.');
+                return;
+            }
+            
+            // Create new user account
+            const newUser = {
+                id: Date.now(),
+                parentName,
+                parentEmail,
+                parentPhone,
+                username,
+                password,
+                playerName,
+                playerAge,
+                registrationDate: new Date().toLocaleDateString(),
+                emailVerified: true // Simulated as verified for demo
+            };
+            
+            registeredUsers.push(newUser);
+            localStorage.setItem('cricketAcademyUsers', JSON.stringify(registeredUsers));
+            
+            alert(`Registration successful!\n\nWelcome to Legacy Cricket Academy, ${parentName}!\n\nPlayer: ${playerName} (${playerAge})\n\nIn a real system, you would receive a verification email at ${parentEmail}. For this demo, your account is ready to use.\n\nYou can now sign in with:\nUsername: ${username}`);
+            
+            showLogin();
+            document.getElementById('loginUsername').value = username;
+        }
+        
+        function login() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                alert('Please enter both username and password.');
+                return;
+            }
+            
+            const user = registeredUsers.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                showDashboard();
+            } else {
+                alert('Invalid username or password. Please check your credentials and try again.');
+            }
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to sign out?')) {
+                currentUser = null;
+                showLogin();
+                clearForms();
+            }
+        }
+        
+        function clearForms() {
+            document.querySelectorAll('input').forEach(input => input.value = '');
+            document.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+        }
+        
+        function showDashboard() {
+            document.getElementById('registrationScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.remove('hidden');
+            
+            // Update profile information
+            document.getElementById('welcomeMessage').textContent = `Welcome back, ${currentUser.parentName}`;
+            document.getElementById('profilePlayerName').textContent = currentUser.playerName;
+            document.getElementById('profilePlayerAge').textContent = currentUser.playerAge;
+            document.getElementById('profileParentName').textContent = currentUser.parentName;
+            document.getElementById('profileParentContact').textContent = `${currentUser.parentEmail} | ${currentUser.parentPhone}`;
+            document.getElementById('profileRegDate').textContent = currentUser.registrationDate;
+        }
+        
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // Initialize demo data if needed
+        if (registeredUsers.length === 0) {
+            // Add a demo account for testing
+            const demoUser = {
+                id: 1,
+                parentName: 'Demo Parent',
+                parentEmail: 'demo@example.com',
+                parentPhone: '555-0100',
+                username: 'demo',
+                password: 'demo123',
+                playerName: 'Demo Player',
+                playerAge: '9-11',
+                registrationDate: new Date().toLocaleDateString(),
+                emailVerified: true
+            };
+            registeredUsers.push(demoUser);
+            localStorage.setItem('cricketAcademyUsers', JSON.stringify(registeredUsers));
+        }
+    </script>
+</body>
+</html>
