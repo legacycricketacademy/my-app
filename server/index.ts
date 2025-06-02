@@ -32,6 +32,41 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Add CORS headers for testing
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
+// Add session configuration
+import session from 'express-session';
+app.use(session({
+  secret: 'cricket-academy-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+}));
+
+// Initialize passport
+import passport from 'passport';
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Add ping endpoint for connectivity testing
+app.get('/api/ping', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'Server is running', 
+    timestamp: new Date().toISOString() 
+  });
+});
+
 // Serve the dashboard with authentication check
 app.get('/', (req, res) => {
   if (req.isAuthenticated() && req.user?.role === 'parent') {
