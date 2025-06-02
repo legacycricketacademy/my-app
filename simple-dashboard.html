@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cricket Academy Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: #2563eb;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .schedule-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9ff;
+            border-left: 4px solid #2563eb;
+            border-radius: 4px;
+        }
+        .btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .btn:hover {
+            background: #b91c1c;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat {
+            text-align: center;
+            padding: 15px;
+            background: #f0f9ff;
+            border-radius: 8px;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏏 Legacy Cricket Academy</h1>
+        <p>Parent Dashboard</p>
+        <button class="btn" onclick="signOut()">Sign Out</button>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Training Schedule</h2>
+            <div class="schedule-item">
+                <strong>Monday 4:00 PM</strong><br>
+                Cricket Training - Ground A
+            </div>
+            <div class="schedule-item">
+                <strong>Wednesday 5:00 PM</strong><br>
+                Fitness Session - Gym
+            </div>
+            <div class="schedule-item">
+                <strong>Friday 4:30 PM</strong><br>
+                Match Practice - Ground B
+            </div>
+            <div class="schedule-item">
+                <strong>Saturday 9:00 AM</strong><br>
+                Team Meeting - Clubhouse
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Player Stats</h2>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number">15</div>
+                    <div>Sessions</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">8</div>
+                    <div>Matches</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">95%</div>
+                    <div>Attendance</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">52</div>
+                    <div>Runs</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Payment Status</h2>
+            <div style="background: #f0fff4; padding: 15px; border-radius: 8px; border: 2px solid #22c55e;">
+                <strong>December 2024: PAID ✓</strong><br>
+                Monthly Fee: $175
+            </div>
+            
+            <h3>Payment History</h3>
+            <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                Nov 2024 - $175 ✓
+            </div>
+            <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                Oct 2024 - $175 ✓
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function signOut() {
+            if (confirm('Sign out?')) {
+                alert('Signed out successfully!');
+            }
+        }
+        console.log('Dashboard loaded');
+    </script>
+</body>
+</html>
