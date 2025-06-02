@@ -32,9 +32,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Redirect root path to the working dashboard for easy access
+// Serve the dashboard directly at root to bypass redirect issues
 app.get('/', (req, res) => {
-  res.redirect('/working-dashboard');
+  res.sendFile('working-dashboard.html', { root: './server/public' });
 });
 
 // Direct, simplified registration that will work properly with the fullName field
@@ -154,6 +154,23 @@ app.get('/admin/coaches', (req, res) => {
 // Simple ping endpoint to check server connectivity
 app.get('/api/ping', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Test endpoint that serves HTML directly
+app.get('/test', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head><title>Server Test</title></head>
+    <body style="font-family: Arial; padding: 20px; background: #f0f0f0;">
+      <h1 style="color: #2d3748;">✅ Server is Working!</h1>
+      <p>Legacy Cricket Academy server is running successfully.</p>
+      <a href="/working-dashboard" style="background: #4299e1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+        Go to Dashboard
+      </a>
+    </body>
+    </html>
+  `);
 });
 
 // Coach approval API endpoints
