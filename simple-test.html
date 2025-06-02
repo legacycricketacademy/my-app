@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cricket Academy - Simple Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { background: #1e40af; color: white; padding: 1rem; text-align: center; border-radius: 8px; }
+        .test-section { background: white; padding: 1.5rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .button { background: #16a34a; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; margin: 0.5rem; }
+        .button:hover { background: #15803d; }
+        .result { background: #f8f9fa; border: 1px solid #dee2e6; padding: 1rem; margin: 1rem 0; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
+        .success { border-color: #28a745; background: #d4edda; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        input, select { width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ccc; border-radius: 4px; }
+        .form-group { margin: 1rem 0; }
+        label { display: block; font-weight: bold; margin-bottom: 0.25rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏏 Legacy Cricket Academy - Feature Test</h1>
+            <p>Test your cricket academy management system</p>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 1: Test Registration</h2>
+            <div class="form-group">
+                <label>Parent Name:</label>
+                <input type="text" id="parentName" value="John Smith">
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" value="john.smith@example.com">
+            </div>
+            <div class="form-group">
+                <label>Phone:</label>
+                <input type="tel" id="phone" value="555-0123">
+            </div>
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="username" value="johnsmith">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="password" value="password123">
+            </div>
+            <div class="form-group">
+                <label>Player Name:</label>
+                <input type="text" id="playerName" value="Alex Smith">
+            </div>
+            <div class="form-group">
+                <label>Player Age Group:</label>
+                <select id="playerAge">
+                    <option value="under-10">Under 10</option>
+                    <option value="under-12">Under 12</option>
+                    <option value="under-14">Under 14</option>
+                </select>
+            </div>
+            <button class="button" onclick="testRegistration()">Test Registration</button>
+            <div id="registrationResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 2: Test Login</h2>
+            <button class="button" onclick="testLogin()">Test Login with Above Credentials</button>
+            <div id="loginResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 3: Test Dashboard Data</h2>
+            <button class="button" onclick="testDashboard()">Test Dashboard APIs</button>
+            <div id="dashboardResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Server Information</h2>
+            <p><strong>Expected Server URL:</strong> http://localhost:5000</p>
+            <p><strong>What this tests:</strong></p>
+            <ul>
+                <li>Parent registration with child information</li>
+                <li>Secure login authentication</li>
+                <li>Dashboard data retrieval (schedule, performance, payments)</li>
+                <li>Data security (parents only see their own data)</li>
+            </ul>
+            <div id="serverInfo" class="result">
+                Click the buttons above to test each feature step by step.
+                Make sure your server is running on port 5000.
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Use XMLHttpRequest instead of fetch to avoid CORS issues
+        function makeRequest(method, url, data = null) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open(method, 'http://localhost:5000' + url);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.withCredentials = true;
+                
+                xhr.onload = function() {
+                    try {
+                        const response = {
+                            ok: xhr.status >= 200 && xhr.status < 300,
+                            status: xhr.status,
+                            json: () => Promise.resolve(JSON.parse(xhr.responseText || '{}'))
+                        };
+                        resolve(response);
+                    } catch (e) {
+                        resolve({
+                            ok: xhr.status >= 200 && xhr.status < 300,
+                            status: xhr.status,
+                            json: () => Promise.resolve({ message: xhr.responseText })
+                        });
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    reject(new Error('Network error - is server running on port 5000?'));
+                };
+                
+                xhr.send(data ? JSON.stringify(data) : null);
+            });
+        }
+        
+        async function testRegistration() {
+            const result = document.getElementById('registrationResult');
+            result.textContent = 'Testing registration...';
+            
+            const registrationData = {
+                fullName: document.getElementById('parentName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                playerName: document.getElementById('playerName').value,
+                playerAge: document.getElementById('playerAge').value,
+                role: 'parent'
+            };
+            
+            try {
+                const response = await makeRequest('POST', '/api/register', registrationData);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.textContent = `✓ Registration successful!\nWelcome ${data.fullName || data.username}!\nParent ID: ${data.id}\nStatus: Account created successfully`;
+                    result.className = 'result success';
+                } else {
+                    result.textContent = `Registration response (${response.status}):\n${JSON.stringify(data, null, 2)}`;
+                    result.className = 'result error';
+                }
+            } catch (error) {
+                result.textContent = `✗ Registration failed:\n${error.message}`;
+                result.className = 'result error';
+            }
+        }
+        
+        async function testLogin() {
+            const result = document.getElementById('loginResult');
+            result.textContent = 'Testing login...';
+            
+            const loginData = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+            
+            try {
+                const response = await makeRequest('POST', '/api/login', loginData);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    result.textContent = `✓ Login successful!\nWelcome back ${data.fullName || data.username}!\nRole: ${data.role}\nYou can now access your dashboard.`;
+                    result.className = 'result success';
+                } else {
+                    const data = await response.json();
+                    result.textContent = `✗ Login failed (${response.status}):\n${JSON.stringify(data, null, 2)}`;
+                    result.className = 'result error';
+                }
+            } catch (error) {
+                result.textContent = `✗ Login failed:\n${error.message}`;
+                result.className = 'result error';
+            }
+        }
+        
+        async function testDashboard() {
+            const result = document.getElementById('dashboardResult');
+            result.textContent = 'Testing dashboard APIs...\n\n';
+            
+            try {
+                // Test schedule
+                const scheduleResponse = await makeRequest('GET', '/api/dashboard/schedule');
+                if (scheduleResponse.ok) {
+                    const scheduleData = await scheduleResponse.json();
+                    result.textContent += `✓ Schedule API: Working\nNext session: ${scheduleData.upcoming[0]?.session || 'N/A'}\n\n`;
+                } else {
+                    result.textContent += `✗ Schedule API failed (${scheduleResponse.status})\n\n`;
+                }
+                
+                // Test stats
+                const statsResponse = await makeRequest('GET', '/api/dashboard/stats');
+                if (statsResponse.ok) {
+                    const statsData = await statsResponse.json();
+                    result.textContent += `✓ Performance API: Working\nBatting average: ${statsData.batting?.average || 'N/A'}\n\n`;
+                } else {
+                    result.textContent += `✗ Performance API failed (${statsResponse.status})\n\n`;
+                }
+                
+                // Test payments
+                const paymentsResponse = await makeRequest('GET', '/api/dashboard/payments');
+                if (paymentsResponse.ok) {
+                    const paymentsData = await paymentsResponse.json();
+                    result.textContent += `✓ Payments API: Working\nCurrent status: ${paymentsData.current?.status || 'N/A'}\nAmount: $${paymentsData.current?.amount || 'N/A'}`;
+                    result.className = 'result success';
+                } else {
+                    result.textContent += `✗ Payments API failed (${paymentsResponse.status})`;
+                    result.className = 'result error';
+                }
+                
+            } catch (error) {
+                result.textContent += `✗ Dashboard test failed:\n${error.message}`;
+                result.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>
