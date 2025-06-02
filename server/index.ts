@@ -124,8 +124,13 @@ async function sendVerificationEmail(email: string, parentName: string, verifica
   }
 }
 
-// Serve the dashboard with authentication check
+// Serve the main cricket academy app
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../cricket-academy-with-email.html'));
+});
+
+// Serve the dashboard with authentication check
+app.get('/dashboard', (req, res) => {
   if (req.isAuthenticated() && req.user?.role === 'parent') {
     res.sendFile(path.join(__dirname, '../secure-dashboard.html'));
   } else {
