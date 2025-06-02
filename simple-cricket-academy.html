@@ -30,7 +30,7 @@
 </head>
 <body>
     <!-- Registration Screen -->
-    <div id="registrationScreen">
+    <div id="registrationScreen" class="hidden">
         <div class="header">
             <h1>🏏 Legacy Cricket Academy</h1>
             <p>Parent Registration</p>
@@ -94,7 +94,7 @@
     </div>
     
     <!-- Login Screen -->
-    <div id="loginScreen" class="hidden">
+    <div id="loginScreen">
         <div class="header">
             <h1>🏏 Legacy Cricket Academy</h1>
             <p>Parent Sign In</p>
@@ -250,10 +250,11 @@
                 parentPhone,
                 username,
                 playerName,
-                playerAge
+                playerAge,
+                emailVerified: false
             };
             
-            alert('Registration successful! You can now sign in.');
+            alert(`Registration successful!\n\nA confirmation email has been sent to: ${parentEmail}\n\nPlease check your email and click the verification link to activate your account.\n\nYou can then sign in with your username and password.`);
             showLogin();
             document.getElementById('loginUsername').value = username;
         }
@@ -291,7 +292,7 @@
         function logout() {
             if (confirm('Are you sure you want to sign out?')) {
                 document.getElementById('dashboardScreen').classList.add('hidden');
-                showRegistration();
+                showLogin();
                 clearForms();
             }
         }
