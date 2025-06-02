@@ -32,9 +32,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Redirect root path to the standalone React dashboard for easy access
+// Redirect root path to the working dashboard for easy access
 app.get('/', (req, res) => {
-  res.redirect('/standalone-react');
+  res.redirect('/working-dashboard');
 });
 
 // Direct, simplified registration that will work properly with the fullName field
@@ -55,6 +55,11 @@ app.get('/enhanced-parent', (req, res) => {
 // Quick parent dashboard with improved sign out button
 app.get('/quick-parent', (req, res) => {
   res.sendFile('quick-parent.html', { root: './server/public' });
+});
+
+// Working dashboard that displays properly
+app.get('/working-dashboard', (req, res) => {
+  res.sendFile('working-dashboard.html', { root: './server/public' });
 });
 
 // Standalone React dashboard that runs directly without the React app
