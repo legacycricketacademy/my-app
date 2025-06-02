@@ -197,7 +197,7 @@
                     <button class="tab" onclick="showTab('schedule')">Schedule</button>
                     <button class="tab" onclick="showTab('payments')">Payments</button>
                     <button class="tab" onclick="showTab('performance')">Performance</button>
-                    <button class="tab" id="usersTab" onclick="showTab('users')" style="display: none;">Users</button>
+                    <button class="tab" id="usersTabButton" onclick="showTab('users')" style="display: none;">Users</button>
                 </div>
                 
                 <!-- Profile Tab -->
@@ -216,7 +216,6 @@
                         
                         <div id="adminControls" class="hidden">
                             <button class="btn btn-success" onclick="addTrainingSession()">Add Training Session</button>
-                            <button class="btn btn-secondary" onclick="manageUsers()">Manage Users</button>
                         </div>
                         
                         <button class="btn btn-secondary" onclick="editProfile()" id="editProfileBtn">Edit Profile</button>
@@ -746,7 +745,7 @@
                 document.getElementById('profileTitle').textContent = 'Admin Dashboard';
                 document.getElementById('profileInfoTitle').textContent = 'Administrator Information';
                 document.getElementById('childrenSection').classList.add('hidden');
-                document.getElementById('usersTab').style.display = 'block';
+                document.getElementById('usersTabButton').style.display = 'block';
             }
             
             populateProfile();
