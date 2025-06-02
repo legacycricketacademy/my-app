@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test Suite - Legacy Cricket Academy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: monospace; background: #1a1a1a; color: #f0f0f0; padding: 2rem; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { background: #2563eb; color: white; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; text-align: center; }
+        .test-section { background: #2a2a2a; border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+        .test-button { background: #16a34a; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; margin: 0.5rem; font-family: monospace; }
+        .test-button:hover { background: #15803d; }
+        .test-button:disabled { background: #6b7280; cursor: not-allowed; }
+        .result { background: #1f2937; border-radius: 6px; padding: 1rem; margin: 1rem 0; white-space: pre-wrap; font-size: 0.875rem; max-height: 300px; overflow-y: auto; }
+        .success { border-left: 4px solid #10b981; }
+        .error { border-left: 4px solid #ef4444; }
+        .warning { border-left: 4px solid #f59e0b; }
+        .status { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-left: 1rem; }
+        .status.success { background: #10b981; color: white; }
+        .status.error { background: #ef4444; color: white; }
+        .status.pending { background: #6b7280; color: white; }
+        .form-group { margin: 1rem 0; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: #d1d5db; }
+        .form-group input, .form-group select { width: 100%; padding: 0.5rem; background: #374151; border: 1px solid #4b5563; color: white; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Legacy Cricket Academy - API Test Suite</h1>
+            <p>Test all registration, authentication, and dashboard features</p>
+        </div>
+        
+        <div class="test-section">
+            <h2>1. Server Connectivity Test <span id="connectivity-status" class="status pending">PENDING</span></h2>
+            <button class="test-button" onclick="testConnectivity()">Test Server Connection</button>
+            <div id="connectivity-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. Parent Registration Test <span id="registration-status" class="status pending">PENDING</span></h2>
+            <div class="form-group">
+                <label>Parent Name:</label>
+                <input type="text" id="parentName" value="John Smith" />
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" value="john.smith@email.com" />
+            </div>
+            <div class="form-group">
+                <label>Phone:</label>
+                <input type="tel" id="phone" value="555-0123" />
+            </div>
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="username" value="johnsmith" />
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="password" value="password123" />
+            </div>
+            <div class="form-group">
+                <label>Player Name:</label>
+                <input type="text" id="playerName" value="Alex Smith" />
+            </div>
+            <div class="form-group">
+                <label>Player Age Group:</label>
+                <select id="playerAge">
+                    <option value="under-10">Under 10</option>
+                    <option value="under-12">Under 12</option>
+                    <option value="under-14">Under 14</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="testRegistration()">Test Registration</button>
+            <div id="registration-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. Login Test <span id="login-status" class="status pending">PENDING</span></h2>
+            <button class="test-button" onclick="testLogin()" id="loginBtn">Test Login</button>
+            <div id="login-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>4. Dashboard API Tests <span id="dashboard-status" class="status pending">PENDING</span></h2>
+            <button class="test-button" onclick="testScheduleAPI()">Test Schedule API</button>
+            <button class="test-button" onclick="testStatsAPI()">Test Performance API</button>
+            <button class="test-button" onclick="testPaymentsAPI()">Test Payments API</button>
+            <div id="dashboard-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>5. Authentication Protection Test <span id="auth-status" class="status pending">PENDING</span></h2>
+            <button class="test-button" onclick="testAuthProtection()">Test Unauthorized Access</button>
+            <div id="auth-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>6. Logout Test <span id="logout-status" class="status pending">PENDING</span></h2>
+            <button class="test-button" onclick="testLogout()">Test Logout</button>
+            <div id="logout-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Summary</h2>
+            <button class="test-button" onclick="runAllTests()" style="background: #7c3aed;">Run All Tests</button>
+            <div id="summary-result" class="result"></div>
+        </div>
+    </div>
+    
+    <script>
+        let testResults = {};
+        
+        async function testConnectivity() {
+            updateStatus('connectivity', 'pending');
+            const result = document.getElementById('connectivity-result');
+            
+            try {
+                const response = await fetch('/api/ping');
+                if (response.ok) {
+                    const data = await response.json();
+                    result.innerHTML = `✓ Server is running\nResponse: ${JSON.stringify(data, null, 2)}`;
+                    result.className = 'result success';
+                    updateStatus('connectivity', 'success');
+                    testResults.connectivity = true;
+                } else {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
+            } catch (error) {
+                result.innerHTML = `✗ Server connection failed\nError: ${error.message}`;
+                result.className = 'result error';
+                updateStatus('connectivity', 'error');
+                testResults.connectivity = false;
+            }
+        }
+        
+        async function testRegistration() {
+            updateStatus('registration', 'pending');
+            const result = document.getElementById('registration-result');
+            
+            const registrationData = {
+                fullName: document.getElementById('parentName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                playerName: document.getElementById('playerName').value,
+                playerAge: document.getElementById('playerAge').value,
+                role: 'parent'
+            };
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(registrationData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.innerHTML = `✓ Registration successful\nResponse: ${JSON.stringify(data, null, 2)}`;
+                    result.className = 'result success';
+                    updateStatus('registration', 'success');
+                    testResults.registration = true;
+                } else {
+                    result.innerHTML = `⚠ Registration response (${response.status})\nResponse: ${JSON.stringify(data, null, 2)}`;
+                    result.className = 'result warning';
+                    updateStatus('registration', 'error');
+                    testResults.registration = false;
+                }
+            } catch (error) {
+                result.innerHTML = `✗ Registration failed\nError: ${error.message}`;
+                result.className = 'result error';
+                updateStatus('registration', 'error');
+                testResults.registration = false;
+            }
+        }
+        
+        async function testLogin() {
+            updateStatus('login', 'pending');
+            const result = document.getElementById('login-result');
+            
+            const loginData = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loginData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    result.innerHTML = `✓ Login successful\nUser data: ${JSON.stringify(data, null, 2)}`;
+                    result.className = 'result success';
+                    updateStatus('login', 'success');
+                    testResults.login = true;
+                } else {
+                    const data = await response.json();
+                    result.innerHTML = `✗ Login failed (${response.status})\nResponse: ${JSON.stringify(data, null, 2)}`;
+                    result.className = 'result error';
+                    updateStatus('login', 'error');
+                    testResults.login = false;
+                }
+            } catch (error) {
+                result.innerHTML = `✗ Login request failed\nError: ${error.message}`;
+                result.className = 'result error';
+                updateStatus('login', 'error');
+                testResults.login = false;
+            }
+        }
+        
+        async function testScheduleAPI() {
+            const result = document.getElementById('dashboard-result');
+            
+            try {
+                const response = await fetch('/api/dashboard/schedule');
+                if (response.ok) {
+                    const data = await response.json();
+                    result.innerHTML += `✓ Schedule API working\nData: ${JSON.stringify(data, null, 2)}\n\n`;
+                    result.className = 'result success';
+                } else {
+                    result.innerHTML += `✗ Schedule API failed (${response.status})\n\n`;
+                    result.className = 'result error';
+                }
+            } catch (error) {
+                result.innerHTML += `✗ Schedule API error: ${error.message}\n\n`;
+                result.className = 'result error';
+            }
+        }
+        
+        async function testStatsAPI() {
+            const result = document.getElementById('dashboard-result');
+            
+            try {
+                const response = await fetch('/api/dashboard/stats');
+                if (response.ok) {
+                    const data = await response.json();
+                    result.innerHTML += `✓ Stats API working\nData: ${JSON.stringify(data, null, 2)}\n\n`;
+                } else {
+                    result.innerHTML += `✗ Stats API failed (${response.status})\n\n`;
+                }
+            } catch (error) {
+                result.innerHTML += `✗ Stats API error: ${error.message}\n\n`;
+            }
+        }
+        
+        async function testPaymentsAPI() {
+            const result = document.getElementById('dashboard-result');
+            
+            try {
+                const response = await fetch('/api/dashboard/payments');
+                if (response.ok) {
+                    const data = await response.json();
+                    result.innerHTML += `✓ Payments API working\nData: ${JSON.stringify(data, null, 2)}\n\n`;
+                    updateStatus('dashboard', 'success');
+                    testResults.dashboard = true;
+                } else {
+                    result.innerHTML += `✗ Payments API failed (${response.status})\n\n`;
+                    updateStatus('dashboard', 'error');
+                    testResults.dashboard = false;
+                }
+            } catch (error) {
+                result.innerHTML += `✗ Payments API error: ${error.message}\n\n`;
+                updateStatus('dashboard', 'error');
+                testResults.dashboard = false;
+            }
+        }
+        
+        async function testAuthProtection() {
+            updateStatus('auth', 'pending');
+            const result = document.getElementById('auth-result');
+            
+            // First logout to test unauthorized access
+            await fetch('/api/logout', { method: 'POST' });
+            
+            try {
+                const response = await fetch('/api/dashboard/schedule');
+                if (response.status === 401) {
+                    result.innerHTML = `✓ Authentication protection working\nUnauthorized access properly blocked (401)`;
+                    result.className = 'result success';
+                    updateStatus('auth', 'success');
+                    testResults.auth = true;
+                } else {
+                    result.innerHTML = `✗ Authentication protection failed\nExpected 401, got ${response.status}`;
+                    result.className = 'result error';
+                    updateStatus('auth', 'error');
+                    testResults.auth = false;
+                }
+            } catch (error) {
+                result.innerHTML = `✗ Auth protection test failed\nError: ${error.message}`;
+                result.className = 'result error';
+                updateStatus('auth', 'error');
+                testResults.auth = false;
+            }
+        }
+        
+        async function testLogout() {
+            updateStatus('logout', 'pending');
+            const result = document.getElementById('logout-result');
+            
+            try {
+                const response = await fetch('/api/logout', { method: 'POST' });
+                if (response.ok) {
+                    result.innerHTML = `✓ Logout successful\nStatus: ${response.status}`;
+                    result.className = 'result success';
+                    updateStatus('logout', 'success');
+                    testResults.logout = true;
+                } else {
+                    result.innerHTML = `✗ Logout failed\nStatus: ${response.status}`;
+                    result.className = 'result error';
+                    updateStatus('logout', 'error');
+                    testResults.logout = false;
+                }
+            } catch (error) {
+                result.innerHTML = `✗ Logout request failed\nError: ${error.message}`;
+                result.className = 'result error';
+                updateStatus('logout', 'error');
+                testResults.logout = false;
+            }
+        }
+        
+        function updateStatus(test, status) {
+            const statusEl = document.getElementById(`${test}-status`);
+            statusEl.textContent = status.toUpperCase();
+            statusEl.className = `status ${status}`;
+        }
+        
+        async function runAllTests() {
+            const summary = document.getElementById('summary-result');
+            summary.innerHTML = 'Running all tests...\n\n';
+            
+            await testConnectivity();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testRegistration();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testLogin();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testScheduleAPI();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testStatsAPI();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testPaymentsAPI();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testAuthProtection();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testLogout();
+            
+            // Generate summary
+            const passed = Object.values(testResults).filter(r => r === true).length;
+            const total = Object.keys(testResults).length;
+            
+            summary.innerHTML += `\nTest Summary:\n`;
+            summary.innerHTML += `Passed: ${passed}/${total} tests\n\n`;
+            
+            Object.entries(testResults).forEach(([test, result]) => {
+                summary.innerHTML += `${result ? '✓' : '✗'} ${test}: ${result ? 'PASS' : 'FAIL'}\n`;
+            });
+            
+            if (passed === total) {
+                summary.innerHTML += `\n🎉 All tests passed! System is ready for use.`;
+                summary.className = 'result success';
+            } else {
+                summary.innerHTML += `\n⚠ Some tests failed. Check individual results above.`;
+                summary.className = 'result warning';
+            }
+        }
+    </script>
+</body>
+</html>
