@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Legacy Cricket Academy - Live Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: #f8fafc; }
+        .header { background: #1e40af; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.25rem; font-weight: 600; }
+        .user-info { display: flex; align-items: center; gap: 1rem; }
+        .btn { background: #dc2626; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500; }
+        .btn:hover { background: #b91c1c; }
+        .btn-primary { background: #2563eb; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .container { max-width: 1000px; margin: 1rem auto; padding: 1rem; }
+        .card { background: white; border-radius: 8px; padding: 1.5rem; margin: 1rem 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .auth-form { max-width: 400px; margin: 2rem auto; }
+        .form-group { margin: 1rem 0; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .schedule-item { padding: 1rem; margin: 0.5rem 0; background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 4px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .stat { text-align: center; padding: 1rem; background: #f0f9ff; border-radius: 6px; }
+        .stat-number { font-size: 1.5rem; font-weight: bold; color: #1d4ed8; display: block; }
+        .payment-item { padding: 0.75rem; margin: 0.5rem 0; background: #f9fafb; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .tabs { display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 1rem; }
+        .tab { padding: 1rem; background: none; border: none; cursor: pointer; font-weight: 500; color: #6b7280; }
+        .tab.active { color: #2563eb; border-bottom: 2px solid #2563eb; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .demo-note { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+        .success-message { background: #d1fae5; border: 1px solid #10b981; color: #065f46; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 1rem; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .payment-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Registration/Login Screen -->
+    <div id="authScreen">
+        <div class="header">
+            <div class="logo">🏏 Legacy Cricket Academy</div>
+        </div>
+        
+        <div class="container">
+            <div class="card auth-form">
+                <div class="demo-note">
+                    <strong>Live Demo:</strong> This shows exactly how your cricket academy system works. 
+                    Registration creates secure parent accounts with data isolation.
+                </div>
+                
+                <div id="registrationForm">
+                    <h2 style="text-align: center; margin-bottom: 1.5rem;">Parent Registration</h2>
+                    
+                    <div class="form-group">
+                        <label>Parent Full Name</label>
+                        <input type="text" id="parentName" value="Sarah Johnson" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="email" value="sarah.johnson@email.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="phone" value="555-0198" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Choose Username</label>
+                        <input type="text" id="username" value="sarah_johnson" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Create Password</label>
+                        <input type="password" id="password" value="securepass123" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Player Name</label>
+                        <input type="text" id="playerName" value="Emma Johnson" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Player Age Group</label>
+                        <select id="playerAge" required>
+                            <option value="under-10">Under 10</option>
+                            <option value="under-12" selected>Under 12</option>
+                            <option value="under-14">Under 14</option>
+                            <option value="under-16">Under 16</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-primary" style="width: 100%; padding: 0.75rem; margin-top: 1rem;" onclick="register()">
+                        Create Parent Account
+                    </button>
+                    
+                    <p style="text-align: center; margin-top: 1rem; color: #6b7280;">
+                        Already have an account? 
+                        <button class="btn" style="background: none; color: #2563eb; padding: 0; text-decoration: underline;" onclick="showLogin()">Sign In</button>
+                    </p>
+                </div>
+                
+                <div id="loginForm" class="hidden">
+                    <h2 style="text-align: center; margin-bottom: 1.5rem;">Parent Sign In</h2>
+                    
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="loginUsername" value="sarah_johnson">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" value="securepass123">
+                    </div>
+                    
+                    <button class="btn btn-primary" style="width: 100%; padding: 0.75rem; margin-top: 1rem;" onclick="login()">
+                        Sign In
+                    </button>
+                    
+                    <p style="text-align: center; margin-top: 1rem; color: #6b7280;">
+                        Need to create an account? 
+                        <button class="btn" style="background: none; color: #2563eb; padding: 0; text-decoration: underline;" onclick="showRegistration()">Register</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Parent Dashboard -->
+    <div id="dashboardScreen" class="hidden">
+        <div class="header">
+            <div class="logo">🏏 Legacy Cricket Academy</div>
+            <div class="user-info">
+                <span id="welcomeText">Welcome, Sarah Johnson</span>
+                <button class="btn" onclick="signOut()">Sign Out</button>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab('schedule')">Training Schedule</button>
+                    <button class="tab" onclick="showTab('performance')">Performance</button>
+                    <button class="tab" onclick="showTab('payments')">Payments</button>
+                </div>
+                
+                <!-- Schedule Tab -->
+                <div id="schedule" class="tab-content active">
+                    <h3>Emma's Training Schedule</h3>
+                    <div class="demo-note">
+                        <strong>Data Security:</strong> Each parent sees only their own child's schedule. 
+                        Other families' information is completely private.
+                    </div>
+                    
+                    <div class="schedule-item">
+                        <strong>Today - Batting Practice</strong><br>
+                        Time: 4:00 PM - 5:30 PM<br>
+                        Coach: Michael Davis<br>
+                        Focus: Defensive shots, footwork
+                    </div>
+                    
+                    <div class="schedule-item">
+                        <strong>Wednesday - Bowling Training</strong><br>
+                        Time: 4:00 PM - 5:30 PM<br>
+                        Coach: Sarah Mitchell<br>
+                        Focus: Line and length, spin techniques
+                    </div>
+                    
+                    <div class="schedule-item">
+                        <strong>Saturday - Match Simulation</strong><br>
+                        Time: 9:00 AM - 12:00 PM<br>
+                        Coach: Michael Davis<br>
+                        Focus: Game situation practice, team coordination
+                    </div>
+                </div>
+                
+                <!-- Performance Tab -->
+                <div id="performance" class="tab-content">
+                    <h3>Emma's Performance Statistics</h3>
+                    
+                    <div class="stats">
+                        <div class="stat">
+                            <span class="stat-number">42.5</span>
+                            <span>Batting Average</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">8</span>
+                            <span>Matches Played</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">6</span>
+                            <span>Wickets Taken</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">95%</span>
+                            <span>Attendance Rate</span>
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin: 1.5rem 0 1rem 0;">Recent Performance</h4>
+                    <div class="schedule-item">
+                        <strong>Last Match vs Riverside Academy</strong><br>
+                        Batting: 38 runs (45 balls, 4 fours)<br>
+                        Bowling: 1 wicket for 12 runs<br>
+                        Coach Notes: Excellent timing, work on running between wickets
+                    </div>
+                    
+                    <div class="schedule-item">
+                        <strong>Practice Session - June 1</strong><br>
+                        Skill Focus: Defensive batting<br>
+                        Progress: Significant improvement in forward defense<br>
+                        Next Goal: Master the cover drive technique
+                    </div>
+                </div>
+                
+                <!-- Payments Tab -->
+                <div id="payments" class="tab-content">
+                    <h3>Payment Information</h3>
+                    
+                    <div class="success-message">
+                        <strong>Account Status: Current</strong><br>
+                        All payments are up to date. Thank you!
+                    </div>
+                    
+                    <h4>Current Month - June 2025</h4>
+                    <div class="payment-item">
+                        <div>
+                            <strong>Monthly Training Fee</strong><br>
+                            <span style="color: #6b7280;">Due: June 1, 2025</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong style="color: #10b981;">PAID</strong><br>
+                            <span style="font-size: 1.1rem; font-weight: 600;">$175.00</span>
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin: 1.5rem 0 1rem 0;">Payment History</h4>
+                    <div class="payment-item">
+                        <div>
+                            <strong>May 2025 - Monthly Training</strong><br>
+                            <span style="color: #6b7280;">Paid: May 1, 2025</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 1.1rem; font-weight: 600;">$175.00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-item">
+                        <div>
+                            <strong>April 2025 - Monthly Training</strong><br>
+                            <span style="color: #6b7280;">Paid: April 1, 2025</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 1.1rem; font-weight: 600;">$175.00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-item">
+                        <div>
+                            <strong>March 2025 - Equipment Purchase</strong><br>
+                            <span style="color: #6b7280;">Paid: March 15, 2025</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 1.1rem; font-weight: 600;">$95.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showRegistration() {
+            document.getElementById('registrationForm').classList.remove('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
+        }
+        
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registrationForm').classList.add('hidden');
+        }
+        
+        function register() {
+            const parentName = document.getElementById('parentName').value;
+            const playerName = document.getElementById('playerName').value;
+            
+            if (!parentName || !playerName) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // Simulate registration success
+            setTimeout(() => {
+                alert(`Registration successful!\n\nParent: ${parentName}\nPlayer: ${playerName}\n\nYou can now sign in to access your dashboard.`);
+                showLogin();
+            }, 500);
+        }
+        
+        function login() {
+            const username = document.getElementById('loginUsername').value;
+            
+            if (!username) {
+                alert('Please enter your username');
+                return;
+            }
+            
+            // Simulate login success
+            setTimeout(() => {
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('dashboardScreen').classList.remove('hidden');
+            }, 500);
+        }
+        
+        function signOut() {
+            if (confirm('Are you sure you want to sign out?')) {
+                document.getElementById('dashboardScreen').classList.add('hidden');
+                document.getElementById('authScreen').classList.remove('hidden');
+                showRegistration();
+            }
+        }
+        
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
