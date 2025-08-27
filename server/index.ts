@@ -11,11 +11,8 @@ import { eq, and, desc } from "drizzle-orm";
 // These two lines allow us to use __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// Temporarily comment out redirects to get the server running
-// import { setupRedirects } from "./redirect";
-const setupRedirects = (app: any) => {
-  console.log('Setup redirects: temporarily disabled');
-};
+// Enable redirects for proper routing
+import { setupRedirects } from "./redirect";
 import { setupStaticRoutes } from "./static-routes"; // Import our static routes handler for React Router
 
 // Add academy context to the request object
