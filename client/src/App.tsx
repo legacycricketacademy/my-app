@@ -29,6 +29,10 @@ import NotFound from "@/pages/not-found";
 import ForceLogoutPage from "@/pages/force-logout";
 import RegisterDebug from "@/pages/register-debug";
 
+// Admin Pages
+import AdminDashboard from "@/pages/admin/admin-dashboard";
+import CoachesPendingApprovalPage from "@/pages/admin/coaches-pending-approval";
+
 function AppRoutes() {
   const { user, isLoading } = useAuth();
 
@@ -153,6 +157,40 @@ function AppRoutes() {
 
       {/* Legacy parent route redirects to dashboard */}
       <Route path="/parent" element={<Navigate to="/dashboard/parent" />} />
+
+      {/* Admin Routes */}
+      <Route
+        path="/admin"
+        element={
+          user && user.role === "admin" ? (
+            <AdminDashboard />
+          ) : (
+            <Navigate to="/auth" />
+          )
+        }
+      />
+      
+      <Route
+        path="/admin/dashboard"
+        element={
+          user && user.role === "admin" ? (
+            <AdminDashboard />
+          ) : (
+            <Navigate to="/auth" />
+          )
+        }
+      />
+      
+      <Route
+        path="/admin/coaches"
+        element={
+          user && user.role === "admin" ? (
+            <CoachesPendingApprovalPage />
+          ) : (
+            <Navigate to="/auth" />
+          )
+        }
+      />
 
       {/* Admin/Coach Routes */}
       <Route
