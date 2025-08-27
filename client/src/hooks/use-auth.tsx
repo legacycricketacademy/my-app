@@ -416,6 +416,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Login Mutation onSuccess - API Response:", response);
       queryClient.setQueryData(["/api/user"], response);
       
+      // Force refetch the user query to update authentication state
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      
       // Safely extract user data from response
       let userData = null;
       
@@ -427,16 +430,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       console.log("Login Mutation onSuccess - User Data:", userData);
       
-      // Redirect user to correct dashboard based on role
-      if (userData) {
-        if (userData.role === 'parent') {
-          // Redirect to parent dashboard
-          window.location.href = '/dashboard/parent';
-        } else if (userData.role === 'coach' || userData.role === 'admin') {
-          // Redirect to admin/coach dashboard
-          window.location.href = '/';
+      // Add a small delay before redirect to ensure state updates
+      setTimeout(() => {
+        if (userData) {
+          if (userData.role === 'parent') {
+            // Redirect to parent dashboard
+            console.log("Redirecting parent to /dashboard/parent");
+            window.location.href = '/dashboard/parent';
+          } else if (userData.role === 'coach' || userData.role === 'admin') {
+            // Redirect to admin/coach dashboard
+            console.log("Redirecting admin/coach to /");
+            window.location.href = '/';
+          }
         }
-      }
+      }, 100);
       
       // Only show toast if we have user data
       if (userData) {
