@@ -431,7 +431,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (userData) {
         if (userData.role === 'parent') {
           // Redirect to parent dashboard
-          window.location.href = '/parent';
+          window.location.href = '/dashboard/parent';
         } else if (userData.role === 'coach' || userData.role === 'admin') {
           // Redirect to admin/coach dashboard
           window.location.href = '/';
