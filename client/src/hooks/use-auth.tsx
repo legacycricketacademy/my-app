@@ -359,36 +359,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           password: '[REDACTED]' 
         });
         
-        const response = await apiRequest<AuthResponse>('POST', "/api/login", credentials);
-        console.log("Login Mutation - Raw API Response:", response);
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+          credentials: "include",
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || "Login failed");
+        }
+        
+        const apiResponse = await response.json();
+        console.log("Login Mutation - Raw API Response:", apiResponse);
 
         // With standardized responses, we expect:
         // { success: true, message: string, data: { user: User } }
-        if (!response.success) {
-          throw new Error(response.message || "Login failed. Please try again.");
+        if (!apiResponse.success) {
+          throw new Error(apiResponse.message || "Login failed. Please try again.");
         }
         
         // Enhanced user data extraction - check multiple possible response formats
         let user = null;
         
         // First try the standard format
-        if (response.data?.user) {
-          user = response.data.user;
+        if (apiResponse.data?.user) {
+          user = apiResponse.data.user;
           console.log("Login Mutation - Found user in standard format");
         } 
         // Try looking for user directly in response
-        else if (response.user && typeof response.user === 'object') {
-          user = response.user;
+        else if (apiResponse.user && typeof apiResponse.user === 'object') {
+          user = apiResponse.user;
           console.log("Login Mutation - Found user at top level of response");
         }
         // Try looking for just data property if it has user fields
-        else if (response.data && typeof response.data === 'object' && 'id' in response.data) {
-          user = response.data;
+        else if (apiResponse.data && typeof apiResponse.data === 'object' && 'id' in apiResponse.data) {
+          user = apiResponse.data;
           console.log("Login Mutation - Found user in data property");
         }
         
         if (!user || !user.id) {
-          console.error("User data missing or invalid in response:", response);
+          console.error("User data missing or invalid in response:", apiResponse);
           throw new Error("User data missing from response");
         }
         
@@ -396,7 +408,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // If we found a valid user but the response isn't in the standard format,
         // convert it to the standard format
-        if (!response.data?.user && user) {
+        if (!apiResponse.data?.user && user) {
           return {
             success: true,
             message: "Login successful",
@@ -405,7 +417,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         
         // Return the standardized API response
-        return response;
+        return apiResponse;
       } catch (error) {
         console.error("Login error:", error);
         throw error;
