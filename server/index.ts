@@ -121,19 +121,19 @@ async function sendVerificationEmail(email: string, parentName: string, verifica
   }
 }
 
-// Serve the main cricket academy app
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../cricket-academy-with-email.html'));
-});
+// Serve the main cricket academy app - DISABLED to use React
+// app.get('/', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../cricket-academy-with-email.html'));
+// });
 
-// Serve the dashboard with authentication check
-app.get('/dashboard', (req, res) => {
-  if (req.isAuthenticated() && req.user?.role === 'parent') {
-    res.sendFile(path.join(__dirname, '../secure-dashboard.html'));
-  } else {
-    res.sendFile(path.join(__dirname, '../parent-registration.html'));
-  }
-});
+// Serve the dashboard with authentication check - DISABLED to use React
+// app.get('/dashboard', (req, res) => {
+//   if (req.isAuthenticated() && req.user?.role === 'parent') {
+//     res.sendFile(path.join(__dirname, '../secure-dashboard.html'));
+//   } else {
+//     res.sendFile(path.join(__dirname, '../parent-registration.html'));
+//   }
+// });
 
 // Direct, simplified registration that will work properly with the fullName field
 app.get('/register-now', (req, res) => {
@@ -180,15 +180,15 @@ app.get('/login.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Login page with shorter path
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
+// Login page with shorter path - DISABLED to use React
+// app.get('/login', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'login.html'));
+// });
 
-// Auth page for login and registration
-app.get('/auth', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'auth.html'));
-});
+// Auth page for login and registration - DISABLED to use React
+// app.get('/auth', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'auth.html'));
+// });
 
 // Coach approval page for administrators
 app.get('/coaches-pending-approval', (req, res) => {
