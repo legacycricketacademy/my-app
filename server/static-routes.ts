@@ -10,23 +10,7 @@ export function setupStaticRoutes(app: express.Express): void {
   // Skip certain routes that are directly handled by the server
   const directServerRoutes = [
     '/api',
-    '/direct-parent',
-    '/enhanced-parent',
-    '/standalone-react',
-    '/register-now',
-    '/verify-email',
-    '/register-debug',
-    '/register-simple',
-    '/login',
-    '/login.html',
-    '/auth',
-    '/auth.html',
-    '/coach',
-    '/coach-dashboard',
-    '/coaches-pending-approval',
-    '/coaches-pending-approval.html',
-    '/admin',
-    '/admin/coaches'
+    '/verify-email'
   ];
   
   // Serve static files from the dist/public directory for all other routes
