@@ -135,75 +135,8 @@ async function sendVerificationEmail(email: string, parentName: string, verifica
 //   }
 // });
 
-// Direct, simplified registration that will work properly with the fullName field
-app.get('/register-now', (req, res) => {
-  res.sendFile('simple-fullname-register.html', { root: './server/public' });
-});
-
-// Direct route to parent dashboard that bypasses React and authentication
-app.get('/direct-parent', (req, res) => {
-  res.sendFile('parent-dashboard.html', { root: './server/public' });
-});
-
-// Enhanced interactive parent dashboard with JavaScript functionality
-app.get('/enhanced-parent', (req, res) => {
-  res.sendFile('enhanced-parent-dashboard.html', { root: './server/public' });
-});
-
-// Quick parent dashboard with improved sign out button
-app.get('/quick-parent', (req, res) => {
-  res.sendFile('quick-parent.html', { root: './server/public' });
-});
-
-// Working dashboard that displays properly
-app.get('/working-dashboard', (req, res) => {
-  res.sendFile('working-dashboard.html', { root: './server/public' });
-});
-
-// Standalone React dashboard that runs directly without the React app
-app.get('/standalone-react', (req, res) => {
-  res.sendFile('standalone-react-dashboard.html', { root: './server/public' });
-});
-
-// Registration debugging tool
-app.get('/register-debug', (req, res) => {
-  res.sendFile(path.resolve('./server/public/register-debug.html'));
-});
-
-// Simple reliable registration form (without network errors)
-app.get('/register-simple', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'simple-reliable-register.html'));
-});
-
-// Login page after email verification
-app.get('/login.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-// Login page with shorter path - DISABLED to use React
-// app.get('/login', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'public', 'login.html'));
-// });
-
-// Auth page for login and registration - DISABLED to use React
-// app.get('/auth', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'public', 'auth.html'));
-// });
-
-// Coach approval page for administrators
-app.get('/coaches-pending-approval', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'coaches-pending-approval.html'));
-});
-
-// Coach dashboard
-app.get('/coach', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'coach-dashboard.html'));
-});
-
-// Coach dashboard with alternative path
-app.get('/coach-dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'coach-dashboard.html'));
-});
+// All static HTML routes have been removed to allow React Router to handle routing
+// React app will handle: /register, /login, /dashboard, /coach, /admin, etc.
 
 // API endpoint to fetch pending coaches
 app.get('/api/coaches/pending', async (req, res) => {
@@ -240,14 +173,7 @@ app.get('/api/coaches/pending', async (req, res) => {
   }
 });
 
-// Admin pages - direct routes to avoid React router
-app.get('/admin', (req, res) => {
-  res.redirect('/admin/dashboard');
-});
-
-app.get('/admin/coaches', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'coaches-pending-approval.html'));
-});
+// Admin routes handled by React Router - removed static HTML serving
 
 // Simple ping endpoint to check server connectivity
 app.get('/api/ping', (req, res) => {
@@ -387,37 +313,7 @@ app.get('/api/dashboard/payments', async (req, res) => {
   }
 });
 
-// Handle email verification directly without React routing
-app.get('/verify-email', (req, res) => {
-  const token = req.query.token;
-  
-  // Process the token in the background to update the user's status
-  if (token && typeof token === 'string') {
-    // Make a server-side request to our API to verify the email in the background
-    try {
-      // Use fetch instead of require to avoid ESM/CJS issues
-      import('node-fetch').then(({ default: fetch }) => {
-        // Use the full server URL instead of localhost
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        const apiUrl = `${baseUrl}/api/verify-email?token=${token}`;
-        
-        fetch(apiUrl)
-          .then(response => response.text())
-          .then(() => {
-            console.log('Background verification process completed');
-          })
-          .catch(err => {
-            console.error('Error in fetch for verification:', err);
-          });
-      });
-    } catch (err) {
-      console.error('Failed to make API request:', err);
-    }
-  }
-  
-  // Return the success page immediately
-  res.sendFile('email-verified.html', { root: './server/public' });
-});
+// Email verification now handled by React Router - removed static HTML serving
 
 // Academy context middleware
 app.use(async (req, res, next) => {
