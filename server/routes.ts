@@ -1,10 +1,10 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
-import { createServer, type Server } from "http";
-import path from "path";
+import { createServer, type Server } from "node:http";
+import path from "node:path";
 import cors from "cors";
-import { storage } from "./storage";
-import { setupAuth } from "./auth";
-import { registerHandler } from "./routes/register";
+import { storage } from "./storage.js";
+import { setupAuth } from "./auth.js";
+import { registerHandler } from "./routes/register.js";
 
 // API prefix for routes
 const apiPrefix = "/api";
@@ -44,8 +44,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up the force-logout endpoint
   setupForceLogoutEndpoint(app);
-  
-  // All HTML-serving routes removed - React Router handles all routing
   
   // Set up authentication routes
   setupAuth(app);

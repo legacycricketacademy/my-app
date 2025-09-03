@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../lib/api-config";
 import { createContext, ReactNode, useContext, useEffect } from "react";
 import {
   useQuery,
@@ -359,7 +360,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           password: '[REDACTED]' 
         });
         
-        const response = await fetch("/api/login", {
+        const response = await fetch(`${API_BASE_URL}/api/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(credentials),
@@ -374,15 +375,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const apiResponse = await response.json();
         console.log("Login Mutation - Raw API Response:", apiResponse);
 
-        // With standardized responses, we expect:
-        // { success: true, message: string, data: { user: User } }
-        if (!apiResponse.success) {
-          throw new Error(apiResponse.message || "Login failed. Please try again.");
+        // Handle direct user response from backend
+        // Handle direct user response from backend - if we have user data, login succeeded
+        if (!apiResponse || !apiResponse.id) {
+          throw new Error("Login failed. Please try again.");
         }
-        
         // Enhanced user data extraction - check multiple possible response formats
         let user = null;
-        
         // First try the standard format
         if (apiResponse.data?.user) {
           user = apiResponse.data.user;

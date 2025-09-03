@@ -92,6 +92,17 @@ export class MultiTenantStorage extends DatabaseStorage {
     return result[0] || null;
   }
 
+  // Get user by ID
+  async getUserById(id: number): Promise<User | null> {
+    try {
+      const users = await this.db.select().from(schema.users).where(eq(schema.users.id, id));
+      return users[0] || null;
+    } catch (error) {
+      console.error("Error getting user by ID:", error);
+      return null;
+    }
+  }
+
   async getUserByUsername(username: string): Promise<any> {
     const conditions = [eq(users.username, username)];
     if (this.currentAcademyId) {
@@ -552,3 +563,4 @@ export class MultiTenantStorage extends DatabaseStorage {
 }
 
 export const multiTenantStorage = new MultiTenantStorage();
+  // Get user by ID

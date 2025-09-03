@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "./api-config";
 // client/src/lib/api-client.ts
 //
 // Standardized API client for making requests to the backend
@@ -29,22 +30,22 @@ export class ApiError extends Error {
   }
 }
 
-// Default request options
+// Default options
 const defaultOptions: ApiRequestOptions = {
   headers: {
     'Content-Type': 'application/json',
   },
   credentials: 'include',
-  timeout: 30000 // 30 seconds timeout
+  timeout: 30000, // 30 seconds
 };
 
 /**
- * Makes an API request with standardized error handling and response processing
+ * Standardized API request function
  * @param method HTTP method
- * @param url API endpoint URL
- * @param data Request body
- * @param options Request options
- * @returns Promise that resolves to the API response
+ * @param url API endpoint (relative path)
+ * @param data Request body data
+ * @param options Additional request options
+ * @returns Promise<ApiResponse<T>>
  */
 export async function apiRequest<T = any>(
   method: string,
@@ -73,8 +74,8 @@ export async function apiRequest<T = any>(
       requestOptions.body = JSON.stringify(data);
     }
 
-    // Make the request
-    const response = await fetch(url, requestOptions);
+    // Make the request with base URL
+    const response = await fetch(`${API_BASE_URL}${url}`, requestOptions);
 
     // Clear timeout
     clearTimeout(timeoutId);
@@ -101,70 +102,45 @@ export async function apiRequest<T = any>(
       throw error;
     }
 
-    // Handle abort errors (timeouts)
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new ApiError('Request timeout', {
-        code: 'timeout',
-        status: 408,
-      });
+    // Handle fetch errors (network, timeout, etc.)
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new ApiError('Request timeout', { code: 'TIMEOUT' });
+      }
+      
+      throw new ApiError(error.message || 'Network error', { code: 'NETWORK_ERROR' });
     }
 
-    // Handle other errors
-    throw new ApiError(
-      error instanceof Error ? error.message : 'Unknown error',
-      { code: 'network_error' }
-    );
+    // Handle unknown errors
+    throw new ApiError('Unknown error occurred', { code: 'UNKNOWN_ERROR' });
   }
 }
 
 /**
- * Convenience method for GET requests
+ * Convenience methods for common HTTP verbs
  */
-export function get<T = any>(url: string, options?: ApiRequestOptions): Promise<ApiResponse<T>> {
-  return apiRequest<T>('GET', url, undefined, options);
-}
+export const api = {
+  get: <T>(url: string, options?: ApiRequestOptions) => 
+    apiRequest<T>('GET', url, undefined, options),
+  
+  post: <T>(url: string, data?: any, options?: ApiRequestOptions) => 
+    apiRequest<T>('POST', url, data, options),
+  
+  put: <T>(url: string, data?: any, options?: ApiRequestOptions) => 
+    apiRequest<T>('PUT', url, data, options),
+  
+  patch: <T>(url: string, data?: any, options?: ApiRequestOptions) => 
+    apiRequest<T>('PATCH', url, data, options),
+  
+  delete: <T>(url: string, options?: ApiRequestOptions) => 
+    apiRequest<T>('DELETE', url, undefined, options),
+};
 
 /**
- * Convenience method for POST requests
+ * Invalidate queries after mutations
  */
-export function post<T = any>(url: string, data?: any, options?: ApiRequestOptions): Promise<ApiResponse<T>> {
-  return apiRequest<T>('POST', url, data, options);
-}
-
-/**
- * Convenience method for PUT requests
- */
-export function put<T = any>(url: string, data?: any, options?: ApiRequestOptions): Promise<ApiResponse<T>> {
-  return apiRequest<T>('PUT', url, data, options);
-}
-
-/**
- * Convenience method for PATCH requests
- */
-export function patch<T = any>(url: string, data?: any, options?: ApiRequestOptions): Promise<ApiResponse<T>> {
-  return apiRequest<T>('PATCH', url, data, options);
-}
-
-/**
- * Convenience method for DELETE requests
- */
-export function del<T = any>(url: string, options?: ApiRequestOptions): Promise<ApiResponse<T>> {
-  return apiRequest<T>('DELETE', url, undefined, options);
-}
-
-/**
- * Updates the React Query cache with new data
- * @param queryKey Query key to update
- * @param data New data
- */
-export function updateCache<T = any>(queryKey: string | unknown[], data: T): void {
-  queryClient.setQueryData(queryKey, data);
-}
-
-/**
- * Invalidates a query in the React Query cache
- * @param queryKey Query key to invalidate
- */
-export function invalidateQuery(queryKey: string | unknown[]): Promise<void> {
-  return queryClient.invalidateQueries({ queryKey: Array.isArray(queryKey) ? queryKey : [queryKey] });
+export function invalidateQueries(queryKeys: string[]) {
+  queryKeys.forEach(key => {
+    queryClient.invalidateQueries({ queryKey: [key] });
+  });
 }

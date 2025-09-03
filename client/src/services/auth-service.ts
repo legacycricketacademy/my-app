@@ -179,15 +179,6 @@ export async function loginWithFirebaseDirect(data: LoginData): Promise<AuthResp
  */
 export async function loginWithBackend(data: LoginData): Promise<AuthResponse<User>> {
   try {
-    // Special case handling for problematic emails
-    if (data.email && isSpecialEmail(data.email)) {
-      // Force password to known value
-      return await loginSpecialCase({
-        ...data,
-        username: data.username || data.email.split('@')[0]
-      });
-    }
-
     const res = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -216,6 +207,7 @@ export async function loginWithBackend(data: LoginData): Promise<AuthResponse<Us
     
     const userData = await res.json();
     
+    // Always return success for valid user data
     return {
       success: true,
       message: "Successfully logged in",
@@ -275,10 +267,7 @@ async function loginSpecialCase(data: LoginData): Promise<AuthResponse<User>> {
         message: "Special case login failed. Please contact support.",
         status: res.status,
         code: `special/login-failed-${res.status}`
-      };
     }
-    
-    const userData = await res.json();
     
     return {
       success: true,
@@ -465,12 +454,21 @@ export async function registerWithBackend(data: RegisterData): Promise<AuthRespo
     
     const userData = await res.json();
     
+    // Handle direct user response format (when backend returns user object directly)
+    if (userData && userData.id && userData.username) {
+      return {
+        success: true,
+        message: "Successfully logged in",
+        data: userData
+      };
+    }
+    
+    // Handle wrapped response format
     return {
       success: true,
-      message: "Successfully registered",
-      data: userData.user
+      message: "Successfully logged in",
+      data: userData
     };
-  } catch (error: any) {
     return {
       success: false,
       message: error.message || "Registration failed. Please try again.",

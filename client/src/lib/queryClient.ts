@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "./api-config";
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
@@ -61,7 +62,7 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     console.log(`Fetching ${queryKey[0]}`);
     try {
-      const res = await fetch(queryKey[0] as string, {
+      const res = await fetch(`${API_BASE_URL}${queryKey[0]}`, {
         credentials: "include",
       });
 
