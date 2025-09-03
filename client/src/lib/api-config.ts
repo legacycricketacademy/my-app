@@ -1,10 +1,8 @@
 // client/src/lib/api-config.ts
 // Single source of truth for API configuration
 
-// Get API base URL from environment variables
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
-                     process.env.VITE_API_URL || 
-                     process.env.REACT_APP_API_URL ||
+// Get API base URL from environment variables (browser-safe)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
                      'https://cricket-academy.lindy.site:3002';
 
 // Compile-time guard to catch wrong ports
