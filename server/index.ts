@@ -86,7 +86,7 @@ setupStaticRoutes(app);
 const port = process.env.PORT || 3001;
 
 // Handle server startup errors
-const server = app.listen(port, () => {
+const server = app.listen(port, "0.0.0.0", () => {
   console.log(`Server running at http://localhost:${port}`);
 }).on('error', (error: any) => {
   if (error.code === 'EADDRINUSE') {
