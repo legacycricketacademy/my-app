@@ -54,6 +54,16 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// DEV-ONLY admin bypass
+app.use((req, _res, next) => {
+  const devBypass = process.env.LOCAL_ADMIN_BYPASS === "true";
+  if (devBypass && req.headers["x-local-admin"] === "1") {
+    (req as any).user = { id: 0, role: "admin" };
+    (req as any).isAuthenticated = () => true;
+  }
+  next();
+});
+
 // Extend Request
 declare global {
   namespace Express {
@@ -297,7 +307,11 @@ app.get("/api/dashboard/payments", (req, res) => {
   res.json({ current: { period: "Dec 2024", status: "paid", amount: "175" } });
 });
 
-// Academy context middleware
+app.post("/api/payments/schedule", (req, res) => {
+  // MVP stub - just return success
+  console.log("Payment scheduled:", req.body);
+  res.json({ ok: true, message: "Payment scheduled successfully" });
+});
 app.use(async (req, _res, next) => {
   const match = req.path.match(/^\/academy\/([^/]+)/);
   if (match) {

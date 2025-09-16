@@ -90,7 +90,6 @@ export interface IStorage {
   updatePaymentStatus(id: number, status: string, paidDate?: Date): Promise<any | undefined>;
   
   // Stripe methods
-  updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
   updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined>;
   updateUserStripeInfo(userId: number, data: { stripeCustomerId: string; stripeSubscriptionId: string }): Promise<User | undefined>;
   
@@ -847,29 +846,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Stripe methods
-  async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
-    const [updatedUser] = await db
-      .update(users)
-      .set({
-        stripeCustomerId: customerId,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, userId))
-      .returning();
-    return updatedUser;
-  }
-  
-  async updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined> {
-    const [updatedUser] = await db
-      .update(users)
-      .set({
-        stripeSubscriptionId: subscriptionId,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, userId))
-      .returning();
-    return updatedUser;
-  }
   
   async updateUserStripeInfo(userId: number, data: { stripeCustomerId: string; stripeSubscriptionId: string }): Promise<User | undefined> {
     const [updatedUser] = await db
