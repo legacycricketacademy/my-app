@@ -240,3 +240,43 @@ tail -f server.log
 ---
 
 **Ready for Parent Rollout** 🏏✨
+
+## 🚀 Production Deployment (Render)
+
+### Environment Variables for Render
+Add these environment variables in your Render Web Service:
+
+```bash
+# Server Configuration
+NODE_ENV=production
+HOST=0.0.0.0
+PORT=3000
+
+# Database
+DATABASE_URL=sqlite:./production.db
+
+# Keycloak Configuration (Production)
+VITE_KEYCLOAK_URL=https://keycloak-service.onrender.com
+VITE_KEYCLOAK_ISSUER_URL=https://keycloak-service.onrender.com/realms/cricket-academy
+VITE_KEYCLOAK_REALM=cricket-academy
+VITE_KEYCLOAK_CLIENT_ID=my-app
+VITE_APP_URL=https://my-frontend.onrender.com
+VITE_REDIRECT_PATH=/auth/callback
+
+# Optional: Admin bypass for initial setup
+LOCAL_ADMIN_BYPASS=true
+KEYCLOAK_ENABLED=true
+```
+
+### Render Service Configuration
+- **Build Command**: `npm run build`
+- **Start Command**: `node dist/index.js`
+- **Branch**: `feat/admin-coach-approval`
+- **Auto-Deploy**: Enabled
+
+### Verification
+After deployment, check build logs to confirm:
+- Frontend uses `https://keycloak-service.onrender.com` instead of `localhost:8081`
+- All VITE_* environment variables are properly injected during build
+- Login button redirects to production Keycloak service
+
