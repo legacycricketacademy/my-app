@@ -6,9 +6,9 @@ export const initKeycloak = async (): Promise<Keycloak> => {
   if (keycloak) return keycloak;
 
   keycloak = new Keycloak({
-    url: import.meta.env.VITE_KEYCLOAK_ISSUER_URL?.replace('/realms/cricket-academy', ''),
-    realm: 'cricket-academy',
-    clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'cricket-coaching-spa',
+    url: import.meta.env.VITE_KEYCLOAK_URL || "http://localhost:8081",
+    realm: import.meta.env.VITE_KEYCLOAK_REALM || "cricket-academy",
+    clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || "my-app",
   });
 
   try {
@@ -36,13 +36,13 @@ export const getAccessToken = (): string | undefined => {
 
 export const login = () => {
   keycloak?.login({
-    redirectUri: import.meta.env.VITE_APP_URL + import.meta.env.VITE_REDIRECT_PATH,
+    redirectUri: (import.meta.env.VITE_APP_URL || window.location.origin) + (import.meta.env.VITE_REDIRECT_PATH || '/auth/callback'),
   });
 };
 
 export const logout = () => {
   keycloak?.logout({
-    redirectUri: import.meta.env.VITE_APP_URL + '/auth',
+    redirectUri: (import.meta.env.VITE_APP_URL || window.location.origin) + '/auth',
   });
 };
 
@@ -51,7 +51,7 @@ export const isAuthenticated = (): boolean => {
 };
 
 export const getUserRoles = (): string[] => {
-  const clientId = import.meta.env.VITE_KEYCLOAK_CLIENT_ID;
+  const clientId = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || "my-app";
   const resourceAccess = keycloak?.tokenParsed?.resource_access;
   const realmAccess = keycloak?.tokenParsed?.realm_access;
   
