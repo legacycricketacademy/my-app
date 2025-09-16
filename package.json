@@ -68,6 +68,8 @@
     "framer-motion": "^11.13.1",
     "hbs": "^4.2.0",
     "input-otp": "^1.2.4",
+    "jose": "^6.1.0",
+    "keycloak-js": "^26.2.0",
     "lucide-react": "^0.453.0",
     "node-fetch": "^3.3.2",
     "passport": "^0.7.0",

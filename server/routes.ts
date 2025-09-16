@@ -1,59 +1,41 @@
-import express, { type Express, type Request, type Response, type NextFunction } from "express";
-import { createServer, type Server } from "http";
-import path from "path";
-import cors from "cors";
-import { storage } from "./storage";
-import { setupAuth } from "./auth";
-import { registerHandler } from "./routes/register";
+import { Express } from "express";
+import { setupVite, serveStatic } from "./vite";
+import { createServer } from "http";
+import { verifyJwt, requireRole } from "./middleware/verifyJwt";
 
-// API prefix for routes
-const apiPrefix = "/api";
-
-// Add a force-logout endpoint that destroys the session without relying on passport
-function setupForceLogoutEndpoint(app: Express) {
-  app.post(`${apiPrefix}/force-logout`, (req, res) => {
-    console.log("Received force-logout request");
-    
-    if (req.session) {
-      console.log("Destroying session for force-logout");
-      req.session.destroy((err) => {
-        if (err) {
-          console.error("Error destroying session:", err);
-          return res.status(500).json({ message: "Error during force logout", error: err.message });
-        }
-        
-        console.log("Session successfully destroyed");
-        res.clearCookie("connect.sid");
-        return res.status(200).json({ message: "Force logout successful" });
-      });
-    } else {
-      console.log("No session found to destroy");
-      return res.status(200).json({ message: "No session to logout" });
-    }
+export function registerRoutes(app: Express) {
+  // Disable local auth routes - return 404
+  app.all("/auth/*", (req, res) => {
+    res.status(404).json({ error: "Local auth disabled - use Keycloak" });
   });
+
+  // Protected API routes with JWT verification
+  app.use("/api/admin/*", verifyJwt, requireRole("admin"));
+  app.use("/api/parent/*", verifyJwt, requireRole("parent"));
+  app.use("/api/coach/*", verifyJwt, requireRole("coach"));
+
+  // Test endpoints for role verification
+  app.get("/api/admin/test", (req, res) => {
+    res.json({ message: "Admin access granted", user: req.user });
+  });
+
+  app.get("/api/parent/test", (req, res) => {
+    res.json({ message: "Parent access granted", user: req.user });
+  });
+
+  // Public health check
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", keycloak_enabled: process.env.KEYCLOAK_ENABLED });
+  });
+
+  // Setup Vite or static serving
+  if (app.get("env") === "development") {
+    setupVite(app);
+  } else {
+    serveStatic(app);
+  }
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Enable CORS for all routes
-  app.use(cors({
-    origin: true, // Allow requests from any origin
-    credentials: true, // Allow credentials (cookies, authorization headers)
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
-    allowedHeaders: ['Content-Type', 'Authorization'] // Allowed headers
-  }));
-  
-  // Set up the force-logout endpoint
-  setupForceLogoutEndpoint(app);
-  
-  // All HTML-serving routes removed - React Router handles all routing
-  
-  // Set up authentication routes
-  setupAuth(app);
-  
-  // Register handler for user registration
-  // registerHandler(app); // Commented out temporarily to fix startup
-
-  const httpServer = createServer(app);
-  
-  return httpServer;
+export function createHttpServer(app: Express) {
+  return createServer(app);
 }

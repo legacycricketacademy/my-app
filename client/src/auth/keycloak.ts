@@ -1,0 +1,62 @@
+import Keycloak from 'keycloak-js';
+
+let keycloak: Keycloak | null = null;
+
+export const initKeycloak = async (): Promise<Keycloak> => {
+  if (keycloak) return keycloak;
+
+  keycloak = new Keycloak({
+    url: import.meta.env.VITE_KEYCLOAK_ISSUER_URL?.replace('/realms/cricket-academy', ''),
+    realm: 'cricket-academy',
+    clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'cricket-coaching-spa',
+  });
+
+  try {
+    const authenticated = await keycloak.init({
+      onLoad: 'check-sso',
+      silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
+      pkceMethod: 'S256',
+    });
+
+    if (authenticated) {
+      console.log('User authenticated');
+    }
+  } catch (error) {
+    console.error('Keycloak init failed:', error);
+  }
+
+  return keycloak;
+};
+
+export const getKeycloak = (): Keycloak | null => keycloak;
+
+export const getAccessToken = (): string | undefined => {
+  return keycloak?.token;
+};
+
+export const login = () => {
+  keycloak?.login({
+    redirectUri: import.meta.env.VITE_APP_URL + import.meta.env.VITE_REDIRECT_PATH,
+  });
+};
+
+export const logout = () => {
+  keycloak?.logout({
+    redirectUri: import.meta.env.VITE_APP_URL + '/auth',
+  });
+};
+
+export const isAuthenticated = (): boolean => {
+  return keycloak?.authenticated || false;
+};
+
+export const getUserRoles = (): string[] => {
+  const clientId = import.meta.env.VITE_KEYCLOAK_CLIENT_ID;
+  const resourceAccess = keycloak?.tokenParsed?.resource_access;
+  const realmAccess = keycloak?.tokenParsed?.realm_access;
+  
+  return [
+    ...(resourceAccess?.[clientId]?.roles || []),
+    ...(realmAccess?.roles || [])
+  ];
+};
