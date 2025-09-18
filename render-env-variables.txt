@@ -1,0 +1,11 @@
+NODE_ENV=production
+HOST=0.0.0.0
+PORT=3000
+DATABASE_URL=sqlite:./production.db
+LOCAL_ADMIN_BYPASS=true
+KEYCLOAK_ENABLED=true
+VITE_KEYCLOAK_URL=https://keycloak-service.onrender.com
+VITE_KEYCLOAK_ISSUER_URL=https://keycloak-service.onrender.com/realms/cricket-academy
+VITE_KEYCLOAK_REALM=cricket-academy
+VITE_KEYCLOAK_CLIENT_ID=my-app
+VITE_REDIRECT_PATH=/auth/callback
