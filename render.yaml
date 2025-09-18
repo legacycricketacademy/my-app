@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: cricket-academy-app
+    env: node
+    plan: starter
+    buildCommand: npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /api/ping
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        value: sqlite:./production.db
+      - key: LOCAL_ADMIN_BYPASS
+        value: true
+      - key: KEYCLOAK_ENABLED
+        value: true
+      - key: VITE_KEYCLOAK_URL
+        value: https://keycloak-service.onrender.com
+      - key: VITE_KEYCLOAK_ISSUER_URL
+        value: https://keycloak-service.onrender.com/realms/cricket-academy
+      - key: VITE_KEYCLOAK_REALM
+        value: cricket-academy
+      - key: VITE_KEYCLOAK_CLIENT_ID
+        value: my-app
+      - key: VITE_REDIRECT_PATH
+        value: /auth/callback
