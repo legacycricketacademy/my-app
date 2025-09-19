@@ -525,3 +525,4 @@ async function processPlayersData(playersData: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+}
