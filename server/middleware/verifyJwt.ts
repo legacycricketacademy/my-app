@@ -1,7 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-const JWKS = createRemoteJWKSet(new URL(`${process.env.KEYCLOAK_ISSUER_URL}/protocol/openid-connect/certs`));
+let JWKS: ReturnType<typeof createRemoteJWKSet> | null = null;
+
+const getJWKS = () => {
+  if (!JWKS && process.env.KEYCLOAK_ISSUER_URL) {
+    JWKS = createRemoteJWKSet(new URL(`${process.env.KEYCLOAK_ISSUER_URL}/protocol/openid-connect/certs`));
+  }
+  return JWKS;
+};
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -13,6 +20,11 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export const verifyJwt = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  // Skip JWT verification if Keycloak is disabled
+  if (process.env.KEYCLOAK_ENABLED !== 'true') {
+    return next();
+  }
+
   const token = req.headers.authorization?.replace('Bearer ', '');
   
   if (!token) {
@@ -20,7 +32,12 @@ export const verifyJwt = async (req: AuthenticatedRequest, res: Response, next: 
   }
 
   try {
-    const { payload } = await jwtVerify(token, JWKS, {
+    const jwks = getJWKS();
+    if (!jwks) {
+      throw new Error('JWKS not initialized - KEYCLOAK_ISSUER_URL not set');
+    }
+
+    const { payload } = await jwtVerify(token, jwks, {
       issuer: process.env.KEYCLOAK_ISSUER_URL,
       audience: process.env.KEYCLOAK_AUDIENCE || process.env.KEYCLOAK_CLIENT_ID,
     });
