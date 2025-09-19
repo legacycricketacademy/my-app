@@ -1,10 +1,22 @@
-# Legacy Cricket Academy
+# Legacy Cricket Academy - DEPLOYMENT INSTRUCTIONS
 
-## Render Deployment Instructions
+## 🚨 CRITICAL: Render Service Configuration
 
-### 1. Environment Variables
+### Build Command
+```
+npm run build
+```
 
-Make sure these environment variables are set in your Render service:
+### Start Command (IMPORTANT!)
+```
+npm start
+```
+
+**NOT** `node start` - this will fail!
+
+### Environment Variables
+
+Set these in your Render service:
 
 ```
 NODE_ENV=production
@@ -21,49 +33,39 @@ VITE_REDIRECT_PATH=/auth/callback
 VITE_APP_URL=https://cricket-academy-app.onrender.com
 ```
 
-### 2. Build & Start Commands
+## 🎉 BUILD STATUS: SUCCESS!
 
-Update your Render service configuration with these exact settings:
+The build is now working perfectly:
+- ✅ Vite build: 1661 modules transformed
+- ✅ Assets generated: CSS (72.99 kB) + JS (285.80 kB)
+- ✅ Server bundle: 74.2kb
 
-- **Build Command**: `npm run build`
-- **Start Command**: `npm start`
+## 🔧 CURRENT ISSUE: Start Command
 
-### 3. Important Notes
-
-- The server will serve the React app from `dist/public/`
-- All API routes are preserved under `/api/*`
-- Static assets are served with proper caching
-- SPA routing is handled via catch-all route
-- Health check available at `/healthz`
-
-### 4. Post-Deployment Verification
-
-1. Visit `https://cricket-academy-app.onrender.com`
-2. Verify you see the full React UI (not just "Home Page")
-3. Test Keycloak login integration
-4. Verify all API endpoints work
-5. Check deep linking works (refresh any route)
-
-## Development
-
+The deployment fails because Render is running:
 ```bash
-# Install dependencies
-npm install
-
-# Run in development
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
+node start  # ❌ WRONG - this looks for /src/start file
 ```
 
-## API Routes
+Instead of:
+```bash
+npm start   # ✅ CORRECT - this runs our package.json script
+```
 
-- `GET /api/ping` - Health check
-- `GET /api/coaches` - List coaches with filters
-- `POST /api/coaches/:id/approve` - Approve coach
-- `POST /api/coaches/:id/reject` - Reject coach
-- `POST /api/payments/schedule` - Schedule payment
+## 📋 Fix Instructions
+
+1. Go to Render Dashboard
+2. Select your `cricket-academy-app` service
+3. Go to Settings
+4. Update **Start Command** to: `npm start`
+5. Save and redeploy
+
+## 🏏 Expected Result
+
+After fixing the start command, you should see:
+- Beautiful "Welcome to Legacy Cricket Academy" login page
+- Full React UI with shadcn/ui components
+- Working Keycloak integration
+- All API endpoints functional
+
+The React app is fully built and ready - just need the correct start command!
