@@ -15,8 +15,8 @@ app.get('/parent', (req, res) => {
   res.sendFile(path.join(__dirname, 'simple-parent.html'));
 });
 
-// Start the server on port 3000
-const PORT = 3000;
+// Start the server on dynamic port
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Standalone parent dashboard server running at http://localhost:${PORT}/parent`);
 });
