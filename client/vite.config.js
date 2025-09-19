@@ -6,13 +6,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000,
+    strictPort: true,
     allowedHosts: [
-      'localhost',
-      '127.0.0.1',
-      '0.0.0.0',
-      '.lindy.site',
-      '.e2b.app',
-      '3000-i08ygb6atkik4es3gtgn4.e2b.app'
+      "3000-i08ygb6atkik4es3gtgn4.e2b.app"
     ]
   },
   resolve: {
