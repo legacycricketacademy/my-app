@@ -27,14 +27,18 @@ export default function AuthPage() {
   // Redirect if already authenticated
   useEffect(() => {
     const unsubscribe = onAuthStateChange((user) => {
+      console.log('Auth state changed:', user);
       if (user) {
+        console.log('User authenticated, redirecting to dashboard...');
         setLocation('/');
       }
     });
 
     // Check if already authenticated
     const currentUser = getCurrentUser();
+    console.log('Current user on mount:', currentUser);
     if (currentUser) {
+      console.log('Already authenticated, redirecting to dashboard...');
       setLocation('/');
     }
 
@@ -46,11 +50,14 @@ export default function AuthPage() {
     setIsLoading(true);
 
     try {
-      await signIn(formData);
+      console.log('Attempting to sign in with:', formData.email);
+      const user = await signIn(formData);
+      console.log('Sign in successful, user:', user);
       toast({
         title: "Welcome back!",
         description: "You have been successfully signed in.",
       });
+      console.log('Redirecting to dashboard...');
       setLocation('/');
     } catch (error: any) {
       toast({

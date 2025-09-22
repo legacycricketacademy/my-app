@@ -5,9 +5,15 @@
 
 import sgMail from '@sendgrid/mail';
 
-// Initialize SendGrid
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Check if email is enabled
+export const isEmailEnabled = !!process.env.SENDGRID_API_KEY;
+
+// Initialize SendGrid only if enabled
+if (isEmailEnabled) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+  console.log('📧 Email service enabled with SendGrid');
+} else {
+  console.log('📧 Email service disabled - SENDGRID_API_KEY not configured');
 }
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@legacycricketacademy.com';
@@ -19,17 +25,27 @@ interface EmailTemplate {
   text: string;
 }
 
+interface EmailResult {
+  sent: boolean;
+  id?: string;
+  reason?: string;
+  preview?: string;
+}
+
 /**
  * Send email using SendGrid
  */
-async function sendEmail(to: string, template: EmailTemplate): Promise<boolean> {
+async function sendEmail(to: string, template: EmailTemplate): Promise<EmailResult> {
   try {
-    if (!process.env.SENDGRID_API_KEY) {
-      console.log('SENDGRID_API_KEY not configured. Logging email instead:');
-      console.log('To:', to);
-      console.log('Subject:', template.subject);
-      console.log('HTML:', template.html);
-      return true; // Return true for development
+    if (!isEmailEnabled) {
+      const preview = `To: ${to}\nSubject: ${template.subject}\n\n${template.text}`;
+      console.log('📧 Email disabled - logging payload:');
+      console.log(preview);
+      return {
+        sent: false,
+        reason: 'disabled',
+        preview
+      };
     }
 
     const msg = {
@@ -41,12 +57,18 @@ async function sendEmail(to: string, template: EmailTemplate): Promise<boolean> 
       html: template.html,
     };
 
-    await sgMail.send(msg);
-    console.log(`Email sent successfully to ${to}`);
-    return true;
+    const response = await sgMail.send(msg);
+    console.log(`📧 Email sent successfully to ${to}`);
+    return {
+      sent: true,
+      id: response[0].headers['x-message-id'] || 'unknown'
+    };
   } catch (error) {
-    console.error('Error sending email:', error);
-    return false;
+    console.error('📧 Error sending email:', error);
+    return {
+      sent: false,
+      reason: error instanceof Error ? error.message : 'unknown_error'
+    };
   }
 }
 
@@ -87,7 +109,7 @@ export function welcomeParentTemplate(parentName: string): EmailTemplate {
               <li>Receive important announcements</li>
             </ul>
             <p style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}" class="button">Access Your Dashboard</a>
+              <a href="${process.env.CLIENT_URL || 'https://cricket-academy.onrender.com'}" class="button">Access Your Dashboard</a>
             </p>
             <p>If you have any questions, please don't hesitate to contact us.</p>
             <p>Best regards,<br>The Legacy Cricket Academy Team</p>
@@ -113,7 +135,7 @@ export function welcomeParentTemplate(parentName: string): EmailTemplate {
       - Make payments and view payment history
       - Receive important announcements
       
-      Access your dashboard at: ${process.env.CLIENT_URL || 'http://localhost:3000'}
+      Access your dashboard at: ${process.env.CLIENT_URL || 'https://cricket-academy.onrender.com'}
       
       If you have any questions, please don't hesitate to contact us.
       
@@ -163,7 +185,7 @@ export function childAddedTemplate(parentName: string, childName: string): Email
               <li>Receive updates about their development</li>
             </ul>
             <p style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}" class="button">View Your Dashboard</a>
+              <a href="${process.env.CLIENT_URL || 'https://cricket-academy.onrender.com'}" class="button">View Your Dashboard</a>
             </p>
             <p>If you have any questions about ${childName}'s enrollment, please contact us.</p>
             <p>Best regards,<br>The Legacy Cricket Academy Team</p>
@@ -189,7 +211,7 @@ export function childAddedTemplate(parentName: string, childName: string): Email
       - Make payments for their training
       - Receive updates about their development
       
-      View your dashboard at: ${process.env.CLIENT_URL || 'http://localhost:3000'}
+      View your dashboard at: ${process.env.CLIENT_URL || 'https://cricket-academy.onrender.com'}
       
       If you have any questions about ${childName}'s enrollment, please contact us.
       
@@ -250,7 +272,7 @@ export function paymentReminderTemplate(parentName: string, amount: number, dueD
             </div>
             <p>Please make your payment as soon as possible to avoid any service interruptions.</p>
             <p style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/payments" class="button">Make Payment Now</a>
+              <a href="${process.env.CLIENT_URL || 'https://cricket-academy.onrender.com'}/payments" class="button">Make Payment Now</a>
             </p>
             <p>If you have already made this payment, please disregard this reminder.</p>
             <p>If you have any questions about your payment, please contact us immediately.</p>
@@ -276,7 +298,7 @@ export function paymentReminderTemplate(parentName: string, amount: number, dueD
       
       Please make your payment as soon as possible to avoid any service interruptions.
       
-      Make payment at: ${process.env.CLIENT_URL || 'http://localhost:3000'}/payments
+      Make payment at: ${process.env.CLIENT_URL || 'https://cricket-academy.onrender.com'}/payments
       
       If you have already made this payment, please disregard this reminder.
       If you have any questions about your payment, please contact us immediately.
@@ -293,7 +315,7 @@ export function paymentReminderTemplate(parentName: string, amount: number, dueD
 /**
  * Send welcome email to new parent
  */
-export async function sendWelcomeParent(parentEmail: string, parentName: string): Promise<boolean> {
+export async function sendWelcomeParent(parentEmail: string, parentName: string): Promise<EmailResult> {
   const template = welcomeParentTemplate(parentName);
   return await sendEmail(parentEmail, template);
 }
@@ -301,7 +323,7 @@ export async function sendWelcomeParent(parentEmail: string, parentName: string)
 /**
  * Send child added notification
  */
-export async function sendChildAdded(parentEmail: string, parentName: string, childName: string): Promise<boolean> {
+export async function sendChildAdded(parentEmail: string, parentName: string, childName: string): Promise<EmailResult> {
   const template = childAddedTemplate(parentName, childName);
   return await sendEmail(parentEmail, template);
 }
@@ -309,7 +331,7 @@ export async function sendChildAdded(parentEmail: string, parentName: string, ch
 /**
  * Send payment reminder
  */
-export async function sendPaymentReminder(parentEmail: string, parentName: string, amount: number, dueDate: string): Promise<boolean> {
+export async function sendPaymentReminder(parentEmail: string, parentName: string, amount: number, dueDate: string): Promise<EmailResult> {
   const template = paymentReminderTemplate(parentName, amount, dueDate);
   return await sendEmail(parentEmail, template);
 }
@@ -317,11 +339,7 @@ export async function sendPaymentReminder(parentEmail: string, parentName: strin
 /**
  * Test email endpoint (development only)
  */
-export async function sendTestEmail(): Promise<boolean> {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Test email endpoint is only available in development');
-  }
-
+export async function sendTestEmail(to?: string): Promise<EmailResult> {
   const template = {
     subject: 'Test Email from Legacy Cricket Academy',
     html: `
@@ -332,5 +350,5 @@ export async function sendTestEmail(): Promise<boolean> {
     text: 'Test Email\n\nThis is a test email from the Legacy Cricket Academy system.\n\nIf you received this, the email service is working correctly!'
   };
 
-  return await sendEmail(FROM_EMAIL, template);
+  return await sendEmail(to || FROM_EMAIL, template);
 }

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Users, UserCheck, Calendar, DollarSign, AlertTriangle, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
+import { EmailStatusBanner } from "@/components/ui/email-status-banner";
 
 export default function AdminDashboard() {
   // Fetch basic stats for the dashboard
@@ -43,6 +44,8 @@ export default function AdminDashboard() {
             Manage your cricket academy operations
           </p>
         </div>
+
+        <EmailStatusBanner />
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

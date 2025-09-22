@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, formatDistance } from "date-fns";
 import { useLocation } from "wouter";
+import { safeTruncate } from "@/lib/strings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -98,7 +99,7 @@ export function AdminNotificationDropdown() {
       id: announcement.id,
       type: "system" as const,
       title: announcement.title,
-      message: announcement.content.substring(0, 50) + (announcement.content.length > 50 ? '...' : ''),
+      message: safeTruncate(announcement.content, 50),
       createdAt: announcement.createdAt,
       read: true
     }))

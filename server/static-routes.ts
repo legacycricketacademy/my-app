@@ -7,8 +7,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export function setupStaticRoutes(app: express.Express): void {
-  // In development, skip static file serving - let Vite handle everything
-  // Only set up static routes for production builds
   if (process.env.NODE_ENV === 'production') {
     // Serve static files from dist/public directory
     const publicDir = path.resolve(__dirname, "..", "dist", "public");
@@ -16,6 +14,13 @@ export function setupStaticRoutes(app: express.Express): void {
     
     // Catch-all route to handle client-side routes (SPA routing)
     // This must be after API routes to avoid interfering with them
+    app.get("*", (_, res) => res.sendFile(path.join(publicDir, "index.html")));
+  } else {
+    // In development, serve the built files from dist/public
+    const publicDir = path.resolve(__dirname, "..", "dist", "public");
+    app.use(express.static(publicDir));
+    
+    // Catch-all route to handle client-side routes (SPA routing)
     app.get("*", (_, res) => res.sendFile(path.join(publicDir, "index.html")));
   }
 }

@@ -1,0 +1,66 @@
+name: Smoke Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Base URL to test'
+        required: false
+        default: 'https://cricket-academy.onrender.com'
+        type: string
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: npm run build:prod
+      
+    - name: Start application
+      run: |
+        npm start &
+        sleep 10
+      env:
+        NODE_ENV: production
+        AUTH_PROVIDER: keycloak
+        DATABASE_URL: postgresql://test:test@localhost:5432/test
+        VITE_KEYCLOAK_URL: https://test-keycloak.example.com/auth
+        VITE_KEYCLOAK_REALM: cricket-academy
+        VITE_KEYCLOAK_CLIENT_ID: cricket-coaching-spa
+        
+    - name: Run smoke tests
+      run: |
+        BASE_URL="${BASE_URL:-http://localhost:3000}" ./scripts/smoke-test.sh
+      env:
+        BASE_URL: ${{ github.event.inputs.base_url || 'http://localhost:3000' }}
+        
+    - name: Test production URL (if not localhost)
+      if: github.event.inputs.base_url != 'http://localhost:3000' && github.event.inputs.base_url != ''
+      run: |
+        BASE_URL="${{ github.event.inputs.base_url }}" ./scripts/smoke-test.sh
+        
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: smoke-test-results
+        path: |
+          smoke-test-results.log
+        retention-days: 7

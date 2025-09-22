@@ -12,6 +12,7 @@ import { AdminNotificationDropdown } from "@/components/admin-notification-dropd
 import { RoleBadge } from "@/components/auth/RoleBadge";
 import { signOut } from "@/lib/auth";
 import { useLocation } from "wouter";
+import { safeInitials } from "@/lib/strings";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -24,13 +25,7 @@ export function MainLayout({ children, title }: MainLayoutProps) {
   const [searchFocused, setSearchFocused] = useState(false);
   const [, setLocation] = useLocation();
   
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
+  // Removed getInitials - now using safeInitials from strings.ts
 
   const handleSignOut = async () => {
     try {
@@ -96,7 +91,7 @@ export function MainLayout({ children, title }: MainLayoutProps) {
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user?.profileImage || undefined} alt={user?.name || "User"} />
-                        <AvatarFallback>{user?.name ? getInitials(user.name) : "U"}</AvatarFallback>
+                        <AvatarFallback>{safeInitials(user?.name)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
@@ -117,7 +112,7 @@ export function MainLayout({ children, title }: MainLayoutProps) {
               <div className="relative md:hidden">
                 <Avatar>
                   <AvatarImage src={user?.profileImage || undefined} alt={user?.name || "User"} />
-                  <AvatarFallback>{user?.name ? getInitials(user.name) : "U"}</AvatarFallback>
+                  <AvatarFallback>{safeInitials(user?.name)}</AvatarFallback>
                 </Avatar>
               </div>
             </div>

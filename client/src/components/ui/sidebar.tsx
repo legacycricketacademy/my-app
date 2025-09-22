@@ -78,8 +78,8 @@ export function Sidebar() {
 
   // Parent nav items
   const parentNavItems = [
-    { label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" />, path: "/parent" },
-    { label: "Schedule", icon: <Calendar className="h-5 w-5" />, path: "/parent/schedule" },
+    { label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" />, path: "/" },
+    { label: "Schedule", icon: <Calendar className="h-5 w-5" />, path: "/schedule" },
     { label: "Fitness Tracking", icon: <Heart className="h-5 w-5" />, path: "/parent/fitness" },
     { label: "Meal Plans", icon: <Utensils className="h-5 w-5" />, path: "/parent/meal-plans" },
     { label: "Announcements", icon: <Send className="h-5 w-5" />, path: "/parent/announcements" },

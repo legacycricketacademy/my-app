@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Search, User, Heart, Mail } from "lucide-react";
+import { Search, User, Heart, Mail, UserPlus } from "lucide-react";
 import { Link } from "wouter";
 import { api } from "@/lib/api";
+import { safeInitials, safeNumber } from "@/lib/strings";
 
 export function PlayersCard() {
   const [ageGroup, setAgeGroup] = useState<string>("all");
@@ -18,17 +19,15 @@ export function PlayersCard() {
     queryFn: () => api.get(`/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`)
   });
   
-  const filteredPlayers = players?.filter(player => {
+  const filteredPlayers = (players ?? []).filter(player => {
     if (!searchQuery) return true;
-    const fullName = `${player.firstName} ${player.lastName}`.toLowerCase();
+    const fullName = `${player.firstName || ''} ${player.lastName || ''}`.toLowerCase();
     return fullName.includes(searchQuery.toLowerCase()) || 
-           player.playerType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           player.ageGroup?.toLowerCase().includes(searchQuery.toLowerCase());
+           (player.playerType?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+           (player.ageGroup?.toLowerCase() || '').includes(searchQuery.toLowerCase());
   });
   
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
-  };
+  // Removed getInitials - now using safeInitials from strings.ts
 
   return (
     <Card className="bg-white rounded-lg shadow">
@@ -85,9 +84,9 @@ export function PlayersCard() {
             filteredPlayers.map((player) => (
               <div key={player.id} className="flex items-center justify-between border-b border-gray-100 pb-3 group">
                 <Link href={`/player/${player.id}`} className="flex items-center space-x-3 flex-1 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors">
-                  <Avatar className={player.id % 5 === 0 ? "border-2 border-primary" : ""}>
-                    <AvatarImage src={player.profileImage} alt={`${player.firstName} ${player.lastName}`} />
-                    <AvatarFallback>{getInitials(player.firstName, player.lastName)}</AvatarFallback>
+                  <Avatar className={safeNumber(player.id) % 5 === 0 ? "border-2 border-primary" : ""}>
+                    <AvatarImage src={player.profileImage} alt={`${player.firstName || ''} ${player.lastName || ''}`} />
+                    <AvatarFallback>{safeInitials(`${player.firstName || ''} ${player.lastName || ''}`)}</AvatarFallback>
                   </Avatar>
                   <div>
                     <h4 className="text-sm font-medium">{player.firstName} {player.lastName}</h4>

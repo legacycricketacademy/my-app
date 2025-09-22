@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, Plus, Search, Filter, ArrowUpDown, CheckCircle, XCircle, Clock, Send } from "lucide-react";
 import { format } from "date-fns";
+import { EmailStatusBanner } from "@/components/ui/email-status-banner";
 
 export default function PaymentsPage() {
   const [status, setStatus] = useState<string>("all");
@@ -108,6 +109,8 @@ export default function PaymentsPage() {
   return (
     <MainLayout title="Payments">
       <div className="space-y-6">
+        <EmailStatusBanner />
+        
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>

@@ -4,13 +4,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
+import { api } from "@/lib/api";
+import { safeNumber } from "@/lib/strings";
 
 export function FitnessCard() {
   const [period, setPeriod] = useState<string>("week");
   
   const { data: fitnessProgress, isLoading } = useQuery<any>({
     queryKey: ["/api/fitness/team-progress", period],
-    queryFn: () => fetch(`/api/fitness/team-progress?period=${period}`).then(res => res.json())
+    queryFn: () => api.get(`/fitness/team-progress?period=${period}`)
   });
   
   const getProgressColor = (metric: string) => {
@@ -91,7 +93,7 @@ export function FitnessCard() {
             <div>
               <div className="flex justify-between items-center mb-1">
                 <h4 className="text-sm font-medium text-gray-700">Running Speed</h4>
-                {getProgressIndicator(fitnessProgress.avgRunningSpeed, fitnessProgress.avgRunningSpeed * 0.96)} {/* Simulating previous value */}
+                {getProgressIndicator(fitnessProgress.avgRunningSpeed, safeNumber(fitnessProgress.avgRunningSpeed) * 0.96)} {/* Simulating previous value */}
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
@@ -108,7 +110,7 @@ export function FitnessCard() {
             <div>
               <div className="flex justify-between items-center mb-1">
                 <h4 className="text-sm font-medium text-gray-700">Endurance</h4>
-                {getProgressIndicator(fitnessProgress.avgEndurance, fitnessProgress.avgEndurance * 0.97)} {/* Simulating previous value */}
+                {getProgressIndicator(fitnessProgress.avgEndurance, safeNumber(fitnessProgress.avgEndurance) * 0.97)} {/* Simulating previous value */}
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
@@ -125,7 +127,7 @@ export function FitnessCard() {
             <div>
               <div className="flex justify-between items-center mb-1">
                 <h4 className="text-sm font-medium text-gray-700">Strength</h4>
-                {getProgressIndicator(fitnessProgress.avgStrength, fitnessProgress.avgStrength * 1.02)} {/* Simulating previous value */}
+                {getProgressIndicator(fitnessProgress.avgStrength, safeNumber(fitnessProgress.avgStrength) * 1.02)} {/* Simulating previous value */}
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 

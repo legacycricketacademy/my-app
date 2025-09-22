@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: cricket-academy
+    env: node
+    plan: starter
+    buildCommand: npm run build:prod
+    startCommand: node dist/index.js
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: AUTH_PROVIDER
+        value: keycloak
+      - key: VITE_API_BASE_URL
+        value: /api
+      - key: VITE_APP_ORIGIN
+        value: https://cricket-academy.onrender.com
+      - key: VITE_AUTH_PROVIDER
+        value: keycloak
+      - key: VITE_KEYCLOAK_REALM
+        value: cricket-academy
+      - key: VITE_KEYCLOAK_CLIENT_ID
+        value: cricket-coaching-spa
+      - key: EMAIL_FROM
+        value: noreply@legacycricketacademy.com
+      - key: EMAIL_REPLY_TO
+        value: support@legacycricketacademy.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://cricket-academy.onrender.com
+      - key: CLIENT_URL
+        value: https://cricket-academy.onrender.com
+    # These should be set in Render dashboard:
+    # - VITE_KEYCLOAK_URL (your Keycloak instance URL)
+    # - DATABASE_URL (your PostgreSQL connection string)
+    # - SENDGRID_API_KEY (your SendGrid API key)

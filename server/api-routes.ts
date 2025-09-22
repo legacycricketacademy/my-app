@@ -392,6 +392,25 @@ export function setupApiRoutes(app: Express) {
     }
   });
 
+  // Dashboard stats endpoint
+  app.get('/api/dashboard/stats', async (req: Request, res: Response) => {
+    try {
+      // Return mock dashboard stats for now
+      const stats = {
+        playerCount: 25,
+        sessionCount: 8,
+        pendingPaymentsTotal: 1250.00,
+        pendingPaymentsCount: 5,
+        announcementCount: 3,
+        lastAnnouncementDate: new Date().toISOString()
+      };
+      res.json(stats);
+    } catch (error) {
+      console.error('Failed to fetch dashboard stats:', error);
+      res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+    }
+  });
+
   // Additional API endpoints that the dashboard components expect
   app.get('/api/connection-requests', async (req: Request, res: Response) => {
     try {
@@ -477,6 +496,372 @@ export function setupApiRoutes(app: Express) {
   });
 
   // Development test email endpoint
+
+  // Schedule routes
+  app.get('/api/schedule/parent', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { from, to, kidIds } = req.query;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Mock schedule data with RSVP status - replace with actual database queries
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dayAfter = new Date(now);
+      dayAfter.setDate(dayAfter.getDate() + 2);
+      const nextWeek = new Date(now);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+
+      const schedule = [
+        {
+          id: 1,
+          type: 'practice',
+          teamId: 1,
+          teamName: 'Under 12s A',
+          start: tomorrow.toISOString(),
+          end: new Date(tomorrow.getTime() + 2 * 60 * 60 * 1000).toISOString(), // +2 hours
+          location: 'Field 1',
+          notes: 'Focus on batting technique',
+          myKidsStatus: [
+            { playerId: 1, status: 'going' },
+            { playerId: 2, status: 'maybe' }
+          ]
+        },
+        {
+          id: 2,
+          type: 'game',
+          teamId: 1,
+          teamName: 'Under 12s A',
+          start: dayAfter.toISOString(),
+          end: new Date(dayAfter.getTime() + 2 * 60 * 60 * 1000).toISOString(), // +2 hours
+          location: 'Cricket Ground',
+          opponent: 'Riverside CC',
+          notes: 'League match',
+          myKidsStatus: [
+            { playerId: 1, status: 'going' },
+            { playerId: 2, status: 'no' }
+          ]
+        },
+        {
+          id: 3,
+          type: 'practice',
+          teamId: 2,
+          teamName: 'Under 14s B',
+          start: nextWeek.toISOString(),
+          end: new Date(nextWeek.getTime() + 2 * 60 * 60 * 1000).toISOString(), // +2 hours
+          location: 'Field 2',
+          notes: 'Bowling practice',
+          myKidsStatus: []
+        }
+      ];
+      
+      res.json(schedule);
+    } catch (error) {
+      console.error('Error fetching parent schedule:', error);
+      res.status(500).json({ error: 'Failed to fetch parent schedule' });
+    }
+  });
+
+  app.get('/api/schedule/admin', requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const { from, to } = req.query;
+      
+      // Mock admin schedule data - replace with actual database queries
+      const schedule = [
+        {
+          id: 1,
+          type: 'practice',
+          teamId: 1,
+          teamName: 'Under 12s A',
+          start: '2024-01-15T10:00:00Z',
+          end: '2024-01-15T12:00:00Z',
+          location: 'Field 1',
+          notes: 'Focus on batting technique'
+        },
+        {
+          id: 2,
+          type: 'game',
+          teamId: 1,
+          teamName: 'Under 12s A',
+          start: '2024-01-20T14:00:00Z',
+          end: '2024-01-20T16:00:00Z',
+          location: 'Cricket Ground',
+          opponent: 'Riverside CC',
+          notes: 'League match'
+        },
+        {
+          id: 3,
+          type: 'practice',
+          teamId: 2,
+          teamName: 'Under 14s B',
+          start: '2024-01-16T16:00:00Z',
+          end: '2024-01-16T18:00:00Z',
+          location: 'Field 2',
+          notes: 'Bowling practice'
+        },
+        {
+          id: 4,
+          type: 'game',
+          teamId: 3,
+          teamName: 'Under 16s A',
+          start: '2024-01-18T10:00:00Z',
+          end: '2024-01-18T12:00:00Z',
+          location: 'Main Ground',
+          opponent: 'City CC',
+          notes: 'Friendly match'
+        }
+      ];
+      
+      res.json(schedule);
+    } catch (error) {
+      console.error('Error fetching admin schedule:', error);
+      res.status(500).json({ error: 'Failed to fetch admin schedule' });
+    }
+  });
+
+  // RSVP routes
+  app.get('/api/rsvps', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { sessionId } = req.query;
+      const userId = req.user?.id;
+      const userRole = req.user?.role;
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      if (!sessionId) {
+        return res.status(400).json({ error: 'sessionId is required' });
+      }
+
+      // Mock RSVP data - replace with actual database queries
+      const rsvpData = {
+        sessionId: parseInt(sessionId as string),
+        counts: {
+          going: 8,
+          maybe: 3,
+          no: 2
+        },
+        byPlayer: userRole === 'admin' ? [
+          { playerId: 1, playerName: 'John Doe', status: 'going', comment: 'Looking forward to it!' },
+          { playerId: 2, playerName: 'Jane Smith', status: 'maybe', comment: 'Depends on weather' },
+          { playerId: 3, playerName: 'Mike Johnson', status: 'no', comment: 'Family conflict' },
+          { playerId: 4, playerName: 'Sarah Wilson', status: 'going' },
+          { playerId: 5, playerName: 'Alex Brown', status: 'going' }
+        ] : [
+          { playerId: 1, playerName: 'John Doe', status: 'going', comment: 'Looking forward to it!' },
+          { playerId: 2, playerName: 'Jane Smith', status: 'maybe', comment: 'Depends on weather' }
+        ]
+      };
+      
+      res.json(rsvpData);
+    } catch (error) {
+      console.error('Error fetching RSVPs:', error);
+      res.status(500).json({ error: 'Failed to fetch RSVPs' });
+    }
+  });
+
+  app.post('/api/rsvps', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { sessionId, playerId, status, comment } = req.body;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Validate required fields
+      if (!sessionId || !playerId || !status) {
+        return res.status(400).json({ error: 'sessionId, playerId, and status are required' });
+      }
+
+      // Validate status enum
+      if (!['going', 'maybe', 'no'].includes(status)) {
+        return res.status(400).json({ error: 'status must be one of: going, maybe, no' });
+      }
+
+      // Mock authorization check - parent can only RSVP for their own kids
+      // In real implementation, check family relationship table
+      const allowedPlayerIds = [1, 2]; // Mock: parent can RSVP for players 1 and 2
+      if (!allowedPlayerIds.includes(parseInt(playerId))) {
+        return res.status(403).json({ error: 'Not authorized to RSVP for this player' });
+      }
+
+      // Mock RSVP upsert - replace with actual database operation
+      const rsvp = {
+        id: Date.now(),
+        sessionId: parseInt(sessionId),
+        playerId: parseInt(playerId),
+        parentUserId: userId,
+        status,
+        comment: comment || null,
+        updatedAt: new Date().toISOString()
+      };
+      
+      res.json(rsvp);
+    } catch (error) {
+      console.error('Error creating/updating RSVP:', error);
+      res.status(500).json({ error: 'Failed to create/update RSVP' });
+    }
+  });
+
+  // Admin session CRUD routes
+  app.get('/api/admin/sessions', requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      // Mock sessions data - replace with actual database queries
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dayAfter = new Date(now);
+      dayAfter.setDate(dayAfter.getDate() + 2);
+      const nextWeek = new Date(now);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+
+      const sessions = [
+        {
+          id: 1,
+          type: 'practice',
+          teamId: 1,
+          teamName: 'Under 12s A',
+          start: tomorrow.toISOString(),
+          end: new Date(tomorrow.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+          location: 'Field 1',
+          notes: 'Focus on batting technique',
+          createdAt: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 2,
+          type: 'game',
+          teamId: 1,
+          teamName: 'Under 12s A',
+          start: dayAfter.toISOString(),
+          end: new Date(dayAfter.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+          location: 'Cricket Ground',
+          opponent: 'Riverside CC',
+          notes: 'League match',
+          createdAt: new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 3,
+          type: 'practice',
+          teamId: 2,
+          teamName: 'Under 14s B',
+          start: nextWeek.toISOString(),
+          end: new Date(nextWeek.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+          location: 'Field 2',
+          notes: 'Bowling practice',
+          createdAt: new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+      
+      res.json(sessions);
+    } catch (error) {
+      console.error('Error fetching admin sessions:', error);
+      res.status(500).json({ error: 'Failed to fetch sessions' });
+    }
+  });
+
+  app.post('/api/admin/sessions', requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const { type, teamId, teamName, start, end, location, opponent, notes } = req.body;
+      
+      // Validate required fields
+      if (!type || !teamId || !teamName || !start || !end || !location) {
+        return res.status(400).json({ error: 'type, teamId, teamName, start, end, and location are required' });
+      }
+
+      // Validate type enum
+      if (!['practice', 'game'].includes(type)) {
+        return res.status(400).json({ error: 'type must be either "practice" or "game"' });
+      }
+
+      // Mock session creation - replace with actual database operation
+      const session = {
+        id: Date.now(),
+        type,
+        teamId: parseInt(teamId),
+        teamName,
+        start,
+        end,
+        location,
+        opponent: opponent || null,
+        notes: notes || null,
+        createdAt: new Date().toISOString()
+      };
+      
+      res.status(201).json(session);
+    } catch (error) {
+      console.error('Error creating session:', error);
+      res.status(500).json({ error: 'Failed to create session' });
+    }
+  });
+
+  app.patch('/api/admin/sessions/:id', requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      // Mock session update - replace with actual database operation
+      const session = {
+        id: parseInt(id),
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+      
+      res.json(session);
+    } catch (error) {
+      console.error('Error updating session:', error);
+      res.status(500).json({ error: 'Failed to update session' });
+    }
+  });
+
+  app.delete('/api/admin/sessions/:id', requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      // Mock session deletion - replace with actual database operation
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      res.status(500).json({ error: 'Failed to delete session' });
+    }
+  });
+
+  // RSVP endpoints for parents
+  app.post('/api/schedule/rsvp', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { sessionId, playerId, status } = req.body;
+      
+      // Validate required fields
+      if (!sessionId || !playerId || !status) {
+        return res.status(400).json({ error: 'Missing required fields: sessionId, playerId, status' });
+      }
+      
+      // Validate status
+      if (!['going', 'maybe', 'no'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status. Must be: going, maybe, or no' });
+      }
+      
+      // Mock RSVP update - replace with actual database operation
+      const rsvp = {
+        sessionId: parseInt(sessionId),
+        playerId: parseInt(playerId),
+        status,
+        updatedAt: new Date().toISOString()
+      };
+      
+      console.log('RSVP updated:', rsvp);
+      res.json({ success: true, rsvp });
+    } catch (error) {
+      console.error('Error updating RSVP:', error);
+      res.status(500).json({ error: 'Failed to update RSVP' });
+    }
+  });
+
   // Admin-only routes
   app.get('/api/admin/users', requireRole('admin'), async (req: Request, res: Response) => {
     try {

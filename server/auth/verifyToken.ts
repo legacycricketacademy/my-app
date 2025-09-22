@@ -6,14 +6,21 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
+import { config } from '../config';
 
-// Keycloak configuration from environment variables
-const KEYCLOAK_URL = process.env.VITE_KEYCLOAK_URL;
-const KEYCLOAK_REALM = process.env.VITE_KEYCLOAK_REALM;
-const KEYCLOAK_CLIENT_ID = process.env.VITE_KEYCLOAK_CLIENT_ID;
+// Get authentication provider from config
+const AUTH_PROVIDER = config.authProvider;
 
-if (!KEYCLOAK_URL || !KEYCLOAK_REALM || !KEYCLOAK_CLIENT_ID) {
-  console.warn('Keycloak environment variables not configured. JWT verification will be disabled.');
+// Keycloak configuration from config
+const KEYCLOAK_URL = config.keycloak?.url;
+const KEYCLOAK_REALM = config.keycloak?.realm;
+const KEYCLOAK_CLIENT_ID = config.keycloak?.clientId;
+
+// Only warn about Keycloak configuration if AUTH_PROVIDER is set to keycloak
+if (AUTH_PROVIDER === 'keycloak' && (!KEYCLOAK_URL || !KEYCLOAK_REALM || !KEYCLOAK_CLIENT_ID)) {
+  console.warn('AUTH_PROVIDER is set to keycloak but Keycloak environment variables are not configured. JWT verification will be disabled.');
+} else if (AUTH_PROVIDER !== 'keycloak') {
+  console.log(`AUTH_PROVIDER is set to ${AUTH_PROVIDER}, skipping Keycloak configuration.`);
 }
 
 // JWKS client for fetching public keys
@@ -126,15 +133,50 @@ function extractToken(req: Request): string | null {
  * Require authentication middleware
  */
 export function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  // Skip auth if Keycloak is not configured
-  if (!expectedIssuer || !expectedAudience) {
-    console.warn('Keycloak not configured, skipping authentication');
+  const token = extractToken(req);
+  console.log('Auth token received:', token);
+  
+  // Handle mock tokens only if AUTH_PROVIDER is mock
+  if (AUTH_PROVIDER === 'mock' && token && token.startsWith('mock-token-')) {
+    console.log('Processing mock token:', token);
+    const userId = token.replace('mock-token-', '');
+    
+    // Determine user type based on token
+    let user;
+    if (token === 'mock-token-admin') {
+      user = {
+        id: 'admin-1',
+        email: 'admin@test.com',
+        name: 'Test Admin',
+        roles: ['admin', 'parent']
+      };
+    } else {
+      user = {
+        id: userId,
+        email: 'parent@test.com',
+        name: 'Test Parent',
+        roles: ['parent']
+      };
+    }
+    
+    req.user = user;
+    console.log('Mock user set:', req.user);
     return next();
   }
 
-  const token = extractToken(req);
-  if (!token) {
-    return res.status(401).json({ error: 'Authorization token required' });
+  // If AUTH_PROVIDER is keycloak, require proper Keycloak configuration
+  if (AUTH_PROVIDER === 'keycloak') {
+    if (!expectedIssuer || !expectedAudience) {
+      return res.status(500).json({ error: 'JWT verification not configured' });
+    }
+
+    if (!token) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+  } else {
+    // For other providers or when not configured, skip authentication
+    console.log(`AUTH_PROVIDER is ${AUTH_PROVIDER}, skipping authentication`);
+    return next();
   }
 
   verifyToken(token)
@@ -165,6 +207,19 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
  */
 export function requireRole(role: string) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    // For mock authentication, check roles directly
+    if (AUTH_PROVIDER === 'mock') {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      if (!req.user.roles.includes(role)) {
+        return res.status(403).json({ error: `Role '${role}' required` });
+      }
+
+      return next();
+    }
+
     // Skip role check if Keycloak is not configured
     if (!expectedIssuer || !expectedAudience) {
       console.warn('Keycloak not configured, skipping role check');

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { User, UserCircle, Users, CalendarCheck2 } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 
 export function ScheduleCard() {
@@ -12,7 +13,9 @@ export function ScheduleCard() {
   });
 
   const formatTime = (dateString: string) => {
+    if (!dateString) return "Invalid time";
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Invalid time";
     return format(date, "h:mm a");
   };
 
@@ -39,7 +42,7 @@ export function ScheduleCard() {
               <div className="h-4 bg-gray-100 rounded w-1/2"></div>
             </div>
           </div>
-        ) : sessions && sessions.length > 0 ? (
+        ) : (sessions ?? []).length > 0 ? (
           sessions.map((session, index) => {
             let borderColor = "border-primary";
             if (index % 3 === 1) borderColor = "border-secondary";
@@ -83,7 +86,7 @@ export function ScheduleCard() {
           </div>
         )}
         
-        {sessions && sessions.length > 0 && (
+        {(sessions ?? []).length > 0 && (
           <div className="text-center py-2 text-gray-500 text-sm border-t border-gray-100">
             <p>No more sessions scheduled for today</p>
           </div>

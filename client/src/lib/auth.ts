@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 import { auth } from './firebase-init';
 import Keycloak from 'keycloak-js';
+import { config } from '../config';
 
 export type AuthProvider = 'keycloak' | 'firebase' | 'mock';
 
@@ -29,7 +30,7 @@ export interface LoginCredentials {
 }
 
 // Get auth provider from environment
-const AUTH_PROVIDER: AuthProvider = (import.meta.env.VITE_AUTH_PROVIDER as AuthProvider) || 'mock';
+const AUTH_PROVIDER: AuthProvider = config.authProvider;
 
 // Mock users for development
 const MOCK_USERS: Record<string, AuthUser> = {
@@ -53,6 +54,18 @@ const MOCK_USERS: Record<string, AuthUser> = {
 let currentUser: AuthUser | null = null;
 let authListeners: ((user: AuthUser | null) => void)[] = [];
 let isInitialized = false;
+
+// Load auth state from localStorage on module load
+if (typeof window !== 'undefined') {
+  try {
+    const stored = localStorage.getItem('auth_user');
+    if (stored) {
+      currentUser = JSON.parse(stored);
+    }
+  } catch (error) {
+    console.warn('Failed to load auth state from localStorage:', error);
+  }
+}
 let keycloak: Keycloak | null = null;
 
 /**
@@ -84,9 +97,9 @@ export async function initAuth(): Promise<void> {
  * Initialize Keycloak authentication
  */
 async function initKeycloakAuth(): Promise<void> {
-  const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL;
-  const realm = import.meta.env.VITE_KEYCLOAK_REALM;
-  const clientId = import.meta.env.VITE_KEYCLOAK_CLIENT_ID;
+  const keycloakUrl = config.keycloak?.url;
+  const realm = config.keycloak?.realm;
+  const clientId = config.keycloak?.clientId;
 
   if (!keycloakUrl || !realm || !clientId) {
     throw new Error('Keycloak environment variables not configured');
@@ -154,8 +167,10 @@ async function initFirebaseAuth(): Promise<void> {
  */
 async function initMockAuth(): Promise<void> {
   // Mock auth is always ready
-  currentUser = null;
-  authListeners.forEach(listener => listener(currentUser));
+  // Don't reset currentUser if it's already set (preserve existing auth state)
+  if (currentUser === null) {
+    authListeners.forEach(listener => listener(currentUser));
+  }
 }
 
 /**
@@ -230,7 +245,7 @@ export async function getToken(): Promise<string | null> {
       if (!auth?.currentUser) return null;
       return await auth.currentUser.getIdToken();
     case 'mock':
-      return currentUser ? 'mock-token-' + currentUser.id : null;
+      return currentUser ? (currentUser.role === 'admin' ? 'mock-token-admin' : 'mock-token-1') : null;
     default:
       return null;
   }
@@ -309,6 +324,12 @@ async function signInWithMock(credentials: LoginCredentials): Promise<AuthUser> 
   }
   
   currentUser = mockUser;
+  
+  // Save to localStorage
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('auth_user', JSON.stringify(currentUser));
+  }
+  
   authListeners.forEach(listener => listener(currentUser));
   return mockUser;
 }
@@ -331,6 +352,12 @@ export async function signOut(): Promise<void> {
     case 'mock':
       // Mock signout - clear user and notify listeners
       currentUser = null;
+      
+      // Clear from localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_user');
+      }
+      
       authListeners.forEach(listener => listener(currentUser));
       break;
   }

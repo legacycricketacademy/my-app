@@ -3,15 +3,24 @@
  * Provides consistent error handling and JSON parsing
  */
 
-import { getToken } from './auth';
+import { getToken, getAuthProvider } from './auth';
+import { getApiUrl } from '../config';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = getApiUrl('');
+
+// Track if we're currently refreshing to avoid multiple refresh calls
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
 
 export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
 }
+
+export type ApiResult<T> = 
+  | { success: true; data: T }
+  | { success: false; error: { status: number; code: string; message?: string } };
 
 export class ApiError extends Error {
   constructor(
@@ -25,14 +34,46 @@ export class ApiError extends Error {
 }
 
 /**
- * Make an API request with proper error handling
+ * Refresh token for Keycloak
+ */
+async function refreshToken(): Promise<string | null> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const authProvider = getAuthProvider();
+      if (authProvider === 'keycloak') {
+        // For Keycloak, we need to access the instance and refresh
+        // This would need to be implemented based on your Keycloak setup
+        console.warn('Keycloak token refresh not implemented yet');
+        return null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+/**
+ * Make an API request with proper error handling (throws on error)
  */
 export async function apiRequest<T = any>(
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   endpoint: string,
-  data?: any
+  data?: any,
+  retryCount = 0
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = getApiUrl(endpoint);
   
   // Get authentication token
   const token = await getToken();
@@ -70,6 +111,24 @@ export async function apiRequest<T = any>(
         // If response is not JSON, use the status text
       }
       
+      // Handle 401 with token refresh and retry
+      if (response.status === 401 && retryCount === 0) {
+        console.log('Received 401, attempting token refresh...');
+        try {
+          const newToken = await refreshToken();
+          
+          if (newToken) {
+            console.log('Token refreshed, retrying request...');
+            // Retry the request with the new token
+            return apiRequest(method, endpoint, data, retryCount + 1);
+          } else {
+            console.warn('Token refresh failed, returning 401 error');
+          }
+        } catch (refreshError) {
+          console.warn('Token refresh failed:', refreshError);
+        }
+      }
+      
       throw new ApiError(errorMessage, response.status, errorData);
     }
 
@@ -98,6 +157,40 @@ export async function apiRequest<T = any>(
 }
 
 /**
+ * Make an API request that returns Result types instead of throwing
+ */
+export async function safeApiRequest<T = any>(
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+  endpoint: string,
+  data?: any,
+  retryCount = 0
+): Promise<ApiResult<T>> {
+  try {
+    const result = await apiRequest<T>(method, endpoint, data, retryCount);
+    return { success: true, data: result };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { 
+        success: false, 
+        error: { 
+          status: error.status, 
+          code: error.name, 
+          message: error.message 
+        } 
+      };
+    }
+    return { 
+      success: false, 
+      error: { 
+        status: 0, 
+        code: 'UnknownError', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      } 
+    };
+  }
+}
+
+/**
  * Convenience methods for common HTTP methods
  */
 export const api = {
@@ -106,6 +199,38 @@ export const api = {
   put: <T = any>(endpoint: string, data?: any) => apiRequest<T>('PUT', endpoint, data),
   patch: <T = any>(endpoint: string, data?: any) => apiRequest<T>('PATCH', endpoint, data),
   delete: <T = any>(endpoint: string) => apiRequest<T>('DELETE', endpoint),
+};
+
+export const safeApi = {
+  get: <T = any>(endpoint: string) => safeApiRequest<T>('GET', endpoint),
+  post: <T = any>(endpoint: string, data?: any) => safeApiRequest<T>('POST', endpoint, data),
+  put: <T = any>(endpoint: string, data?: any) => safeApiRequest<T>('PUT', endpoint, data),
+  patch: <T = any>(endpoint: string, data?: any) => safeApiRequest<T>('PATCH', endpoint, data),
+  delete: <T = any>(endpoint: string) => safeApiRequest<T>('DELETE', endpoint),
+};
+
+// RSVP-specific API methods
+export const rsvpApi = {
+  get: (sessionId: number): Promise<ApiResult<{
+    sessionId: number;
+    counts: { going: number; maybe: number; no: number };
+    byPlayer: Array<{ playerId: number; playerName: string; status: string; comment?: string }>;
+  }>> => safeApi.get(endpoints.rsvps.get(sessionId)),
+  
+  upsert: (data: {
+    sessionId: number;
+    playerId: number;
+    status: 'going' | 'maybe' | 'no';
+    comment?: string;
+  }): Promise<ApiResult<{
+    id: number;
+    sessionId: number;
+    playerId: number;
+    parentUserId: number;
+    status: string;
+    comment?: string;
+    updatedAt: string;
+  }>> => safeApi.post(endpoints.rsvps.create(), data),
 };
 
 /**
@@ -149,5 +274,13 @@ export const endpoints = {
     users: () => '/admin/users',
     stats: () => '/admin/stats',
     announcements: () => '/admin/announcements',
+    sessions: () => '/admin/sessions',
+  },
+  
+  // RSVP
+  rsvps: {
+    get: (sessionId: number) => `/rsvps?sessionId=${sessionId}`,
+    create: () => '/rsvps',
+    update: () => '/rsvps',
   },
 } as const;

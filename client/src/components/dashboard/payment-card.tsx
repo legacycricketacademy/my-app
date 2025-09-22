@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send, DollarSign } from "lucide-react";
 import { Link } from "wouter";
 import { api } from "@/lib/api";
+import { safeInitials, safeNumber, safePercentage } from "@/lib/strings";
 
 export function PaymentCard() {
   const [period, setPeriod] = useState<string>("thisMonth");
@@ -21,9 +22,7 @@ export function PaymentCard() {
     queryFn: () => api.get("/dashboard/stats")
   });
   
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
-  };
+  // Removed getInitials - now using safeInitials from strings.ts
   
   const getStatusColor = (daysOverdue: number) => {
     if (daysOverdue > 0) return "bg-danger/10 text-danger";
@@ -39,9 +38,11 @@ export function PaymentCard() {
   
   // Calculate days overdue based on due date
   const getDaysOverdue = (dueDate: string) => {
+    if (!dueDate) return 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const due = new Date(dueDate);
+    if (isNaN(due.getTime())) return 0;
     const diffTime = today.getTime() - due.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
@@ -74,11 +75,12 @@ export function PaymentCard() {
         <div className="mb-4 h-40 flex items-center justify-center">
           <div className="relative h-36 w-36">
             <div className="absolute inset-0 flex items-center justify-center flex-col">
-              <span className="text-2xl font-bold text-primary">
-                {stats && stats.playerCount > 0 
-                  ? Math.round((stats.playerCount - (stats.pendingPaymentsCount || 0)) / stats.playerCount * 100)
-                  : 0}%
-              </span>
+                  <span className="text-2xl font-bold text-primary">
+                    {safePercentage(
+                      (stats?.playerCount || 0) - (stats?.pendingPaymentsCount || 0),
+                      stats?.playerCount || 0
+                    )}%
+                  </span>
               <span className="text-xs text-gray-500">Paid</span>
             </div>
             {/* Circle chart */}
@@ -89,9 +91,10 @@ export function PaymentCard() {
                 fill="none" 
                 stroke="#3366CC" 
                 strokeWidth="3" 
-                strokeDasharray={`${stats && stats.playerCount > 0 
-                  ? Math.round((stats.playerCount - (stats.pendingPaymentsCount || 0)) / stats.playerCount * 100) 
-                  : 0}, 100`}
+                    strokeDasharray={`${safePercentage(
+                      (stats?.playerCount || 0) - (stats?.pendingPaymentsCount || 0),
+                      stats?.playerCount || 0
+                    )}, 100`}
               />
             </svg>
           </div>
@@ -116,20 +119,20 @@ export function PaymentCard() {
                 </div>
               </div>
             ))
-          ) : pendingPayments && pendingPayments.length > 0 ? (
+          ) : (pendingPayments ?? []).length > 0 ? (
             pendingPayments.map((payment) => {
               const daysOverdue = getDaysOverdue(payment.dueDate);
               
               return (
                 <div key={payment.id} className="flex items-center justify-between border-b border-gray-100 pb-3">
                   <div className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage src={payment.profileImage} alt={`${payment.playerFirstName} ${payment.playerLastName}`} />
-                      <AvatarFallback>{getInitials(payment.playerFirstName, payment.playerLastName)}</AvatarFallback>
-                    </Avatar>
+                        <Avatar>
+                          <AvatarImage src={payment.profileImage} alt={`${payment.playerFirstName || ''} ${payment.playerLastName || ''}`} />
+                          <AvatarFallback>{safeInitials(`${payment.playerFirstName || ''} ${payment.playerLastName || ''}`)}</AvatarFallback>
+                        </Avatar>
                     <div>
                       <h4 className="text-sm font-medium">{payment.playerFirstName} {payment.playerLastName}</h4>
-                      <p className="text-xs text-gray-600">{payment.paymentType}: ${Number(payment.amount).toFixed(2)}</p>
+                      <p className="text-xs text-gray-600">{payment.paymentType}: ${safeNumber(payment.amount).toFixed(2)}</p>
                     </div>
                   </div>
                   <div className="flex items-center">

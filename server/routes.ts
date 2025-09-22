@@ -1,7 +1,7 @@
 import { Express } from "express";
 import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
-import { verifyJwt, requireRole } from "./middleware/verifyJwt";
+import { requireAuth, requireRole } from "./auth/verifyToken";
 import { setupApiRoutes } from "./api-routes";
 
 export function registerRoutes(app: Express) {
@@ -10,10 +10,10 @@ export function registerRoutes(app: Express) {
     res.status(404).json({ error: "Local auth disabled - use Keycloak" });
   });
 
-  // Protected API routes with JWT verification
-  app.use("/api/admin/*", verifyJwt, requireRole("admin"));
-  app.use("/api/parent/*", verifyJwt, requireRole("parent"));
-  app.use("/api/coach/*", verifyJwt, requireRole("coach"));
+  // Protected API routes with authentication
+  app.use("/api/admin/*", requireAuth, requireRole("admin"));
+  app.use("/api/parent/*", requireAuth, requireRole("parent"));
+  app.use("/api/coach/*", requireAuth, requireRole("coach"));
 
   // Test endpoints for role verification
   app.get("/api/admin/test", (req, res) => {

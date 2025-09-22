@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { db } from "@db";
 import { users } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { config, isDevelopment, isProduction, getCorsOptions } from "./config";
 
 // These two lines allow us to use __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -29,11 +30,19 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add CORS headers for testing
+// Add CORS headers
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const corsOptions = getCorsOptions();
+  const origin = req.headers.origin;
+  
+  if (corsOptions.origin.includes('*') || (origin && corsOptions.origin.includes(origin))) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
   } else {
@@ -64,6 +73,63 @@ app.get('/api/ping', (req, res) => {
   });
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  const { isEmailEnabled } = require('./services/email');
+  res.json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: config.appEnv,
+    authProvider: config.authProvider,
+    emailEnabled: isEmailEnabled
+  });
+});
+
+// Version endpoint
+app.get('/api/version', (req, res) => {
+  res.json({
+    appEnv: config.appEnv,
+    nodeEnv: config.nodeEnv,
+    authProvider: config.authProvider,
+    version: process.env.npm_package_version || '1.0.0',
+    buildTime: process.env.BUILD_TIME || new Date().toISOString(),
+    gitSha: process.env.GIT_SHA || 'unknown',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Email status endpoint
+app.get('/api/email/status', (req, res) => {
+  const { isEmailEnabled } = require('./services/email');
+  res.json({
+    enabled: isEmailEnabled,
+    fromEmail: process.env.EMAIL_FROM || 'noreply@legacycricketacademy.com',
+    replyToEmail: process.env.EMAIL_REPLY_TO || 'support@legacycricketacademy.com'
+  });
+});
+
+// Dev test email endpoint (only in non-production)
+app.post('/api/dev/test-email', async (req, res) => {
+  if (config.appEnv === 'production') {
+    return res.status(404).json({ error: 'Test email endpoint not available in production' });
+  }
+
+  try {
+    const { sendTestEmail } = await import('./services/email');
+    const { to } = req.body;
+    
+    const result = await sendTestEmail(to);
+    res.json(result);
+  } catch (error) {
+    console.error('Error sending test email:', error);
+    res.status(500).json({ 
+      sent: false, 
+      reason: error instanceof Error ? error.message : 'unknown_error' 
+    });
+  }
+});
+
 // Email verification functionality
 import { MailService } from '@sendgrid/mail';
 
@@ -78,7 +144,7 @@ async function sendVerificationEmail(email: string, parentName: string, verifica
     return false;
   }
 
-  const verificationUrl = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${process.env.REPLIT_URL || 'localhost:5000'}/verify-email?token=${verificationToken}`;
+  const verificationUrl = `${config.clientUrl}/verify-email?token=${verificationToken}`;
   
   const emailContent = {
     to: email,
@@ -262,29 +328,6 @@ app.get('/api/dashboard/schedule', async (req, res) => {
   }
 });
 
-app.get('/api/dashboard/stats', async (req, res) => {
-  if (!req.isAuthenticated() || req.user?.role !== 'parent') {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  
-  try {
-    const parentId = req.user.id;
-    // Return performance data for this parent's child
-    const stats = {
-      sessions: 18,
-      matches: 12,
-      attendance: '97%',
-      runs: 68,
-      achievements: [
-        { title: 'Player of the Match - Best Bowling', date: 'Last Week' },
-        { title: 'Highest Score: 52 Not Out', date: 'This Month' }
-      ]
-    };
-    res.json(stats);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch stats' });
-  }
-});
 
 app.get('/api/dashboard/payments', async (req, res) => {
   if (!req.isAuthenticated() || req.user?.role !== 'parent') {
@@ -400,25 +443,21 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  const isDevelopment = process.env.NODE_ENV === "development" || app.get("env") === "development";
-  console.log("Environment check:", { NODE_ENV: process.env.NODE_ENV, expressEnv: app.get("env"), isDevelopment });
+  console.log("Environment check:", { NODE_ENV: config.nodeEnv, expressEnv: app.get("env"), isDevelopment: isDevelopment() });
   
-  if (isDevelopment) {
+  if (isDevelopment()) {
     console.log("Setting up Vite development server...");
     await setupVite(app, server);
   } else {
     console.log("Static file serving already configured in routes...");
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
+  // Start the server
   server.listen({
-    port,
+    port: config.port,
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`serving on port ${config.port}`);
   });
 })();
