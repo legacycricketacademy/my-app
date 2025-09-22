@@ -15,6 +15,12 @@ PORT=3000
 NODE_ENV=development
 ```
 
+### Authentication Provider
+```bash
+# Choose authentication provider: keycloak, firebase, or mock
+VITE_AUTH_PROVIDER=mock
+```
+
 ### Firebase Authentication
 ```bash
 VITE_FIREBASE_API_KEY=your_firebase_api_key
@@ -22,9 +28,10 @@ VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
 VITE_FIREBASE_APP_ID=your_firebase_app_id
 ```
 
-### Keycloak Authentication (Alternative)
+### Keycloak Authentication
 ```bash
-VITE_KEYCLOAK_ISSUER_URL=https://your-keycloak-instance.com/realms/cricket-academy
+VITE_KEYCLOAK_URL=https://your-keycloak-instance.com
+VITE_KEYCLOAK_REALM=cricket-academy
 VITE_KEYCLOAK_CLIENT_ID=cricket-coaching-spa
 ```
 

@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { getCurrentUser, getRole, hasRole, isAuthenticated, onAuthStateChange } from '@/lib/auth';
+import { getCurrentUser, getRole, hasRole, isAuthenticated, onAuthStateChange, initAuth, isAuthInitialized } from '@/lib/auth';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -26,15 +26,27 @@ export function RequireAuth({ children, fallback }: ProtectedRouteProps) {
   const [isAuth, setIsAuth] = useState(false);
 
   useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        if (!isAuthInitialized()) {
+          await initAuth();
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        setIsLoading(false);
+      }
+    };
+
     const unsubscribe = onAuthStateChange((user) => {
       setIsAuth(!!user);
-      setIsLoading(false);
       
       if (!user) {
         setLocation('/auth');
       }
     });
 
+    initializeAuth();
     return unsubscribe;
   }, [setLocation]);
 
@@ -78,6 +90,18 @@ export function RequireRole({ children, role, fallback }: RequireRoleProps) {
   const [hasRequiredRole, setHasRequiredRole] = useState(false);
 
   useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        if (!isAuthInitialized()) {
+          await initAuth();
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        setIsLoading(false);
+      }
+    };
+
     const unsubscribe = onAuthStateChange((user) => {
       if (user) {
         setHasRequiredRole(hasRole(role));
@@ -85,9 +109,9 @@ export function RequireRole({ children, role, fallback }: RequireRoleProps) {
         setHasRequiredRole(false);
         setLocation('/auth');
       }
-      setIsLoading(false);
     });
 
+    initializeAuth();
     return unsubscribe;
   }, [role, setLocation]);
 
@@ -162,11 +186,23 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        if (!isAuthInitialized()) {
+          await initAuth();
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        setIsLoading(false);
+      }
+    };
+
     const unsubscribe = onAuthStateChange((authUser) => {
       setUser(authUser);
-      setIsLoading(false);
     });
 
+    initializeAuth();
     return unsubscribe;
   }, []);
 
