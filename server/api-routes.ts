@@ -1,5 +1,6 @@
 import { Express, Request, Response } from "express";
 import { sendWelcomeParent, sendChildAdded, sendPaymentReminder, sendTestEmail } from "./services/email";
+import { requireAuth, requireRole } from "./auth/verifyToken";
 
 export function setupApiRoutes(app: Express) {
   // Players API
@@ -42,7 +43,7 @@ export function setupApiRoutes(app: Express) {
     }
   });
 
-  app.post('/api/players', async (req: Request, res: Response) => {
+  app.post('/api/players', requireAuth, async (req: Request, res: Response) => {
     try {
       const { firstName, lastName, dateOfBirth, ageGroup, playerType, emergencyContact, medicalInformation, parentEmail, parentName } = req.body;
       
@@ -208,7 +209,7 @@ export function setupApiRoutes(app: Express) {
     }
   });
 
-  app.post('/api/sessions', async (req: Request, res: Response) => {
+  app.post('/api/sessions', requireAuth, async (req: Request, res: Response) => {
     try {
       const { title, description, startTime, endTime, location, ageGroup, sessionType, maxAttendees } = req.body;
       
@@ -319,7 +320,7 @@ export function setupApiRoutes(app: Express) {
     }
   });
 
-  app.post('/api/payments', async (req: Request, res: Response) => {
+  app.post('/api/payments', requireAuth, async (req: Request, res: Response) => {
     try {
       const { playerId, amount, description, dueDate } = req.body;
       
@@ -347,7 +348,7 @@ export function setupApiRoutes(app: Express) {
     }
   });
 
-  app.post('/api/payments/:id/remind', async (req: Request, res: Response) => {
+  app.post('/api/payments/:id/remind', requireAuth, async (req: Request, res: Response) => {
     try {
       const paymentId = req.params.id;
       
@@ -476,6 +477,80 @@ export function setupApiRoutes(app: Express) {
   });
 
   // Development test email endpoint
+  // Admin-only routes
+  app.get('/api/admin/users', requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      // Mock admin data - replace with actual database query
+      const users = [
+        {
+          id: 1,
+          email: 'admin@example.com',
+          name: 'Admin User',
+          role: 'admin',
+          lastLogin: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 2,
+          email: 'parent@example.com',
+          name: 'Parent User',
+          role: 'parent',
+          lastLogin: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString()
+        }
+      ];
+      
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  app.get('/api/admin/stats', requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      // Mock admin stats - replace with actual database queries
+      const stats = {
+        totalUsers: 150,
+        totalPlayers: 75,
+        totalSessions: 200,
+        totalRevenue: 15000,
+        activeSessions: 12,
+        pendingPayments: 8
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      res.status(500).json({ error: 'Failed to fetch admin stats' });
+    }
+  });
+
+  app.post('/api/admin/announcements', requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const { title, message, priority } = req.body;
+      
+      if (!title || !message) {
+        return res.status(400).json({ error: 'Title and message are required' });
+      }
+      
+      // Mock announcement creation
+      const announcement = {
+        id: Date.now(),
+        title,
+        message,
+        priority: priority || 'normal',
+        createdAt: new Date().toISOString(),
+        createdBy: req.user?.id || 'unknown'
+      };
+      
+      res.status(201).json(announcement);
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      res.status(500).json({ error: 'Failed to create announcement' });
+    }
+  });
+
   if (process.env.NODE_ENV === 'development') {
     app.post('/api/dev/test-email', async (req: Request, res: Response) => {
       try {

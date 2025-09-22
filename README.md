@@ -137,6 +137,122 @@ To use Keycloak authentication:
    VITE_KEYCLOAK_CLIENT_ID=cricket-coaching-spa
    ```
 
+## Testing with cURL
+
+### Getting an Access Token
+
+1. **Get Keycloak Token Endpoint**
+   ```bash
+   # Get token endpoint URL
+   curl -s "http://localhost:8080/realms/cricket-academy/.well-known/openid_configuration" | jq -r '.token_endpoint'
+   ```
+
+2. **Get Access Token**
+   ```bash
+   # Replace with your actual credentials
+   curl -X POST "http://localhost:8080/realms/cricket-academy/protocol/openid-connect/token" \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -d "grant_type=password" \
+     -d "client_id=cricket-coaching-spa" \
+     -d "username=your-username" \
+     -d "password=your-password"
+   ```
+
+3. **Extract Access Token**
+   ```bash
+   # Save the response and extract the access_token
+   ACCESS_TOKEN="your-access-token-here"
+   ```
+
+### Testing API Endpoints
+
+**Public Endpoints (No Auth Required):**
+```bash
+# Health check
+curl http://localhost:3000/api/ping
+
+# Get players (read-only)
+curl http://localhost:3000/api/players
+
+# Get sessions (read-only)
+curl http://localhost:3000/api/sessions
+```
+
+**Protected Endpoints (Auth Required):**
+```bash
+# Create a player
+curl -X POST http://localhost:3000/api/players \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Test",
+    "lastName": "Player",
+    "dateOfBirth": "2010-01-01",
+    "ageGroup": "Under 12s",
+    "parentEmail": "test@example.com",
+    "parentName": "Test Parent"
+  }'
+
+# Create a session
+curl -X POST http://localhost:3000/api/sessions \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Test Session",
+    "startTime": "2024-01-01T10:00:00Z",
+    "endTime": "2024-01-01T12:00:00Z",
+    "location": "Test Field",
+    "ageGroup": "Under 12s",
+    "sessionType": "Training",
+    "maxAttendees": 20
+  }'
+```
+
+**Admin-Only Endpoints:**
+```bash
+# Get admin stats (requires admin role)
+curl -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:3000/api/admin/stats
+
+# Get all users (requires admin role)
+curl -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:3000/api/admin/users
+
+# Create announcement (requires admin role)
+curl -X POST http://localhost:3000/api/admin/announcements \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Important Notice",
+    "message": "Training session cancelled due to weather",
+    "priority": "high"
+  }'
+```
+
+### Testing Authentication Errors
+
+**Missing Token:**
+```bash
+curl -X POST http://localhost:3000/api/players \
+  -H "Content-Type: application/json" \
+  -d '{"firstName": "Test"}'
+# Returns: 401 Unauthorized
+```
+
+**Invalid Token:**
+```bash
+curl -X POST http://localhost:3000/api/players \
+  -H "Authorization: Bearer invalid-token" \
+  -H "Content-Type: application/json" \
+  -d '{"firstName": "Test"}'
+# Returns: 401 Unauthorized
+```
+
+**Insufficient Role:**
+```bash
+# Using a parent token to access admin endpoint
+curl -H "Authorization: Bearer $PARENT_TOKEN" http://localhost:3000/api/admin/stats
+# Returns: 403 Forbidden
+```
+
 ## Email Configuration
 
 The application supports SendGrid for email notifications:

@@ -3,6 +3,8 @@
  * Provides consistent error handling and JSON parsing
  */
 
+import { getToken } from './auth';
+
 const API_BASE_URL = '/api';
 
 export interface ApiResponse<T = any> {
@@ -32,12 +34,23 @@ export async function apiRequest<T = any>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  // Get authentication token
+  const token = await getToken();
+  
   const config: RequestInit = {
     method,
     headers: {
       'Content-Type': 'application/json',
     },
   };
+
+  // Add Authorization header if token is available
+  if (token) {
+    config.headers = {
+      ...config.headers,
+      'Authorization': `Bearer ${token}`
+    };
+  }
 
   if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
     config.body = JSON.stringify(data);
@@ -129,5 +142,12 @@ export const endpoints = {
     delete: (id: number) => `/payments/${id}`,
     pending: () => '/payments/pending',
     remind: (id: number) => `/payments/${id}/remind`,
+  },
+  
+  // Admin
+  admin: {
+    users: () => '/admin/users',
+    stats: () => '/admin/stats',
+    announcements: () => '/admin/announcements',
   },
 } as const;
