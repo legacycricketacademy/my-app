@@ -34,7 +34,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -627,16 +627,31 @@ export function ScheduleSessionDialog() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  form.reset();
+                  setTempStartDate(null);
+                  setTempEndDate(null);
+                  setIsCustomLocation(false);
+                  setCustomLocation("");
+                }}
                 className="mr-2"
+                disabled={createSessionMutation.isPending}
               >
                 Cancel
               </Button>
               <Button 
                 type="submit"
-                disabled={createSessionMutation.isPending}
+                disabled={createSessionMutation.isPending || !form.formState.isValid}
               >
-                {createSessionMutation.isPending ? "Scheduling..." : "Schedule Session"}
+                {createSessionMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Scheduling...
+                  </>
+                ) : (
+                  "Schedule Session"
+                )}
               </Button>
             </DialogFooter>
           </form>

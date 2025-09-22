@@ -73,8 +73,12 @@ export async function apiRequest<T = any>(
     }
     
     // Handle network errors or other issues
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new ApiError('Network error - please check your connection', 0);
+    }
+    
     throw new ApiError(
-      error instanceof Error ? error.message : 'Network error',
+      error instanceof Error ? error.message : 'An unexpected error occurred',
       0
     );
   }

@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send } from "lucide-react";
+import { Send, DollarSign } from "lucide-react";
 import { Link } from "wouter";
 import { api } from "@/lib/api";
 
@@ -75,7 +75,9 @@ export function PaymentCard() {
           <div className="relative h-36 w-36">
             <div className="absolute inset-0 flex items-center justify-center flex-col">
               <span className="text-2xl font-bold text-primary">
-                {stats ? Math.round((stats.playerCount - (stats.pendingPaymentsCount || 0)) / stats.playerCount * 100) : 0}%
+                {stats && stats.playerCount > 0 
+                  ? Math.round((stats.playerCount - (stats.pendingPaymentsCount || 0)) / stats.playerCount * 100)
+                  : 0}%
               </span>
               <span className="text-xs text-gray-500">Paid</span>
             </div>
@@ -87,7 +89,9 @@ export function PaymentCard() {
                 fill="none" 
                 stroke="#3366CC" 
                 strokeWidth="3" 
-                strokeDasharray={`${stats ? Math.round((stats.playerCount - (stats.pendingPaymentsCount || 0)) / stats.playerCount * 100) : 0}, 100`}
+                strokeDasharray={`${stats && stats.playerCount > 0 
+                  ? Math.round((stats.playerCount - (stats.pendingPaymentsCount || 0)) / stats.playerCount * 100) 
+                  : 0}, 100`}
               />
             </svg>
           </div>
@@ -140,8 +144,16 @@ export function PaymentCard() {
               );
             })
           ) : (
-            <div className="text-center py-4 text-gray-500">
-              <p>No pending payments</p>
+            <div className="text-center py-8 text-gray-500">
+              <div className="mb-4">
+                <DollarSign className="h-12 w-12 mx-auto text-gray-300" />
+              </div>
+              <p className="text-lg font-medium mb-2">No pending payments</p>
+              <p className="text-sm mb-4">All payments are up to date</p>
+              <Button size="sm" className="bg-primary text-white">
+                <DollarSign className="h-4 w-4 mr-2" />
+                View All Payments
+              </Button>
             </div>
           )}
         </div>

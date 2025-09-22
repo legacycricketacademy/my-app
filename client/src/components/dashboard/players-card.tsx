@@ -112,8 +112,18 @@ export function PlayersCard() {
               </div>
             ))
           ) : (
-            <div className="text-center py-4 text-gray-500">
-              <p>No players found</p>
+            <div className="text-center py-8 text-gray-500">
+              <div className="mb-4">
+                <User className="h-12 w-12 mx-auto text-gray-300" />
+              </div>
+              <p className="text-lg font-medium mb-2">No players found</p>
+              <p className="text-sm mb-4">Get started by adding your first player</p>
+              <Link href="/players/add">
+                <Button size="sm" className="bg-primary text-white">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add Player
+                </Button>
+              </Link>
             </div>
           )}
         </div>

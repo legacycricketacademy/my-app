@@ -1,4 +1,5 @@
 import { Express, Request, Response } from "express";
+import { sendWelcomeParent, sendChildAdded, sendPaymentReminder, sendTestEmail } from "./services/email";
 
 export function setupApiRoutes(app: Express) {
   // Players API
@@ -64,6 +65,14 @@ export function setupApiRoutes(app: Express) {
         parentName,
         createdAt: new Date().toISOString()
       };
+      
+      // Send child added notification email
+      try {
+        await sendChildAdded(parentEmail, parentName, `${firstName} ${lastName}`);
+      } catch (error) {
+        console.error('Failed to send child added email:', error);
+        // Don't fail the request if email fails
+      }
       
       res.status(201).json(newPlayer);
     } catch (error) {
@@ -342,8 +351,35 @@ export function setupApiRoutes(app: Express) {
     try {
       const paymentId = req.params.id;
       
-      // Mock reminder sending - replace with actual email service
-      console.log(`Sending payment reminder for payment ID: ${paymentId}`);
+      // Find the payment (mock data)
+      const payment = {
+        id: parseInt(paymentId),
+        playerId: 1,
+        playerName: "John Doe",
+        amount: 175,
+        status: "pending",
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        description: "Monthly Training Fee",
+        parentEmail: "parent@example.com",
+        parentName: "Jane Doe"
+      };
+      
+      if (!payment) {
+        return res.status(404).json({ error: 'Payment not found' });
+      }
+      
+      // Send payment reminder email
+      try {
+        await sendPaymentReminder(
+          payment.parentEmail, 
+          payment.parentName, 
+          payment.amount, 
+          payment.dueDate
+        );
+      } catch (error) {
+        console.error('Failed to send payment reminder email:', error);
+        // Don't fail the request if email fails
+      }
       
       res.json({ 
         message: 'Payment reminder sent successfully',
@@ -438,4 +474,20 @@ export function setupApiRoutes(app: Express) {
       res.status(500).json({ error: 'Failed to fetch meal plan' });
     }
   });
+
+  // Development test email endpoint
+  if (process.env.NODE_ENV === 'development') {
+    app.post('/api/dev/test-email', async (req: Request, res: Response) => {
+      try {
+        const success = await sendTestEmail();
+        res.json({ 
+          message: success ? 'Test email sent successfully' : 'Failed to send test email',
+          success
+        });
+      } catch (error) {
+        console.error('Error sending test email:', error);
+        res.status(500).json({ error: 'Failed to send test email' });
+      }
+    });
+  }
 }

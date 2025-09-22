@@ -20,7 +20,7 @@ export function RoleBadge() {
   const variant = isAdmin ? 'default' : 'secondary';
 
   return (
-    <Badge variant={variant} className="flex items-center gap-1">
+    <Badge variant={variant} className="flex items-center gap-1" data-testid="role-badge">
       <Icon className="h-3 w-3" />
       <span className="text-xs font-medium">
         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}

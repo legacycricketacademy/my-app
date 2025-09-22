@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { User, UserCircle, Users } from "lucide-react";
+import { User, UserCircle, Users, CalendarCheck2 } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { api } from "@/lib/api";
@@ -70,8 +70,16 @@ export function ScheduleCard() {
             );
           })
         ) : (
-          <div className="text-center py-4 text-gray-500">
-            <p>No sessions scheduled for today</p>
+          <div className="text-center py-8 text-gray-500">
+            <div className="mb-4">
+              <CalendarCheck2 className="h-12 w-12 mx-auto text-gray-300" />
+            </div>
+            <p className="text-lg font-medium mb-2">No sessions today</p>
+            <p className="text-sm mb-4">Schedule your first training session</p>
+            <Button size="sm" className="bg-primary text-white">
+              <CalendarCheck2 className="h-4 w-4 mr-2" />
+              Schedule Session
+            </Button>
           </div>
         )}
         
