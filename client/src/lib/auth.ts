@@ -247,7 +247,8 @@ export async function signIn(credentials?: LoginCredentials): Promise<AuthUser> 
       }
       await keycloak.login();
       // The actual user will be set in updateUserFromKeycloak after redirect
-      throw new Error('Keycloak login initiated - redirecting');
+      // Don't throw error, just return a promise that never resolves
+      return new Promise(() => {});
       
     case 'firebase':
       return await signInWithFirebase(credentials!);
@@ -328,12 +329,19 @@ export async function signOut(): Promise<void> {
       }
       break;
     case 'mock':
-      // Mock signout
+      // Mock signout - clear user and notify listeners
+      currentUser = null;
+      authListeners.forEach(listener => listener(currentUser));
       break;
   }
   
-  currentUser = null;
-  authListeners.forEach(listener => listener(currentUser));
+  // For Keycloak and Firebase, the auth state change will be handled by their respective listeners
+  if (AUTH_PROVIDER === 'mock') {
+    // Already handled above
+  } else {
+    currentUser = null;
+    authListeners.forEach(listener => listener(currentUser));
+  }
 }
 
 /**

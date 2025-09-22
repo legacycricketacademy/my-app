@@ -3,9 +3,9 @@
  * Supports multiple authentication providers: Keycloak, Firebase, and Mock
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { signIn, getAuthProvider } from '@/lib/auth';
+import { signIn, getAuthProvider, getCurrentUser, onAuthStateChange } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,23 @@ export default function AuthPage() {
   });
 
   const authProvider = getAuthProvider();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    const unsubscribe = onAuthStateChange((user) => {
+      if (user) {
+        setLocation('/');
+      }
+    });
+
+    // Check if already authenticated
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      setLocation('/');
+    }
+
+    return unsubscribe;
+  }, [setLocation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,10 +69,6 @@ export default function AuthPage() {
       await signIn();
       // Keycloak will redirect, so this won't be reached
     } catch (error: any) {
-      if (error.message.includes('redirecting')) {
-        // This is expected for Keycloak
-        return;
-      }
       toast({
         title: "Sign in failed",
         description: error.message || "Failed to initiate Keycloak sign in.",

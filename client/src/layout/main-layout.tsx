@@ -2,13 +2,16 @@ import { ReactNode, useState } from "react";
 import { Sidebar } from "@/components/ui/sidebar";
 import { MobileNav } from "@/components/ui/mobile-nav";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, Menu } from "lucide-react";
+import { Search, Menu, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMobile } from "@/hooks/use-mobile";
 import { AdminNotificationDropdown } from "@/components/admin-notification-dropdown";
 import { RoleBadge } from "@/components/auth/RoleBadge";
+import { signOut } from "@/lib/auth";
+import { useLocation } from "wouter";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -19,6 +22,7 @@ export function MainLayout({ children, title }: MainLayoutProps) {
   const { user } = useAuth();
   const isMobile = useMobile();
   const [searchFocused, setSearchFocused] = useState(false);
+  const [, setLocation] = useLocation();
   
   const getInitials = (name: string) => {
     return name
@@ -26,6 +30,15 @@ export function MainLayout({ children, title }: MainLayoutProps) {
       .map((n) => n[0])
       .join("")
       .toUpperCase();
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setLocation('/auth');
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    }
   };
   
   return (
@@ -76,10 +89,35 @@ export function MainLayout({ children, title }: MainLayoutProps) {
               <RoleBadge />
               <AdminNotificationDropdown />
               
+              {/* User dropdown - Desktop */}
+              <div className="hidden md:block">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.profileImage || undefined} alt={user?.name || "User"} />
+                        <AvatarFallback>{user?.name ? getInitials(user.name) : "U"}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <div className="flex flex-col space-y-1 p-2">
+                      <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                    </div>
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Sign out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              
+              {/* Mobile avatar */}
               <div className="relative md:hidden">
                 <Avatar>
-                  <AvatarImage src={user?.profileImage || undefined} alt={user?.fullName || "User"} />
-                  <AvatarFallback>{user?.fullName ? getInitials(user.fullName) : "U"}</AvatarFallback>
+                  <AvatarImage src={user?.profileImage || undefined} alt={user?.name || "User"} />
+                  <AvatarFallback>{user?.name ? getInitials(user.name) : "U"}</AvatarFallback>
                 </Avatar>
               </div>
             </div>
