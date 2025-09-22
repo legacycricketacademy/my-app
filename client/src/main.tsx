@@ -12,6 +12,9 @@ import Dashboard from "./pages/dashboard";
 import SchedulePage from "./pages/schedule";
 import AdminSessionsPage from "./pages/admin-sessions";
 import AddPlayerPage from "./pages/add-player";
+import PlayersPage from "./pages/players";
+import PaymentsPage from "./pages/payments";
+import ConnectionRequestsPage from "./pages/connection-requests";
 import { RequireAuth, RequireRole } from "./components/auth/ProtectedRoute";
 
 function Router() {
@@ -46,6 +49,21 @@ function Router() {
         <RequireAuth>
           <AddPlayerPage />
         </RequireAuth>
+      )} />
+      <Route path="/players" component={() => (
+        <RequireAuth>
+          <PlayersPage />
+        </RequireAuth>
+      )} />
+      <Route path="/payments" component={() => (
+        <RequireAuth>
+          <PaymentsPage />
+        </RequireAuth>
+      )} />
+      <Route path="/connection-requests" component={() => (
+        <RequireRole role="admin">
+          <ConnectionRequestsPage />
+        </RequireRole>
       )} />
       <Route component={() => <div>404 Not Found</div>} />
     </Switch>

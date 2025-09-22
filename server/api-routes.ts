@@ -392,6 +392,142 @@ export function setupApiRoutes(app: Express) {
     }
   });
 
+  // Send all payment reminders endpoint
+  app.post('/api/payments/send-all-reminders', requireAuth, async (req: Request, res: Response) => {
+    try {
+      // Get all pending payments (mock data)
+      const pendingPayments = [
+        {
+          id: 1,
+          playerId: 1,
+          playerName: "John Doe",
+          amount: 175,
+          status: "pending",
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          description: "Monthly Training Fee",
+          parentEmail: "parent@example.com",
+          parentName: "Jane Doe"
+        },
+        {
+          id: 2,
+          playerId: 2,
+          playerName: "Sarah Smith",
+          amount: 200,
+          status: "pending",
+          dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+          description: "Monthly Training Fee",
+          parentEmail: "sarah.parent@example.com",
+          parentName: "Mike Smith"
+        }
+      ];
+      
+      const results = [];
+      
+      // Send reminders for all pending payments
+      for (const payment of pendingPayments) {
+        try {
+          await sendPaymentReminder(
+            payment.parentEmail, 
+            payment.parentName, 
+            payment.amount, 
+            payment.dueDate
+          );
+          
+          results.push({
+            paymentId: payment.id,
+            playerName: payment.playerName,
+            parentEmail: payment.parentEmail,
+            status: 'sent'
+          });
+        } catch (error) {
+          console.error(`Failed to send reminder for payment ${payment.id}:`, error);
+          results.push({
+            paymentId: payment.id,
+            playerName: payment.playerName,
+            parentEmail: payment.parentEmail,
+            status: 'failed',
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+      
+      const successCount = results.filter(r => r.status === 'sent').length;
+      const failureCount = results.filter(r => r.status === 'failed').length;
+      
+      res.json({ 
+        message: `Payment reminders sent: ${successCount} successful, ${failureCount} failed`,
+        totalSent: successCount,
+        totalFailed: failureCount,
+        results
+      });
+    } catch (error) {
+      console.error('Error sending all payment reminders:', error);
+      res.status(500).json({ error: 'Failed to send payment reminders' });
+    }
+  });
+
+  // Notifications endpoint for parents
+  app.get('/api/notifications', requireAuth, async (req: Request, res: Response) => {
+    try {
+      // Get user from auth (mock for now)
+      const userId = req.user?.id || '1';
+      
+      // Mock notifications data
+      const notifications = [
+        {
+          id: 1,
+          type: 'payment_reminder',
+          title: 'Payment Reminder',
+          message: 'Payment of $175 for John Doe is due in 7 days',
+          isRead: false,
+          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+          actionUrl: '/payments'
+        },
+        {
+          id: 2,
+          type: 'session_reminder',
+          title: 'Session Reminder',
+          message: 'Practice session tomorrow at 4:00 PM',
+          isRead: false,
+          createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+          actionUrl: '/schedule'
+        },
+        {
+          id: 3,
+          type: 'payment_reminder',
+          title: 'Payment Reminder',
+          message: 'Payment of $200 for Sarah Smith is due in 3 days',
+          isRead: true,
+          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+          actionUrl: '/payments'
+        }
+      ];
+      
+      res.json(notifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+  });
+
+  // Mark notification as read
+  app.patch('/api/notifications/:id/read', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const notificationId = req.params.id;
+      
+      // Mock: mark notification as read
+      console.log(`Marking notification ${notificationId} as read`);
+      
+      res.json({ 
+        message: 'Notification marked as read',
+        notificationId: parseInt(notificationId)
+      });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      res.status(500).json({ error: 'Failed to mark notification as read' });
+    }
+  });
+
   // Dashboard stats endpoint
   app.get('/api/dashboard/stats', async (req: Request, res: Response) => {
     try {

@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, DollarSign } from "lucide-react";
+import { Send, DollarSign, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { api } from "@/lib/api";
 import { safeInitials, safeNumber, safePercentage } from "@/lib/strings";
+import { toast } from "@/hooks/use-toast";
 
 export function PaymentCard() {
   const [period, setPeriod] = useState<string>("thisMonth");
+  const queryClient = useQueryClient();
   
   const { data: pendingPayments, isLoading } = useQuery<any[]>({
     queryKey: ["/api/payments/pending"],
@@ -20,6 +22,44 @@ export function PaymentCard() {
   const { data: stats } = useQuery<any>({
     queryKey: ["/api/dashboard/stats"],
     queryFn: () => api.get("/dashboard/stats")
+  });
+
+  // Send individual payment reminder mutation
+  const sendReminderMutation = useMutation({
+    mutationFn: (paymentId: number) => api.post(`/payments/${paymentId}/remind`),
+    onSuccess: () => {
+      toast({
+        title: "Reminder Sent",
+        description: "Payment reminder has been sent successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reminder. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Send all reminders mutation
+  const sendAllRemindersMutation = useMutation({
+    mutationFn: () => api.post("/payments/send-all-reminders"),
+    onSuccess: (data) => {
+      toast({
+        title: "Reminders Sent",
+        description: data.message || "Payment reminders have been sent successfully.",
+      });
+      // Refresh notifications to show new reminders
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reminders. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
   
   // Removed getInitials - now using safeInitials from strings.ts
@@ -139,8 +179,19 @@ export function PaymentCard() {
                     <span className={`text-xs ${getStatusColor(daysOverdue)} px-2 py-1 rounded-full mr-2`}>
                       {getStatusText(daysOverdue)}
                     </span>
-                    <Button variant="ghost" size="icon" className="text-primary rounded h-8 w-8 hover:bg-gray-100" title="Send Reminder">
-                      <Send className="h-4 w-4" />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-primary rounded h-8 w-8 hover:bg-gray-100" 
+                      title="Send Reminder"
+                      onClick={() => sendReminderMutation.mutate(payment.id)}
+                      disabled={sendReminderMutation.isPending}
+                    >
+                      {sendReminderMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -162,9 +213,22 @@ export function PaymentCard() {
         </div>
         
         <div className="mt-4 flex justify-center">
-          <Button className="bg-primary text-white">
-            <Send className="h-4 w-4 mr-1" />
-            <span>Send All Reminders</span>
+          <Button 
+            className="bg-primary text-white"
+            onClick={() => sendAllRemindersMutation.mutate()}
+            disabled={sendAllRemindersMutation.isPending}
+          >
+            {sendAllRemindersMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                <span>Sending...</span>
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4 mr-1" />
+                <span>Send All Reminders</span>
+              </>
+            )}
           </Button>
         </div>
       </CardContent>

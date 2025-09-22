@@ -9,6 +9,7 @@ import { PlayersCard } from "@/components/dashboard/players-card";
 import { MealPlanCard } from "@/components/dashboard/meal-plan-card";
 import { PaymentCard } from "@/components/dashboard/payment-card";
 import { AnnouncementsCard } from "@/components/dashboard/announcements-card";
+import { NotificationsCard } from "@/components/dashboard/notifications-card";
 import { UserPlus, CalendarCheck2, Users, Heart, DollarSign, Megaphone, Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -139,10 +140,13 @@ export default function Dashboard() {
             </ErrorBoundary>
           </div>
           
-          {/* Column 3: Upcoming Payments & Announcements */}
+          {/* Column 3: Upcoming Payments, Notifications & Announcements */}
           <div className="space-y-6">
             <ErrorBoundary>
               <PaymentCard />
+            </ErrorBoundary>
+            <ErrorBoundary>
+              <NotificationsCard />
             </ErrorBoundary>
             <ErrorBoundary>
               <AnnouncementsCard />
