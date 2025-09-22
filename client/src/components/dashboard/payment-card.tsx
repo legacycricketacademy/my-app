@@ -6,16 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send } from "lucide-react";
 import { Link } from "wouter";
+import { api } from "@/lib/api";
 
 export function PaymentCard() {
   const [period, setPeriod] = useState<string>("thisMonth");
   
   const { data: pendingPayments, isLoading } = useQuery<any[]>({
     queryKey: ["/api/payments/pending"],
+    queryFn: () => api.get("/payments/pending")
   });
   
   const { data: stats } = useQuery<any>({
     queryKey: ["/api/dashboard/stats"],
+    queryFn: () => api.get("/dashboard/stats")
   });
   
   const getInitials = (firstName: string, lastName: string) => {

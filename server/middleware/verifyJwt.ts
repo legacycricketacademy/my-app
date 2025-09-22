@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-const JWKS = createRemoteJWKSet(new URL(`${process.env.KEYCLOAK_ISSUER_URL}/protocol/openid-connect/certs`));
+// Only create JWKS if KEYCLOAK_ISSUER_URL is available
+const JWKS = process.env.KEYCLOAK_ISSUER_URL 
+  ? createRemoteJWKSet(new URL(`${process.env.KEYCLOAK_ISSUER_URL}/protocol/openid-connect/certs`))
+  : null;
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -17,6 +20,12 @@ export const verifyJwt = async (req: AuthenticatedRequest, res: Response, next: 
   
   if (!token) {
     return res.status(401).json({ error: 'No token provided' });
+  }
+
+  // If Keycloak is not configured, skip JWT verification
+  if (!JWKS || !process.env.KEYCLOAK_ISSUER_URL) {
+    console.log('Keycloak not configured, skipping JWT verification');
+    return res.status(401).json({ error: 'JWT verification not configured' });
   }
 
   try {

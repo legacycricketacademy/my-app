@@ -383,11 +383,11 @@ app.use((req, res, next) => {
   // Setup redirects for dashboard routes
   setupRedirects(app);
   
-  // Setup static routes for React Router support
-  setupStaticRoutes(app);
-  
-  // Register API routes
+  // Register API routes FIRST (before static routes)
   const server = await registerRoutes(app);
+  
+  // Setup static routes for React Router support (after API routes)
+  setupStaticRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -407,8 +407,7 @@ app.use((req, res, next) => {
     console.log("Setting up Vite development server...");
     await setupVite(app, server);
   } else {
-    console.log("Setting up static file serving...");
-    serveStatic(app);
+    console.log("Static file serving already configured in routes...");
   }
 
   // ALWAYS serve the app on port 5000
