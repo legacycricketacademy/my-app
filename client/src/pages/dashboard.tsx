@@ -12,7 +12,7 @@ import { AnnouncementsCard } from "@/components/dashboard/announcements-card";
 import { UserPlus, CalendarCheck2, Users, Heart, DollarSign, Megaphone, Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { ScheduleSessionDialog } from "@/components/sessions/schedule-session-dialog";
+import { SimpleScheduleDialog } from "@/components/sessions/simple-schedule-dialog";
 import { Link } from "wouter";
 import { getRole } from "@/lib/auth";
 import { ErrorBoundary, RouteErrorBoundary } from "@/components/ui/ErrorBoundary";
@@ -52,7 +52,7 @@ export default function Dashboard() {
                 <span>Add New Player</span>
               </Button>
             </Link>
-            <ScheduleSessionDialog />
+            <SimpleScheduleDialog />
           </div>
         </div>
         
