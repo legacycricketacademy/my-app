@@ -1,466 +1,126 @@
-/**
- * Unified Authentication Client
- * Supports multiple authentication providers: Keycloak, Firebase, and Mock
- */
-
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User as FirebaseUser
-} from 'firebase/auth';
-import { auth } from './firebase-init';
-import Keycloak from 'keycloak-js';
 import { config } from '../config';
+import { 
+  getAuthSnapshot, 
+  subscribeAuth, 
+  setUser, 
+  setReady, 
+  initAuthOnce, 
+  signOutStore,
+  type AuthUser,
+  type Role
+} from './auth-store';
 
-export type AuthProvider = 'keycloak' | 'firebase' | 'mock';
+// Types (re-export from store for compatibility)
+export type User = AuthUser;
+export type { Role } from './auth-store';
 
-export interface AuthUser {
-  id: string;
-  email: string;
-  name: string;
-  role: 'parent' | 'admin';
-  isEmailVerified: boolean;
+export interface AuthState {
+  user: User | null;
+  isInitialized: boolean;
 }
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-// Get auth provider from environment
-const AUTH_PROVIDER: AuthProvider = config.authProvider;
-
-// Mock users for development
-const MOCK_USERS: Record<string, AuthUser> = {
-  'parent@test.com': {
-    id: 'parent-1',
-    email: 'parent@test.com',
-    name: 'Test Parent',
-    role: 'parent',
-    isEmailVerified: true
-  },
-  'admin@test.com': {
-    id: 'admin-1',
-    email: 'admin@test.com',
-    name: 'Test Admin',
-    role: 'admin',
-    isEmailVerified: true
-  }
-};
-
-// Global state
-let currentUser: AuthUser | null = null;
-let authListeners: ((user: AuthUser | null) => void)[] = [];
-let isInitialized = false;
-
-// Load auth state from localStorage on module load
-if (typeof window !== 'undefined') {
-  try {
-    const stored = localStorage.getItem('auth_user');
-    if (stored) {
-      currentUser = JSON.parse(stored);
-    }
-  } catch (error) {
-    console.warn('Failed to load auth state from localStorage:', error);
-  }
-}
-let keycloak: Keycloak | null = null;
-
-/**
- * Initialize authentication based on provider
- */
-export async function initAuth(): Promise<void> {
-  if (isInitialized) return;
-
-  console.log(`Initializing auth with provider: ${AUTH_PROVIDER}`);
-
-  switch (AUTH_PROVIDER) {
-    case 'keycloak':
-      await initKeycloakAuth();
-      break;
-    case 'firebase':
-      await initFirebaseAuth();
-      break;
-    case 'mock':
-      await initMockAuth();
-      break;
-    default:
-      throw new Error(`Unknown auth provider: ${AUTH_PROVIDER}`);
-  }
-
-  isInitialized = true;
-}
-
-/**
- * Initialize Keycloak authentication
- */
-async function initKeycloakAuth(): Promise<void> {
-  const keycloakUrl = config.keycloak?.url;
-  const realm = config.keycloak?.realm;
-  const clientId = config.keycloak?.clientId;
-
-  if (!keycloakUrl || !realm || !clientId) {
-    throw new Error('Keycloak environment variables not configured');
-  }
-
-  keycloak = new Keycloak({
-    url: keycloakUrl,
-    realm,
-    clientId
-  });
-
-  try {
-    const authenticated = await keycloak.init({
-      onLoad: 'check-sso',
-      silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
-      pkceMethod: 'S256',
-      flow: 'standard'
-    });
-
-    if (authenticated) {
-      await updateUserFromKeycloak();
-    }
-  } catch (error) {
-    console.error('Keycloak initialization failed:', error);
-    throw error;
-  }
-}
-
-/**
- * Initialize Firebase authentication
- */
-async function initFirebaseAuth(): Promise<void> {
-  if (!auth) {
-    throw new Error('Firebase auth not initialized');
-  }
-
-  return new Promise((resolve) => {
-    onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        // Get user role from Firebase custom claims or fallback to mock
-        const tokenResult = await firebaseUser.getIdTokenResult();
-        const role = tokenResult.claims.role as 'parent' | 'admin' || 
-                     (MOCK_USERS[firebaseUser.email || '']?.role) || 'parent';
-        
-        currentUser = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email || '',
-          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
-          role,
-          isEmailVerified: firebaseUser.emailVerified
-        };
-      } else {
-        currentUser = null;
-      }
-      
-      // Notify all listeners
-      authListeners.forEach(listener => listener(currentUser));
-      resolve();
-    });
+// Auth state change subscription
+export function onAuthStateChange(fn: (user: User | null) => void): () => void {
+  return subscribeAuth(() => {
+    const snapshot = getAuthSnapshot();
+    fn(snapshot.user);
   });
 }
 
-/**
- * Initialize Mock authentication
- */
-async function initMockAuth(): Promise<void> {
-  // Mock auth is always ready
-  // Don't reset currentUser if it's already set (preserve existing auth state)
-  if (currentUser === null) {
-    authListeners.forEach(listener => listener(currentUser));
-  }
-}
-
-/**
- * Update user from Keycloak token
- */
-async function updateUserFromKeycloak(): Promise<void> {
-  if (!keycloak || !keycloak.authenticated) {
-    currentUser = null;
-    authListeners.forEach(listener => listener(currentUser));
-    return;
-  }
-
-  try {
-    // Refresh token if needed
-    await keycloak.updateToken(30);
+// Initialize authentication
+export function initAuth(): Promise<void> {
+  return initAuthOnce(async () => {
+    const provider = config.authProvider;
+    console.log('Auth: Initializing with provider:', provider);
     
-    const token = keycloak.token;
-    const tokenParsed = keycloak.tokenParsed;
-    
-    if (!tokenParsed) {
-      currentUser = null;
-      authListeners.forEach(listener => listener(currentUser));
-      return;
+    if (provider === 'mock') {
+      // For mock, we'll let the store handle localStorage restoration
+      return null; // Store will handle localStorage
     }
-
-    // Extract role from Keycloak token
-    const realmRoles = tokenParsed.realm_access?.roles || [];
-    const resourceRoles = tokenParsed.resource_access?.[keycloak.clientId || '']?.roles || [];
-    const allRoles = [...realmRoles, ...resourceRoles];
     
-    // Map roles: if 'admin' role present, use admin; otherwise parent
-    const role = allRoles.includes('admin') ? 'admin' : 'parent';
-
-    currentUser = {
-      id: tokenParsed.sub || '',
-      email: tokenParsed.email || tokenParsed.preferred_username || '',
-      name: tokenParsed.name || tokenParsed.preferred_username || 'User',
-      role,
-      isEmailVerified: tokenParsed.email_verified || false
-    };
-
-    authListeners.forEach(listener => listener(currentUser));
-  } catch (error) {
-    console.error('Error updating user from Keycloak:', error);
-    currentUser = null;
-    authListeners.forEach(listener => listener(currentUser));
-  }
+    // For other providers, implement actual authentication
+    return null;
+  });
 }
 
-/**
- * Get the current authenticated user
- */
-export function getCurrentUser(): AuthUser | null {
-  return currentUser;
-}
-
-/**
- * Get the current authentication token
- */
-export async function getToken(): Promise<string | null> {
-  switch (AUTH_PROVIDER) {
-    case 'keycloak':
-      if (!keycloak || !keycloak.authenticated) return null;
-      try {
-        await keycloak.updateToken(30);
-        return keycloak.token || null;
-      } catch (error) {
-        console.error('Error refreshing Keycloak token:', error);
-        return null;
-      }
-    case 'firebase':
-      if (!auth?.currentUser) return null;
-      return await auth.currentUser.getIdToken();
-    case 'mock':
-      return currentUser ? (currentUser.role === 'admin' ? 'mock-token-admin' : 'mock-token-1') : null;
-    default:
-      return null;
-  }
-}
-
-/**
- * Sign in with the configured provider
- */
-export async function signIn(credentials?: LoginCredentials): Promise<AuthUser> {
-  switch (AUTH_PROVIDER) {
-    case 'keycloak':
-      if (!keycloak) {
-        throw new Error('Keycloak not initialized');
-      }
-      await keycloak.login();
-      // The actual user will be set in updateUserFromKeycloak after redirect
-      // Don't throw error, just return a promise that never resolves
-      return new Promise(() => {});
-      
-    case 'firebase':
-      return await signInWithFirebase(credentials!);
-      
-    case 'mock':
-      return await signInWithMock(credentials!);
-      
-    default:
-      throw new Error(`Unknown auth provider: ${AUTH_PROVIDER}`);
-  }
-}
-
-/**
- * Sign in with Firebase
- */
-async function signInWithFirebase(credentials: LoginCredentials): Promise<AuthUser> {
-  if (!auth) {
-    throw new Error('Firebase auth not initialized');
-  }
-
-  try {
-    const userCredential = await signInWithEmailAndPassword(
-      auth, 
-      credentials.email, 
-      credentials.password
-    );
+// Sign in
+export async function signIn({ email, password }: { email: string; password: string }): Promise<{ ok: boolean; error?: string }> {
+  const provider = config.authProvider;
+  
+  if (provider === 'mock') {
+    // Mock authentication - derive role from email
+    const role = /admin@/i.test(email) ? 'admin' : 'parent';
     
-    const firebaseUser = userCredential.user;
-    
-    // Get user role from custom claims or mock data
-    const tokenResult = await firebaseUser.getIdTokenResult();
-    const role = tokenResult.claims.role as 'parent' | 'admin' || 
-                 (MOCK_USERS[firebaseUser.email || '']?.role) || 'parent';
+    // Mock authentication - accept any password for testing
+    // In real implementation, this would validate credentials
     
     const user: AuthUser = {
-      id: firebaseUser.uid,
-      email: firebaseUser.email || '',
-      name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+      id: crypto.randomUUID?.() ?? String(Date.now()),
+      email,
       role,
-      isEmailVerified: firebaseUser.emailVerified
     };
     
-    currentUser = user;
-    return user;
-  } catch (error: any) {
-    throw new Error(error.message || 'Sign in failed');
-  }
-}
-
-/**
- * Sign in with Mock authentication
- */
-async function signInWithMock(credentials: LoginCredentials): Promise<AuthUser> {
-  const mockUser = MOCK_USERS[credentials.email];
-  
-  if (!mockUser || credentials.password !== 'Test1234!') {
-    throw new Error('Invalid credentials');
+    console.log('Auth: User signed in:', user);
+    setUser(user);
+    
+    return { ok: true };
   }
   
-  currentUser = mockUser;
-  
-  // Save to localStorage
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('auth_user', JSON.stringify(currentUser));
-  }
-  
-  authListeners.forEach(listener => listener(currentUser));
-  return mockUser;
+  // For other providers, you would implement actual authentication
+  return { ok: false, error: 'Authentication provider not implemented' };
 }
 
-/**
- * Sign out the current user
- */
-export async function signOut(): Promise<void> {
-  switch (AUTH_PROVIDER) {
-    case 'keycloak':
-      if (keycloak) {
-        await keycloak.logout();
-      }
-      break;
-    case 'firebase':
-      if (auth) {
-        await firebaseSignOut(auth);
-      }
-      break;
-    case 'mock':
-      // Mock signout - clear user and notify listeners
-      currentUser = null;
-      
-      // Clear from localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth_user');
-      }
-      
-      authListeners.forEach(listener => listener(currentUser));
-      break;
-  }
-  
-  // For Keycloak and Firebase, the auth state change will be handled by their respective listeners
-  if (AUTH_PROVIDER === 'mock') {
-    // Already handled above
-  } else {
-    currentUser = null;
-    authListeners.forEach(listener => listener(currentUser));
-  }
+// Sign out
+export function signOut(): void {
+  signOutStore();
 }
 
-/**
- * Get the current user's role
- */
-export function getRole(): 'parent' | 'admin' | null {
-  return currentUser?.role || null;
+// Get current user
+export function getCurrentUser(): User | null {
+  return getAuthSnapshot().user;
 }
 
-/**
- * Check if user has a specific role
- */
-export function hasRole(role: 'parent' | 'admin'): boolean {
-  return currentUser?.role === role;
+// Get user role
+export function getRole(): string | null {
+  return getAuthSnapshot().role;
 }
 
-/**
- * Check if user is authenticated
- */
-export function isAuthenticated(): boolean {
-  return currentUser !== null;
-}
-
-/**
- * Check if auth is initialized
- */
+// Check if auth is initialized
 export function isAuthInitialized(): boolean {
-  return isInitialized;
+  return getAuthSnapshot().ready;
 }
 
-/**
- * Get the current auth provider
- */
-export function getAuthProvider(): AuthProvider {
-  return AUTH_PROVIDER;
+// Get auth provider
+export function getAuthProvider(): string {
+  return config.authProvider;
 }
 
-/**
- * Subscribe to auth state changes
- */
-export function onAuthStateChange(listener: (user: AuthUser | null) => void): () => void {
-  authListeners.push(listener);
-  
-  // Call immediately with current state
-  listener(currentUser);
-  
-  // Return unsubscribe function
-  return () => {
-    const index = authListeners.indexOf(listener);
-    if (index > -1) {
-      authListeners.splice(index, 1);
-    }
-  };
+// Get auth token
+export function getToken(): string | null {
+  const user = getCurrentUser();
+  if (!user) return null;
+  return `Bearer mock:${user.id}:${user.role}`;
 }
 
-/**
- * Create a new user account (for development/testing)
- */
-export async function createUser(credentials: LoginCredentials & { name: string; role: 'parent' | 'admin' }): Promise<AuthUser> {
-  if (AUTH_PROVIDER !== 'firebase') {
-    throw new Error('User creation only supported with Firebase provider');
-  }
+// Refresh token (for API retry)
+export function refreshToken(): string | null {
+  return getToken(); // Mock tokens are static
+}
 
-  if (!auth) {
-    throw new Error('Firebase auth not initialized');
-  }
+// Check if user has specific role
+export function hasRole(role: string): boolean {
+  const user = getCurrentUser();
+  if (!user) return false;
+  return user.role === role;
+}
 
-  try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      credentials.email,
-      credentials.password
-    );
-    
-    const firebaseUser = userCredential.user;
-    
-    // Set display name
-    await firebaseUser.updateProfile({
-      displayName: credentials.name
-    });
-    
-    const user: AuthUser = {
-      id: firebaseUser.uid,
-      email: firebaseUser.email || '',
-      name: credentials.name,
-      role: credentials.role,
-      isEmailVerified: firebaseUser.emailVerified
-    };
-    
-    currentUser = user;
-    return user;
-  } catch (error: any) {
-    throw new Error(error.message || 'Account creation failed');
-  }
+// Check if user is authenticated
+export function isAuthenticated(): boolean {
+  return getCurrentUser() !== null;
+}
+
+// Reset auth state (for testing)
+export function resetAuth(): void {
+  signOutStore();
+  setReady(false);
 }

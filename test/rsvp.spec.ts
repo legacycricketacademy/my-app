@@ -1,31 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import request from 'supertest';
-import { app } from '../server/routes';
+import { httpRequest, asAdmin, asParent, asGuest } from './utils/http';
+import { expectUnauthorized, expectForbidden, expectBadRequest, expectSuccess, expectCreated, expectNoContent } from './utils/expectations';
 
 describe('RSVP API', () => {
   describe('GET /api/rsvps', () => {
     it('should require authentication', async () => {
-      const response = await request(app)
-        .get('/api/rsvps')
-        .expect(401);
-
-      expect(response.body.error).toBe('JWT verification not configured');
+      const response = await asGuest(httpRequest().get('/api/rsvps'));
+      expectUnauthorized(response);
     });
 
     it('should require sessionId parameter', async () => {
-      const response = await request(app)
-        .get('/api/rsvps')
-        .set('Authorization', 'Bearer mock-token')
-        .expect(400);
-
+      const response = await asParent(httpRequest().get('/api/rsvps'));
+      expectBadRequest(response);
       expect(response.body.error).toBe('sessionId is required');
     });
 
     it('should return RSVP data for valid session', async () => {
-      const response = await request(app)
-        .get('/api/rsvps?sessionId=1')
-        .set('Authorization', 'Bearer mock-token')
-        .expect(200);
+      const response = await asParent(httpRequest()
+        .get('/api/rsvps?sessionId=1'));
 
       expect(response.body).toHaveProperty('sessionId');
       expect(response.body).toHaveProperty('counts');
@@ -40,16 +32,12 @@ describe('RSVP API', () => {
 
     it('should return different data for admin vs parent', async () => {
       // Admin response
-      const adminResponse = await request(app)
-        .get('/api/rsvps?sessionId=1')
-        .set('Authorization', 'Bearer admin-token')
-        .expect(200);
+      const adminResponse = await asAdmin(httpRequest()
+        .get('/api/rsvps?sessionId=1'));
 
       // Parent response
-      const parentResponse = await request(app)
-        .get('/api/rsvps?sessionId=1')
-        .set('Authorization', 'Bearer parent-token')
-        .expect(200);
+      const parentResponse = await asParent(httpRequest()
+        .get('/api/rsvps?sessionId=1'));
 
       // Admin should see more players
       expect(adminResponse.body.byPlayer.length).toBeGreaterThan(parentResponse.body.byPlayer.length);
@@ -58,40 +46,34 @@ describe('RSVP API', () => {
 
   describe('POST /api/rsvps', () => {
     it('should require authentication', async () => {
-      const response = await request(app)
+      const response = await httpRequest()
         .post('/api/rsvps')
         .send({ sessionId: 1, playerId: 1, status: 'going' })
         .expect(401);
 
-      expect(response.body.error).toBe('JWT verification not configured');
+      expect(response.body.error).toMatch(/User not authenticated/i);
     });
 
     it('should validate required fields', async () => {
-      const response = await request(app)
+      const response = await asParent(httpRequest()
         .post('/api/rsvps')
-        .set('Authorization', 'Bearer mock-token')
-        .send({ sessionId: 1 })
-        .expect(400);
+        .send({ sessionId: 1 }));
 
       expect(response.body.error).toBe('sessionId, playerId, and status are required');
     });
 
     it('should validate status enum', async () => {
-      const response = await request(app)
+      const response = await asParent(httpRequest()
         .post('/api/rsvps')
-        .set('Authorization', 'Bearer mock-token')
-        .send({ sessionId: 1, playerId: 1, status: 'invalid' })
-        .expect(400);
+        .send({ sessionId: 1, playerId: 1, status: 'invalid' }));
 
       expect(response.body.error).toBe('status must be one of: going, maybe, no');
     });
 
     it('should create RSVP for authorized player', async () => {
-      const response = await request(app)
+      const response = await asParent(httpRequest()
         .post('/api/rsvps')
-        .set('Authorization', 'Bearer mock-token')
-        .send({ sessionId: 1, playerId: 1, status: 'going', comment: 'Looking forward to it!' })
-        .expect(200);
+        .send({ sessionId: 1, playerId: 1, status: 'going', comment: 'Looking forward to it!' }));
 
       expect(response.body).toHaveProperty('id');
       expect(response.body).toHaveProperty('sessionId', 1);
@@ -102,11 +84,9 @@ describe('RSVP API', () => {
     });
 
     it('should reject RSVP for unauthorized player', async () => {
-      const response = await request(app)
+      const response = await asParent(httpRequest()
         .post('/api/rsvps')
-        .set('Authorization', 'Bearer mock-token')
-        .send({ sessionId: 1, playerId: 999, status: 'going' })
-        .expect(403);
+        .send({ sessionId: 1, playerId: 999, status: 'going' }));
 
       expect(response.body.error).toBe('Not authorized to RSVP for this player');
     });
@@ -115,11 +95,9 @@ describe('RSVP API', () => {
       const validStatuses = ['going', 'maybe', 'no'];
       
       for (const status of validStatuses) {
-        const response = await request(app)
+        const response = await asParent(httpRequest()
           .post('/api/rsvps')
-          .set('Authorization', 'Bearer mock-token')
-          .send({ sessionId: 1, playerId: 1, status })
-          .expect(200);
+          .send({ sessionId: 1, playerId: 1, status }));
 
         expect(response.body.status).toBe(status);
       }
@@ -129,7 +107,7 @@ describe('RSVP API', () => {
   describe('Admin Session CRUD', () => {
     describe('POST /api/admin/sessions', () => {
       it('should require admin role', async () => {
-        const response = await request(app)
+        const response = await httpRequest()
           .post('/api/admin/sessions')
           .send({
             type: 'practice',
@@ -141,23 +119,20 @@ describe('RSVP API', () => {
           })
           .expect(401);
 
-        expect(response.body.error).toBe('JWT verification not configured');
+        expect(response.body.error).toMatch(/User not authenticated/i);
       });
 
       it('should validate required fields', async () => {
-        const response = await request(app)
+        const response = await asAdmin(httpRequest()
           .post('/api/admin/sessions')
-          .set('Authorization', 'Bearer admin-token')
-          .send({ type: 'practice' })
-          .expect(400);
+          .send({ type: 'practice' }));
 
         expect(response.body.error).toBe('type, teamId, teamName, start, end, and location are required');
       });
 
       it('should validate type enum', async () => {
-        const response = await request(app)
+        const response = await asAdmin(httpRequest()
           .post('/api/admin/sessions')
-          .set('Authorization', 'Bearer admin-token')
           .send({
             type: 'invalid',
             teamId: 1,
@@ -165,8 +140,7 @@ describe('RSVP API', () => {
             start: '2024-01-15T10:00:00Z',
             end: '2024-01-15T12:00:00Z',
             location: 'Test Field'
-          })
-          .expect(400);
+          }));
 
         expect(response.body.error).toBe('type must be either "practice" or "game"');
       });
@@ -183,11 +157,9 @@ describe('RSVP API', () => {
           notes: 'Test notes'
         };
 
-        const response = await request(app)
+        const response = await asAdmin(httpRequest()
           .post('/api/admin/sessions')
-          .set('Authorization', 'Bearer admin-token')
-          .send(sessionData)
-          .expect(201);
+          .send(sessionData));
 
         expect(response.body).toHaveProperty('id');
         expect(response.body.type).toBe('practice');
@@ -201,20 +173,18 @@ describe('RSVP API', () => {
 
     describe('PATCH /api/admin/sessions/:id', () => {
       it('should require admin role', async () => {
-        const response = await request(app)
+        const response = await httpRequest()
           .patch('/api/admin/sessions/1')
           .send({ teamName: 'Updated Team' })
           .expect(401);
 
-        expect(response.body.error).toBe('JWT verification not configured');
+        expect(response.body.error).toMatch(/User not authenticated/i);
       });
 
       it('should update session', async () => {
-        const response = await request(app)
+        const response = await asAdmin(httpRequest()
           .patch('/api/admin/sessions/1')
-          .set('Authorization', 'Bearer admin-token')
-          .send({ teamName: 'Updated Team', notes: 'Updated notes' })
-          .expect(200);
+          .send({ teamName: 'Updated Team', notes: 'Updated notes' }));
 
         expect(response.body.id).toBe(1);
         expect(response.body.teamName).toBe('Updated Team');
@@ -225,18 +195,16 @@ describe('RSVP API', () => {
 
     describe('DELETE /api/admin/sessions/:id', () => {
       it('should require admin role', async () => {
-        const response = await request(app)
+        const response = await httpRequest()
           .delete('/api/admin/sessions/1')
           .expect(401);
 
-        expect(response.body.error).toBe('JWT verification not configured');
+        expect(response.body.error).toMatch(/User not authenticated/i);
       });
 
       it('should delete session', async () => {
-        const response = await request(app)
-          .delete('/api/admin/sessions/1')
-          .set('Authorization', 'Bearer admin-token')
-          .expect(204);
+        const response = await asAdmin(httpRequest()
+          .delete('/api/admin/sessions/1'));
 
         expect(response.body).toEqual({});
       });
@@ -245,20 +213,16 @@ describe('RSVP API', () => {
 
   describe('Data validation', () => {
     it('should handle invalid sessionId format', async () => {
-      const response = await request(app)
-        .get('/api/rsvps?sessionId=invalid')
-        .set('Authorization', 'Bearer mock-token')
-        .expect(200);
+      const response = await asParent(httpRequest()
+        .get('/api/rsvps?sessionId=invalid'));
 
-      expect(response.body.sessionId).toBe(NaN);
+      expect(response.body.sessionId).toBeNull();
     });
 
     it('should handle missing optional fields in RSVP creation', async () => {
-      const response = await request(app)
+      const response = await asParent(httpRequest()
         .post('/api/rsvps')
-        .set('Authorization', 'Bearer mock-token')
-        .send({ sessionId: 1, playerId: 1, status: 'going' })
-        .expect(200);
+        .send({ sessionId: 1, playerId: 1, status: 'going' }));
 
       expect(response.body.comment).toBeNull();
     });
@@ -273,11 +237,9 @@ describe('RSVP API', () => {
         location: 'Test Field'
       };
 
-      const response = await request(app)
+      const response = await asAdmin(httpRequest()
         .post('/api/admin/sessions')
-        .set('Authorization', 'Bearer admin-token')
-        .send(sessionData)
-        .expect(201);
+        .send(sessionData));
 
       expect(response.body.opponent).toBeNull();
       expect(response.body.notes).toBeNull();

@@ -6,7 +6,10 @@ services:
     buildCommand: npm run build:prod
     startCommand: node dist/index.js
     autoDeploy: true
+    healthCheckPath: /api/health
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: APP_ENV
         value: production
       - key: AUTH_PROVIDER
@@ -29,7 +32,11 @@ services:
         value: https://cricket-academy.onrender.com
       - key: CLIENT_URL
         value: https://cricket-academy.onrender.com
+      - key: LOG_LEVEL
+        value: info
     # These should be set in Render dashboard:
     # - VITE_KEYCLOAK_URL (your Keycloak instance URL)
     # - DATABASE_URL (your PostgreSQL connection string)
     # - SENDGRID_API_KEY (your SendGrid API key)
+    # - JWT_SECRET (your production JWT secret)
+    # - SESSION_SECRET (your production session secret)

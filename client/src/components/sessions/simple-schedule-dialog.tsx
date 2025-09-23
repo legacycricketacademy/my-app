@@ -1,302 +1,115 @@
-import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Loader2 } from "lucide-react";
+interface SimpleScheduleDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
 
-// Form schema validation
-const sessionFormSchema = z.object({
-  type: z.string().min(1, "Session type is required"),
-  teamId: z.coerce.number().int().min(1, "Team ID is required"),
-  teamName: z.string().min(1, "Team name is required"),
-  start: z.string().min(1, "Start date is required"),
-  end: z.string().min(1, "End date is required"),
-  location: z.string().min(1, "Location is required"),
-  opponent: z.string().optional(),
-  notes: z.string().optional(),
-}).refine(data => new Date(data.end) > new Date(data.start), {
-  message: "End time must be after start time",
-  path: ["end"]
-});
-
-type SessionFormValues = z.infer<typeof sessionFormSchema>;
-
-export function SimpleScheduleDialog() {
-  const [open, setOpen] = useState(false);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  // Default values for the form
-  const defaultValues: Partial<SessionFormValues> = {
-    type: "practice",
-    teamId: 1,
-    teamName: "",
-    start: "",
-    end: "",
-    location: "",
-    opponent: "",
-    notes: "",
-  };
-
-  const form = useForm<SessionFormValues>({
-    resolver: zodResolver(sessionFormSchema),
-    defaultValues,
+export function SimpleScheduleDialog({ open = false, onOpenChange }: SimpleScheduleDialogProps) {
+  const [formData, setFormData] = useState({
+    title: '',
+    date: '',
+    startTime: '',
+    endTime: '',
+    location: '',
+    description: ''
   });
 
-  const createSessionMutation = useMutation({
-    mutationFn: async (data: SessionFormValues) => {
-      return await api.post("/admin/sessions", data);
-    },
-    onSuccess: () => {
-      // Reset form and close dialog
-      form.reset();
-      setOpen(false);
-      
-      // Invalidate related queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/schedule/parent"] });
-      
-      toast({
-        title: "Session Created",
-        description: "The training session has been successfully created.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to Create Session",
-        description: error.message || "An error occurred. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  function onSubmit(data: SessionFormValues) {
-    createSessionMutation.mutate(data);
-  }
-
-  // Helper function to get future date
-  const getFutureDate = (daysFromNow: number, hours: number = 10) => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysFromNow);
-    date.setHours(hours, 0, 0, 0);
-    return date.toISOString().slice(0, 16); // Format for datetime-local input
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Creating session:', formData);
+    onOpenChange?.(false);
+    // Reset form
+    setFormData({
+      title: '',
+      date: '',
+      startTime: '',
+      endTime: '',
+      location: '',
+      description: ''
+    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button data-testid="create-session" className="flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4" />
-          <span>Create Session</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Schedule New Training Session</DialogTitle>
-          <DialogDescription>
-            Create a new training session for your academy.
-          </DialogDescription>
+          <DialogTitle>Create New Session</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Session Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="practice">Practice</SelectItem>
-                        <SelectItem value="game">Game</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="teamId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Team ID</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="teamName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Team Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Under 12s A" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="title">Session Title</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="Enter session title"
+              required
             />
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="start"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Date & Time</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="datetime-local" 
-                        {...field}
-                        defaultValue={getFutureDate(1)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="end"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date & Time</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="datetime-local" 
-                        {...field}
-                        defaultValue={getFutureDate(1, 12)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Field 1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="opponent"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Opponent (for games)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Riverside CC" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Add any additional details about the session" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <div>
+            <Label htmlFor="date">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              required
             />
-            
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setOpen(false);
-                  form.reset();
-                }}
-                className="mr-2"
-                disabled={createSessionMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                disabled={createSessionMutation.isPending}
-              >
-                {createSessionMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Session"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="startTime">Start Time</Label>
+              <Input
+                id="startTime"
+                type="time"
+                value={formData.startTime}
+                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="endTime">End Time</Label>
+              <Input
+                id="endTime"
+                type="time"
+                value={formData.endTime}
+                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="location">Location</Label>
+            <Input
+              id="location"
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              placeholder="Enter location"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Enter session description"
+            />
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange?.(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Create Session</Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

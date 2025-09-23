@@ -1,0 +1,125 @@
+{
+  "users": {
+    "parent": {
+      "email": "parent@test.com",
+      "password": "password123",
+      "name": "Parent",
+      "role": "parent"
+    },
+    "admin": {
+      "email": "admin@test.com",
+      "password": "password123",
+      "name": "Test Admin",
+      "role": "admin"
+    }
+  },
+  "urls": {
+    "base": "http://localhost:3000",
+    "auth": "/auth",
+    "admin": "/admin",
+    "parentDashboard": "/dashboard/parent",
+    "adminSessions": "/admin/sessions",
+    "adminUsers": "/admin/users",
+    "adminCoaches": "/admin/coaches",
+    "adminPayments": "/admin/payments",
+    "adminReports": "/admin/reports",
+    "schedule": "/schedule",
+    "account": "/account",
+    "players": "/players",
+    "playersAdd": "/players/add"
+  },
+  "testIds": {
+    "header": {
+      "roleBadge": "role-badge",
+      "userMenuTrigger": "user-menu-trigger",
+      "userMenuProfile": "user-menu-profile",
+      "userMenuSettings": "user-menu-settings",
+      "userMenuSignout": "user-menu-signout"
+    },
+    "dashboard": {
+      "title": "dashboard-title",
+      "stats": "stats-card",
+      "players": "players-card",
+      "fitness": "fitness-card",
+      "meal": "meal-plan-card",
+      "payments": "payment-card",
+      "schedule": "schedule-card",
+      "announcements": "announcements-card"
+    },
+    "schedule": {
+      "page": "schedule-page",
+      "tabs": "schedule-tabs",
+      "tabAll": "tab-all",
+      "tabPractices": "tab-practices",
+      "tabGames": "tab-games",
+      "viewSelect": "view-mode-select",
+      "viewWeek": "view-week",
+      "viewMonth": "view-month",
+      "kidFilter": "kid-filter",
+      "rsvpGoing": "rsvp-going",
+      "rsvpMaybe": "rsvp-maybe",
+      "rsvpNo": "rsvp-no"
+    },
+    "admin": {
+      "page": "admin-sessions-page",
+      "createBtn": "create-session",
+      "list": "session-list",
+      "rowPrefix": "session-row-",
+      "save": "session-save",
+      "cancel": "session-cancel"
+    },
+    "account": {
+      "page": "account-page",
+      "tabProfile": "account-tab-profile",
+      "tabSecurity": "account-tab-security",
+      "tabNotifications": "account-tab-notifications",
+      "tabChildren": "account-tab-children",
+      "tabOrg": "account-tab-organization"
+    },
+    "common": {
+      "empty": "empty-state",
+      "skeleton": "skeleton"
+    }
+  },
+  "expectedTexts": {
+    "adminDashboard": {
+      "title": "Admin Dashboard",
+      "subtitle": "Manage your cricket academy operations",
+      "totalUsers": "Total Users",
+      "pendingCoaches": "Pending Coaches",
+      "trainingSessions": "Training Sessions",
+      "revenue": "Revenue",
+      "manageCoaches": "Manage Coaches",
+      "manageUsers": "Manage Users",
+      "manageSessions": "Manage Sessions",
+      "managePayments": "Manage Payments",
+      "viewReports": "View Reports",
+      "systemSettings": "System Settings"
+    },
+    "parentDashboard": {
+      "title": "Welcome",
+      "scheduleTab": "Schedule",
+      "playerTab": "Player Profile",
+      "fitnessTab": "Fitness & Meals",
+      "locationTab": "Locations",
+      "paymentsTab": "Payments",
+      "viewFullCalendar": "View Full Calendar",
+      "addPlayer": "Add Player"
+    },
+    "auth": {
+      "signInTitle": "Sign in to your account",
+      "emailPlaceholder": "Email",
+      "passwordPlaceholder": "Password",
+      "signInButton": "Sign In"
+    },
+    "emailBanner": {
+      "title": "Email Service Disabled",
+      "message": "SENDGRID_API_KEY not configured"
+    }
+  },
+  "timeouts": {
+    "short": 5000,
+    "medium": 10000,
+    "long": 30000
+  }
+}

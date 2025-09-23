@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ParentLayout } from "@/layout/parent-layout";
-import { useAuth } from "@/hooks/use-auth";
+import { MainLayout } from "@/layout/main-layout";
+import { getCurrentUser } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -16,8 +16,11 @@ import {
   Award
 } from 'lucide-react';
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/api";
 import { format } from "date-fns";
+import { TID } from "@/ui/testids";
+
+// TID imported for testids
 
 // Types
 interface Session {
@@ -44,14 +47,8 @@ const playerSkills: SkillRating[] = [
 ];
 
 export default function EnhancedParentDashboard() {
-  const { user, logoutMutation } = useAuth();
+  const user = getCurrentUser();
   const [activeTab, setActiveTab] = useState("schedule");
-  
-  // Handle sign out
-  const handleSignOut = () => {
-    logoutMutation.mutate();
-    window.location.href = "/auth";
-  };
   
   // Fetch upcoming sessions - in a real implementation this would use the API
   const { data: sessions, isLoading: isLoadingSessions } = useQuery({
@@ -87,19 +84,46 @@ export default function EnhancedParentDashboard() {
   };
   
   return (
-    <ParentLayout title="Parent Dashboard">
+    <MainLayout title="Parent Dashboard">
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || 'Parent'}</h1>
+            <h1 className="text-3xl font-bold tracking-tight" data-testid={TID.dashboard.title}>Welcome, {user?.fullName || 'Parent'}</h1>
             <p className="text-muted-foreground">
               Manage your child's cricket activities and progress
             </p>
           </div>
-          <Button className="w-full sm:w-auto">
+          <Button 
+            className="w-full sm:w-auto"
+            onClick={() => window.location.href = '/schedule'}
+          >
             <CalendarCheck className="mr-2 h-4 w-4" />
             View Full Calendar
           </Button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card data-testid={TID.dashboard.stats}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">12</div>
+              <p className="text-xs text-muted-foreground">This month</p>
+            </CardContent>
+          </Card>
+          <Card data-testid={TID.dashboard.announcements}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Announcements</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">3</div>
+              <p className="text-xs text-muted-foreground">New updates</p>
+            </CardContent>
+          </Card>
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -128,7 +152,7 @@ export default function EnhancedParentDashboard() {
           
           {/* Schedule Tab */}
           <TabsContent value="schedule" className="space-y-4">
-            <Card>
+            <Card data-testid={TID.dashboard.schedule}>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Calendar className="mr-2 h-5 w-5" />
@@ -180,7 +204,7 @@ export default function EnhancedParentDashboard() {
           {/* Player Profile Tab */}
           <TabsContent value="player" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <Card>
+              <Card data-testid={TID.dashboard.players}>
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <User className="mr-2 h-5 w-5" />
@@ -211,14 +235,22 @@ export default function EnhancedParentDashboard() {
                       <p className="text-sm font-medium text-muted-foreground">Emergency Contact</p>
                       <p>Rajesh Sharma - +91 9876543210</p>
                     </div>
-                    <div className="pt-2">
+                    <div className="pt-2 flex gap-2">
                       <Button variant="outline" size="sm">Update Information</Button>
+                      <Button 
+                        size="sm"
+                        data-testid="add-player-btn"
+                        onClick={() => window.location.href = '/players/add'}
+                      >
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Player
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card>
+              <Card data-testid={TID.dashboard.fitness}>
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Award className="mr-2 h-5 w-5" />
@@ -253,7 +285,7 @@ export default function EnhancedParentDashboard() {
           
           {/* Fitness & Meals Tab */}
           <TabsContent value="fitness" className="space-y-4">
-            <Card>
+            <Card data-testid={TID.dashboard.meal}>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Utensils className="mr-2 h-5 w-5" />
@@ -388,7 +420,7 @@ export default function EnhancedParentDashboard() {
           
           {/* Payments Tab */}
           <TabsContent value="payments" className="space-y-4">
-            <Card>
+            <Card data-testid={TID.dashboard.payments}>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <CreditCard className="mr-2 h-5 w-5" />
@@ -456,6 +488,6 @@ export default function EnhancedParentDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </ParentLayout>
+    </MainLayout>
   );
 }

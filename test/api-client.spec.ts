@@ -42,12 +42,15 @@ describe('API Client', () => {
     });
 
     it('should retry on 401 with token refresh', async () => {
-      const { getToken } = await import('../client/src/lib/auth');
+      const { getToken, refreshToken } = await import('../client/src/lib/auth');
       
-      // Mock token calls
+      // Mock token calls - getToken is synchronous
       vi.mocked(getToken)
-        .mockResolvedValueOnce('old-token')  // First call
-        .mockResolvedValueOnce('new-token'); // Second call after refresh
+        .mockReturnValueOnce('old-token')  // First call
+        .mockReturnValueOnce('new-token'); // Second call after refresh
+      
+      // Mock refreshToken to return a different token
+      vi.mocked(refreshToken).mockReturnValueOnce('new-token');
 
       // First call returns 401, second call succeeds
       mockFetch
@@ -71,7 +74,7 @@ describe('API Client', () => {
     it('should not retry on 401 if refresh fails', async () => {
       const { getToken } = await import('../client/src/lib/auth');
       
-      vi.mocked(getToken).mockResolvedValueOnce('old-token');
+      vi.mocked(getToken).mockReturnValueOnce('old-token');
 
       mockFetch.mockResolvedValueOnce({
         ok: false,
@@ -86,7 +89,7 @@ describe('API Client', () => {
     it('should not retry on 401 if already retried once', async () => {
       const { getToken } = await import('../client/src/lib/auth');
       
-      vi.mocked(getToken).mockResolvedValueOnce('token');
+      vi.mocked(getToken).mockReturnValueOnce('token');
 
       mockFetch.mockResolvedValueOnce({
         ok: false,
@@ -101,7 +104,7 @@ describe('API Client', () => {
     it('should throw ApiError for non-ok responses', async () => {
       const { getToken } = await import('../client/src/lib/auth');
       
-      vi.mocked(getToken).mockResolvedValueOnce('token');
+      vi.mocked(getToken).mockReturnValueOnce('token');
 
       mockFetch.mockResolvedValueOnce({
         ok: false,
@@ -115,7 +118,7 @@ describe('API Client', () => {
     it('should handle network errors', async () => {
       const { getToken } = await import('../client/src/lib/auth');
       
-      vi.mocked(getToken).mockResolvedValueOnce('token');
+      vi.mocked(getToken).mockReturnValueOnce('token');
 
       mockFetch.mockRejectedValueOnce(new TypeError('Network error'));
 
@@ -125,7 +128,7 @@ describe('API Client', () => {
     it('should include Authorization header when token is available', async () => {
       const { getToken } = await import('../client/src/lib/auth');
       
-      vi.mocked(getToken).mockResolvedValueOnce('test-token');
+      vi.mocked(getToken).mockReturnValueOnce('test-token');
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -147,7 +150,7 @@ describe('API Client', () => {
     it('should include request body for POST requests', async () => {
       const { getToken } = await import('../client/src/lib/auth');
       
-      vi.mocked(getToken).mockResolvedValueOnce('token');
+      vi.mocked(getToken).mockReturnValueOnce('token');
 
       mockFetch.mockResolvedValueOnce({
         ok: true,

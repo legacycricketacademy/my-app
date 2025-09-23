@@ -1,315 +1,281 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { MainLayout } from '@/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, Users, Trophy, Target, ExternalLink } from 'lucide-react';
-import { api } from '@/lib/api';
-import { getRole } from '@/lib/auth';
-import { format, parseISO, isToday, isTomorrow, isYesterday, isPast } from 'date-fns';
-import { RSVPControls } from '@/components/schedule/rsvp-controls';
+import { getCurrentUser } from '@/lib/auth';
+import { TID } from '@/ui/testids';
 
-interface ScheduleItem {
-  id: number;
-  type: 'practice' | 'game';
-  teamId: number;
-  teamName: string;
-  start: string;
-  end: string;
-  location: string;
-  opponent?: string;
-  notes?: string;
-  myKidsStatus?: Array<{ playerId: number; status: string }>;
+// Mock data for schedule
+const mockSessions = [
+  {
+    id: 1,
+    type: 'practice',
+    title: 'Batting Practice',
+    date: '2024-01-15',
+    time: '4:00 PM',
+    duration: '2 hours',
+    location: 'Field 1',
+    isPast: false,
+  },
+  {
+    id: 2,
+    type: 'game',
+    title: 'League Match',
+    date: '2024-01-17',
+    time: '5:00 PM',
+    duration: '3 hours',
+    location: 'Cricket Ground',
+    isPast: false,
+  },
+  {
+    id: 3,
+    type: 'practice',
+    title: 'Fielding Drills',
+    date: '2024-01-19',
+    time: '3:30 PM',
+    duration: '1.5 hours',
+    location: 'Field 2',
+    isPast: false,
+  },
+];
+
+const mockKids = [
+  { id: 1, name: 'John Smith' },
+  { id: 2, name: 'Sarah Johnson' },
+];
+
+// Empty state component
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="text-center py-8" data-testid={TID.common.empty}>
+      <div className="text-gray-500 text-sm">{message}</div>
+    </div>
+  );
 }
 
-interface Kid {
-  id: number;
-  name: string;
-  teamName: string;
-}
+// RSVP buttons component
+function RSVPButtons({ sessionId, isPast }: { sessionId: number; isPast: boolean }) {
+  const [status, setStatus] = useState<'going' | 'maybe' | 'no' | null>(null);
 
-export default function SchedulePage() {
-  const [selectedKids, setSelectedKids] = useState<number[]>([]);
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
-  const [activeTab, setActiveTab] = useState<'all' | 'practices' | 'games'>('all');
-  
-  const userRole = getRole();
-  const isAdmin = userRole === 'admin';
-
-  // Mock kids data - replace with actual API call
-  const { data: kids = [] } = useQuery<Kid[]>({
-    queryKey: ['/api/players'],
-    queryFn: () => api.get('/players'),
-    select: (players) => players.map((player: any) => ({
-      id: player.id,
-      name: `${player.firstName} ${player.lastName}`,
-      teamName: player.ageGroup
-    }))
-  });
-
-  // Get schedule data
-  const { data: schedule = [], isLoading, error } = useQuery<ScheduleItem[]>({
-    queryKey: ['/api/schedule', isAdmin ? 'admin' : 'parent', selectedKids, viewMode],
-    queryFn: () => {
-      const endpoint = isAdmin ? '/schedule/admin' : '/schedule/parent';
-      const params = new URLSearchParams();
-      
-      if (viewMode === 'week') {
-        const startOfWeek = new Date();
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(endOfWeek.getDate() + 6);
-        
-        params.set('from', startOfWeek.toISOString());
-        params.set('to', endOfWeek.toISOString());
-      } else {
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        const endOfMonth = new Date(startOfMonth);
-        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-        endOfMonth.setDate(0);
-        
-        params.set('from', startOfMonth.toISOString());
-        params.set('to', endOfMonth.toISOString());
-      }
-      
-      if (!isAdmin && selectedKids.length > 0) {
-        params.set('kidIds', selectedKids.join(','));
-      }
-      
-      return api.get(`${endpoint}?${params.toString()}`);
-    }
-  });
-
-  // Debug logging
-  console.log('Schedule data:', { schedule, isLoading, error, kids, isAdmin });
-
-  // Filter schedule based on active tab
-  const filteredSchedule = useMemo(() => {
-    if (activeTab === 'practices') {
-      return schedule.filter(item => item.type === 'practice');
-    } else if (activeTab === 'games') {
-      return schedule.filter(item => item.type === 'game');
-    }
-    return schedule;
-  }, [schedule, activeTab]);
-
-  // Group schedule by date
-  const groupedSchedule = useMemo(() => {
-    const groups: { [key: string]: ScheduleItem[] } = {};
-    
-    filteredSchedule.forEach(item => {
-      const date = format(parseISO(item.start), 'yyyy-MM-dd');
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(item);
-    });
-    
-    return Object.entries(groups)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, items]) => ({
-        date,
-        items: items.sort((a, b) => a.start.localeCompare(b.start))
-      }));
-  }, [filteredSchedule]);
-
-  const formatTime = (dateString: string) => {
-    try {
-      const date = parseISO(dateString);
-      return format(date, 'h:mm a');
-    } catch {
-      return 'Invalid time';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      const date = parseISO(dateString);
-      if (isToday(date)) return 'Today';
-      if (isTomorrow(date)) return 'Tomorrow';
-      if (isYesterday(date)) return 'Yesterday';
-      return format(date, 'EEEE, MMM d');
-    } catch {
-      return 'Invalid date';
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    return type === 'practice' ? <Target className="h-4 w-4" /> : <Trophy className="h-4 w-4" />;
-  };
-
-  const getTypeColor = (type: string) => {
-    return type === 'practice' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
-  };
-
-  const getMapUrl = (location: string) => {
-    return `https://maps.google.com/maps?q=${encodeURIComponent(location)}`;
+  const handleRSVP = (newStatus: 'going' | 'maybe' | 'no') => {
+    setStatus(newStatus);
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Schedule</h1>
-        <div className="flex items-center space-x-4">
-          <Select value={viewMode} onValueChange={(value: 'week' | 'month') => setViewMode(value)}>
-            <SelectTrigger className="w-32" data-testid="view-mode-select">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="week" data-testid="view-week">Week</SelectItem>
-              <SelectItem value="month" data-testid="view-month">Month</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="flex space-x-2">
+      <Button
+        size="sm"
+        variant={status === 'going' ? 'default' : 'outline'}
+        onClick={() => handleRSVP('going')}
+        disabled={isPast}
+        data-testid={TID.schedule.rsvpGoing}
+        aria-disabled={isPast}
+        title={isPast ? 'Past event' : 'Going'}
+      >
+        Going
+      </Button>
+      <Button
+        size="sm"
+        variant={status === 'maybe' ? 'default' : 'outline'}
+        onClick={() => handleRSVP('maybe')}
+        disabled={isPast}
+        data-testid={TID.schedule.rsvpMaybe}
+        aria-disabled={isPast}
+        title={isPast ? 'Past event' : 'Maybe'}
+      >
+        Maybe
+      </Button>
+      <Button
+        size="sm"
+        variant={status === 'no' ? 'default' : 'outline'}
+        onClick={() => handleRSVP('no')}
+        disabled={isPast}
+        data-testid={TID.schedule.rsvpNo}
+        aria-disabled={isPast}
+        title={isPast ? 'Past event' : 'No'}
+      >
+        No
+      </Button>
+    </div>
+  );
+}
+
+export default function SchedulePage() {
+  const user = getCurrentUser();
+  const [activeTab, setActiveTab] = useState<'all' | 'practices' | 'games'>('all');
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [selectedKids, setSelectedKids] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate data loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Not Authenticated</h1>
+          <p className="text-gray-600 mb-4">Please sign in to access the schedule.</p>
+          <Button onClick={() => window.location.href = '/auth'}>
+            Go to Login
+          </Button>
         </div>
       </div>
+    );
+  }
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4">
-            {!isAdmin && (
-              <div className="flex-1 min-w-64">
-                <label className="block text-sm font-medium mb-2">Select Kids</label>
-                <Select
-                  value={selectedKids.length > 0 ? selectedKids.join(',') : 'all'}
-                  onValueChange={(value) => {
-                    if (value === 'all') {
-                      setSelectedKids([]);
-                    } else {
-                      setSelectedKids(value.split(',').map(Number));
-                    }
-                  }}
-                >
-                  <SelectTrigger data-testid="kid-filter">
-                    <SelectValue placeholder="All kids" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All kids</SelectItem>
-                    {kids.map((kid) => (
-                      <SelectItem key={kid.id} value={kid.id.toString()}>
-                        {kid.name} ({kid.teamName})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+  const isParent = user.role === 'parent';
+  const isAdmin = user.role === 'admin';
+
+  // Filter sessions based on active tab
+  const filteredSessions = mockSessions.filter(session => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'practices') return session.type === 'practice';
+    if (activeTab === 'games') return session.type === 'game';
+    return true;
+  });
+
+  return (
+    <MainLayout title="Schedule">
+      <div className="space-y-6" data-testid={TID.schedule.page}>
+        {/* Tabs */}
+        <div className="border-b border-gray-200" data-testid={TID.schedule.tabs}>
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'all'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+              data-testid={TID.schedule.tabAll}
+            >
+              All Events
+            </button>
+            <button
+              onClick={() => setActiveTab('practices')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'practices'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+              data-testid={TID.schedule.tabPractices}
+            >
+              Practices
+            </button>
+            <button
+              onClick={() => setActiveTab('games')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'games'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+              data-testid={TID.schedule.tabGames}
+            >
+              Games
+            </button>
+          </nav>
+        </div>
+
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          {/* View Mode Selector */}
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-gray-700">View:</label>
+            <select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value as 'week' | 'month')}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+              data-testid={TID.schedule.viewSelect}
+            >
+              <option value="week" data-testid={TID.schedule.viewWeek}>Week</option>
+              <option value="month" data-testid={TID.schedule.viewMonth}>Month</option>
+            </select>
+          </div>
+
+          {/* Kid Filter (Parent only) */}
+          {isParent && (
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700">Kids:</label>
+              <select
+                multiple
+                value={selectedKids}
+                onChange={(e) => {
+                  const values = Array.from(e.target.selectedOptions, option => parseInt(option.value));
+                  setSelectedKids(values);
+                }}
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm min-w-32"
+                data-testid={TID.schedule.kidFilter}
+              >
+                {mockKids.map(kid => (
+                  <option key={kid.id} value={kid.id}>
+                    {kid.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Schedule Content */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {activeTab === 'all' && 'All Events'}
+              {activeTab === 'practices' && 'Practice Sessions'}
+              {activeTab === 'games' && 'Games'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredSessions.length === 0 ? (
+              <EmptyState message="No sessions found for the selected criteria." />
+            ) : (
+              <div className="space-y-4">
+                {filteredSessions.map(session => (
+                  <div key={session.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{session.title}</h3>
+                        <div className="mt-2 space-y-1">
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Date:</span> {session.date}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Time:</span> {session.time} ({session.duration})
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Location:</span> {session.location}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Type:</span> {session.type.charAt(0).toUpperCase() + session.type.slice(1)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <RSVPButtons sessionId={session.id} isPast={session.isPast} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Schedule Tabs */}
-      <Tabs value={activeTab} onValueChange={(value: 'all' | 'practices' | 'games') => setActiveTab(value)}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all">All Events</TabsTrigger>
-          <TabsTrigger value="practices">Practices</TabsTrigger>
-          <TabsTrigger value="games">Games</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={activeTab} className="space-y-4">
-          {isLoading ? (
-            <div className="space-y-4">
-              {Array(3).fill(0).map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-6">
-                    <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : groupedSchedule.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No events found</h3>
-                <p className="text-gray-600">
-                  {activeTab === 'all' 
-                    ? "No events scheduled for this period."
-                    : `No ${activeTab} scheduled for this period.`
-                  }
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            groupedSchedule.map(({ date, items }) => (
-              <div key={date} className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {formatDate(items[0].start)}
-                </h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {items.map((item) => (
-                    <Card key={item.id} className="hover:shadow-md transition-shadow" data-testid="schedule-card">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            {getTypeIcon(item.type)}
-                            <CardTitle className="text-lg">{item.teamName}</CardTitle>
-                          </div>
-                          <Badge className={getTypeColor(item.type)}>
-                            {item.type === 'practice' ? 'Practice' : 'Game'}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <Clock className="h-4 w-4" />
-                          <span>{formatTime(item.start)} - {formatTime(item.end)}</span>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <MapPin className="h-4 w-4" />
-                          <div className="flex-1">
-                            <span>{item.location}</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="ml-2 h-6 px-2"
-                              onClick={() => window.open(getMapUrl(item.location), '_blank')}
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {item.opponent && (
-                          <div className="flex items-center space-x-2 text-sm text-gray-600">
-                            <Users className="h-4 w-4" />
-                            <span>vs {item.opponent}</span>
-                          </div>
-                        )}
-
-                        {item.notes && (
-                          <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                            {item.notes}
-                          </div>
-                        )}
-
-                        {/* RSVP Controls for Parents */}
-                        {!isAdmin && (
-                          <RSVPControls
-                            sessionId={item.id}
-                            myKidsStatus={item.myKidsStatus || []}
-                            kids={kids.filter(kid => selectedKids.length === 0 || selectedKids.includes(kid.id))}
-                            isPastEvent={isPast(parseISO(item.end || item.start))}
-                            hasConflict={false} // TODO: Implement conflict detection
-                          />
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
   );
 }

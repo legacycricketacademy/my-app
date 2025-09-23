@@ -32,6 +32,7 @@ export interface ServerConfig {
     replyToEmail: string;
   };
   clientUrl: string;
+  emailBanner: 'on' | 'off';
 }
 
 function getEnvVar(name: string, defaultValue?: string): string {
@@ -74,6 +75,7 @@ export const config: ServerConfig = {
   databaseUrl: getEnvVar('DATABASE_URL'),
   corsAllowedOrigins: parseCorsOrigins(getEnvVarOptional('CORS_ALLOWED_ORIGINS')),
   clientUrl: getEnvVar('CLIENT_URL', 'http://localhost:3000'),
+  emailBanner: (getEnvVarOptional('EMAIL_BANNER', 'off') as 'on' | 'off') || 'off',
   
   // Keycloak configuration (only if auth provider is keycloak)
   ...(getEnvVar('AUTH_PROVIDER', 'mock') === 'keycloak' && {

@@ -1,10 +1,13 @@
 /**
  * Email Status Banner Component
  * Shows when email is disabled in the current environment
+ * Only shows for admin users when EMAIL_BANNER config is 'on'
  */
 
-import { AlertCircle, Mail } from 'lucide-react';
+import { AlertCircle, Mail, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { config } from '@/config';
+import { getCurrentUser } from '@/lib/auth';
 
 interface EmailStatus {
   enabled: boolean;
@@ -14,54 +17,78 @@ interface EmailStatus {
 
 export function EmailStatusBanner() {
   const [emailStatus, setEmailStatus] = useState<EmailStatus | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const user = getCurrentUser();
 
   useEffect(() => {
+    // Check if banner was previously dismissed
+    const dismissedState = localStorage.getItem('email-banner:dismissed');
+    if (dismissedState === 'true') {
+      setDismissed(true);
+    }
+
     // Check email status
     fetch('/api/email/status')
       .then(res => res.json())
       .then(data => {
         setEmailStatus(data);
-        setIsVisible(!data.enabled);
       })
       .catch(err => {
         console.warn('Failed to fetch email status:', err);
-        setIsVisible(false);
       });
   }, []);
 
-  if (!isVisible || !emailStatus) {
+  // Show only when:
+  // 1. EMAIL_BANNER config is 'on'
+  // 2. User is admin
+  // 3. Banner not dismissed
+  // 4. Email is disabled
+  if (
+    config.emailBanner !== 'on' ||
+    user?.role !== 'admin' ||
+    dismissed ||
+    !emailStatus ||
+    emailStatus.enabled
+  ) {
     return null;
   }
 
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem('email-banner:dismissed', 'true');
+  };
+
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+    <div 
+      className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4"
+      data-testid="email-banner"
+    >
       <div className="flex items-start">
-        <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
+        <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
         <div className="flex-1">
-          <h3 className="text-sm font-medium text-amber-800">
-            Email Notifications Disabled
+          <h3 className="text-sm font-medium text-blue-800">
+            Email Service Disabled
           </h3>
-          <p className="text-sm text-amber-700 mt-1">
-            Email notifications are currently disabled in this environment. 
-            Users will not receive welcome emails, payment reminders, or other notifications.
+          <p className="text-sm text-blue-700 mt-1">
+            Email notifications are currently disabled. Emails will be logged to the console instead of being sent.
           </p>
-          <div className="mt-2 text-xs text-amber-600">
-            <p>To enable email notifications:</p>
-            <ul className="list-disc list-inside mt-1 space-y-1">
-              <li>Set the <code className="bg-amber-100 px-1 rounded">SENDGRID_API_KEY</code> environment variable</li>
-              <li>Configure <code className="bg-amber-100 px-1 rounded">EMAIL_FROM</code> and <code className="bg-amber-100 px-1 rounded">EMAIL_REPLY_TO</code></li>
-              <li>Verify your sender domain in SendGrid</li>
-            </ul>
-          </div>
         </div>
-        <button
-          onClick={() => setIsVisible(false)}
-          className="text-amber-600 hover:text-amber-800 ml-2"
-          aria-label="Dismiss banner"
-        >
-          ×
-        </button>
+        <div className="flex items-center space-x-2 ml-2">
+          <button
+            onClick={handleDismiss}
+            className="text-xs text-blue-600 hover:text-blue-800 underline"
+            aria-label="Don't show again"
+          >
+            Don't show again
+          </button>
+          <button
+            onClick={handleDismiss}
+            className="text-blue-600 hover:text-blue-800"
+            aria-label="Dismiss banner"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

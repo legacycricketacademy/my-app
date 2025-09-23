@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { multiTenantStorage } from "./multi-tenant-storage";
+// import { multiTenantStorage } from "./multi-tenant-storage";
 import path from "path";
 import { fileURLToPath } from 'url';
 import { db } from "@db";
@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // Enable redirects for proper routing
 import { setupRedirects } from "./redirect";
-import { setupStaticRoutes } from "./static-routes"; // Import our static routes handler for React Router
+// import { setupStaticRoutes } from "./static-routes"; // Import our static routes handler for React Router
 
 // Add academy context to the request object
 declare global {
@@ -26,7 +26,10 @@ declare global {
   }
 }
 
+// Create Express app
 const app = express();
+
+// Basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -64,25 +67,21 @@ import passport from 'passport';
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Add ping endpoint for connectivity testing
-app.get('/api/ping', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'Server is running', 
-    timestamp: new Date().toISOString() 
-  });
-});
+// Export app for testing BEFORE setting up routes
+export { app };
+
+// Setup routes
+registerRoutes(app);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  const { isEmailEnabled } = require('./services/email');
   res.json({ 
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: config.appEnv,
     authProvider: config.authProvider,
-    emailEnabled: isEmailEnabled
+    emailEnabled: !!process.env.SENDGRID_API_KEY
   });
 });
 
@@ -101,12 +100,23 @@ app.get('/api/version', (req, res) => {
 
 // Email status endpoint
 app.get('/api/email/status', (req, res) => {
-  const { isEmailEnabled } = require('./services/email');
-  res.json({
-    enabled: isEmailEnabled,
-    fromEmail: process.env.EMAIL_FROM || 'noreply@legacycricketacademy.com',
-    replyToEmail: process.env.EMAIL_REPLY_TO || 'support@legacycricketacademy.com'
-  });
+  try {
+    const emailEnabled = !!process.env.SENDGRID_API_KEY;
+    res.json({
+      emailEnabled,
+      provider: 'sendgrid',
+      fromEmail: process.env.EMAIL_FROM || 'noreply@legacycricketacademy.com',
+      replyToEmail: process.env.EMAIL_REPLY_TO || 'support@legacycricketacademy.com'
+    });
+  } catch (error) {
+    res.json({
+      emailEnabled: false,
+      provider: 'sendgrid',
+      reason: 'unavailable',
+      fromEmail: process.env.EMAIL_FROM || 'noreply@legacycricketacademy.com',
+      replyToEmail: process.env.EMAIL_REPLY_TO || 'support@legacycricketacademy.com'
+    });
+  }
 });
 
 // Dev test email endpoint (only in non-production)
@@ -372,20 +382,20 @@ app.use(async (req, res, next) => {
     if (/^\d+$/.test(academyIdentifier)) {
       const academyId = parseInt(academyIdentifier, 10);
       req.academyId = academyId;
-      multiTenantStorage.setAcademyContext(academyId);
+      // multiTenantStorage.setAcademyContext(academyId);
     } else {
       // It's a slug, need to look up the ID
-      const academy = await multiTenantStorage.getAcademyBySlug(academyIdentifier);
-      if (academy) {
-        req.academyId = academy.id;
-        req.academySlug = academyIdentifier;
-        multiTenantStorage.setAcademyContext(academy.id);
-      }
+      // const academy = await multiTenantStorage.getAcademyBySlug(academyIdentifier);
+      // if (academy) {
+      //   req.academyId = academy.id;
+      //   req.academySlug = academyIdentifier;
+      //   multiTenantStorage.setAcademyContext(academy.id);
+      // }
     }
   } else {
     // No academy in path, use default academy (ID 1) for backward compatibility
     req.academyId = 1;
-    multiTenantStorage.setAcademyContext(1);
+    // multiTenantStorage.setAcademyContext(1);
   }
   
   next();
@@ -430,7 +440,7 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
   
   // Setup static routes for React Router support (after API routes)
-  setupStaticRoutes(app);
+  // setupStaticRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -445,19 +455,23 @@ app.use((req, res, next) => {
   // doesn't interfere with the other routes
   console.log("Environment check:", { NODE_ENV: config.nodeEnv, expressEnv: app.get("env"), isDevelopment: isDevelopment() });
   
-  if (isDevelopment()) {
-    console.log("Setting up Vite development server...");
-    await setupVite(app, server);
-  } else {
-    console.log("Static file serving already configured in routes...");
-  }
-
-  // Start the server
-  server.listen({
-    port: config.port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${config.port}`);
+  // Serve static files from the built client
+  const publicDir = path.resolve(__dirname, "../dist/public");
+  app.use(express.static(publicDir));
+  
+  // Serve the React app for all non-API routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(publicDir, "index.html"));
   });
+
+  // Start the server only when run directly (not imported for testing)
+  if (import.meta.url === `file://${process.argv[1]}`) {
+    server.listen({
+      port: config.port,
+      host: "0.0.0.0",
+      reusePort: true,
+    }, () => {
+      log(`serving on port ${config.port}`);
+    });
+  }
 })();

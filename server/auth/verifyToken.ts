@@ -136,32 +136,53 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
   const token = extractToken(req);
   console.log('Auth token received:', token);
   
-  // Handle mock tokens only if AUTH_PROVIDER is mock
-  if (AUTH_PROVIDER === 'mock' && token && token.startsWith('mock-token-')) {
-    console.log('Processing mock token:', token);
-    const userId = token.replace('mock-token-', '');
-    
-    // Determine user type based on token
-    let user;
-    if (token === 'mock-token-admin') {
-      user = {
-        id: 'admin-1',
-        email: 'admin@test.com',
-        name: 'Test Admin',
-        roles: ['admin', 'parent']
-      };
-    } else {
-      user = {
-        id: userId,
-        email: 'parent@test.com',
-        name: 'Test Parent',
-        roles: ['parent']
-      };
+  // Handle mock tokens if AUTH_PROVIDER is mock
+  if (AUTH_PROVIDER === 'mock') {
+    if (!token) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    req.user = user;
-    console.log('Mock user set:', req.user);
-    return next();
+    // Parse mock token format: mock:<id>:<role>
+    if (token.startsWith('mock:')) {
+      const parts = token.split(':');
+      if (parts.length === 3) {
+        const [, id, role] = parts;
+        req.user = {
+          id,
+          email: `test+${id}@example.com`,
+          name: role === 'admin' ? 'Test Admin' : 'Test Parent',
+          roles: [role]
+        };
+        console.log('Mock user set:', req.user);
+        return next();
+      }
+    }
+    
+    // Legacy mock token support
+    if (token.startsWith('mock-token-')) {
+      const userId = token.replace('mock-token-', '');
+      let user;
+      if (token === 'mock-token-admin') {
+        user = {
+          id: '1',
+          email: 'test+1@example.com',
+          name: 'Test Admin',
+          roles: ['admin']
+        };
+      } else {
+        user = {
+          id: '2',
+          email: 'test+2@example.com',
+          name: 'Test Parent',
+          roles: ['parent']
+        };
+      }
+      req.user = user;
+      console.log('Mock user set:', req.user);
+      return next();
+    }
+    
+    return res.status(401).json({ error: 'User not authenticated' });
   }
 
   // If AUTH_PROVIDER is keycloak, require proper Keycloak configuration
@@ -214,7 +235,7 @@ export function requireRole(role: string) {
       }
 
       if (!req.user.roles.includes(role)) {
-        return res.status(403).json({ error: `Role '${role}' required` });
+        return res.status(403).json({ error: 'Insufficient role' });
       }
 
       return next();
@@ -231,7 +252,7 @@ export function requireRole(role: string) {
     }
 
     if (!req.user.roles.includes(role)) {
-      return res.status(403).json({ error: `Role '${role}' required` });
+      return res.status(403).json({ error: 'Insufficient role' });
     }
 
     next();

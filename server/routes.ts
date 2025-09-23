@@ -11,9 +11,9 @@ export function registerRoutes(app: Express) {
   });
 
   // Protected API routes with authentication
-  app.use("/api/admin/*", requireAuth, requireRole("admin"));
-  app.use("/api/parent/*", requireAuth, requireRole("parent"));
-  app.use("/api/coach/*", requireAuth, requireRole("coach"));
+  app.use("/api/admin/*", requireAuth);
+  app.use("/api/parent/*", requireAuth);
+  app.use("/api/coach/*", requireAuth);
 
   // Test endpoints for role verification
   app.get("/api/admin/test", (req, res) => {
@@ -26,7 +26,11 @@ export function registerRoutes(app: Express) {
 
   // Public health check
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", keycloak_enabled: process.env.KEYCLOAK_ENABLED });
+    res.json({ 
+      status: "ok", 
+      keycloak_enabled: process.env.KEYCLOAK_ENABLED,
+      emailEnabled: !!process.env.SENDGRID_API_KEY
+    });
   });
 
   // Setup API routes

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Users, UserCheck, Calendar, DollarSign, AlertTriangle, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
-import { EmailStatusBanner } from "@/components/ui/email-status-banner";
+import { TID } from "@/ui/testids";
 
 export default function AdminDashboard() {
   // Fetch basic stats for the dashboard
@@ -39,17 +39,16 @@ export default function AdminDashboard() {
     <MainLayout>
       <div className="container mx-auto p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight" data-testid={TID.dashboard.title}>Admin Dashboard</h1>
           <p className="text-muted-foreground">
             Manage your cricket academy operations
           </p>
         </div>
 
-        <EmailStatusBanner />
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card data-testid={TID.dashboard.stats}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -62,7 +61,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-testid={TID.dashboard.players}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Coaches</CardTitle>
               <UserCheck className="h-4 w-4 text-muted-foreground" />
@@ -75,7 +74,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-testid={TID.dashboard.schedule}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Training Sessions</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -88,7 +87,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-testid={TID.dashboard.payments}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Revenue</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -104,7 +103,7 @@ export default function AdminDashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card>
+          <Card data-testid={TID.dashboard.fitness}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserCheck className="h-5 w-5" />
@@ -129,7 +128,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-testid={TID.dashboard.meal}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
@@ -148,7 +147,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-testid={TID.dashboard.announcements}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
@@ -216,7 +215,7 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/admin/settings">
+              <Link href="/account">
                 <Button className="w-full">
                   System Settings
                 </Button>

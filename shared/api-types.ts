@@ -1,171 +1,39 @@
-/**
- * Shared API response types for both frontend and backend
- */
+// API response types for the cricket academy app
 
-/**
- * Common error types that can be returned from the API
- */
-export type ApiErrorType = 
-  | 'InvalidInputFormat'
-  | 'UsernameAlreadyExists'
-  | 'EmailAlreadyRegistered'
-  | 'DatabaseError'
-  | 'EmailSendFailure'
-  | 'InvalidCredentials'
-  | 'UserNotVerified'
-  | 'DuplicateRequest'
-  | 'NotFound'
-  | 'Unauthorized'
-  | 'Forbidden'
-  | 'AccountLocked'
-  | 'AccountDisabled'
-  | 'TooManyAttempts'
-  | 'SessionExpired'
-  | 'AuthorizationRequired';
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
 
-/**
- * Base success response structure
- */
-export interface ApiSuccessResponse<T = any> {
+export interface ApiSuccessResponse<T = any> extends ApiResponse<T> {
   success: true;
-  message: string;
   data: T;
 }
 
-/**
- * Base error response structure
- */
-export interface ApiErrorResponse {
+export interface ApiErrorResponse extends ApiResponse {
   success: false;
-  message: string;
-  error?: ApiErrorType | string;
-  details?: string;
-  errorCode?: string;
-  fields?: string[];
+  error: string;
+  message?: string;
 }
 
-/**
- * Union type for all API responses
- */
-export type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
-
-/**
- * Helper to extract the data type from a success response
- */
 export function isApiSuccess<T>(response: ApiResponse<T>): response is ApiSuccessResponse<T> {
   return response.success === true;
 }
 
-/**
- * Helper to check if a response is an error
- */
-export function isApiError(response: ApiResponse): response is ApiErrorResponse {
+export function isApiError<T>(response: ApiResponse<T>): response is ApiErrorResponse {
   return response.success === false;
 }
 
-/**
- * Helper to check for specific error types
- */
-export function hasApiErrorType(response: ApiResponse, errorType: ApiErrorType): boolean {
-  return isApiError(response) && response.error === errorType;
-}
-
-/**
- * Auth related response types
- */
 export interface AuthResponse {
   user: {
-    id: number;
-    username: string;
-    fullName: string;
+    id: string;
     email: string;
-    role: string;
-    isVerified: boolean;
-    academyId?: number;
-    academyName?: string;
+    name: string;
+    roles: string[];
   };
   token?: string;
+  message?: string;
 }
 
-/**
- * Player related response types
- */
-export interface PlayerResponse {
-  id: number;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  ageGroup: string;
-  parentId: number;
-  parentName: string;
-  parentEmail: string;
-  academyId: number;
-  academyName: string;
-}
-
-/**
- * Session related response types
- */
-export interface SessionResponse {
-  id: number;
-  title: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  location: string;
-  notes: string;
-  coachId: number;
-  coachName: string;
-  academyId: number;
-  ageGroup: string;
-}
-
-/**
- * Announcement related response types
- */
-export interface AnnouncementResponse {
-  id: number;
-  title: string;
-  content: string;
-  createdAt: string;
-  createdById: number;
-  createdByName: string;
-  academyId: number;
-  isPinned: boolean;
-  isPublic: boolean;
-}
-
-/**
- * Payment related response types
- */
-export interface PaymentResponse {
-  id: number;
-  amount: number;
-  currency: string;
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
-  playerId: number;
-  playerName: string;
-  parentId: number;
-  parentName: string;
-  academyId: number;
-  date: string;
-  notes?: string;
-  paymentMethod?: string;
-  refNumber?: string;
-}
-
-/**
- * Connection request related response types
- */
-export interface ConnectionRequestResponse {
-  id: number;
-  playerId: number;
-  playerFirstName: string;
-  playerLastName: string;
-  parentId: number;
-  parentName: string;
-  parentEmail: string;
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
-  academyId: number;
-}

@@ -1,0 +1,108 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - heading [level=1]
+        - generic [ref=e8]: Admin
+      - generic [ref=e9]:
+        - generic [ref=e10]: Legacy Cricket Academy
+        - button "U admin@test.com admin" [ref=e12] [cursor=pointer]:
+          - generic [ref=e13] [cursor=pointer]:
+            - generic [ref=e14] [cursor=pointer]: U
+            - generic [ref=e15] [cursor=pointer]:
+              - generic [ref=e16] [cursor=pointer]: admin@test.com
+              - generic [ref=e17] [cursor=pointer]: admin
+            - img [ref=e18] [cursor=pointer]
+  - main [ref=e20]:
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - heading "Admin Dashboard" [level=1] [ref=e23]
+        - paragraph [ref=e24]: Manage your cricket academy operations
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - heading "Total Users" [level=3] [ref=e28]
+            - img [ref=e29]
+          - generic [ref=e34]:
+            - generic [ref=e35]: "0"
+            - paragraph [ref=e36]: Active academy members
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - heading "Pending Coaches" [level=3] [ref=e39]
+            - img [ref=e40]
+          - generic [ref=e44]:
+            - generic [ref=e45]: "0"
+            - paragraph [ref=e46]: Awaiting approval
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - heading "Training Sessions" [level=3] [ref=e49]
+            - img [ref=e50]
+          - generic [ref=e52]:
+            - generic [ref=e53]: "0"
+            - paragraph [ref=e54]: This month
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - heading "Revenue" [level=3] [ref=e57]
+            - img [ref=e58]
+          - generic [ref=e60]:
+            - generic [ref=e61]: $0
+            - paragraph [ref=e62]: This month
+      - generic [ref=e63]:
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - heading "Coach Management" [level=3] [ref=e66]:
+              - img [ref=e67]
+              - text: Coach Management
+            - paragraph [ref=e71]: Review and approve new coach applications
+          - link "Manage Coaches" [ref=e73] [cursor=pointer]:
+            - /url: /admin/coaches
+            - button "Manage Coaches" [ref=e74] [cursor=pointer]
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - heading "User Management" [level=3] [ref=e77]:
+              - img [ref=e78]
+              - text: User Management
+            - paragraph [ref=e83]: Manage parents, students, and user accounts
+          - link "Manage Users" [ref=e85] [cursor=pointer]:
+            - /url: /admin/users
+            - button "Manage Users" [ref=e86] [cursor=pointer]
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - heading "Training Sessions" [level=3] [ref=e89]:
+              - img [ref=e90]
+              - text: Training Sessions
+            - paragraph [ref=e92]: Manage schedules and training programs
+          - link "Manage Sessions" [ref=e94] [cursor=pointer]:
+            - /url: /admin/sessions
+            - button "Manage Sessions" [ref=e95] [cursor=pointer]
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - heading "Financial Management" [level=3] [ref=e98]:
+              - img [ref=e99]
+              - text: Financial Management
+            - paragraph [ref=e101]: Review payments and financial reports
+          - link "Manage Payments" [ref=e103] [cursor=pointer]:
+            - /url: /admin/payments
+            - button "Manage Payments" [ref=e104] [cursor=pointer]
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - heading "Reports & Analytics" [level=3] [ref=e107]:
+              - img [ref=e108]
+              - text: Reports & Analytics
+            - paragraph [ref=e111]: View performance metrics and insights
+          - link "View Reports" [ref=e113] [cursor=pointer]:
+            - /url: /admin/reports
+            - button "View Reports" [ref=e114] [cursor=pointer]
+        - generic [ref=e115]:
+          - generic [ref=e116]:
+            - heading "System Settings" [level=3] [ref=e117]:
+              - img [ref=e118]
+              - text: System Settings
+            - paragraph [ref=e120]: Academy settings and configuration
+          - link "System Settings" [ref=e122] [cursor=pointer]:
+            - /url: /account
+            - button "System Settings" [ref=e123] [cursor=pointer]
+```

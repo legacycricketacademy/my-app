@@ -4,20 +4,19 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import request from 'supertest';
-import { app } from '../server/index';
+import { httpRequest } from './utils/http';
 
 describe('Email API Endpoints', () => {
   describe('GET /api/email/status', () => {
     it('should return email status', async () => {
-      const response = await request(app)
+      const response = await httpRequest()
         .get('/api/email/status')
         .expect(200);
 
-      expect(response.body).toHaveProperty('enabled');
+      expect(response.body).toHaveProperty('emailEnabled');
       expect(response.body).toHaveProperty('fromEmail');
       expect(response.body).toHaveProperty('replyToEmail');
-      expect(typeof response.body.enabled).toBe('boolean');
+      expect(typeof response.body.emailEnabled).toBe('boolean');
     });
   });
 
@@ -26,7 +25,7 @@ describe('Email API Endpoints', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'development';
 
-      const response = await request(app)
+      const response = await httpRequest()
         .post('/api/dev/test-email')
         .send({ to: 'test@example.com' })
         .expect(200);
@@ -42,7 +41,7 @@ describe('Email API Endpoints', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'development';
 
-      const response = await request(app)
+      const response = await httpRequest()
         .post('/api/dev/test-email')
         .send({ to: 'custom@example.com' })
         .expect(200);
@@ -58,7 +57,7 @@ describe('Email API Endpoints', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'development';
 
-      const response = await request(app)
+      const response = await httpRequest()
         .post('/api/dev/test-email')
         .send({})
         .expect(200);
@@ -74,7 +73,7 @@ describe('Email API Endpoints', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
 
-      const response = await request(app)
+      const response = await httpRequest()
         .post('/api/dev/test-email')
         .send({ to: 'test@example.com' })
         .expect(404);
@@ -89,7 +88,7 @@ describe('Email API Endpoints', () => {
 
   describe('GET /api/health', () => {
     it('should include emailEnabled in health check', async () => {
-      const response = await request(app)
+      const response = await httpRequest()
         .get('/api/health')
         .expect(200);
 

@@ -1,0 +1,43 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - heading "Account" [level=1] [ref=e8]
+        - generic [ref=e9]: Admin
+      - generic [ref=e10]:
+        - generic [ref=e11]: Legacy Cricket Academy
+        - button "U admin@test.com admin" [ref=e13] [cursor=pointer]:
+          - generic [ref=e14] [cursor=pointer]:
+            - generic [ref=e15] [cursor=pointer]: U
+            - generic [ref=e16] [cursor=pointer]:
+              - generic [ref=e17] [cursor=pointer]: admin@test.com
+              - generic [ref=e18] [cursor=pointer]: admin
+            - img [ref=e19] [cursor=pointer]
+  - main [ref=e21]:
+    - generic [ref=e22]:
+      - navigation [ref=e24]:
+        - button "Profile" [ref=e25] [cursor=pointer]
+        - button "Security" [ref=e26] [cursor=pointer]
+        - button "Notifications" [ref=e27] [cursor=pointer]
+        - button "Organization" [ref=e28] [cursor=pointer]
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - heading "Profile Information" [level=2] [ref=e33]
+          - button "Edit Profile" [ref=e34] [cursor=pointer]
+        - generic [ref=e36]:
+          - generic [ref=e37]:
+            - generic [ref=e38]: Name
+            - paragraph [ref=e39]: John Doe
+          - generic [ref=e40]:
+            - generic [ref=e41]: Email
+            - paragraph [ref=e42]: john@example.com
+          - generic [ref=e43]:
+            - generic [ref=e44]: Phone
+            - paragraph [ref=e45]: +1 (555) 123-4567
+          - generic [ref=e46]:
+            - generic [ref=e47]: Address
+            - paragraph [ref=e48]: 123 Main St, City, State 12345
+```

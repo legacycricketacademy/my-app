@@ -8,6 +8,7 @@ export interface ClientConfig {
   apiBaseUrl: string;
   appOrigin: string;
   authProvider: 'mock' | 'keycloak' | 'firebase';
+  emailBanner: 'on' | 'off';
   keycloak?: {
     url: string;
     realm: string;
@@ -47,6 +48,7 @@ export const config: ClientConfig = {
   apiBaseUrl: getEnvVar('VITE_API_BASE_URL', '/api'),
   appOrigin: getEnvVar('VITE_APP_ORIGIN', 'http://localhost:3000'),
   authProvider: validateAuthProvider(getEnvVar('VITE_AUTH_PROVIDER', 'mock')),
+  emailBanner: (getEnvVar('VITE_EMAIL_BANNER', 'off') as 'on' | 'off') || 'off',
   
   // Keycloak configuration (only if auth provider is keycloak)
   ...(getEnvVar('VITE_AUTH_PROVIDER', 'mock') === 'keycloak' && {

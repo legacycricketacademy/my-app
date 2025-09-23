@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, Megaphone, Eye, Clock, Users, Calendar, Search, Filter } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
-import { EmailStatusBanner } from "@/components/ui/email-status-banner";
 
 export default function AnnouncementsPage() {
   const [tab, setTab] = useState<string>("all");
@@ -79,7 +78,6 @@ export default function AnnouncementsPage() {
   return (
     <MainLayout title="Announcements">
       <div className="space-y-6">
-        <EmailStatusBanner />
         
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

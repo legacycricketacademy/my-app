@@ -3,6 +3,107 @@ import { sendWelcomeParent, sendChildAdded, sendPaymentReminder, sendTestEmail }
 import { requireAuth, requireRole } from "./auth/verifyToken";
 
 export function setupApiRoutes(app: Express) {
+  // Authentication endpoints
+  app.post('/api/auth/login', (req: Request, res: Response) => {
+    const { email, password } = req.body;
+    
+    // Mock authentication
+    if (email === 'admin@test.com' && password === 'password123') {
+      res.json({
+        success: true,
+        user: {
+          id: 'admin-1',
+          email: 'admin@test.com',
+          name: 'Test Admin',
+          roles: ['admin', 'parent']
+        },
+        token: 'mock-token-admin'
+      });
+    } else if (email === 'parent@test.com' && password === 'password123') {
+      res.json({
+        success: true,
+        user: {
+          id: 'parent-1',
+          email: 'parent@test.com',
+          name: 'Test Parent',
+          roles: ['parent']
+        },
+        token: 'mock-token-1'
+      });
+    } else {
+      res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+  });
+
+  app.post('/api/auth/logout', (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  });
+
+  // Admin stats endpoint
+  app.get('/api/admin/stats', requireRole('admin'), (req: Request, res: Response) => {
+    try {
+      // Mock admin statistics
+      const stats = {
+        totalUsers: 156,
+        pendingCoaches: 3,
+        trainingSessions: 24,
+        revenue: 12500,
+        activePlayers: 89,
+        totalCoaches: 12,
+        monthlyGrowth: 15.2,
+        averageSessionAttendance: 18.5
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      res.status(500).json({ error: 'Failed to fetch admin statistics' });
+    }
+  });
+
+  // Logout endpoints
+  app.post('/api/logout', (req: Request, res: Response) => {
+    try {
+      // Clear any session data
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.error('Session destroy error:', err);
+          }
+        });
+      }
+      
+      res.json({ success: true, message: 'Logged out successfully' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ success: false, error: 'Logout failed' });
+    }
+  });
+
+  app.post('/api/standard-logout', (req: Request, res: Response) => {
+    try {
+      // Clear any session data
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.error('Session destroy error:', err);
+          }
+        });
+      }
+      
+      res.json({ success: true, message: 'Logged out successfully' });
+    } catch (error) {
+      console.error('Standard logout error:', error);
+      res.status(500).json({ success: false, error: 'Logout failed' });
+    }
+  });
+
   // Players API
   app.get('/api/players', async (req: Request, res: Response) => {
     try {
@@ -652,6 +753,7 @@ export function setupApiRoutes(app: Express) {
       const nextWeek = new Date(now);
       nextWeek.setDate(nextWeek.getDate() + 7);
 
+      // Parent only sees their child's team (teamId 1)
       const schedule = [
         {
           id: 1,
@@ -681,17 +783,6 @@ export function setupApiRoutes(app: Express) {
             { playerId: 1, status: 'going' },
             { playerId: 2, status: 'no' }
           ]
-        },
-        {
-          id: 3,
-          type: 'practice',
-          teamId: 2,
-          teamName: 'Under 14s B',
-          start: nextWeek.toISOString(),
-          end: new Date(nextWeek.getTime() + 2 * 60 * 60 * 1000).toISOString(), // +2 hours
-          location: 'Field 2',
-          notes: 'Bowling practice',
-          myKidsStatus: []
         }
       ];
       
@@ -705,16 +796,27 @@ export function setupApiRoutes(app: Express) {
   app.get('/api/schedule/admin', requireRole('admin'), async (req: Request, res: Response) => {
     try {
       const { from, to } = req.query;
+      console.log('Admin schedule request:', { from, to, user: req.user });
       
-      // Mock admin schedule data - replace with actual database queries
+      // Mock admin schedule data - future-dated sessions for multiple teams
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dayAfter = new Date(now);
+      dayAfter.setDate(dayAfter.getDate() + 2);
+      const nextWeek = new Date(now);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      const nextMonth = new Date(now);
+      nextMonth.setDate(nextMonth.getDate() + 30);
+
       const schedule = [
         {
           id: 1,
           type: 'practice',
           teamId: 1,
           teamName: 'Under 12s A',
-          start: '2024-01-15T10:00:00Z',
-          end: '2024-01-15T12:00:00Z',
+          start: tomorrow.toISOString(),
+          end: new Date(tomorrow.getTime() + 2 * 60 * 60 * 1000).toISOString(),
           location: 'Field 1',
           notes: 'Focus on batting technique'
         },
@@ -723,14 +825,35 @@ export function setupApiRoutes(app: Express) {
           type: 'game',
           teamId: 1,
           teamName: 'Under 12s A',
-          start: '2024-01-20T14:00:00Z',
-          end: '2024-01-20T16:00:00Z',
+          start: dayAfter.toISOString(),
+          end: new Date(dayAfter.getTime() + 2 * 60 * 60 * 1000).toISOString(),
           location: 'Cricket Ground',
           opponent: 'Riverside CC',
           notes: 'League match'
         },
         {
           id: 3,
+          type: 'practice',
+          teamId: 2,
+          teamName: 'Under 14s B',
+          start: nextWeek.toISOString(),
+          end: new Date(nextWeek.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+          location: 'Field 2',
+          notes: 'Fielding practice'
+        },
+        {
+          id: 4,
+          type: 'game',
+          teamId: 2,
+          teamName: 'Under 14s B',
+          start: nextMonth.toISOString(),
+          end: new Date(nextMonth.getTime() + 3 * 60 * 60 * 1000).toISOString(),
+          location: 'Main Ground',
+          opponent: 'City CC',
+          notes: 'Championship match'
+        },
+        {
+          id: 5,
           type: 'practice',
           teamId: 2,
           teamName: 'Under 14s B',
@@ -752,6 +875,7 @@ export function setupApiRoutes(app: Express) {
         }
       ];
       
+      console.log('Admin schedule response:', { scheduleLength: schedule.length, firstItem: schedule[0] });
       res.json(schedule);
     } catch (error) {
       console.error('Error fetching admin schedule:', error);
@@ -764,7 +888,7 @@ export function setupApiRoutes(app: Express) {
     try {
       const { sessionId } = req.query;
       const userId = req.user?.id;
-      const userRole = req.user?.role;
+      const userRole = req.user?.roles?.[0];
       
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });

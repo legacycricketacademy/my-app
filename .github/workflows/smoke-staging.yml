@@ -1,0 +1,221 @@
+name: Staging Smoke Tests
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      staging_url:
+        description: 'Staging URL to test'
+        required: true
+        default: 'https://cricket-academy-staging.onrender.com'
+      skip_e2e:
+        description: 'Skip E2E tests'
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '18'
+  PLAYWRIGHT_BROWSERS: '0'
+
+jobs:
+  # Smoke Tests using bash script
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Make smoke test script executable
+      run: chmod +x scripts/smoke-test.sh
+      
+    - name: Run Smoke Tests
+      run: npm run test:smoke:prod
+      env:
+        BASE_URL: ${{ github.event.inputs.staging_url || 'https://cricket-academy-staging.onrender.com' }}
+        
+    - name: Upload Smoke Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: smoke-test-results
+        path: smoke-test-results.log
+        retention-days: 7
+
+  # E2E Smoke Tests
+  e2e-smoke-tests:
+    name: E2E Smoke Tests
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.inputs.skip_e2e }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps
+      
+    - name: Wait for staging to be ready
+      run: |
+        STAGING_URL="${{ github.event.inputs.staging_url || 'https://cricket-academy-staging.onrender.com' }}"
+        echo "Waiting for staging environment to be ready..."
+        for i in {1..30}; do
+          if curl -f "$STAGING_URL/api/health" > /dev/null 2>&1; then
+            echo "Staging environment is ready!"
+            break
+          fi
+          echo "Attempt $i: Staging not ready yet, waiting 10 seconds..."
+          sleep 10
+        done
+        
+        # Final check
+        if ! curl -f "$STAGING_URL/api/health" > /dev/null 2>&1; then
+          echo "Staging environment is not ready after 5 minutes"
+          exit 1
+        fi
+        
+    - name: Run E2E Smoke Tests
+      run: npx playwright test e2e/smoke.prod.spec.ts
+      env:
+        BASE_URL: ${{ github.event.inputs.staging_url || 'https://cricket-academy-staging.onrender.com' }}
+        
+    - name: Upload E2E Smoke Test Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-smoke-report
+        path: playwright-report/
+        retention-days: 7
+
+  # Health Check Tests
+  health-check-tests:
+    name: Health Check Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run Health Check Tests
+      run: |
+        STAGING_URL="${{ github.event.inputs.staging_url || 'https://cricket-academy-staging.onrender.com' }}"
+        
+        echo "Testing staging environment: $STAGING_URL"
+        
+        # Test health endpoint
+        echo "Testing /api/health..."
+        HEALTH_RESPONSE=$(curl -s "$STAGING_URL/api/health")
+        echo "Health response: $HEALTH_RESPONSE"
+        
+        # Test version endpoint
+        echo "Testing /api/version..."
+        VERSION_RESPONSE=$(curl -s "$STAGING_URL/api/version")
+        echo "Version response: $VERSION_RESPONSE"
+        
+        # Test ping endpoint
+        echo "Testing /api/ping..."
+        PING_RESPONSE=$(curl -s "$STAGING_URL/api/ping")
+        echo "Ping response: $PING_RESPONSE"
+        
+        # Test homepage
+        echo "Testing homepage..."
+        HOMEPAGE_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$STAGING_URL/")
+        echo "Homepage status: $HOMEPAGE_RESPONSE"
+        
+        # Verify all endpoints return 200
+        if [[ "$HOMEPAGE_RESPONSE" != "200" ]]; then
+          echo "Homepage test failed: expected 200, got $HOMEPAGE_RESPONSE"
+          exit 1
+        fi
+        
+        echo "All health checks passed!"
+
+  # Performance Tests on Staging
+  staging-performance-tests:
+    name: Staging Performance Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps
+      
+    - name: Run Staging Performance Tests
+      run: npx playwright test e2e/staging-performance.spec.ts
+      env:
+        BASE_URL: ${{ github.event.inputs.staging_url || 'https://cricket-academy-staging.onrender.com' }}
+        
+    - name: Upload Performance Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: staging-performance-report
+        path: playwright-report/
+        retention-days: 7
+
+  # Test Summary
+  staging-summary:
+    name: Staging Test Summary
+    runs-on: ubuntu-latest
+    needs: [smoke-tests, e2e-smoke-tests, health-check-tests, staging-performance-tests]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      
+    - name: Display staging test summary
+      run: |
+        echo "## Staging Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Smoke Tests | ${{ needs.smoke-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| E2E Smoke Tests | ${{ needs.e2e-smoke-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Health Check Tests | ${{ needs.health-check-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Staging Performance Tests | ${{ needs.staging-performance-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Staging URL:** ${{ github.event.inputs.staging_url || 'https://cricket-academy-staging.onrender.com' }}" >> $GITHUB_STEP_SUMMARY
+

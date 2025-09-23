@@ -1,202 +1,130 @@
-/**
- * Authentication Page
- * Supports multiple authentication providers: Keycloak, Firebase, and Mock
- */
-
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { signIn, getAuthProvider, getCurrentUser, onAuthStateChange } from '@/lib/auth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield, User } from 'lucide-react';
+import { signIn, isAuthInitialized, getCurrentUser, onAuthStateChange, getAuthProvider } from '@/lib/auth';
 
 export default function AuthPage() {
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-
-  const authProvider = getAuthProvider();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [authProvider] = useState(getAuthProvider());
 
   // Redirect if already authenticated
   useEffect(() => {
+    if (isAuthInitialized() && getCurrentUser()) {
+      window.location.href = '/';
+      return;
+    }
+
+    // Subscribe to auth state changes
     const unsubscribe = onAuthStateChange((user) => {
-      console.log('Auth state changed:', user);
       if (user) {
-        console.log('User authenticated, redirecting to dashboard...');
-        setLocation('/');
+        window.location.href = '/';
       }
     });
 
-    // Check if already authenticated
-    const currentUser = getCurrentUser();
-    console.log('Current user on mount:', currentUser);
-    if (currentUser) {
-      console.log('Already authenticated, redirecting to dashboard...');
-      setLocation('/');
-    }
-
     return unsubscribe;
-  }, [setLocation]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoading(true);
+    setError('');
 
     try {
-      console.log('Attempting to sign in with:', formData.email);
-      const user = await signIn(formData);
-      console.log('Sign in successful, user:', user);
-      toast({
-        title: "Welcome back!",
-        description: "You have been successfully signed in.",
-      });
-      console.log('Redirecting to dashboard...');
-      setLocation('/');
-    } catch (error: any) {
-      toast({
-        title: "Sign in failed",
-        description: error.message || "Please check your credentials and try again.",
-        variant: "destructive",
-      });
+      const result = await signIn({ email, password });
+      if (result.ok) {
+        console.log('Login successful');
+        // Redirect will happen via auth state change listener
+      } else {
+        setError(result.error || 'Invalid credentials');
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
-
-  const handleKeycloakSignIn = async () => {
-    setIsLoading(true);
-    try {
-      await signIn();
-      // Keycloak will redirect, so this won't be reached
-    } catch (error: any) {
-      toast({
-        title: "Sign in failed",
-        description: error.message || "Failed to initiate Keycloak sign in.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Legacy Cricket Academy</h1>
-          <p className="mt-2 text-sm text-gray-600">Sign in to your account</p>
-          <p className="mt-1 text-xs text-gray-500">
-            Using {authProvider === 'keycloak' ? 'Keycloak' : authProvider === 'firebase' ? 'Firebase' : 'Mock'} authentication
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Legacy Cricket Academy
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Sign in to your account
           </p>
         </div>
-        
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {authProvider === 'keycloak' ? (
-                <Shield className="h-5 w-5" />
-              ) : (
-                <User className="h-5 w-5" />
-              )}
-              Sign In
-            </CardTitle>
-            <CardDescription>
-              {authProvider === 'keycloak' 
-                ? 'Sign in with your Keycloak account'
-                : 'Enter your credentials to access your account'
-              }
-            </CardDescription>
+            <CardTitle>Login</CardTitle>
           </CardHeader>
           <CardContent>
-            {authProvider === 'keycloak' ? (
-              <div className="space-y-4">
-                <Button 
-                  onClick={handleKeycloakSignIn}
-                  className="w-full" 
-                  disabled={isLoading}
-                  size="lg"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Redirecting to Keycloak...
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="mr-2 h-4 w-4" />
-                      Sign in with Keycloak
-                    </>
-                  )}
-                </Button>
-                <p className="text-xs text-gray-500 text-center">
-                  You will be redirected to your Keycloak login page
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+            {authProvider === 'mock' ? (
+              <form className="space-y-6" onSubmit={handleSubmit}>
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                    Email address
+                  </label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
+                    autoComplete="email"
                     required
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-1"
+                    placeholder="admin@test.com or parent@test.com"
                   />
                 </div>
-                
                 <div>
-                  <Label htmlFor="password">Password</Label>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    Password
+                  </label>
                   <Input
                     id="password"
                     name="password"
                     type="password"
+                    autoComplete="current-password"
                     required
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="mt-1"
+                    placeholder="password123"
                   />
                 </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
+                <div className="text-xs text-gray-500">
+                  <p>Test credentials:</p>
+                  <p>• Admin: admin@test.com / password123</p>
+                  <p>• Parent: parent@test.com / password123</p>
+                </div>
+                {error && (
+                  <div className="text-red-600 text-sm">{error}</div>
+                )}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    'Sign In'
-                  )}
+                  {loading ? 'Signing in...' : 'Sign in'}
                 </Button>
               </form>
-            )}
-            
-            {authProvider === 'mock' && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-md">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">Development Accounts</h3>
-                <div className="text-xs text-gray-600 space-y-1">
-                  <div><strong>Parent:</strong> parent@test.com / Test1234!</div>
-                  <div><strong>Admin:</strong> admin@test.com / Test1234!</div>
-                </div>
+            ) : (
+              <div className="space-y-4">
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    // For Keycloak, redirect to auth URL
+                    window.location.href = '/auth/keycloak';
+                  }}
+                >
+                  Sign in with Keycloak
+                </Button>
               </div>
             )}
           </CardContent>
