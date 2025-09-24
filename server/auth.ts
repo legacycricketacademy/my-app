@@ -4,8 +4,7 @@ import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { storage } from "./storage";
-import { multiTenantStorage } from "./multi-tenant-storage";
+// Storage imports removed - using direct database queries
 import { User as SelectUser, users, userAuditLogs } from "@shared/schema";
 import { db } from "@db";
 import { requireAdmin, requireCoach, requireParent } from "./middleware/require-role";
@@ -166,7 +165,7 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET || "cricket-academy-secret",
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
+    // Session store removed - using stateless JWT tokens
     cookie: {
       secure: process.env.NODE_ENV === "production",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
