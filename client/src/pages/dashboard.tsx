@@ -10,6 +10,7 @@ import { PaymentCard } from "@/components/dashboard/payment-card";
 import { AnnouncementsCard } from "@/components/dashboard/announcements-card";
 import { UserPlus, CalendarCheck2, Users, Heart, DollarSign, Megaphone, Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { ScheduleSessionDialog } from "@/components/sessions/schedule-session-dialog";
 import { Link } from "wouter";
 
@@ -18,6 +19,7 @@ export default function Dashboard() {
   
   const { data: stats, isLoading } = useQuery<any>({
     queryKey: ["/api/dashboard/stats"],
+    queryFn: () => api.get("/dashboard/stats")
   });
   
   return (

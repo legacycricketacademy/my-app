@@ -31,7 +31,8 @@ import { format, parseISO } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { apiRequest, queryClient } from "../lib/queryClient";
+import { api } from "../lib/api";
+import { queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Search, 
@@ -118,17 +119,12 @@ export default function PlayersPage() {
   
   const { data: players, isLoading } = useQuery<any[]>({
     queryKey: ["/api/players", ageGroup],
-    queryFn: () => fetch(`/api/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`).then(res => res.json())
+    queryFn: () => api.get(`/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`)
   });
   
   const createPlayerMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/players", data);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to create player");
-      }
-      return res.json();
+      return await api.post("/players", data);
     },
     onSuccess: () => {
       toast({

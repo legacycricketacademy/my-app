@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useMobile } from "@/hooks/use-mobile";
 import { AdminNotificationDropdown } from "@/components/admin-notification-dropdown";
+import { RoleBadge } from "@/components/auth/RoleBadge";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -72,6 +73,7 @@ export function MainLayout({ children, title }: MainLayoutProps) {
             
             {/* Right side actions */}
             <div className="flex items-center space-x-4">
+              <RoleBadge />
               <AdminNotificationDropdown />
               
               <div className="relative md:hidden">

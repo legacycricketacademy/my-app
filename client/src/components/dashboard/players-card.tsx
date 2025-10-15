@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Search, User, Heart, Mail } from "lucide-react";
 import { Link } from "wouter";
+import { api } from "@/lib/api";
 
 export function PlayersCard() {
   const [ageGroup, setAgeGroup] = useState<string>("all");
@@ -14,7 +15,7 @@ export function PlayersCard() {
   
   const { data: players, isLoading } = useQuery<any[]>({
     queryKey: ["/api/players", ageGroup],
-    queryFn: () => fetch(`/api/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`).then(res => res.json())
+    queryFn: () => api.get(`/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`)
   });
   
   const filteredPlayers = players?.filter(player => {

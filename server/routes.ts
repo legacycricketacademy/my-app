@@ -2,6 +2,7 @@ import { Express } from "express";
 import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
 import { verifyJwt, requireRole } from "./middleware/verifyJwt";
+import { setupApiRoutes } from "./api-routes";
 
 export function registerRoutes(app: Express) {
   // Disable local auth routes - return 404
@@ -28,12 +29,11 @@ export function registerRoutes(app: Express) {
     res.json({ status: "ok", keycloak_enabled: process.env.KEYCLOAK_ENABLED });
   });
 
-  // Setup Vite or static serving
-  if (app.get("env") === "development") {
-    setupVite(app);
-  } else {
-    serveStatic(app);
-  }
+  // Setup API routes
+  setupApiRoutes(app);
+
+  // Return the HTTP server
+  return createHttpServer(app);
 }
 
 export function createHttpServer(app: Express) {

@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { User, UserCircle, Users } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
+import { api } from "@/lib/api";
 
 export function ScheduleCard() {
   const { data: sessions, isLoading } = useQuery<any[]>({
     queryKey: ["/api/sessions/today"],
+    queryFn: () => api.get("/sessions/today")
   });
 
   const formatTime = (dateString: string) => {
