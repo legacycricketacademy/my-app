@@ -11,7 +11,10 @@
     "db:push": "drizzle-kit push --force --config=./drizzle.config.ts",
     "db:seed": "tsx db/seed.ts",
     "dev:client": "vite",
-    "dev:server": "tsx server/index.ts"
+    "dev:server": "tsx server/index.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -97,7 +100,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.55.0",
+    "@playwright/test": "^1.56.0",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",
     "@types/connect-pg-simple": "^7.0.3",
