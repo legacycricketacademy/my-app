@@ -1,14 +1,17 @@
 import { defineConfig } from "drizzle-kit";
 
-function pickDialect(url?: string) {
-  if (!url) throw new Error("DATABASE_URL is required");
-  return /^postgres(ql)?:\/\//i.test(url) ? "postgresql" : "sqlite";
-}
+const url = process.env.DATABASE_URL;
+if (!url) throw new Error("DATABASE_URL is required");
+
+const dialect =
+  url.startsWith("file:") || url.startsWith("sqlite")
+    ? "sqlite"
+    : "postgresql";
 
 export default defineConfig({
-  schema: "./db/**/*.ts",   // ← look for any TS schema in db/
+  schema: "./db/**/*.ts",
   out: "./drizzle",
-  dialect: pickDialect(process.env.DATABASE_URL),
-  dbCredentials: { url: process.env.DATABASE_URL! },
+  dialect,
+  dbCredentials: { url },
   strict: true,
 });
