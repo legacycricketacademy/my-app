@@ -1,5 +1,5 @@
 def plan_from_goal(goal:str):
-    slug = "Hello Agent — wiring PR" if "wiring" in goal else goal
+    slug = goal
     return [{
         "title": slug,
         "acceptance": "Creates a tiny harmless change and opens a PR.",
