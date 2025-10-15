@@ -81,6 +81,49 @@ app.get("/api/ping", (_req, res) => {
   });
 });
 
+// Dev login bypass endpoint (for testing without Firebase)
+app.post("/api/dev/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Development accounts for testing
+    const devAccounts = {
+      "admin@test.com": { password: "Test1234!", role: "admin", id: 1 },
+      "parent@test.com": { password: "Test1234!", role: "parent", id: 2 }
+    };
+    
+    const account = devAccounts[email];
+    
+    if (!account || account.password !== password) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials"
+      });
+    }
+    
+    // Create mock session
+    req.session.userId = account.id;
+    req.session.userRole = account.role;
+    
+    res.json({
+      success: true,
+      message: "Dev login successful",
+      user: {
+        id: account.id,
+        email: email,
+        role: account.role,
+        fullName: email.split('@')[0]
+      }
+    });
+  } catch (error) {
+    console.error("Dev login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Login failed"
+    });
+  }
+});
+
 // ---- SendGrid (optional in dev) ----
 const mailService = new MailService();
 if (process.env.SENDGRID_API_KEY) {
