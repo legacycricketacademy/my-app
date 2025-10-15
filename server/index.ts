@@ -269,7 +269,6 @@ app.use((req, res, next) => {
   let captured: Record<string, any> | undefined;
 
   const orig = res.json;
-  // @ts-expect-error - augment for capture
   res.json = function (bodyJson: any, ...args: any[]) {
     captured = bodyJson;
     // @ts-ignore
