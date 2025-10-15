@@ -846,18 +846,7 @@ export class DatabaseStorage implements IStorage {
     return updatedPayment;
   }
 
-  // Stripe methods
-  async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
-    const [updatedUser] = await db
-      .update(users)
-      .set({
-        stripeCustomerId: customerId,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, userId))
-      .returning();
-    return updatedUser;
-  }
+  // Stripe methods (duplicate removed - using implementation at line 159)
   
   async updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined> {
     const [updatedUser] = await db
