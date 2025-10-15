@@ -2,7 +2,7 @@ import os, re
 from git import Repo
 class RepoTool:
     def __init__(self, path:str='.') -> None:
-        self.repo = Repo(path)
+        self.repo = Repo(path, search_parent_directories=True)
         self.remote = os.getenv('GIT_REMOTE','origin')
     def start_feature_branch(self, title:str):
         slug = re.sub(r'[^a-z0-9]+','-', title.lower()).strip('-')
