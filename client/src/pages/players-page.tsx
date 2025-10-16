@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/layout/main-layout";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -70,6 +71,7 @@ const playerFormSchema = z.object({
 type PlayerFormValues = z.infer<typeof playerFormSchema>;
 
 export default function PlayersPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [ageGroup, setAgeGroup] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
@@ -80,6 +82,16 @@ export default function PlayersPage() {
   const [sendingEmailId, setSendingEmailId] = useState<number | null>(null);
   const [playerToDelete, setPlayerToDelete] = useState<any>(null);
   const { toast } = useToast();
+  
+  // Check for add=true query parameter and open dialog
+  useEffect(() => {
+    const addParam = searchParams.get('add');
+    if (addParam === 'true') {
+      setShowAddPlayerDialog(true);
+      // Remove the query parameter from URL
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
   
   // Reset the copied state after 3 seconds
   const resetCopiedState = (playerId: number) => {

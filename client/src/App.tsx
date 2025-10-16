@@ -210,6 +210,21 @@ function AppRoutes() {
       />
 
       <Route
+        path="/players/add"
+        element={
+          user ? (
+            !isParentUser ? (
+              <Navigate to="/players?add=true" />
+            ) : (
+              <Navigate to="/dashboard/parent" />
+            )
+          ) : (
+            <Navigate to="/auth" />
+          )
+        }
+      />
+
+      <Route
         path="/schedule"
         element={
           user ? (
@@ -233,6 +248,74 @@ function AppRoutes() {
             ) : (
               <Navigate to="/parent/announcements" />
             )
+          ) : (
+            <Navigate to="/auth" />
+          )
+        }
+      />
+
+      <Route
+        path="/fitness"
+        element={
+          user ? (
+            !isParentUser ? (
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">Fitness Tracking</h1>
+                <p>Fitness tracking page is coming soon!</p>
+              </div>
+            ) : (
+              <Navigate to="/parent/fitness" />
+            )
+          ) : (
+            <Navigate to="/auth" />
+          )
+        }
+      />
+
+      <Route
+        path="/meal-plans"
+        element={
+          user ? (
+            !isParentUser ? (
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">Meal Plans</h1>
+                <p>Meal plans page is coming soon!</p>
+              </div>
+            ) : (
+              <Navigate to="/parent/meal-plans" />
+            )
+          ) : (
+            <Navigate to="/auth" />
+          )
+        }
+      />
+
+      <Route
+        path="/payments"
+        element={
+          user ? (
+            !isParentUser ? (
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">Payments</h1>
+                <p>Payments page is coming soon!</p>
+              </div>
+            ) : (
+              <Navigate to="/parent/payments" />
+            )
+          ) : (
+            <Navigate to="/auth" />
+          )
+        }
+      />
+
+      <Route
+        path="/settings"
+        element={
+          user ? (
+            <div className="p-6">
+              <h1 className="text-2xl font-bold mb-4">Settings</h1>
+              <p>Settings page is coming soon!</p>
+            </div>
           ) : (
             <Navigate to="/auth" />
           )
