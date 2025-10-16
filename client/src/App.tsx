@@ -20,6 +20,7 @@ import ParentSchedulePage from "@/pages/parent/parent-schedule";
 import ParentAnnouncementsPage from "@/pages/parent/announcements";
 import ParentPaymentsPage from "@/pages/parent/payments";
 import AuthPageLocal from "@/pages/auth-page-local";
+import AuthPageDev from "@/pages/auth-page-dev";
 import Dashboard from "@/pages/dashboard";
 import PlayersPage from "@/pages/players-page";
 import SchedulePage from "@/pages/schedule-page";
@@ -71,7 +72,7 @@ function AppRoutes() {
               <Navigate to="/" />
             )
           ) : (
-            <AuthPageLocal />
+            <AuthPageDev />
           )
         }
       />

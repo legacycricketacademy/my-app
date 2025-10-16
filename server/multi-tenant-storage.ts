@@ -381,23 +381,8 @@ export class MultiTenantStorage extends DatabaseStorage {
   }
 
   /**
-   * User session management methods
+   * User session management methods (duplicate removed - using implementation at line 209)
    */
-  async createSession(userId: number, sessionId: string): Promise<void> {
-    // Set expiration to 30 days from now
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
-
-    await db.insert(userSessions).values({
-      userId, 
-      sessionId,
-      expiresAt,
-      isActive: true,
-      tokenVersion: 1,
-      lastActiveAt: new Date(),
-      updatedAt: new Date()
-    });
-  }
 
   async getSession(sessionId: string): Promise<any> {
     const result = await db.select().from(userSessions).where(eq(userSessions.sessionId, sessionId)).limit(1);

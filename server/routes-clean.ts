@@ -525,3 +525,6 @@ async function processPlayersData(playersData: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // TODO: Implement route registration
+  return {} as Server;
+}
