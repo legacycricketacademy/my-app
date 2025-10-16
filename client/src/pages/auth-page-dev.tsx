@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function AuthPageDev() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -18,28 +18,37 @@ export default function AuthPageDev() {
     setIsLoading(true);
 
     try {
+      console.log('Attempting login with:', formData);
       const response = await fetch('/api/dev/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
+        credentials: 'include',
       });
 
+      console.log('Login response status:', response.status);
+      const data = await response.json();
+      console.log('Login response data:', data);
+
       if (response.ok) {
-        const data = await response.json();
         console.log('Dev login successful:', data);
         // Redirect based on role
         if (data.user.role === 'admin') {
-          setLocation('/admin');
+          console.log('Redirecting to admin dashboard');
+          navigate('/admin');
         } else {
-          setLocation('/dashboard/parent');
+          console.log('Redirecting to parent dashboard');
+          navigate('/dashboard/parent');
         }
       } else {
-        console.error('Login failed');
+        console.error('Login failed:', data);
+        alert(`Login failed: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Login error:', error);
+      alert(`Login error: ${error.message || 'Network error'}`);
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useLocation, Link } from "wouter";
+import { useLocation, Link } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Users, 

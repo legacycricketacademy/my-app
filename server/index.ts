@@ -124,6 +124,38 @@ app.post("/api/dev/login", async (req, res) => {
   }
 });
 
+// User info endpoint for frontend auth state
+app.get("/api/user", async (req, res) => {
+  try {
+    // Check if user is logged in via session
+    if (req.session.userId && req.session.userRole) {
+      const user = {
+        id: req.session.userId,
+        email: req.session.userRole === "admin" ? "admin@test.com" : "parent@test.com",
+        role: req.session.userRole,
+        fullName: req.session.userRole === "admin" ? "admin" : "parent"
+      };
+      
+      return res.json({
+        success: true,
+        data: { user }
+      });
+    }
+    
+    // Not authenticated
+    return res.status(401).json({
+      success: false,
+      message: "Not authenticated"
+    });
+  } catch (error) {
+    console.error("User info error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+});
+
 // ---- SendGrid (optional in dev) ----
 const mailService = new MailService();
 if (process.env.SENDGRID_API_KEY) {
