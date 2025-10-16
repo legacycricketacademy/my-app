@@ -57,7 +57,7 @@ export function MealPlanCard() {
   };
 
   return (
-    <Card className="bg-white rounded-lg shadow-sm border border-gray-100">
+    <Card className="bg-white rounded-lg shadow-sm border border-gray-100 w-full max-w-full overflow-hidden">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 p-4">
         <CardTitle className="font-semibold text-lg heading">Weekly Meal Plan</CardTitle>
         <Select value={ageGroup} onValueChange={setAgeGroup}>
@@ -72,7 +72,7 @@ export function MealPlanCard() {
         </Select>
       </CardHeader>
       
-      <CardContent className="p-4">
+      <CardContent className="p-4 overflow-hidden">
         {/* Day selector tabs */}
         <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-100 pb-3 mb-4">
           {dayNames.map((day, index) => (
@@ -135,16 +135,14 @@ export function MealPlanCard() {
           )}
         </div>
         
-        <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-between">
-          <Button variant="outline" size="sm" className="border-primary text-primary flex-1 sm:flex-none">
-            <Download className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Download Plan</span>
-            <span className="sm:hidden">Download</span>
+        <div className="mt-4 flex gap-2">
+          <Button variant="outline" size="sm" className="border-primary text-primary flex-1 min-w-0">
+            <Download className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span className="truncate text-xs">Download</span>
           </Button>
-          <Button size="sm" className="bg-primary text-white flex-1 sm:flex-none">
-            <Send className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Share with Parents</span>
-            <span className="sm:hidden">Share</span>
+          <Button size="sm" className="bg-primary text-white flex-1 min-w-0">
+            <Send className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span className="truncate text-xs">Share</span>
           </Button>
         </div>
       </CardContent>
