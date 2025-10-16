@@ -188,8 +188,17 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAllPlayers(ageGroup?: string): Promise<any[]> {
-    let query = db.select({
-      ...players,
+    const baseQuery = db.select({
+      id: players.id,
+      firstName: players.firstName,
+      lastName: players.lastName,
+      dateOfBirth: players.dateOfBirth,
+      ageGroup: players.ageGroup,
+      playerType: players.playerType,
+      parentId: players.parentId,
+      academyId: players.academyId,
+      profileImage: players.profileImage,
+      location: players.location,
       parentName: users.fullName,
       parentEmail: users.email,
     }).from(players)
@@ -197,15 +206,24 @@ export class DatabaseStorage implements IStorage {
       .orderBy(players.firstName);
     
     if (ageGroup && ageGroup !== 'all') {
-      query = query.where(eq(players.ageGroup, ageGroup));
+      return await baseQuery.where(eq(players.ageGroup, ageGroup as "5-8 years" | "8+ years"));
     }
     
-    return await query;
+    return await baseQuery;
   }
   
   async getPlayersPendingReview(): Promise<any[]> {
     const query = db.select({
-      ...players,
+      id: players.id,
+      firstName: players.firstName,
+      lastName: players.lastName,
+      dateOfBirth: players.dateOfBirth,
+      ageGroup: players.ageGroup,
+      playerType: players.playerType,
+      parentId: players.parentId,
+      academyId: players.academyId,
+      profileImage: players.profileImage,
+      location: players.location,
       parentName: users.fullName,
       parentEmail: users.email,
     }).from(players)
@@ -243,15 +261,31 @@ export class DatabaseStorage implements IStorage {
       return existingPlayer;
     }
     
+    // Convert Date objects to strings for database storage
+    const playerDataForInsert = {
+      ...playerData,
+      dateOfBirth: playerData.dateOfBirth instanceof Date ? playerData.dateOfBirth.toISOString().split('T')[0] : playerData.dateOfBirth
+    };
+    
     // Player doesn't exist, create a new one
-    const [player] = await db.insert(players).values(playerData).returning();
+    const [player] = await db.insert(players).values(playerDataForInsert).returning();
     return player;
   }
   
   async updatePlayer(id: number, playerData: Partial<InsertPlayer>): Promise<any | undefined> {
+    // Convert Date objects to strings for database storage
+    const updateData = {
+      ...playerData,
+      updatedAt: new Date()
+    };
+    
+    if (playerData.dateOfBirth instanceof Date) {
+      updateData.dateOfBirth = playerData.dateOfBirth.toISOString().split('T')[0];
+    }
+    
     const [updatedPlayer] = await db
       .update(players)
-      .set({...playerData, updatedAt: new Date()})
+      .set(updateData)
       .where(eq(players.id, id))
       .returning();
     return updatedPlayer;
@@ -311,7 +345,19 @@ export class DatabaseStorage implements IStorage {
   async getSessionById(id: number): Promise<any> {
     const result = await db
       .select({
-        ...sessions,
+        id: sessions.id,
+        title: sessions.title,
+        description: sessions.description,
+        sessionType: sessions.sessionType,
+        ageGroup: sessions.ageGroup,
+        location: sessions.location,
+        startTime: sessions.startTime,
+        endTime: sessions.endTime,
+        coachId: sessions.coachId,
+        maxPlayers: sessions.maxPlayers,
+        academyId: sessions.academyId,
+        createdAt: sessions.createdAt,
+        updatedAt: sessions.updatedAt,
         coachName: users.fullName,
       })
       .from(sessions)
@@ -361,7 +407,19 @@ export class DatabaseStorage implements IStorage {
   async getAllSessions(): Promise<any[]> {
     return await db
       .select({
-        ...sessions,
+        id: sessions.id,
+        title: sessions.title,
+        description: sessions.description,
+        sessionType: sessions.sessionType,
+        ageGroup: sessions.ageGroup,
+        location: sessions.location,
+        startTime: sessions.startTime,
+        endTime: sessions.endTime,
+        coachId: sessions.coachId,
+        maxPlayers: sessions.maxPlayers,
+        academyId: sessions.academyId,
+        createdAt: sessions.createdAt,
+        updatedAt: sessions.updatedAt,
         coachName: users.fullName,
       })
       .from(sessions)
@@ -411,6 +469,10 @@ export class DatabaseStorage implements IStorage {
       today.setMonth(today.getMonth() - 1);
     }
     
+    // Convert dates to strings for database comparison
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const todayStr = today.toISOString().split('T')[0];
+    
     let query = db
       .select({
         avgRunningSpeed: sql<number>`avg(${fitnessRecords.runningSpeed})`,
@@ -423,13 +485,13 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(players, eq(fitnessRecords.playerId, players.id))
       .where(
         and(
-          gte(fitnessRecords.recordDate, startDate),
-          lte(fitnessRecords.recordDate, today)
+          gte(fitnessRecords.recordDate, startDateStr),
+          lte(fitnessRecords.recordDate, todayStr)
         )
       );
     
     if (ageGroup && ageGroup !== 'all') {
-      query = query.where(eq(players.ageGroup, ageGroup));
+      query = query.where(eq(players.ageGroup, ageGroup as "5-8 years" | "8+ years"));
     }
     
     const result = await query;
@@ -463,7 +525,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(mealPlans)
-      .where(eq(mealPlans.ageGroup, ageGroup))
+      .where(eq(mealPlans.ageGroup, ageGroup as "5-8 years" | "8+ years"))
       .orderBy(desc(mealPlans.weekStartDate));
   }
   
@@ -481,7 +543,16 @@ export class DatabaseStorage implements IStorage {
   async getAnnouncementById(id: number): Promise<any> {
     const result = await db
       .select({
-        ...announcements,
+        id: announcements.id,
+        title: announcements.title,
+        content: announcements.content,
+        priority: announcements.priority,
+        targetAudience: announcements.targetAudience,
+        createdBy: announcements.createdBy,
+        academyId: announcements.academyId,
+        isActive: announcements.isActive,
+        createdAt: announcements.createdAt,
+        updatedAt: announcements.updatedAt,
         createdByName: users.fullName,
       })
       .from(announcements)
@@ -494,7 +565,16 @@ export class DatabaseStorage implements IStorage {
   async getRecentAnnouncements(limit: number = 5): Promise<any[]> {
     return await db
       .select({
-        ...announcements,
+        id: announcements.id,
+        title: announcements.title,
+        content: announcements.content,
+        priority: announcements.priority,
+        targetAudience: announcements.targetAudience,
+        createdBy: announcements.createdBy,
+        academyId: announcements.academyId,
+        isActive: announcements.isActive,
+        createdAt: announcements.createdAt,
+        updatedAt: announcements.updatedAt,
         createdByName: users.fullName,
       })
       .from(announcements)
@@ -926,7 +1006,13 @@ export class DatabaseStorage implements IStorage {
   
   async getConnectionRequestsByParentId(parentId: number): Promise<any[]> {
     const requests = await db.select({
-      ...connectionRequests,
+      id: connectionRequests.id,
+      parentId: connectionRequests.parentId,
+      playerId: connectionRequests.playerId,
+      status: connectionRequests.status,
+      message: connectionRequests.message,
+      createdAt: connectionRequests.createdAt,
+      updatedAt: connectionRequests.updatedAt,
       playerFirstName: players.firstName,
       playerLastName: players.lastName,
       playerAgeGroup: players.ageGroup
@@ -941,7 +1027,13 @@ export class DatabaseStorage implements IStorage {
   
   async getAllConnectionRequests(status?: string): Promise<any[]> {
     let query = db.select({
-      ...connectionRequests,
+      id: connectionRequests.id,
+      parentId: connectionRequests.parentId,
+      playerId: connectionRequests.playerId,
+      status: connectionRequests.status,
+      message: connectionRequests.message,
+      createdAt: connectionRequests.createdAt,
+      updatedAt: connectionRequests.updatedAt,
       parentName: users.fullName,
       parentEmail: users.email,
       playerFirstName: players.firstName,

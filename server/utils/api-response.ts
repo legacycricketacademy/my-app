@@ -13,7 +13,7 @@ import { ApiResponse } from '../../shared/api-types';
  * @returns Standardized success response
  */
 export function createSuccessResponse<T = any>(
-  data?: T,
+  data: T,
   message: string = 'Success',
   metadata: Record<string, any> = {}
 ): ApiResponse<T> {
@@ -21,7 +21,6 @@ export function createSuccessResponse<T = any>(
     success: true,
     message,
     data,
-    timestamp: new Date().toISOString(),
     ...metadata
   };
 }
@@ -36,17 +35,14 @@ export function createSuccessResponse<T = any>(
  */
 export function createErrorResponse<T = any>(
   message: string = 'An error occurred',
-  code?: string,
-  status?: number,
-  data?: T
+  errorCode?: string,
+  details?: string
 ): ApiResponse<T> {
   return {
     success: false,
     message,
-    code,
-    status,
-    data,
-    timestamp: new Date().toISOString()
+    errorCode,
+    details
   };
 }
 
@@ -82,8 +78,7 @@ export function createValidationErrorResponse(
   return createErrorResponse(
     message,
     'validation_error',
-    400,
-    { errors }
+    JSON.stringify({ errors })
   );
 }
 
@@ -97,8 +92,7 @@ export function createUnauthorizedResponse(
 ): ApiResponse {
   return createErrorResponse(
     message,
-    'unauthorized',
-    401
+    'unauthorized'
   );
 }
 
@@ -112,8 +106,7 @@ export function createForbiddenResponse(
 ): ApiResponse {
   return createErrorResponse(
     message,
-    'forbidden',
-    403
+    'forbidden'
   );
 }
 
@@ -127,7 +120,6 @@ export function createNotFoundResponse(
 ): ApiResponse {
   return createErrorResponse(
     message,
-    'not_found',
-    404
+    'not_found'
   );
 }
