@@ -535,15 +535,7 @@ export class MultiTenantStorage extends DatabaseStorage {
       .limit(limit);
   }
 
-  // Missing methods required by auth services
-  async getUserByEmail(email: string): Promise<any> {
-    return await db.select().from(users).where(eq(users.email, email)).limit(1).then(result => result[0] || null);
-  }
-
-  async getUserByUsername(username: string): Promise<any> {
-    return await db.select().from(users).where(eq(users.username, username)).limit(1).then(result => result[0] || null);
-  }
-
+  // Missing methods required by auth services (only add if not already present)
   async getUserByFirebaseUid(firebaseUid: string): Promise<any> {
     return await db.select().from(users).where(eq(users.firebaseUid, firebaseUid)).limit(1).then(result => result[0] || null);
   }
@@ -594,10 +586,6 @@ export class MultiTenantStorage extends DatabaseStorage {
   // Alias methods for compatibility
   async getAcademy(id: number): Promise<any> {
     return this.getAcademyById(id);
-  }
-
-  async getAcademyBySlug(slug: string): Promise<any> {
-    return await db.select().from(academies).where(eq(academies.slug, slug)).limit(1).then(result => result[0] || null);
   }
 }
 
