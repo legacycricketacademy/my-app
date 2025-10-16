@@ -5,10 +5,16 @@ import * as schema from "@shared/schema";
 const { DATABASE_URL, NODE_ENV } = process.env;
 if (!DATABASE_URL) throw new Error('DATABASE_URL must be set');
 
-export const pool = new Pool({
+const poolConfig: any = {
   connectionString: DATABASE_URL,
-  ssl: NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+};
+
+// Only add SSL config in production
+if (NODE_ENV === 'production') {
+  poolConfig.ssl = { rejectUnauthorized: false };
+}
+
+export const pool = new Pool(poolConfig);
 
 export const db = drizzle(pool, { schema });
 
