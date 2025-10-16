@@ -1,4 +1,4 @@
-import { db } from "@db";
+import { db } from "../db/index.js";
 import { 
   users, 
   players, 
@@ -11,8 +11,8 @@ import {
   announcementViews, 
   payments,
   connectionRequests
-} from "@shared/schema";
-import type { AgeGroup } from "@shared/schema";
+} from "../shared/schema.js";
+import type { AgeGroup } from "../shared/schema.js";
 import { eq, and, or, gte, lte, desc, sql, count } from "drizzle-orm";
 import { Pool } from "@neondatabase/serverless";
 import connectPg from "connect-pg-simple";
@@ -782,7 +782,7 @@ export class DatabaseStorage implements IStorage {
       .from(players)
       .where(eq(players.parentId, parentId));
     
-    return result.map(row => row.id);
+    return result.map((row: any) => row.id);
   }
   
   async getAllPayments(status?: string): Promise<any[]> {

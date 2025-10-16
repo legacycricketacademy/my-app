@@ -16,6 +16,16 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export const verifyJwt = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  // If in test mode, trust session user
+  if (process.env.AUTH_MODE === "stub") {
+    // @ts-ignore - Session typing
+    if (req.session.user) {
+      req.user = req.session.user;
+      return next();
+    }
+    return res.status(401).json({ error: 'No test user in session' });
+  }
+
   const token = req.headers.authorization?.replace('Bearer ', '');
   
   if (!token) {

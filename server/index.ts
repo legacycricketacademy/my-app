@@ -10,8 +10,8 @@ import { setupRedirects } from "./redirect.js";
 import { setupStaticRoutes } from "./static-routes.js";
 import { multiTenantStorage } from "./multi-tenant-storage.js";
 
-import { db } from "@db";
-import { users } from "@shared/schema.js";
+import { db } from "../db/index.js";
+import { users } from "../shared/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 import { MailService } from "@sendgrid/mail";
 

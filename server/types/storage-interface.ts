@@ -1,3 +1,5 @@
+import { AgeGroup } from "@shared/schema";
+
 // Comprehensive interface for MultiTenantStorage
 export interface IMultiTenantStorage {
   // User management methods
@@ -29,14 +31,14 @@ export interface IMultiTenantStorage {
   // Player methods
   getPlayerById(id: number): Promise<any>;
   getPlayersByParentId(parentId: number): Promise<any[]>;
-  getAllPlayers(ageGroup?: string): Promise<any[]>;
+  getAllPlayers(ageGroup?: AgeGroup): Promise<any[]>;
   createPlayer(playerData: any): Promise<any>;
   updatePlayer(id: number, playerData: any): Promise<any>;
   deletePlayer(id: number): Promise<boolean>;
   
   // Session methods
   getSessionById(id: number): Promise<any>;
-  getAllSessions(ageGroup?: string): Promise<any[]>;
+  getAllSessions(ageGroup?: AgeGroup): Promise<any[]>;
   createSession(sessionData: any): Promise<any>;
   updateSession(id: number, sessionData: any): Promise<any>;
   deleteSession(id: number): Promise<boolean>;
@@ -52,11 +54,11 @@ export interface IMultiTenantStorage {
   // Fitness methods
   getFitnessRecordsByPlayerId(playerId: number): Promise<any[]>;
   createFitnessRecord(recordData: any): Promise<any>;
-  getTeamFitnessProgress(ageGroup?: string, period?: string): Promise<any>;
+  getTeamFitnessProgress(ageGroup?: AgeGroup, period?: string): Promise<any>;
   
   // Meal plan methods
   getMealPlanById(id: number): Promise<any>;
-  getMealPlansByAgeGroup(ageGroup: string): Promise<any[]>;
+  getMealPlansByAgeGroup(ageGroup: AgeGroup): Promise<any[]>;
   createMealPlan(mealPlanData: any): Promise<any>;
   
   // Announcement methods

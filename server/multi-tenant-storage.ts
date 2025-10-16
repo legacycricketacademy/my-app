@@ -1,4 +1,4 @@
-import { db } from "../db";
+import { db } from "../db/index.js";
 import { and, eq, desc, or, gte } from "drizzle-orm";
 import {
   academies,
@@ -14,8 +14,8 @@ import {
   connectionRequests,
   userSessions,
   userAuditLogs,
-} from "../shared/schema";
-import { DatabaseStorage } from "./storage";
+} from "../shared/schema.js";
+import { DatabaseStorage } from "./storage.js";
 
 /**
  * Extends the standard DatabaseStorage with multi-tenancy capabilities
@@ -157,7 +157,7 @@ export class MultiTenantStorage extends DatabaseStorage {
     return result[0] || null;
   }
 
-  async getAllPlayers(ageGroup?: string): Promise<any[]> {
+  async getAllPlayers(ageGroup?: AgeGroup): Promise<any[]> {
     const conditions = [];
     if (this.currentAcademyId) {
       conditions.push(eq(players.academyId, this.currentAcademyId));

@@ -8,8 +8,9 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   timeout: 30000, // 30 seconds per test
+  globalSetup: "./global-setup.ts",
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:3002',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 10000, // 10 seconds for actions
@@ -18,22 +19,38 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'chromium-admin',
+      use: { 
+        ...devices['Desktop Chrome'],
+        storageState: 'storageState.admin.json'
+      },
+    },
+    {
+      name: 'chromium-parent',
+      use: { 
+        ...devices['Desktop Chrome'],
+        storageState: 'storageState.parent.json'
+      },
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: { 
+        ...devices['Desktop Firefox'],
+        storageState: 'storageState.admin.json'
+      },
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { 
+        ...devices['Desktop Safari'],
+        storageState: 'storageState.admin.json'
+      },
     },
   ],
 
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:5173',
+    url: 'http://localhost:3002',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

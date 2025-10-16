@@ -1,13 +1,14 @@
 import { db } from "./index.js";
 import * as schema from "@shared/schema.js";
 import { hashSync, genSaltSync } from "bcrypt";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 async function seed() {
   try {
     // Create default academy if it doesn't exist
     let defaultAcademy;
     const academyExists = await db.query.academies.findFirst({
-      where: (academies, { eq }) => eq(academies.name, "Legacy Cricket Academy")
+      where: eq(schema.academies.name, "Legacy Cricket Academy")
     });
 
     if (!academyExists) {
@@ -39,7 +40,7 @@ async function seed() {
     const academyId = defaultAcademy.id;
     // Create admin user
     const adminExists = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.username, "admin")
+      where: eq(schema.users.username, "admin")
     });
 
     if (!adminExists) {
@@ -57,7 +58,7 @@ async function seed() {
 
     // Create coach
     const coachExists = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.username, "coach")
+      where: eq(schema.users.username, "coach")
     });
 
     if (!coachExists) {
@@ -112,7 +113,7 @@ async function seed() {
 
     for (const parentData of parentsData) {
       const parentExists = await db.query.users.findFirst({
-        where: (users, { eq }) => eq(users.username, parentData.username)
+        where: eq(schema.users.username, parentData.username)
       });
 
       if (!parentExists) {
@@ -122,7 +123,7 @@ async function seed() {
 
     // Get parent IDs for reference
     const parents = await db.query.users.findMany({
-      where: (users, { eq }) => eq(users.role, "parent")
+      where: eq(schema.users.role, "parent")
     });
 
     if (parents.length === 0) {
@@ -186,9 +187,9 @@ async function seed() {
 
     for (const playerData of playersData) {
       const playerExists = await db.query.players.findFirst({
-        where: (players, { and, eq }) => and(
-          eq(players.firstName, playerData.firstName),
-          eq(players.lastName, playerData.lastName)
+        where: and(
+          eq(schema.players.firstName, playerData.firstName),
+          eq(schema.players.lastName, playerData.lastName)
         )
       });
 
@@ -199,7 +200,7 @@ async function seed() {
 
     // Get coach ID
     const coach = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.role, "coach")
+      where: eq(schema.users.role, "coach")
     });
 
     if (!coach) {
@@ -263,9 +264,9 @@ async function seed() {
 
     for (const sessionData of sessionsData) {
       const sessionExists = await db.query.sessions.findFirst({
-        where: (sessions, { and, eq }) => and(
-          eq(sessions.title, sessionData.title),
-          eq(sessions.startTime, sessionData.startTime)
+        where: and(
+          eq(schema.sessions.title, sessionData.title),
+          eq(schema.sessions.startTime, sessionData.startTime)
         )
       });
 
@@ -284,9 +285,9 @@ async function seed() {
       
       for (const player of players) {
         const fitnessExists = await db.query.fitnessRecords.findFirst({
-          where: (records, { and, eq }) => and(
-            eq(records.playerId, player.id),
-            eq(records.recordDate, today.toISOString().split('T')[0]) // Convert to date string
+          where: and(
+            eq(schema.fitnessRecords.playerId, player.id),
+            eq(schema.fitnessRecords.recordDate, today.toISOString().split('T')[0]) // Convert to date string
           )
         });
         
@@ -332,9 +333,9 @@ async function seed() {
 
     let mealPlanId;
     const mealPlanExists = await db.query.mealPlans.findFirst({
-      where: (plans, { and, eq }) => and(
-        eq(plans.ageGroup, mealPlanData.ageGroup),
-        eq(plans.title, mealPlanData.title)
+      where: and(
+        eq(schema.mealPlans.ageGroup, mealPlanData.ageGroup),
+        eq(schema.mealPlans.title, mealPlanData.title)
       )
     });
 
@@ -373,10 +374,10 @@ async function seed() {
 
       for (const meal of mondayMeals) {
         const mealExists = await db.query.mealItems.findFirst({
-          where: (items, { and, eq }) => and(
-            eq(items.mealPlanId, meal.mealPlanId),
-            eq(items.dayOfWeek, meal.dayOfWeek),
-            eq(items.mealType, meal.mealType)
+          where: and(
+            eq(schema.mealItems.mealPlanId, meal.mealPlanId),
+            eq(schema.mealItems.dayOfWeek, meal.dayOfWeek),
+            eq(schema.mealItems.mealType, meal.mealType)
           )
         });
 
@@ -416,9 +417,9 @@ async function seed() {
 
     for (const announcement of announcementsData) {
       const announcementExists = await db.query.announcements.findFirst({
-        where: (announcements, { and, eq }) => and(
-          eq(announcements.title, announcement.title),
-          eq(announcements.content, announcement.content)
+        where: and(
+          eq(schema.announcements.title, announcement.title),
+          eq(schema.announcements.content, announcement.content)
         )
       });
 
@@ -461,10 +462,10 @@ async function seed() {
 
       for (const payment of paymentsData) {
         const paymentExists = await db.query.payments.findFirst({
-          where: (payments, { and, eq }) => and(
-            eq(payments.playerId, payment.playerId),
-            eq(payments.amount, payment.amount),
-            eq(payments.paymentType, payment.paymentType)
+          where: and(
+            eq(schema.payments.playerId, payment.playerId),
+            eq(schema.payments.amount, payment.amount),
+            eq(schema.payments.paymentType, payment.paymentType)
           )
         });
 
