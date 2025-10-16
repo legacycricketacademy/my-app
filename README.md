@@ -1,71 +1,99 @@
-# Legacy Cricket Academy - DEPLOYMENT INSTRUCTIONS
+# Legacy Cricket Academy
 
-## 🚨 CRITICAL: Render Service Configuration
+Comprehensive cricket academy management system for player development, coaching workflows, and family engagement.
 
-### Build Command
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run database migrations
+npm run db:push
+
+# Start development server
+npm run dev
 ```
+
+## Build
+
+```bash
+# Build client and server
 npm run build
+
+# Start production server
+node dist/index.js
 ```
 
-### Start Command (IMPORTANT!)
-```
-npm start
+## Deploy on Render
+
+### Configuration
+
+**Build Command:**
+```bash
+npm ci --include=dev && npm run build
 ```
 
-**NOT** `node start` - this will fail!
+**Start Command:**
+```bash
+node dist/index.js
+```
 
 ### Environment Variables
 
-Set these in your Render service:
+Set the following in Render Dashboard:
 
-```
-NODE_ENV=production
-HOST=0.0.0.0
-PORT=3000
-DATABASE_URL=sqlite:./production.db
-LOCAL_ADMIN_BYPASS=true
-KEYCLOAK_ENABLED=true
-VITE_KEYCLOAK_URL=https://keycloak-24-0-tbwj.onrender.com
-VITE_KEYCLOAK_ISSUER_URL=https://keycloak-24-0-tbwj.onrender.com/realms/cricket-academy
-VITE_KEYCLOAK_REALM=cricket-academy
-VITE_KEYCLOAK_CLIENT_ID=my-app
-VITE_REDIRECT_PATH=/auth/callback
-VITE_APP_URL=https://cricket-academy-app.onrender.com
-```
+- `DATABASE_URL` - PostgreSQL connection string (automatically provided by Render Database)
+- `NODE_ENV` - Set to `production`
+- `SESSION_SECRET` - Generate a random secret
+- `PORT` - Set to `10000` (or use Render's default)
 
-## 🎉 BUILD STATUS: SUCCESS!
+**Optional Alternative:** Set `NPM_CONFIG_PRODUCTION=false` as an environment variable instead of using `--include=dev` in the build command.
 
-The build is now working perfectly:
-- ✅ Vite build: 1661 modules transformed
-- ✅ Assets generated: CSS (72.99 kB) + JS (285.80 kB)
-- ✅ Server bundle: 74.2kb
+### Why devDependencies are Required
 
-## 🔧 CURRENT ISSUE: Start Command
+Our build process uses `vite` and `esbuild` which are intentionally kept in `devDependencies`:
+- `vite` is used at build-time to bundle the React client
+- `esbuild` is used at build-time to bundle the Node.js server
+- These tools are NOT needed at runtime, only during the build phase
 
-The deployment fails because Render is running:
+The `--include=dev` flag ensures these build tools are available during Render's build phase, while keeping the production runtime lean.
+
+### Database Setup
+
+Render will automatically:
+1. Create a PostgreSQL database
+2. Provide `DATABASE_URL` to your app
+3. Run migrations during build via `npm run db:push`
+
+### Troubleshooting
+
+**Build fails with "vite: not found":**
+- Ensure Build Command includes `--include=dev` flag
+- OR set environment variable `NPM_CONFIG_PRODUCTION=false`
+
+**502 Bad Gateway:**
+- Check Render logs for startup errors
+- Verify `DATABASE_URL` is set correctly
+- Ensure migrations ran successfully
+
+## Testing
+
 ```bash
-node start  # ❌ WRONG - this looks for /src/start file
+# Run end-to-end tests
+npm run test:e2e
+
+# Run tests in UI mode
+npm run test:e2e:ui
 ```
 
-Instead of:
+## Database
+
 ```bash
-npm start   # ✅ CORRECT - this runs our package.json script
+# Push schema changes to database
+npm run db:push
+
+# Seed database with sample data
+npm run db:seed
 ```
 
-## 📋 Fix Instructions
-
-1. Go to Render Dashboard
-2. Select your `cricket-academy-app` service
-3. Go to Settings
-4. Update **Start Command** to: `npm start`
-5. Save and redeploy
-
-## 🏏 Expected Result
-
-After fixing the start command, you should see:
-- Beautiful "Welcome to Legacy Cricket Academy" login page
-- Full React UI with shadcn/ui components
-- Working Keycloak integration
-- All API endpoints functional
-
-The React app is fully built and ready - just need the correct start command!
