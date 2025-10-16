@@ -1,30 +1,24 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { drizzle as drizzlePg } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import ws from "ws";
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+const { DATABASE_URL, NODE_ENV } = process.env;
+if (!DATABASE_URL) throw new Error('DATABASE_URL must be set');
+
+export const pool = new Pool({
+  connectionString: DATABASE_URL,
+  ssl: NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+});
+
+export const db = drizzle(pool, { schema });
+
+export async function dbHealth() {
+  const client = await pool.connect();
+  try { 
+    await client.query('select 1'); 
+    return { ok: true }; 
+  }
+  finally { 
+    client.release(); 
+  }
 }
-
-// Check if this is a Neon database URL
-const isNeon = process.env.DATABASE_URL.includes('neon.tech') || process.env.DATABASE_URL.includes('neon.tech');
-
-let db;
-
-if (isNeon) {
-  // This is the correct way neon config - DO NOT change this
-  neonConfig.webSocketConstructor = ws;
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  db = drizzle({ client: pool, schema });
-} else {
-  // Standard PostgreSQL connection
-  const sql = postgres(process.env.DATABASE_URL);
-  db = drizzlePg(sql, { schema });
-}
-
-export { db };

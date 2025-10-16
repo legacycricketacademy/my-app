@@ -113,8 +113,9 @@ export default function AuthPage() {
             <div className="mt-6 p-4 bg-gray-50 rounded-md">
               <h3 className="text-sm font-medium text-gray-900 mb-2">Development Accounts</h3>
               <div className="text-xs text-gray-600 space-y-1">
-                <div><strong>Parent:</strong> parent@test.com / Test1234!</div>
-                <div><strong>Admin:</strong> admin@test.com / Test1234!</div>
+                <div><strong>Parent:</strong> parent / password</div>
+                <div><strong>Admin:</strong> admin / password</div>
+                <div><strong>Coach:</strong> coach / password</div>
               </div>
             </div>
           </CardContent>

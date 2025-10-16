@@ -37,6 +37,7 @@ export async function apiRequest<T = any>(
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
   };
 
   if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {

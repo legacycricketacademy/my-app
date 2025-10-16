@@ -3,12 +3,15 @@ import session from "express-session";
 import passport from "passport";
 import path from "path";
 import { fileURLToPath } from "url";
+import PGSession from 'connect-pg-simple';
 
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
 import { setupRedirects } from "./redirect.js";
 import { setupStaticRoutes } from "./static-routes.js";
 import { multiTenantStorage } from "./multi-tenant-storage.js";
+import { setupAuth } from "./auth.js";
+import { pool, dbHealth } from "../db/index.js";
 
 import { db } from "../db/index.js";
 import { users } from "../shared/schema.js";
@@ -24,30 +27,53 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// CORS (dev-friendly)
+// CORS configuration
+const allowedOrigins = [
+  'https://cricket-academy-app.onrender.com',
+  'http://localhost:5174',
+  'http://localhost:5173',
+  'http://localhost:3002',
+  'http://localhost:10000'
+];
+
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
 
+// Trust proxy for production (Render)
+app.set('trust proxy', 1);
+
 // Sessions
-app.use(
-  session({
-    secret: "cricket-academy-secret-key",
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }, // 24h
-  })
-);
+const isProd = process.env.NODE_ENV === 'production';
+if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET must be set');
+
+const sessionConfig = {
+  name: 'sid',
+  secret: process.env.SESSION_SECRET!,
+  resave: false,
+  saveUninitialized: false,
+  store: isProd ? new (PGSession(session))({ pool }) : undefined,
+  cookie: {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  }
+};
+
+app.use(session(sessionConfig));
+
+// Setup authentication
+setupAuth(app);
 
 // Passport
 app.use(passport.initialize());
@@ -79,6 +105,33 @@ app.get("/api/ping", (_req, res) => {
     message: "Server is running",
     timestamp: new Date().toISOString(),
   });
+});
+
+// Health check endpoint
+app.get("/api/healthz", async (_req, res) => {
+  try { 
+    const h = await dbHealth(); 
+    res.json({ ok: true, db: h.ok, timestamp: new Date().toISOString() }); 
+  }
+  catch { 
+    res.status(500).json({ ok: false, timestamp: new Date().toISOString() }); 
+  }
+});
+
+// Whoami endpoint (requires authentication)
+app.get("/api/whoami", (req, res) => {
+  if (req.user) {
+    const { password, ...userWithoutPassword } = req.user as any;
+    res.json({ 
+      success: true, 
+      user: userWithoutPassword 
+    });
+  } else {
+    res.status(401).json({ 
+      success: false, 
+      message: "Not authenticated" 
+    });
+  }
 });
 
 // Dev login bypass endpoint (for testing without Firebase)

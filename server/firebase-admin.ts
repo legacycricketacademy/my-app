@@ -1,4 +1,4 @@
-import { db } from "@db";
+import { db } from "../db/index.js";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import admin from "firebase-admin";

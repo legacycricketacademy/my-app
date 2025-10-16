@@ -2,17 +2,71 @@
 
 Comprehensive cricket academy management system for player development, coaching workflows, and family engagement.
 
-## Development
+## Local PostgreSQL Setup
+
+### Prerequisites
+- Node.js 20+
+- PostgreSQL 16+
+
+### Installation
+
+**macOS:**
+```bash
+brew install postgresql@16
+brew services start postgresql@16
+createdb cricket_dev
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+sudo -u postgres createdb cricket_dev
+```
+
+**Windows:**
+Download and install PostgreSQL from [postgresql.org](https://www.postgresql.org/download/windows/)
+
+### Environment Setup
+
+Create a `.env` file in the project root:
+```bash
+DATABASE_URL=postgres://localhost:5432/cricket_dev
+SESSION_SECRET=dev-secret-change-me
+NODE_ENV=development
+```
+
+### Development
 
 ```bash
 # Install dependencies
 npm install
 
-# Run database migrations
-npm run db:push
+# Generate and run database migrations
+npm run db:generate
+npm run db:migrate
+
+# Seed the database with test data
+npm run db:seed
 
 # Start development server
 npm run dev
+```
+
+### Database Management
+
+```bash
+# Generate new migrations after schema changes
+npm run db:generate
+
+# Apply migrations
+npm run db:migrate
+
+# Open Drizzle Studio (database GUI)
+npm run db:studio
+
+# Seed database with test data
+npm run db:seed
 ```
 
 ## Build
@@ -34,6 +88,11 @@ node dist/index.js
 npm ci --include=dev && npm run build
 ```
 
+**Pre-Deploy Command:**
+```bash
+npm run db:migrate
+```
+
 **Start Command:**
 ```bash
 node dist/index.js
@@ -45,10 +104,15 @@ Set the following in Render Dashboard:
 
 - `DATABASE_URL` - PostgreSQL connection string (automatically provided by Render Database)
 - `NODE_ENV` - Set to `production`
-- `SESSION_SECRET` - Generate a random secret
+- `SESSION_SECRET` - Generate a random secret (required for sessions)
 - `PORT` - Set to `10000` (or use Render's default)
 
-**Optional Alternative:** Set `NPM_CONFIG_PRODUCTION=false` as an environment variable instead of using `--include=dev` in the build command.
+### Session Configuration
+
+The app uses PostgreSQL for session storage in production:
+- Sessions are stored in the `session` table (created automatically)
+- Cookies are configured with `secure: true` and `sameSite: 'none'` for HTTPS
+- Trust proxy is enabled for Render's load balancer
 
 ### Why devDependencies are Required
 

@@ -1,17 +1,17 @@
-import { defineConfig } from "drizzle-kit";
+import 'dotenv/config';
+import type { Config } from 'drizzle-kit';
 
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is required");
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is not set');
+}
 
-const dialect =
-  url.startsWith("file:") || url.startsWith("sqlite")
-    ? "sqlite"
-    : "postgresql";
-
-export default defineConfig({
-  schema: "./db/**/*.ts",
-  out: "./drizzle",
-  dialect,
-  dbCredentials: { url },
+export default {
+  schema: ['./shared/schema.ts'],
+  out: './drizzle',
+  dialect: 'postgresql',
+  dbCredentials: { 
+    url: process.env.DATABASE_URL!
+  },
+  verbose: true,
   strict: true,
-});
+} satisfies Config;

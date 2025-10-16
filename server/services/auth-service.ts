@@ -10,7 +10,7 @@ import {
   generateAdminCoachApprovalRequestEmail
 } from "../email";
 import { eq } from "drizzle-orm";
-import { db } from "@db";
+import { db } from "../../db/index.js";
 
 // Custom error classes for better error handling
 export class AuthError extends Error {

@@ -7,7 +7,7 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { multiTenantStorage } from "./multi-tenant-storage";
 import { User as SelectUser, users, userAuditLogs } from "@shared/schema";
-import { db } from "@db";
+import { db } from "../db/index.js";
 import { requireAdmin, requireCoach, requireParent } from "./middleware/require-role";
 import { generateVerificationEmail, sendEmail } from "./email";
 import {
