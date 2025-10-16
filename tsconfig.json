@@ -1,5 +1,5 @@
 {
-  "include": ["client/src/**/*", "db/**/*", "server/**/*"],
+  "include": ["client/src/**/*", "db/**/*", "server/**/*", "types/**/*"],
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts", "**/*-broken.ts", "**/*.broken.ts"],
   "compilerOptions": {
     "incremental": true,
@@ -15,7 +15,8 @@
     "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
     "baseUrl": ".",
-    "types": ["node", "vite/client"],
+    "typeRoots": ["./types", "./node_modules/@types"],
+    "types": ["node"],
     "paths": {
       "@db": ["./db/index.ts"],
       "@db/*": ["./db/*"],

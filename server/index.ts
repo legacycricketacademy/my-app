@@ -4,24 +4,16 @@ import passport from "passport";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
-import { setupRedirects } from "./redirect";
-import { setupStaticRoutes } from "./static-routes";
-import { multiTenantStorage } from "./multi-tenant-storage";
+import { registerRoutes } from "./routes.js";
+import { setupVite, serveStatic, log } from "./vite.js";
+import { setupRedirects } from "./redirect.js";
+import { setupStaticRoutes } from "./static-routes.js";
+import { multiTenantStorage } from "./multi-tenant-storage.js";
 
 import { db } from "@db";
 import { users } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { MailService } from "@sendgrid/mail";
-
-// ---- Session type augmentation ----
-declare module 'express-session' {
-  interface SessionData {
-    userId?: number;
-    userRole?: string;
-  }
-}
 
 // ---- __dirname for ES modules ----
 const __filename = fileURLToPath(import.meta.url);
