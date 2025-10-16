@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Sun, CupSoda, UtensilsCrossed, Download, Send } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export function MealPlanCard() {
   const [ageGroup, setAgeGroup] = useState<string>("Under 12s");

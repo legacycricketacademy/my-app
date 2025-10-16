@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export function FitnessCard() {
   const [period, setPeriod] = useState<string>("week");
@@ -146,7 +146,7 @@ export function FitnessCard() {
         )}
         
         <div className="border-t border-gray-100 pt-3">
-          <Link href="/fitness" className="text-primary text-sm hover:underline flex items-center justify-center">
+          <Link to="/fitness" className="text-primary text-sm hover:underline flex items-center justify-center">
             <span>View Detailed Fitness Report</span>
             <ArrowRight className="ml-1 h-4 w-4" />
           </Link>
