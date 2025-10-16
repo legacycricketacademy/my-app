@@ -100,7 +100,7 @@ app.post("/api/dev/login", async (req, res) => {
       "parent@test.com": { password: "Test1234!", role: "parent", id: 2 }
     };
     
-    const account = devAccounts[email];
+    const account = devAccounts[email as keyof typeof devAccounts];
     
     if (!account || account.password !== password) {
       return res.status(401).json({
