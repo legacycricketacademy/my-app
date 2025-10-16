@@ -1,12 +1,12 @@
 {
   "include": ["client/src/**/*", "db/**/*", "server/**/*", "types/**/*", "shared/**/*"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts", "**/*-broken.ts", "**/*.broken.ts"],
+  "exclude": ["node_modules", "build", "dist", "**/*.test.ts", "**/*-broken.ts", "**/*.broken.ts", "vite.config.ts", "server/vite.ts", "playwright-report"],
   "compilerOptions": {
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
     "noEmit": true,
     "module": "nodenext",
-    "target": "ES2020",
+    "target": "ES2022",
     "strict": true,
     "lib": ["esnext", "dom", "dom.iterable"],
     "jsx": "preserve",

@@ -30,6 +30,8 @@ export interface ApiSuccessResponse<T = any> {
   success: true;
   message: string;
   data: T;
+  timestamp?: string;
+  code?: string;
 }
 
 /**
@@ -42,6 +44,8 @@ export interface ApiErrorResponse {
   details?: string;
   errorCode?: string;
   fields?: string[];
+  timestamp?: string;
+  code?: string;
 }
 
 /**
