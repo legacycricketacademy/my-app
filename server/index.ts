@@ -3,6 +3,7 @@ import session from "express-session";
 import passport from "passport";
 import path from "path";
 import { fileURLToPath } from "url";
+import cors from "cors";
 import PGSession from 'connect-pg-simple';
 
 import { registerRoutes } from "./routes.js";
@@ -27,29 +28,14 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// CORS configuration
-const allowedOrigins = [
-  process.env.APP_ORIGIN || 'https://legacy-cricket-app.onrender.com',
-  'http://localhost:5174',
-  'http://localhost:5173',
-  'http://localhost:3002',
-  'http://localhost:10000'
-];
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-  }
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-  next();
-});
-
 // Trust proxy for production (Render)
 app.set('trust proxy', 1);
+
+// CORS configuration using cors middleware
+app.use(cors({ 
+  origin: process.env.APP_ORIGIN ?? 'http://localhost:5173', 
+  credentials: true 
+}));
 
 // Production validation
 if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.startsWith('sqlite:')) {
@@ -128,11 +114,10 @@ app.get("/api/healthz", async (_req, res) => {
 // Simple health check endpoint
 app.get("/healthz", async (_req, res) => {
   try {
-    const h = await dbHealth();
-    res.status(200).send("ok");
-  }
-  catch {
-    res.status(500).send("error");
+    const r = await pool.query('select 1 as ok');
+    return r.rows?.[0]?.ok === 1 ? res.status(200).send('ok') : res.status(500).send('db not ok');
+  } catch (e) {
+    return res.status(500).send('db error: ' + (e as Error).message);
   }
 });
 
@@ -464,18 +449,10 @@ app.use((req, res, next) => {
     console.log("Static file serving already configured in routes...");
   }
 
-  // Port: 3002 in dev (5000 conflicts with macOS ControlCenter), 5000 in prod
-  const defaultPort = isDevelopment ? 3002 : 5000;
-  const port = parseInt(process.env.PORT || String(defaultPort), 10);
+  // Port configuration for Render
+  const port = Number(process.env.PORT) || 10000;
 
-  server.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    }
-  );
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`server listening on :${port}`);
+  });
 })();
