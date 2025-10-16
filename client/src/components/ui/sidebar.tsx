@@ -35,7 +35,7 @@ declare global {
 
 export function Sidebar() {
   const { user, logoutMutation } = useAuth();
-  const [location] = useLocation();
+  const location = useLocation();
   
   const getInitials = (name: string) => {
     return name
@@ -46,7 +46,7 @@ export function Sidebar() {
   };
   
   const isActive = (path: string) => {
-    return location === path;
+    return location.pathname === path;
   };
   
   const handleLogout = () => {
