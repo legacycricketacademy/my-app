@@ -37,8 +37,8 @@ import CoachesPendingApprovalPage from "@/pages/admin/coaches-pending-approval";
 // Dashboard Pages
 import { DashboardLayout } from "@/layout/DashboardLayout";
 import TeamPage from "@/pages/dashboard/TeamPage";
-import AnnouncementsPage as DashboardAnnouncementsPage from "@/pages/dashboard/AnnouncementsPage";
-import SchedulePage as DashboardSchedulePage from "@/pages/dashboard/SchedulePage";
+import DashboardAnnouncementsPage from "@/pages/dashboard/AnnouncementsPage";
+import DashboardSchedulePage from "@/pages/dashboard/SchedulePage";
 import PaymentsPage from "@/pages/dashboard/PaymentsPage";
 import MealPlansPage from "@/pages/dashboard/MealPlansPage";
 import FitnessTrackingPage from "@/pages/dashboard/FitnessTrackingPage";
