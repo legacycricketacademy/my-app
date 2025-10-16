@@ -55,11 +55,11 @@ const sessionConfig = {
   saveUninitialized: false,
   store: isProd ? new (PGSession(session))({ pool }) : undefined,
   cookie: {
+    secure: process.env.NODE_ENV === 'production',   // required on Render (HTTPS)
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
     path: '/',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   }
 };
 
@@ -161,15 +161,28 @@ app.post("/api/dev/login", async (req, res) => {
     req.session.userId = account.id;
     req.session.userRole = account.role;
     
-    res.json({
-      success: true,
-      message: "Dev login successful",
-      user: {
-        id: account.id,
-        email: email,
-        role: account.role,
-        fullName: email.split('@')[0]
+    // Ensure session is saved before sending response
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.status(500).json({
+          success: false,
+          message: "Session save failed"
+        });
       }
+      
+      console.log('login ok', { userId: account.id });
+      
+      res.json({
+        success: true,
+        message: "Dev login successful",
+        user: {
+          id: account.id,
+          email: email,
+          role: account.role,
+          fullName: email.split('@')[0]
+        }
+      });
     });
   } catch (error) {
     console.error("Dev login error:", error);
@@ -178,6 +191,30 @@ app.post("/api/dev/login", async (req, res) => {
       message: "Login failed"
     });
   }
+});
+
+// Session verification endpoint
+app.get("/api/session", (req, res) => {
+  res.json({ authenticated: !!req.session.userId });
+});
+
+// Cookie check endpoint for debugging
+app.get("/cookie-check", (req, res) => {
+  // Set a test cookie
+  res.cookie('test-cookie', 'test-value', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  });
+  
+  res.json({
+    receivedCookies: req.headers.cookie,
+    sessionId: req.sessionID,
+    sessionData: {
+      userId: req.session.userId,
+      userRole: req.session.userRole
+    }
+  });
 });
 
 // User info endpoint for frontend auth state
