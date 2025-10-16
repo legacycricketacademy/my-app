@@ -12,6 +12,7 @@ import {
   payments,
   connectionRequests
 } from "@shared/schema";
+import type { AgeGroup } from "@shared/schema";
 import { eq, and, or, gte, lte, desc, sql, count } from "drizzle-orm";
 import { Pool } from "@neondatabase/serverless";
 import connectPg from "connect-pg-simple";
@@ -27,7 +28,7 @@ import {
   InsertAnnouncement, 
   InsertPayment,
   InsertConnectionRequest
-} from "@shared/schema";
+} from "@shared/schema.js";
 
 export interface IStorage {
   // User methods
@@ -43,7 +44,7 @@ export interface IStorage {
   // Player methods
   getPlayerById(id: number): Promise<any>;
   getPlayersByParentId(parentId: number): Promise<any[]>;
-  getAllPlayers(ageGroup?: string): Promise<any[]>;
+  getAllPlayers(ageGroup?: AgeGroup): Promise<any[]>;
   getPlayersPendingReview(): Promise<any[]>;
   createPlayer(playerData: InsertPlayer): Promise<any>;
   updatePlayer(id: number, playerData: Partial<InsertPlayer>): Promise<any | undefined>;
@@ -64,11 +65,11 @@ export interface IStorage {
   // Fitness records methods
   getFitnessRecordsByPlayerId(playerId: number): Promise<any[]>;
   createFitnessRecord(fitnessData: InsertFitnessRecord): Promise<any>;
-  getTeamFitnessProgress(ageGroup?: string, period?: string): Promise<any>;
+  getTeamFitnessProgress(ageGroup?: AgeGroup, period?: string): Promise<any>;
   
   // Meal plan methods
   getMealPlanById(id: number): Promise<any>;
-  getMealPlansByAgeGroup(ageGroup: string): Promise<any[]>;
+  getMealPlansByAgeGroup(ageGroup: AgeGroup): Promise<any[]>;
   createMealPlan(mealPlanData: InsertMealPlan): Promise<any>;
   createMealItem(mealItemData: InsertMealItem): Promise<any>;
   
@@ -187,7 +188,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(players).where(eq(players.parentId, parentId));
   }
   
-  async getAllPlayers(ageGroup?: string): Promise<any[]> {
+  async getAllPlayers(ageGroup?: AgeGroup): Promise<any[]> {
     const baseQuery = db.select({
       id: players.id,
       firstName: players.firstName,
@@ -205,8 +206,8 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(players.parentId, users.id))
       .orderBy(players.firstName);
     
-    if (ageGroup && ageGroup !== 'all') {
-      return await baseQuery.where(eq(players.ageGroup, ageGroup as "5-8 years" | "8+ years"));
+    if (ageGroup) {
+      return await baseQuery.where(eq(players.ageGroup, ageGroup));
     }
     
     return await baseQuery;
@@ -274,7 +275,7 @@ export class DatabaseStorage implements IStorage {
   
   async updatePlayer(id: number, playerData: Partial<InsertPlayer>): Promise<any | undefined> {
     // Convert Date objects to strings for database storage
-    const updateData = {
+    const updateData: any = {
       ...playerData,
       updatedAt: new Date()
     };
@@ -375,7 +376,19 @@ export class DatabaseStorage implements IStorage {
     
     return await db
       .select({
-        ...sessions,
+        id: sessions.id,
+        academyId: sessions.academyId,
+        title: sessions.title,
+        description: sessions.description,
+        sessionType: sessions.sessionType,
+        ageGroup: sessions.ageGroup,
+        location: sessions.location,
+        startTime: sessions.startTime,
+        endTime: sessions.endTime,
+        coachId: sessions.coachId,
+        maxPlayers: sessions.maxPlayers,
+        createdAt: sessions.createdAt,
+        updatedAt: sessions.updatedAt,
         coachName: users.fullName,
       })
       .from(sessions)
@@ -394,7 +407,19 @@ export class DatabaseStorage implements IStorage {
     
     return await db
       .select({
-        ...sessions,
+        id: sessions.id,
+        academyId: sessions.academyId,
+        title: sessions.title,
+        description: sessions.description,
+        sessionType: sessions.sessionType,
+        ageGroup: sessions.ageGroup,
+        location: sessions.location,
+        startTime: sessions.startTime,
+        endTime: sessions.endTime,
+        coachId: sessions.coachId,
+        maxPlayers: sessions.maxPlayers,
+        createdAt: sessions.createdAt,
+        updatedAt: sessions.updatedAt,
         coachName: users.fullName,
       })
       .from(sessions)
@@ -455,7 +480,7 @@ export class DatabaseStorage implements IStorage {
     return record;
   }
   
-  async getTeamFitnessProgress(ageGroup?: string, period: string = 'week'): Promise<any> {
+  async getTeamFitnessProgress(ageGroup?: AgeGroup, period: string = 'week'): Promise<any> {
     // Calculate date range based on period
     const today = new Date();
     const startDate = new Date(today);
@@ -473,7 +498,16 @@ export class DatabaseStorage implements IStorage {
     const startDateStr = startDate.toISOString().split('T')[0];
     const todayStr = today.toISOString().split('T')[0];
     
-    let query = db
+    const conditions = [
+      gte(fitnessRecords.recordDate, startDateStr),
+      lte(fitnessRecords.recordDate, todayStr)
+    ];
+    
+    if (ageGroup) {
+      conditions.push(eq(players.ageGroup, ageGroup));
+    }
+    
+    const result = await db
       .select({
         avgRunningSpeed: sql<number>`avg(${fitnessRecords.runningSpeed})`,
         avgEndurance: sql<number>`avg(${fitnessRecords.endurance})`,
@@ -483,18 +517,7 @@ export class DatabaseStorage implements IStorage {
       })
       .from(fitnessRecords)
       .innerJoin(players, eq(fitnessRecords.playerId, players.id))
-      .where(
-        and(
-          gte(fitnessRecords.recordDate, startDateStr),
-          lte(fitnessRecords.recordDate, todayStr)
-        )
-      );
-    
-    if (ageGroup && ageGroup !== 'all') {
-      query = query.where(eq(players.ageGroup, ageGroup as "5-8 years" | "8+ years"));
-    }
-    
-    const result = await query;
+      .where(and(...conditions));
     return result[0];
   }
   
@@ -521,7 +544,7 @@ export class DatabaseStorage implements IStorage {
     return undefined;
   }
   
-  async getMealPlansByAgeGroup(ageGroup: "5-8 years" | "8+ years"): Promise<any[]> {
+  async getMealPlansByAgeGroup(ageGroup: AgeGroup): Promise<any[]> {
     return await db
       .select()
       .from(mealPlans)
@@ -1024,6 +1047,12 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAllConnectionRequests(status?: string): Promise<any[]> {
+    const conditions = [];
+    
+    if (status && status !== 'all') {
+      conditions.push(eq(connectionRequests.status, status));
+    }
+    
     let query = db.select({
       id: connectionRequests.id,
       parentId: connectionRequests.parentId,
@@ -1040,14 +1069,13 @@ export class DatabaseStorage implements IStorage {
     })
     .from(connectionRequests)
     .leftJoin(users, eq(connectionRequests.parentId, users.id))
-    .leftJoin(players, eq(connectionRequests.playerId, players.id))
-    .orderBy(desc(connectionRequests.createdAt));
+    .leftJoin(players, eq(connectionRequests.playerId, players.id));
     
-    if (status && status !== 'all') {
-      query = query.where(eq(connectionRequests.status, status));
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
     }
     
-    return await query;
+    return await query.orderBy(desc(connectionRequests.createdAt));
   }
   
   async createConnectionRequest(requestData: InsertConnectionRequest): Promise<any> {

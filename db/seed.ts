@@ -294,24 +294,26 @@ async function seed() {
           // Current fitness record
           await db.insert(schema.fitnessRecords).values({
             playerId: player.id,
+            academyId: player.academyId,
             recordDate: today.toISOString().split('T')[0], // Convert to date string
-            runningSpeed: 15 + Math.random() * 3,
-            endurance: 20 + Math.random() * 10,
-            strength: 10 + Math.random() * 8,
-            agility: 14 + Math.random() * 6,
-            flexibility: 12 + Math.random() * 5,
+            runningSpeed: (15 + Math.random() * 3).toString(),
+            endurance: (20 + Math.random() * 10).toString(),
+            strength: (10 + Math.random() * 8).toString(),
+            agility: (14 + Math.random() * 6).toString(),
+            flexibility: (12 + Math.random() * 5).toString(),
             notes: "Regular assessment"
           });
           
           // Last week's record (for progress comparison)
           await db.insert(schema.fitnessRecords).values({
             playerId: player.id,
+            academyId: player.academyId,
             recordDate: lastWeek.toISOString().split('T')[0], // Convert to date string
-            runningSpeed: 14 + Math.random() * 3,
-            endurance: 18 + Math.random() * 10,
-            strength: 9 + Math.random() * 8,
-            agility: 13 + Math.random() * 6,
-            flexibility: 11 + Math.random() * 5,
+            runningSpeed: (14 + Math.random() * 3).toString(),
+            endurance: (18 + Math.random() * 10).toString(),
+            strength: (9 + Math.random() * 8).toString(),
+            agility: (13 + Math.random() * 6).toString(),
+            flexibility: (11 + Math.random() * 5).toString(),
             notes: "Previous assessment"
           });
         }
