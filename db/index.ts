@@ -7,7 +7,7 @@ if (!DATABASE_URL) throw new Error('DATABASE_URL must be set');
 
 export const pool = new Pool({
   connectionString: DATABASE_URL,
-  ssl: NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  ssl: NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 export const db = drizzle(pool, { schema });

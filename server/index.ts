@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: false }));
 
 // CORS configuration
 const allowedOrigins = [
-  'https://cricket-academy-app.onrender.com',
+  process.env.APP_ORIGIN || 'https://legacy-cricket-app.onrender.com',
   'http://localhost:5174',
   'http://localhost:5173',
   'http://localhost:3002',
@@ -50,6 +50,13 @@ app.use((req, res, next) => {
 
 // Trust proxy for production (Render)
 app.set('trust proxy', 1);
+
+// Production validation
+if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.startsWith('sqlite:')) {
+  console.error('ERROR: SQLite database detected in production environment');
+  console.error('Production must use PostgreSQL database');
+  process.exit(1);
+}
 
 // Sessions
 const isProd = process.env.NODE_ENV === 'production';
@@ -109,12 +116,23 @@ app.get("/api/ping", (_req, res) => {
 
 // Health check endpoint
 app.get("/api/healthz", async (_req, res) => {
-  try { 
-    const h = await dbHealth(); 
-    res.json({ ok: true, db: h.ok, timestamp: new Date().toISOString() }); 
+  try {
+    const h = await dbHealth();
+    res.json({ ok: true, db: h.ok, timestamp: new Date().toISOString() });
   }
-  catch { 
-    res.status(500).json({ ok: false, timestamp: new Date().toISOString() }); 
+  catch {
+    res.status(500).json({ ok: false, timestamp: new Date().toISOString() });
+  }
+});
+
+// Simple health check endpoint
+app.get("/healthz", async (_req, res) => {
+  try {
+    const h = await dbHealth();
+    res.status(200).send("ok");
+  }
+  catch {
+    res.status(500).send("error");
   }
 });
 
