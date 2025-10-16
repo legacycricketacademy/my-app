@@ -521,11 +521,11 @@ export class DatabaseStorage implements IStorage {
     return undefined;
   }
   
-  async getMealPlansByAgeGroup(ageGroup: string): Promise<any[]> {
+  async getMealPlansByAgeGroup(ageGroup: "5-8 years" | "8+ years"): Promise<any[]> {
     return await db
       .select()
       .from(mealPlans)
-      .where(eq(mealPlans.ageGroup, ageGroup as "5-8 years" | "8+ years"))
+      .where(eq(mealPlans.ageGroup, ageGroup))
       .orderBy(desc(mealPlans.weekStartDate));
   }
   
@@ -546,11 +546,10 @@ export class DatabaseStorage implements IStorage {
         id: announcements.id,
         title: announcements.title,
         content: announcements.content,
-        priority: announcements.priority,
-        targetAudience: announcements.targetAudience,
         createdBy: announcements.createdBy,
         academyId: announcements.academyId,
-        isActive: announcements.isActive,
+        targetAgeGroups: announcements.targetAgeGroups,
+        targetLocations: announcements.targetLocations,
         createdAt: announcements.createdAt,
         updatedAt: announcements.updatedAt,
         createdByName: users.fullName,
@@ -568,11 +567,10 @@ export class DatabaseStorage implements IStorage {
         id: announcements.id,
         title: announcements.title,
         content: announcements.content,
-        priority: announcements.priority,
-        targetAudience: announcements.targetAudience,
         createdBy: announcements.createdBy,
         academyId: announcements.academyId,
-        isActive: announcements.isActive,
+        targetAgeGroups: announcements.targetAgeGroups,
+        targetLocations: announcements.targetLocations,
         createdAt: announcements.createdAt,
         updatedAt: announcements.updatedAt,
         createdByName: users.fullName,
@@ -1010,7 +1008,7 @@ export class DatabaseStorage implements IStorage {
       parentId: connectionRequests.parentId,
       playerId: connectionRequests.playerId,
       status: connectionRequests.status,
-      message: connectionRequests.message,
+      notes: connectionRequests.notes,
       createdAt: connectionRequests.createdAt,
       updatedAt: connectionRequests.updatedAt,
       playerFirstName: players.firstName,
@@ -1031,7 +1029,7 @@ export class DatabaseStorage implements IStorage {
       parentId: connectionRequests.parentId,
       playerId: connectionRequests.playerId,
       status: connectionRequests.status,
-      message: connectionRequests.message,
+      notes: connectionRequests.notes,
       createdAt: connectionRequests.createdAt,
       updatedAt: connectionRequests.updatedAt,
       parentName: users.fullName,

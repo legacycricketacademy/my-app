@@ -15,6 +15,14 @@ import { users } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { MailService } from "@sendgrid/mail";
 
+// ---- Session type augmentation ----
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    userRole?: string;
+  }
+}
+
 // ---- __dirname for ES modules ----
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -84,7 +92,7 @@ app.get("/api/ping", (_req, res) => {
 // Dev login bypass endpoint (for testing without Firebase)
 app.post("/api/dev/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body as { email: string; password: string };
     
     // Development accounts for testing
     const devAccounts = {

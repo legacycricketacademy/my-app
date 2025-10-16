@@ -13,6 +13,7 @@ async function seed() {
     if (!academyExists) {
       const [academy] = await db.insert(schema.academies).values({
         name: "Legacy Cricket Academy",
+        slug: "legacy-cricket-academy", // Added required slug field
         description: "The main cricket academy for player development",
         address: "123 Cricket Lane, Sports City",
         phone: "+1234567890",
@@ -80,7 +81,7 @@ async function seed() {
         password: hashSync("password", genSaltSync(10)),
         email: "parent1@example.com",
         fullName: "John Williams",
-        role: "parent",
+        role: "parent" as const,
         academyId: academyId
       },
       {
@@ -88,7 +89,7 @@ async function seed() {
         password: hashSync("password", genSaltSync(10)),
         email: "parent2@example.com",
         fullName: "Sarah Chen",
-        role: "parent",
+        role: "parent" as const,
         academyId: academyId
       },
       {
@@ -96,7 +97,7 @@ async function seed() {
         password: hashSync("password", genSaltSync(10)),
         email: "parent3@example.com",
         fullName: "Michael Harrison",
-        role: "parent",
+        role: "parent" as const,
         academyId: academyId
       },
       {
@@ -104,7 +105,7 @@ async function seed() {
         password: hashSync("password", genSaltSync(10)),
         email: "parent4@example.com",
         fullName: "Lisa Rodriguez",
-        role: "parent",
+        role: "parent" as const,
         academyId: academyId
       }
     ];
@@ -134,8 +135,8 @@ async function seed() {
       {
         firstName: "Aiden",
         lastName: "Parker",
-        dateOfBirth: new Date("2012-05-15"),
-        ageGroup: "Under 12s",
+        dateOfBirth: "2012-05-15", // Convert to string format
+        ageGroup: "8+ years" as const, // Use correct enum value
         playerType: "Batsman",
         parentId: parents[0].id,
         academyId: academyId,
@@ -144,8 +145,8 @@ async function seed() {
       {
         firstName: "Maya",
         lastName: "Williams",
-        dateOfBirth: new Date("2010-02-28"),
-        ageGroup: "Under 14s",
+        dateOfBirth: "2010-02-28", // Convert to string format
+        ageGroup: "8+ years" as const, // Use correct enum value
         playerType: "All-rounder",
         parentId: parents[0].id,
         academyId: academyId,
@@ -154,8 +155,8 @@ async function seed() {
       {
         firstName: "Ethan",
         lastName: "Chen",
-        dateOfBirth: new Date("2012-09-10"),
-        ageGroup: "Under 12s",
+        dateOfBirth: "2012-09-10",
+        ageGroup: "8+ years" as const,
         playerType: "Bowler",
         parentId: parents[1].id,
         academyId: academyId,
@@ -164,8 +165,8 @@ async function seed() {
       {
         firstName: "Jake",
         lastName: "Harrison",
-        dateOfBirth: new Date("2010-11-22"),
-        ageGroup: "Under 14s",
+        dateOfBirth: "2010-11-22",
+        ageGroup: "8+ years" as const,
         playerType: "Wicket Keeper",
         parentId: parents[2].id,
         academyId: academyId,
@@ -174,8 +175,8 @@ async function seed() {
       {
         firstName: "Sophia",
         lastName: "Rodriguez",
-        dateOfBirth: new Date("2008-07-15"),
-        ageGroup: "Under 16s",
+        dateOfBirth: "2008-07-15",
+        ageGroup: "8+ years" as const,
         playerType: "All-rounder",
         parentId: parents[3].id,
         academyId: academyId,
@@ -215,8 +216,8 @@ async function seed() {
         title: "Under 12s Training",
         description: "Basic batting and bowling techniques",
         sessionType: "Training",
-        ageGroup: "Under 12s",
-        location: "Main Ground",
+        ageGroup: "8+ years" as const,
+        location: "Strongsville" as const, // Use correct enum value
         startTime: new Date(today.getTime() + 16 * 60 * 60 * 1000), // 4:00 PM today
         endTime: new Date(today.getTime() + 17.5 * 60 * 60 * 1000), // 5:30 PM today
         coachId: coach.id,
@@ -227,8 +228,8 @@ async function seed() {
         title: "Under 14s Fitness",
         description: "Strength and conditioning training",
         sessionType: "Fitness",
-        ageGroup: "Under 14s",
-        location: "Indoor Facility",
+        ageGroup: "8+ years" as const,
+        location: "Solon" as const, // Use correct enum value
         startTime: new Date(today.getTime() + 18 * 60 * 60 * 1000), // 6:00 PM today
         endTime: new Date(today.getTime() + 19 * 60 * 60 * 1000), // 7:00 PM today
         coachId: coach.id,
@@ -239,8 +240,8 @@ async function seed() {
         title: "Parent Meeting",
         description: "Discussion: Tournament Preparation",
         sessionType: "Meeting",
-        ageGroup: "All",
-        location: "Club House",
+        ageGroup: "8+ years" as const,
+        location: "Strongsville" as const, // Use correct enum value
         startTime: new Date(today.getTime() + 19.5 * 60 * 60 * 1000), // 7:30 PM today
         endTime: new Date(today.getTime() + 20.5 * 60 * 60 * 1000), // 8:30 PM today
         coachId: coach.id,
@@ -250,8 +251,8 @@ async function seed() {
         title: "Under 16s Match Practice",
         description: "Simulated match scenarios",
         sessionType: "Practice Match",
-        ageGroup: "Under 16s",
-        location: "Main Ground",
+        ageGroup: "8+ years" as const,
+        location: "Strongsville" as const, // Use correct enum value
         startTime: new Date(today.getTime() + 24 * 60 * 60 * 1000 + 15 * 60 * 60 * 1000), // 3:00 PM tomorrow
         endTime: new Date(today.getTime() + 24 * 60 * 60 * 1000 + 17 * 60 * 60 * 1000), // 5:00 PM tomorrow
         coachId: coach.id,
@@ -285,7 +286,7 @@ async function seed() {
         const fitnessExists = await db.query.fitnessRecords.findFirst({
           where: (records, { and, eq }) => and(
             eq(records.playerId, player.id),
-            eq(records.recordDate, today)
+            eq(records.recordDate, today.toISOString().split('T')[0]) // Convert to date string
           )
         });
         
@@ -293,7 +294,7 @@ async function seed() {
           // Current fitness record
           await db.insert(schema.fitnessRecords).values({
             playerId: player.id,
-            recordDate: today,
+            recordDate: today.toISOString().split('T')[0], // Convert to date string
             runningSpeed: 15 + Math.random() * 3,
             endurance: 20 + Math.random() * 10,
             strength: 10 + Math.random() * 8,
@@ -305,7 +306,7 @@ async function seed() {
           // Last week's record (for progress comparison)
           await db.insert(schema.fitnessRecords).values({
             playerId: player.id,
-            recordDate: lastWeek,
+            recordDate: lastWeek.toISOString().split('T')[0], // Convert to date string
             runningSpeed: 14 + Math.random() * 3,
             endurance: 18 + Math.random() * 10,
             strength: 9 + Math.random() * 8,
@@ -319,10 +320,10 @@ async function seed() {
 
     // Create meal plans
     const mealPlanData = {
-      ageGroup: "Under 12s",
+      ageGroup: "5-8 years" as const, // Use correct enum value
       title: "Weekly Nutrition Plan",
-      weekStartDate: new Date(),
-      weekEndDate: new Date(new Date().setDate(new Date().getDate() + 6)),
+      weekStartDate: new Date().toISOString().split('T')[0], // Convert to date string
+      weekEndDate: new Date(new Date().setDate(new Date().getDate() + 6)).toISOString().split('T')[0], // Convert to date string
       createdBy: coach.id,
       academyId: academyId
     };
@@ -429,27 +430,27 @@ async function seed() {
       const paymentsData = [
         {
           playerId: players[1].id, // Maya Williams
-          amount: 85.00,
+          amount: "85.00", // Convert to string as per schema
           paymentType: "Monthly Fee",
-          dueDate: new Date(new Date().setDate(new Date().getDate() - 3)), // 3 days ago
+          dueDate: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString().split('T')[0], // 3 days ago
           status: "pending",
           notes: "Monthly training fee",
           academyId: academyId
         },
         {
           playerId: players[3].id, // Jake Harrison
-          amount: 45.00,
+          amount: "45.00", // Convert to string as per schema
           paymentType: "Equipment Fee",
-          dueDate: new Date(), // Today
+          dueDate: new Date().toISOString().split('T')[0], // Today
           status: "pending",
           notes: "Cricket gear purchase",
           academyId: academyId
         },
         {
           playerId: players[2].id, // Ethan Chen
-          amount: 120.00,
+          amount: "120.00", // Convert to string as per schema
           paymentType: "Tournament Fee",
-          dueDate: new Date(new Date().setDate(new Date().getDate() + 5)), // 5 days from now
+          dueDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString().split('T')[0], // 5 days from now
           status: "pending",
           notes: "Summer tournament registration",
           academyId: academyId
