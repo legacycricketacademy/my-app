@@ -117,6 +117,28 @@ export default function AuthPage() {
                 <div><strong>Admin:</strong> admin / password</div>
                 <div><strong>Coach:</strong> coach / password</div>
               </div>
+              
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/dev/send-test-email?to=${encodeURIComponent(formData.email || 'madhukar.kcc@gmail.com')}`, { 
+                        credentials: 'include' 
+                      });
+                      const data = await response.json();
+                      alert(data.ok ? `Email sent to ${data.to}` : `Failed: ${data.error}`);
+                    } catch (error) {
+                      alert(`Error: ${error}`);
+                    }
+                  }}
+                >
+                  Send Test Email
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

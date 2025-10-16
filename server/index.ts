@@ -18,6 +18,7 @@ import { db } from "../db/index.js";
 import { users } from "../shared/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 import { MailService } from "@sendgrid/mail";
+import { sendAppEmail } from "./email.js";
 
 // ---- __dirname for ES modules ----
 const __filename = fileURLToPath(import.meta.url);
@@ -259,6 +260,9 @@ if (process.env.SENDGRID_API_KEY) {
   mailService.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
+// Email configuration logging
+console.log(`email: bypass=${process.env.BYPASS_EMAIL_SENDING} key=${process.env.SENDGRID_API_KEY ? 'present' : 'missing'} from=${process.env.DEFAULT_FROM_EMAIL || 'madhukar.kcc@gmail.com'}`);
+
 async function sendVerificationEmail(
   email: string,
   parentName: string,
@@ -311,6 +315,23 @@ async function sendVerificationEmail(
     return false;
   }
 }
+
+// ---- Test Email Endpoint ----
+app.get('/api/dev/send-test-email', async (req, res) => {
+  if (process.env.EMAIL_TEST_ENABLED !== 'true') {
+    return res.status(403).json({ ok: false, error: 'disabled' });
+  }
+  
+  const to = String(req.query.to || process.env.DEFAULT_FROM_EMAIL || 'madhukar.kcc@gmail.com');
+  
+  try {
+    const result = await sendAppEmail(to, 'Legacy Cricket Academy Test Email', 'Legacy Cricket Academy test email from Render.');
+    return res.json({ ok: true, to });
+  } catch (err) {
+    console.error('test email failed', err);
+    return res.status(500).json({ ok: false, error: (err as Error).message });
+  }
+});
 
 // ---- Example APIs ----
 app.get("/api/coaches/pending", async (_req, res) => {

@@ -12,6 +12,7 @@ const ACADEMY_NAME = 'Legacy Cricket Academy';
 // Important: This MUST be an email address that is verified in your SendGrid account
 // Clean up any whitespace from environment variable
 const ACADEMY_EMAIL = process.env.SENDGRID_FROM_EMAIL ? process.env.SENDGRID_FROM_EMAIL.trim() : 'madhukar.kcc@gmail.com'; // Verified sender email
+const DEFAULT_FROM_EMAIL = process.env.DEFAULT_FROM_EMAIL || 'madhukar.kcc@gmail.com';
 const ACADEMY_WEBSITE = 'https://legacycricketacademy.com';
 
 // Log and check the SendGrid configuration on startup
@@ -110,6 +111,19 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
     console.error('Error details:', error);
     return false;
   }
+}
+
+// Simple helper function for sending app emails
+export async function sendAppEmail(to: string, subject: string, text: string): Promise<any> {
+  const result = await sendEmail({
+    to,
+    subject,
+    text,
+    html: `<p>${text}</p>`
+  });
+  
+  console.log('sendAppEmail result:', { statusCode: result ? 'success' : 'failed', body: result });
+  return result;
 }
 
 export function generateInvitationEmail(

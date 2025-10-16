@@ -19,8 +19,12 @@ services:
         sync: false
       - key: SENDGRID_API_KEY
         sync: false
-      - key: BYPASS_EMAIL_SENDING
+      - key: DEFAULT_FROM_EMAIL
+        value: madhukar.kcc@gmail.com
+      - key: EMAIL_TEST_ENABLED
         value: true
+      - key: BYPASS_EMAIL_SENDING
+        value: false
       - key: DATABASE_URL
         fromDatabase:
           name: legacy-cricket-db
