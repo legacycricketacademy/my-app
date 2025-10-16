@@ -68,7 +68,7 @@ app.get("/health", (_req, res) => {
   res.status(200).json({
     status: "ok",
     env: process.env.NODE_ENV || "development",
-    port: Number(process.env.PORT) || (process.env.NODE_ENV === "production" ? 5000 : 3002),
+    port: Number(process.env.PORT) || 3002,
     time: new Date().toISOString(),
   });
 });
@@ -172,8 +172,7 @@ async function sendVerificationEmail(
     return false;
   }
 
-  const defaultPort =
-    process.env.NODE_ENV === "production" ? 5000 : 3002;
+  const defaultPort = 3002;
   const port = process.env.PORT || String(defaultPort);
   const host =
     process.env.NODE_ENV === "production"
