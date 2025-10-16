@@ -53,7 +53,11 @@ const sessionConfig = {
   secret: process.env.SESSION_SECRET!,
   resave: false,
   saveUninitialized: false,
-  store: isProd ? new (PGSession(session))({ pool }) : undefined,
+  store: isProd ? new (PGSession(session))({ 
+    pool,
+    tableName: 'session',
+    createTableIfMissing: true   // auto-create on first run
+  }) : undefined,
   cookie: {
     secure: process.env.NODE_ENV === 'production',   // required on Render (HTTPS)
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
@@ -491,5 +495,6 @@ app.use((req, res, next) => {
 
   server.listen(port, '0.0.0.0', () => {
     console.log(`server listening on :${port}`);
+    console.log('sessions: using connect-pg-simple with table "session" (auto-create enabled)');
   });
 })();
