@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/layout/main-layout";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,7 +32,8 @@ import { format, parseISO } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { apiRequest, queryClient } from "../lib/queryClient";
+import { api } from "../lib/api";
+import { queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Search, 
@@ -69,6 +71,7 @@ const playerFormSchema = z.object({
 type PlayerFormValues = z.infer<typeof playerFormSchema>;
 
 export default function PlayersPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [ageGroup, setAgeGroup] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
@@ -79,6 +82,16 @@ export default function PlayersPage() {
   const [sendingEmailId, setSendingEmailId] = useState<number | null>(null);
   const [playerToDelete, setPlayerToDelete] = useState<any>(null);
   const { toast } = useToast();
+  
+  // Check for add=true query parameter and open dialog
+  useEffect(() => {
+    const addParam = searchParams.get('add');
+    if (addParam === 'true') {
+      setShowAddPlayerDialog(true);
+      // Remove the query parameter from URL
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
   
   // Reset the copied state after 3 seconds
   const resetCopiedState = (playerId: number) => {
@@ -118,17 +131,12 @@ export default function PlayersPage() {
   
   const { data: players, isLoading } = useQuery<any[]>({
     queryKey: ["/api/players", ageGroup],
-    queryFn: () => fetch(`/api/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`).then(res => res.json())
+    queryFn: () => api.get(`/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`)
   });
   
   const createPlayerMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/players", data);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to create player");
-      }
-      return res.json();
+      return await api.post("/players", data);
     },
     onSuccess: () => {
       toast({

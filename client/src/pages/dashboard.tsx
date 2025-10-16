@@ -10,14 +10,16 @@ import { PaymentCard } from "@/components/dashboard/payment-card";
 import { AnnouncementsCard } from "@/components/dashboard/announcements-card";
 import { UserPlus, CalendarCheck2, Users, Heart, DollarSign, Megaphone, Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { ScheduleSessionDialog } from "@/components/sessions/schedule-session-dialog";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const currentDate = format(new Date(), "EEEE, MMMM d, yyyy");
   
   const { data: stats, isLoading } = useQuery<any>({
     queryKey: ["/api/dashboard/stats"],
+    queryFn: () => api.get("/dashboard/stats")
   });
   
   return (
@@ -30,7 +32,7 @@ export default function Dashboard() {
         </div>
         
         <div className="mt-4 md:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-          <Link href="/players/add">
+          <Link to="/players/add">
             <Button className="flex items-center justify-center space-x-2">
               <UserPlus className="h-4 w-4 mr-1" />
               <span>Add New Player</span>

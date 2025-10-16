@@ -2,11 +2,13 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { User, UserCircle, Users } from "lucide-react";
 import { format } from "date-fns";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
+import { api } from "@/lib/api";
 
 export function ScheduleCard() {
   const { data: sessions, isLoading } = useQuery<any[]>({
     queryKey: ["/api/sessions/today"],
+    queryFn: () => api.get("/sessions/today")
   });
 
   const formatTime = (dateString: string) => {
@@ -18,7 +20,7 @@ export function ScheduleCard() {
     <Card className="bg-white rounded-lg shadow">
       <CardHeader className="flex items-center justify-between border-b border-gray-200 p-4">
         <CardTitle className="font-semibold text-lg heading">Today's Schedule</CardTitle>
-        <Link href="/schedule" className="text-primary text-sm hover:underline">
+        <Link to="/schedule" className="text-primary text-sm hover:underline">
           View All
         </Link>
       </CardHeader>

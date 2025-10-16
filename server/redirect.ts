@@ -2,9 +2,9 @@
  * This is a server middleware that handles redirects to appropriate dashboard
  * based on user role after login
  */
-import path from 'path';
+import { Express } from 'express';
 
-function setupRedirects(app) {
+export function setupRedirects(app: Express) {
   // Add a middleware to check if user is logged in and redirect accordingly
   app.get('/dashboard', (req, res) => {
     if (!req.isAuthenticated()) {
@@ -73,5 +73,3 @@ function setupRedirects(app) {
     return res.redirect('/');
   });
 }
-
-export { setupRedirects };

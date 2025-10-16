@@ -2,7 +2,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Eye } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 
 export function AnnouncementsCard() {
@@ -81,7 +81,7 @@ export function AnnouncementsCard() {
         
         {announcements && announcements.length > 0 && (
           <div className="mt-3 text-center">
-            <Link href="/announcements" className="text-primary text-sm hover:underline flex items-center justify-center">
+            <Link to="/announcements" className="text-primary text-sm hover:underline flex items-center justify-center">
               <span>View All Announcements</span>
               <ArrowRight className="ml-1 h-4 w-4" />
             </Link>

@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Sun, CupSoda, UtensilsCrossed, Download, Send } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export function MealPlanCard() {
   const [ageGroup, setAgeGroup] = useState<string>("Under 12s");
@@ -57,11 +57,11 @@ export function MealPlanCard() {
   };
 
   return (
-    <Card className="bg-white rounded-lg shadow">
-      <CardHeader className="flex items-center justify-between border-b border-gray-200 p-4">
+    <Card className="bg-white rounded-lg shadow-sm border border-gray-100 w-full max-w-full overflow-hidden">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 p-4">
         <CardTitle className="font-semibold text-lg heading">Weekly Meal Plan</CardTitle>
         <Select value={ageGroup} onValueChange={setAgeGroup}>
-          <SelectTrigger className="text-sm bg-gray-100 border-0 focus:ring-1 focus:ring-primary h-8 w-32">
+          <SelectTrigger className="text-sm bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-primary h-8 w-32">
             <SelectValue placeholder="Select age group" />
           </SelectTrigger>
           <SelectContent>
@@ -72,16 +72,16 @@ export function MealPlanCard() {
         </Select>
       </CardHeader>
       
-      <CardContent className="p-4">
+      <CardContent className="p-4 overflow-hidden">
         {/* Day selector tabs */}
-        <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-200 pb-2 mb-4">
+        <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-100 pb-3 mb-4">
           {dayNames.map((day, index) => (
             <button
               key={index}
-              className={`min-w-[80px] text-center py-2 px-3 text-sm font-medium ${
+              className={`min-w-[60px] text-center py-2 px-2 text-sm font-medium transition-colors rounded-t-md ${
                 selectedDay === index 
-                  ? "text-primary border-b-2 border-primary" 
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "text-primary border-b-2 border-primary bg-primary/5" 
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               }`}
               onClick={() => setSelectedDay(index)}
             >
@@ -108,20 +108,20 @@ export function MealPlanCard() {
             ))
           ) : selectedDayMeals && selectedDayMeals.length > 0 ? (
             selectedDayMeals.map((meal) => (
-              <div key={meal.id}>
-                <div className="flex items-center mb-2">
-                  <div className={`h-8 w-8 ${getMealIconBg(meal.mealType)} rounded-full flex items-center justify-center mr-2`}>
+              <div key={meal.id} className="border border-gray-100 rounded-lg p-3 bg-gray-50/50">
+                <div className="flex items-center mb-3">
+                  <div className={`h-8 w-8 ${getMealIconBg(meal.mealType)} rounded-full flex items-center justify-center mr-3`}>
                     {getMealIcon(meal.mealType)}
                   </div>
                   <h4 className="font-medium text-gray-800">{meal.mealType}</h4>
                 </div>
-                <div className="pl-10">
+                <div className="pl-11">
                   {meal.items?.map((item: string, index: number) => (
-                    <p key={index} className="text-sm text-gray-600">• {item}</p>
+                    <p key={index} className="text-sm text-gray-600 mb-1">• {item}</p>
                   ))}
                   {meal.notes && (
-                    <div className="mt-1 text-xs text-secondary flex items-center">
-                      <span className="i-ri-information-line mr-1">ⓘ</span>
+                    <div className="mt-2 text-xs text-blue-600 flex items-center bg-blue-50 p-2 rounded">
+                      <span className="mr-1">ℹ️</span>
                       <span>{meal.notes}</span>
                     </div>
                   )}
@@ -135,14 +135,14 @@ export function MealPlanCard() {
           )}
         </div>
         
-        <div className="mt-4 flex justify-between">
-          <Button variant="outline" size="sm" className="border-primary text-primary">
-            <Download className="h-4 w-4 mr-1" />
-            <span>Download Plan</span>
+        <div className="mt-4 flex gap-2">
+          <Button variant="outline" size="sm" className="border-primary text-primary flex-1 min-w-0">
+            <Download className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span className="truncate text-xs">Download</span>
           </Button>
-          <Button size="sm" className="bg-primary text-white">
-            <Send className="h-4 w-4 mr-1" />
-            <span>Share with Parents</span>
+          <Button size="sm" className="bg-primary text-white flex-1 min-w-0">
+            <Send className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span className="truncate text-xs">Share</span>
           </Button>
         </div>
       </CardContent>

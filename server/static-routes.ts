@@ -7,36 +7,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export function setupStaticRoutes(app: express.Express): void {
-  // Skip certain routes that are directly handled by the server
-  const directServerRoutes = [
-    '/api',
-    '/verify-email'
-  ];
-  
   // In development, skip static file serving - let Vite handle everything
   // Only set up static routes for production builds
   if (process.env.NODE_ENV === 'production') {
-    // Serve static files from the dist/public directory for all other routes
-    app.use((req, res, next) => {
-      // For routes specifically handled by the server, don't try to serve static files
-      if (directServerRoutes.some(route => req.path.startsWith(route))) {
-        return next();
-      }
-      
-      // For all other routes, try to serve static files
-      express.static('dist/public')(req, res, next);
-    });
+    // Serve static files from dist/public directory
+    const publicDir = path.resolve(__dirname, "..", "dist", "public");
+    app.use(express.static(publicDir));
     
     // Catch-all route to handle client-side routes (SPA routing)
-    app.use((req, res, next) => {
-      // Skip API routes and direct server routes
-      if (req.path.startsWith('/api/') || 
-          directServerRoutes.some(route => req.path.startsWith(route))) {
-        return next();
-      }
-      
-      // For all other routes, serve the React app index.html
-      res.sendFile(path.resolve('./dist/public/index.html'));
-    });
+    // This must be after API routes to avoid interfering with them
+    app.get("*", (_, res) => res.sendFile(path.join(publicDir, "index.html")));
   }
 }

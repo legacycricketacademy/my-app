@@ -2,8 +2,16 @@ import { Express } from "express";
 import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
 import { verifyJwt, requireRole } from "./middleware/verifyJwt";
+// import { setupApiRoutes } from "./api-routes";
+import { isTestAuth, testLogin, testLogout } from "./auth/test-auth.js";
 
 export function registerRoutes(app: Express) {
+  // Test auth routes (only available in test mode)
+  if (isTestAuth()) {
+    app.post("/api/test/login", testLogin);
+    app.post("/api/test/logout", testLogout);
+  }
+
   // Disable local auth routes - return 404
   app.all("/auth/*", (req, res) => {
     res.status(404).json({ error: "Local auth disabled - use Keycloak" });
@@ -28,12 +36,11 @@ export function registerRoutes(app: Express) {
     res.json({ status: "ok", keycloak_enabled: process.env.KEYCLOAK_ENABLED });
   });
 
-  // Setup Vite or static serving
-  if (app.get("env") === "development") {
-    setupVite(app);
-  } else {
-    serveStatic(app);
-  }
+  // Setup API routes
+  // setupApiRoutes(app);
+
+  // Return the HTTP server
+  return createHttpServer(app);
 }
 
 export function createHttpServer(app: Express) {

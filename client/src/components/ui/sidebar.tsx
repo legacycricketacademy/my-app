@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useLocation, Link } from "wouter";
+import { useLocation, Link } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Users, 
@@ -35,7 +35,7 @@ declare global {
 
 export function Sidebar() {
   const { user, logoutMutation } = useAuth();
-  const [location] = useLocation();
+  const location = useLocation();
   
   const getInitials = (name: string) => {
     return name
@@ -46,7 +46,7 @@ export function Sidebar() {
   };
   
   const isActive = (path: string) => {
-    return location === path;
+    return location.pathname === path;
   };
   
   const handleLogout = () => {
@@ -66,13 +66,13 @@ export function Sidebar() {
   
   // Base nav items for admins/coaches
   const adminNavItems = [
-    { label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" />, path: "/" },
-    { label: "Team Management", icon: <Users className="h-5 w-5" />, path: "/players" },
-    { label: "Schedule", icon: <Calendar className="h-5 w-5" />, path: "/schedule" },
-    { label: "Fitness Tracking", icon: <Heart className="h-5 w-5" />, path: "/fitness" },
-    { label: "Meal Plans", icon: <Utensils className="h-5 w-5" />, path: "/meal-plans" },
-    { label: "Announcements", icon: <Send className="h-5 w-5" />, path: "/announcements" },
-    { label: "Payments", icon: <DollarSign className="h-5 w-5" />, path: "/payments" },
+    { label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" />, path: "/dashboard" },
+    { label: "Team Management", icon: <Users className="h-5 w-5" />, path: "/dashboard/team" },
+    { label: "Schedule", icon: <Calendar className="h-5 w-5" />, path: "/dashboard/schedule" },
+    { label: "Fitness Tracking", icon: <Heart className="h-5 w-5" />, path: "/dashboard/fitness" },
+    { label: "Meal Plans", icon: <Utensils className="h-5 w-5" />, path: "/dashboard/meal-plans" },
+    { label: "Announcements", icon: <Send className="h-5 w-5" />, path: "/dashboard/announcements" },
+    { label: "Payments", icon: <DollarSign className="h-5 w-5" />, path: "/dashboard/payments" },
     { label: "Settings", icon: <Settings className="h-5 w-5" />, path: "/settings" },
   ];
 

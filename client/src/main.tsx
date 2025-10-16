@@ -1,36 +1,38 @@
-import React from "react";
-import { createRoot } from "react-dom/client";
-import { Switch, Route } from "wouter";
-import "./index.css";
+/**
+ * Main application entry point
+ * Uses the refactored authentication service
+ */
 
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
-import { Toaster } from "@/components/ui/toaster";
-import AuthPageLocal from "./pages/auth-page-local";
-import AuthCallback from "./pages/auth-callback";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/providers/theme-provider';
+import { AuthProvider } from '@/contexts/auth-context';
+import App from './App';
+import './index.css';
 
-function Router() {
-  return (
-    <Switch>
-      <Route path="/auth" component={AuthPageLocal} />
-      <Route path="/auth/callback" component={AuthCallback} />
-      <Route path="/" component={() => <div>Home Page</div>} />
-      <Route component={() => <div>404 Not Found</div>} />
-    </Switch>
-  );
-}
+// Create a new query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-function App() {
-  return (
+// Render the app
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <ThemeProvider>
+        <AuthProvider>
+          <App />
+          <Toaster />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
-  );
-}
-
-const container = document.getElementById("root");
-if (!container) throw new Error("Root element not found");
-
-const root = createRoot(container);
-root.render(<App />);
+  </React.StrictMode>
+);

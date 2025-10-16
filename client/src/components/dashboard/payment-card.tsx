@@ -5,17 +5,20 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
+import { api } from "@/lib/api";
 
 export function PaymentCard() {
   const [period, setPeriod] = useState<string>("thisMonth");
   
   const { data: pendingPayments, isLoading } = useQuery<any[]>({
     queryKey: ["/api/payments/pending"],
+    queryFn: () => api.get("/payments/pending")
   });
   
   const { data: stats } = useQuery<any>({
     queryKey: ["/api/dashboard/stats"],
+    queryFn: () => api.get("/dashboard/stats")
   });
   
   const getInitials = (firstName: string, lastName: string) => {
@@ -47,7 +50,7 @@ export function PaymentCard() {
     <Card className="bg-white rounded-lg shadow">
       <CardHeader className="flex items-center justify-between border-b border-gray-200 p-4">
         <CardTitle className="font-semibold text-lg heading">Payment Tracker</CardTitle>
-        <Link href="/payments" className="text-primary text-sm hover:underline">
+        <Link to="/payments" className="text-primary text-sm hover:underline">
           View All
         </Link>
       </CardHeader>

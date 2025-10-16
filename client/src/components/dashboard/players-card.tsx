@@ -6,7 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Search, User, Heart, Mail } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
+import { api } from "@/lib/api";
 
 export function PlayersCard() {
   const [ageGroup, setAgeGroup] = useState<string>("all");
@@ -14,7 +15,7 @@ export function PlayersCard() {
   
   const { data: players, isLoading } = useQuery<any[]>({
     queryKey: ["/api/players", ageGroup],
-    queryFn: () => fetch(`/api/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`).then(res => res.json())
+    queryFn: () => api.get(`/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`)
   });
   
   const filteredPlayers = players?.filter(player => {
@@ -45,7 +46,7 @@ export function PlayersCard() {
               <SelectItem value="Under 16s">Under 16s</SelectItem>
             </SelectContent>
           </Select>
-          <Link href="/players" className="text-primary text-sm hover:underline flex items-center">
+          <Link to="/players" className="text-primary text-sm hover:underline flex items-center">
             View All
           </Link>
         </div>
@@ -83,7 +84,7 @@ export function PlayersCard() {
           ) : filteredPlayers && filteredPlayers.length > 0 ? (
             filteredPlayers.map((player) => (
               <div key={player.id} className="flex items-center justify-between border-b border-gray-100 pb-3 group">
-                <Link href={`/player/${player.id}`} className="flex items-center space-x-3 flex-1 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors">
+                <Link to={`/player/${player.id}`} className="flex items-center space-x-3 flex-1 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors">
                   <Avatar className={player.id % 5 === 0 ? "border-2 border-primary" : ""}>
                     <AvatarImage src={player.profileImage} alt={`${player.firstName} ${player.lastName}`} />
                     <AvatarFallback>{getInitials(player.firstName, player.lastName)}</AvatarFallback>
@@ -94,12 +95,12 @@ export function PlayersCard() {
                   </div>
                 </Link>
                 <div className="flex space-x-1">
-                  <Link href={`/player/${player.id}`}>
+                  <Link to={`/player/${player.id}`}>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-gray-500 hover:text-primary hover:bg-gray-100" title="View Profile">
                       <User className="h-4 w-4" />
                     </Button>
                   </Link>
-                  <Link href={`/player/${player.id}?tab=fitness`}>
+                  <Link to={`/player/${player.id}?tab=fitness`}>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-gray-500 hover:text-primary hover:bg-gray-100" title="Fitness Data">
                       <Heart className="h-4 w-4" />
                     </Button>

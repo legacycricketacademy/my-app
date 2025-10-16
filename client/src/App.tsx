@@ -20,6 +20,7 @@ import ParentSchedulePage from "@/pages/parent/parent-schedule";
 import ParentAnnouncementsPage from "@/pages/parent/announcements";
 import ParentPaymentsPage from "@/pages/parent/payments";
 import AuthPageLocal from "@/pages/auth-page-local";
+import AuthPageDev from "@/pages/auth-page-dev";
 import Dashboard from "@/pages/dashboard";
 import PlayersPage from "@/pages/players-page";
 import SchedulePage from "@/pages/schedule-page";
@@ -32,6 +33,16 @@ import RegisterDebug from "@/pages/register-debug";
 // Admin Pages
 import AdminDashboard from "@/pages/admin/admin-dashboard";
 import CoachesPendingApprovalPage from "@/pages/admin/coaches-pending-approval";
+
+// Dashboard Pages
+import { DashboardLayout } from "@/layout/DashboardLayout";
+import TeamPage from "@/pages/dashboard/TeamPage";
+import DashboardAnnouncementsPage from "@/pages/dashboard/AnnouncementsPage";
+import DashboardSchedulePage from "@/pages/dashboard/SchedulePage";
+import PaymentsPage from "@/pages/dashboard/PaymentsPage";
+import MealPlansPage from "@/pages/dashboard/MealPlansPage";
+import FitnessTrackingPage from "@/pages/dashboard/FitnessTrackingPage";
+import SectionNotFound from "@/pages/dashboard/SectionNotFound";
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -51,41 +62,63 @@ function AppRoutes() {
     );
   }
 
-  // Check if user is a parent or testing parent view
-  const isParentUser = user && (user.role === "parent" || isTestingParentView);
-
-  // Debug logging to help troubleshoot routing
-  console.log("App Routing - User:", user);
-  console.log("App Routing - Is Parent View:", isParentUser);
+  // Check if user is a parent user
+  const isParentUser = user?.role === "parent";
 
   return (
     <Routes>
-      {/* Auth Route - accessible to non-logged in users */}
+      {/* Auth route */}
       <Route
         path="/auth"
         element={
           user ? (
-            isParentUser ? (
-              <Navigate to="/dashboard/parent" />
-            ) : (
-              <Navigate to="/" />
-            )
+            <Navigate to="/dashboard" />
           ) : (
-            <AuthPageLocal />
+            <AuthPageDev />
           )
         }
       />
 
-      {/* Home Route - redirects based on authentication */}
-      <Route path="/" element={
-        user ? (
-          isParentUser ? <Navigate to="/dashboard/parent" /> : <Dashboard />
-        ) : (
-          <SimpleReactDashboard />
-        )
-      } />
+      {/* Main dashboard route with nested routes */}
+      <Route
+        path="/dashboard"
+        element={
+          user ? (
+            <DashboardLayout />
+          ) : (
+            <Navigate to="/auth" />
+          )
+        }
+      >
+        {/* Dashboard index route */}
+        <Route
+          index
+          element={
+            isTestingParentView ? (
+              <EnhancedParentDashboard />
+            ) : (
+              <Dashboard />
+            )
+          }
+        />
+        
+        {/* Dashboard section routes */}
+        <Route path="team" element={<TeamPage />} />
+        <Route path="announcements" element={<DashboardAnnouncementsPage />} />
+        <Route path="schedule" element={<DashboardSchedulePage />} />
+        <Route path="payments" element={<PaymentsPage />} />
+        <Route path="meal-plans" element={<MealPlansPage />} />
+        <Route path="fitness" element={<FitnessTrackingPage />} />
+        
+        {/* Dashboard catch-all */}
+        <Route path="*" element={<SectionNotFound />} />
+      </Route>
 
-      {/* Parent Dashboard Routes */}
+      {/* Legacy routes - redirect to dashboard */}
+      <Route path="/" element={<Navigate to="/dashboard" />} />
+      <Route path="/admin" element={<Navigate to="/dashboard" />} />
+
+      {/* Parent dashboard routes */}
       <Route
         path="/dashboard/parent"
         element={
@@ -93,7 +126,7 @@ function AppRoutes() {
             isParentUser ? (
               <EnhancedParentDashboard />
             ) : (
-              <Navigate to="/" />
+              <Navigate to="/dashboard" />
             )
           ) : (
             <Navigate to="/auth" />
@@ -101,15 +134,12 @@ function AppRoutes() {
         }
       />
 
-      {/* Simple React parent dashboard with minimal dependencies */}
+      {/* Test parent routes */}
       <Route path="/simple-parent" element={<SimpleReactDashboard />} />
-
-      {/* Independent parent dashboard that uses no external dependencies */}
       <Route path="/independent-parent" element={<IndependentDashboard />} />
-      
-      {/* Direct testing route for enhanced parent dashboard - no auth required */}
       <Route path="/test-enhanced-parent" element={<EnhancedParentDashboard />} />
 
+      {/* Parent specific routes */}
       <Route
         path="/parent/schedule"
         element={
@@ -117,7 +147,7 @@ function AppRoutes() {
             isParentUser ? (
               <ParentSchedulePage />
             ) : (
-              <Navigate to="/schedule" />
+              <Navigate to="/dashboard/schedule" />
             )
           ) : (
             <Navigate to="/auth" />
@@ -132,7 +162,7 @@ function AppRoutes() {
             isParentUser ? (
               <ParentAnnouncementsPage />
             ) : (
-              <Navigate to="/announcements" />
+              <Navigate to="/dashboard/announcements" />
             )
           ) : (
             <Navigate to="/auth" />
@@ -147,7 +177,7 @@ function AppRoutes() {
             isParentUser ? (
               <ParentPaymentsPage />
             ) : (
-              <Navigate to="/" />
+              <Navigate to="/dashboard/payments" />
             )
           ) : (
             <Navigate to="/auth" />
@@ -155,83 +185,21 @@ function AppRoutes() {
         }
       />
 
-      {/* Legacy parent route redirects to dashboard */}
       <Route path="/parent" element={<Navigate to="/dashboard/parent" />} />
 
-      {/* Admin Routes */}
-      <Route
-        path="/admin"
-        element={
-          user && user.role === "admin" ? (
-            <AdminDashboard />
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
-      
-      <Route
-        path="/admin/dashboard"
-        element={
-          user && user.role === "admin" ? (
-            <AdminDashboard />
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
-      
-      <Route
-        path="/admin/coaches"
-        element={
-          user && user.role === "admin" ? (
-            <CoachesPendingApprovalPage />
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
+      {/* Legacy player routes - redirect to dashboard */}
+      <Route path="/players" element={<Navigate to="/dashboard/team" />} />
+      <Route path="/players/add" element={<Navigate to="/dashboard/team?add=true" />} />
 
-      {/* Admin/Coach Routes */}
+      {/* Settings route (outside dashboard) */}
       <Route
-        path="/players"
+        path="/settings"
         element={
           user ? (
-            !isParentUser ? (
-              <PlayersPage />
-            ) : (
-              <Navigate to="/dashboard/parent" />
-            )
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
-
-      <Route
-        path="/schedule"
-        element={
-          user ? (
-            !isParentUser ? (
-              <SchedulePage />
-            ) : (
-              <Navigate to="/parent/schedule" />
-            )
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
-
-      <Route
-        path="/announcements"
-        element={
-          user ? (
-            !isParentUser ? (
-              <AnnouncementsPage />
-            ) : (
-              <Navigate to="/parent/announcements" />
-            )
+            <div className="p-6">
+              <h1 className="text-2xl font-bold mb-4">Settings</h1>
+              <p>Settings page is coming soon!</p>
+            </div>
           ) : (
             <Navigate to="/auth" />
           )

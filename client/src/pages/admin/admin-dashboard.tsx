@@ -3,7 +3,7 @@ import { MainLayout } from "@/layout/main-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, UserCheck, Calendar, DollarSign, AlertTriangle, TrendingUp } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export default function AdminDashboard() {
   // Fetch basic stats for the dashboard
@@ -112,7 +112,7 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Link href="/admin/coaches">
+              <Link to="/admin/coaches">
                 <Button className="w-full">
                   Manage Coaches
                 </Button>
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/admin/users">
+              <Link to="/admin/users">
                 <Button className="w-full">
                   Manage Users
                 </Button>

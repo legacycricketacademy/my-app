@@ -3,7 +3,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { api } from "@/lib/api";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -92,8 +92,7 @@ export function ScheduleSessionDialog() {
         startTime: data.startTime.toISOString(),
         endTime: data.endTime.toISOString(),
       };
-      const response = await apiRequest("POST", "/api/sessions", formattedData);
-      return response.json();
+      return await api.post("/sessions", formattedData);
     },
     onSuccess: () => {
       // Reset form and close dialog

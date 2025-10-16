@@ -1,31 +1,31 @@
 services:
   - type: web
-    name: cricket-academy-app
+    name: legacy-cricket-academy
     env: node
-    plan: starter
-    buildCommand: npm run build
-    startCommand: node dist/index.js
-    healthCheckPath: /api/ping
+    plan: free
+    buildCommand: npm ci && npm run db:push && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: HOST
-        value: 0.0.0.0
-      - key: PORT
-        value: 3000
       - key: DATABASE_URL
-        value: sqlite:./production.db
-      - key: LOCAL_ADMIN_BYPASS
-        value: true
+        fromDatabase:
+          name: legacy-cricket-db
+          property: connectionString
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SENDGRID_FROM_EMAIL
+        value: noreply@legacycricketacademy.com
       - key: KEYCLOAK_ENABLED
-        value: true
-      - key: VITE_KEYCLOAK_URL
-        value: https://keycloak-service.onrender.com
-      - key: VITE_KEYCLOAK_ISSUER_URL
-        value: https://keycloak-service.onrender.com/realms/cricket-academy
-      - key: VITE_KEYCLOAK_REALM
-        value: cricket-academy
-      - key: VITE_KEYCLOAK_CLIENT_ID
-        value: my-app
-      - key: VITE_REDIRECT_PATH
-        value: /auth/callback
+        value: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: PORT
+        value: 10000
+      - key: VITE_API_BASE_URL
+        value: https://cricket-academy-app.onrender.com
+
+databases:
+  - name: legacy-cricket-db
+    plan: free
+    databaseName: legacycricket
