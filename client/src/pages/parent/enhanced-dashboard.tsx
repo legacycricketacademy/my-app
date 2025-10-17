@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from "@/hooks/use-auth";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ParentEditPlayerModal } from "@/components/parent/ParentEditPlayerModal";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { 
@@ -44,7 +46,9 @@ const playerSkills: SkillRating[] = [
 
 export default function EnhancedParentDashboard() {
   const { user, logoutMutation } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("schedule");
+  const [showEditModal, setShowEditModal] = useState(false);
   
   // Handle sign out
   const handleSignOut = () => {
@@ -94,7 +98,12 @@ export default function EnhancedParentDashboard() {
               Manage your child's cricket activities and progress
             </p>
           </div>
-          <Button className="w-full sm:w-auto">
+          <Button 
+            className="w-full sm:w-auto"
+            onClick={() => navigate('/parent/schedule/full')}
+            data-testid="btn-view-calendar"
+            aria-label="View full calendar"
+          >
             <CalendarCheck className="mr-2 h-4 w-4" />
             View Full Calendar
           </Button>
@@ -210,7 +219,15 @@ export default function EnhancedParentDashboard() {
                       <p>Rajesh Sharma - +91 9876543210</p>
                     </div>
                     <div className="pt-2">
-                      <Button variant="outline" size="sm">Update Information</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowEditModal(true)}
+                        data-testid="btn-update-parent"
+                        aria-label="Update player information"
+                      >
+                        Update Information
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -357,7 +374,15 @@ export default function EnhancedParentDashboard() {
                     <h3 className="font-semibold">Main Cricket Ground</h3>
                     <p className="text-sm text-muted-foreground">123 Sports Avenue, New Delhi - 110001</p>
                     <div className="mt-2 flex items-center gap-2">
-                      <Button variant="outline" size="sm">Get Directions</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('123 Sports Avenue, New Delhi - 110001'), '_blank', 'noopener,noreferrer')}
+                        data-testid="btn-get-directions"
+                        aria-label="Get directions to Main Ground"
+                      >
+                        Get Directions
+                      </Button>
                       <Button variant="outline" size="sm">Facilities Info</Button>
                     </div>
                   </div>
@@ -366,7 +391,15 @@ export default function EnhancedParentDashboard() {
                     <h3 className="font-semibold">Academy Training Center</h3>
                     <p className="text-sm text-muted-foreground">456 Cricket Lane, New Delhi - 110021</p>
                     <div className="mt-2 flex items-center gap-2">
-                      <Button variant="outline" size="sm">Get Directions</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('456 Cricket Lane, New Delhi - 110021'), '_blank', 'noopener,noreferrer')}
+                        data-testid="btn-get-directions"
+                        aria-label="Get directions to Training Center"
+                      >
+                        Get Directions
+                      </Button>
                       <Button variant="outline" size="sm">Facilities Info</Button>
                     </div>
                   </div>
@@ -375,7 +408,15 @@ export default function EnhancedParentDashboard() {
                     <h3 className="font-semibold">City Cricket Stadium</h3>
                     <p className="text-sm text-muted-foreground">789 Stadium Road, New Delhi - 110005</p>
                     <div className="mt-2 flex items-center gap-2">
-                      <Button variant="outline" size="sm">Get Directions</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('789 Stadium Road, New Delhi - 110005'), '_blank', 'noopener,noreferrer')}
+                        data-testid="btn-get-directions"
+                        aria-label="Get directions to City Stadium"
+                      >
+                        Get Directions
+                      </Button>
                       <Button variant="outline" size="sm">Facilities Info</Button>
                     </div>
                   </div>
@@ -445,7 +486,13 @@ export default function EnhancedParentDashboard() {
                     </div>
                   </div>
                   
-                  <Button variant="outline" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => navigate('/parent/payments/transactions')}
+                    data-testid="btn-view-transactions"
+                    aria-label="View all payment transactions"
+                  >
                     View All Transactions
                   </Button>
                 </div>
@@ -453,6 +500,18 @@ export default function EnhancedParentDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Edit Profile Modal */}
+        <ParentEditPlayerModal
+          open={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          initialValues={{
+            playerId: 78,
+            playerName: "Arjun Sharma",
+            emergencyContact: "Rajesh Sharma - +91 9876543210",
+            medicalInformation: ""
+          }}
+        />
     </div>
   );
 }

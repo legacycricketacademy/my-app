@@ -605,6 +605,33 @@ app.post('/api/admin/players', createAuthMiddleware(), createPlayerHandler);
 app.post('/api/coach/players', createAuthMiddleware(), createPlayerHandler);
 
 // Parent Portal API Routes - Placeholder implementations
+app.put('/api/parent/profile', createAuthMiddleware(), async (req: Request, res: Response) => {
+  try {
+    const { playerId, playerName, emergencyContact, medicalInformation } = req.body;
+    
+    console.log('Parent profile update:', { parentId: req.user?.id, playerId, playerName });
+    
+    // Placeholder response - actual implementation would update player in DB
+    return res.status(200).json({
+      ok: true,
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        playerId,
+        playerName,
+        emergencyContact,
+        medicalInformation
+      }
+    });
+  } catch (error) {
+    console.error('Error updating parent profile:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update profile'
+    });
+  }
+});
+
 app.post('/api/parents/connect-child', createAuthMiddleware(), async (req: Request, res: Response) => {
   try {
     const { childEmail, note } = req.body;

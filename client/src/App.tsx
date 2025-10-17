@@ -47,6 +47,8 @@ import FitnessTrackingPage from "@/pages/dashboard/FitnessTrackingPage";
 import SectionNotFound from "@/pages/dashboard/SectionNotFound";
 import ParentProfilePage from "@/pages/parent/profile";
 import ConnectChildPage from "@/pages/parent/connect-child-page";
+import FullCalendarPage from "@/pages/parent/FullCalendarPage";
+import PaymentTransactionsPage from "@/pages/parent/PaymentTransactionsPage";
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -140,8 +142,10 @@ function AppRoutes() {
         <Route path="/dashboard/parent" element={<EnhancedParentDashboard />} />
         <Route path="/parent" element={<Navigate to="/dashboard/parent" />} />
         <Route path="/parent/schedule" element={<ParentSchedulePage />} />
+        <Route path="/parent/schedule/full" element={<FullCalendarPage />} />
         <Route path="/parent/announcements" element={<ParentAnnouncementsPage />} />
         <Route path="/parent/payments" element={<ParentPaymentsPage />} />
+        <Route path="/parent/payments/transactions" element={<PaymentTransactionsPage />} />
         <Route path="/parent/connect-child" element={<ConnectChildPage />} />
         <Route path="/parent/profile" element={<ParentProfilePage />} />
       </Route>
