@@ -37,6 +37,7 @@ import CoachesPendingApprovalPage from "@/pages/admin/coaches-pending-approval";
 
 // Dashboard Pages
 import { DashboardLayout } from "@/layout/DashboardLayout";
+import { ParentDashboardLayout } from "@/layout/ParentDashboardLayout";
 import TeamPage from "@/pages/dashboard/TeamPage";
 import DashboardAnnouncementsPage from "@/pages/dashboard/AnnouncementsPage";
 import DashboardSchedulePage from "@/pages/dashboard/SchedulePage";
@@ -44,6 +45,7 @@ import PaymentsPage from "@/pages/dashboard/PaymentsPage";
 import MealPlansPage from "@/pages/dashboard/MealPlansPage";
 import FitnessTrackingPage from "@/pages/dashboard/FitnessTrackingPage";
 import SectionNotFound from "@/pages/dashboard/SectionNotFound";
+import ParentProfilePage from "@/pages/parent/profile";
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -122,74 +124,30 @@ function AppRoutes() {
       />
       <Route path="/admin" element={<Navigate to="/dashboard" />} />
 
-      {/* Parent dashboard routes */}
+      {/* Parent Portal Routes - Single Layout with Outlet */}
       <Route
-        path="/dashboard/parent"
         element={
-          user ? (
-            isParentUser ? (
-              <EnhancedParentDashboard />
+          <RequireAuth>
+            {user?.role === "parent" ? (
+              <ParentDashboardLayout />
             ) : (
               <Navigate to="/dashboard" />
-            )
-          ) : (
-            <Navigate to="/auth" />
-          )
+            )}
+          </RequireAuth>
         }
-      />
+      >
+        <Route path="/dashboard/parent" element={<EnhancedParentDashboard />} />
+        <Route path="/parent" element={<Navigate to="/dashboard/parent" />} />
+        <Route path="/parent/schedule" element={<ParentSchedulePage />} />
+        <Route path="/parent/announcements" element={<ParentAnnouncementsPage />} />
+        <Route path="/parent/payments" element={<ParentPaymentsPage />} />
+        <Route path="/parent/profile" element={<ParentProfilePage />} />
+      </Route>
 
       {/* Test parent routes */}
       <Route path="/simple-parent" element={<SimpleReactDashboard />} />
       <Route path="/independent-parent" element={<IndependentDashboard />} />
       <Route path="/test-enhanced-parent" element={<EnhancedParentDashboard />} />
-
-      {/* Parent specific routes */}
-      <Route
-        path="/parent/schedule"
-        element={
-          user ? (
-            isParentUser ? (
-              <ParentSchedulePage />
-            ) : (
-              <Navigate to="/dashboard/schedule" />
-            )
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
-
-      <Route
-        path="/parent/announcements"
-        element={
-          user ? (
-            isParentUser ? (
-              <ParentAnnouncementsPage />
-            ) : (
-              <Navigate to="/dashboard/announcements" />
-            )
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
-
-      <Route
-        path="/parent/payments"
-        element={
-          user ? (
-            isParentUser ? (
-              <ParentPaymentsPage />
-            ) : (
-              <Navigate to="/dashboard/payments" />
-            )
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
-
-      <Route path="/parent" element={<Navigate to="/dashboard/parent" />} />
 
       {/* Legacy player routes - redirect to dashboard */}
       <Route path="/players" element={<Navigate to="/dashboard/team" />} />
