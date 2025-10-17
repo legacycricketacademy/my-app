@@ -130,15 +130,16 @@ export function ScheduleSessionDialog() {
           <span>Schedule New Session</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[550px] max-h-[85vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle>Schedule New Training Session</DialogTitle>
           <DialogDescription>
             Create a new training session for your academy.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
             <FormField
               control={form.control}
               name="title"
@@ -622,8 +623,9 @@ export function ScheduleSessionDialog() {
                 </FormItem>
               )}
             />
+            </div>
             
-            <DialogFooter>
+            <DialogFooter className="sticky bottom-0 bg-white border-t px-6 py-4 mt-0">
               <Button
                 type="button"
                 variant="outline"

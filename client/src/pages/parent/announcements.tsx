@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ParentLayout } from "@/layout/parent-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Megaphone, Calendar, Users, Eye, Search, Info } from "lucide-react";
@@ -74,8 +73,7 @@ export default function ParentAnnouncementsPage() {
   };
 
   return (
-    <ParentLayout title="Announcements">
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header and search */}
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <h1 className="text-2xl font-bold">Announcements</h1>
@@ -177,7 +175,6 @@ export default function ParentAnnouncementsPage() {
             </Card>
           )}
         </div>
-      </div>
-    </ParentLayout>
+    </div>
   );
 }

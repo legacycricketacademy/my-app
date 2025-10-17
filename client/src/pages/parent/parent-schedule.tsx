@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { ParentLayout } from "@/layout/parent-layout";
 import { Calendar, Clock, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,8 +36,7 @@ export default function ParentSchedulePage() {
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(startOfCurrentWeek, i));
 
   return (
-    <ParentLayout title="Schedule">
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Training Schedule</h1>
           <p className="text-muted-foreground">
@@ -128,7 +126,6 @@ export default function ParentSchedulePage() {
             </Card>
           )}
         </div>
-      </div>
-    </ParentLayout>
+    </div>
   );
 }

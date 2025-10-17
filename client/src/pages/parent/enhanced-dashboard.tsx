@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { ParentLayout } from "@/layout/parent-layout";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,8 +86,7 @@ export default function EnhancedParentDashboard() {
   };
   
   return (
-    <ParentLayout title="Parent Dashboard">
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || 'Parent'}</h1>
@@ -455,7 +453,6 @@ export default function EnhancedParentDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
-    </ParentLayout>
+    </div>
   );
 }
