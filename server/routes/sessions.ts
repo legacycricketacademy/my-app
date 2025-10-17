@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { zonedTimeToUtc, utcToZonedTime, format } from 'date-fns-tz';
+import { zonedTimeToUtc } from 'date-fns-tz';
 import { pool } from '../../db/index.js';
 import { requireAuth } from '../middleware/authz.js';
 
@@ -30,12 +30,6 @@ const listSessionsSchema = z.object({
 // Helper to convert local time to UTC
 function convertToUTC(localTime: string, timezone: string): Date {
   return zonedTimeToUtc(localTime, timezone);
-}
-
-// Helper to convert UTC to local time for display
-function convertFromUTC(utcTime: string, timezone: string): string {
-  const utcDate = new Date(utcTime);
-  return utcToZonedTime(utcDate, timezone).toISOString();
 }
 
 // POST /api/sessions - Create a new session

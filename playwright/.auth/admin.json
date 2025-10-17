@@ -2,10 +2,10 @@
   "cookies": [
     {
       "name": "connect.sid",
-      "value": "s%3A1MWtCrdKJmcApDsqOTFu7rKo4RnisG1D.bzul5puKuoheoBEaBGLEz97zieA1CFMw7NvtwjjDwG8",
+      "value": "s%3Ap1mCaNc-aJFcydy6tNFC6xQ0hi0o8eTy.jQZlINDW2JtcCM2s%2BYZ5lFz1TMjR6guc1d501XvONqk",
       "domain": "cricket-academy-app.onrender.com",
       "path": "/",
-      "expires": 1763308740.30717,
+      "expires": 1763310469.560937,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None"
