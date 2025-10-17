@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { loginAs, expectOneSidebar, ADMIN_CREDENTIALS } from '../utils/auth';
 
+// Clear storage state for navigation tests
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Dashboard Navigation', () => {
   test.beforeEach(async ({ page }) => {
     // Login as admin before each test

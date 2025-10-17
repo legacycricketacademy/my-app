@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { loginAs, logout, expectOneSidebar, ADMIN_CREDENTIALS, PARENT_CREDENTIALS } from '../utils/auth';
 
+// Clear storage state for login tests
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Login Flow', () => {
   test('should reach /auth and login with admin credentials', async ({ page }) => {
     // Navigate to auth page

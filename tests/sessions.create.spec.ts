@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test';
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
 
+// Clear storage state for sessions tests
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Sessions E2E', () => {
   test.beforeEach(async ({ page }) => {
     // Login as admin
@@ -11,7 +14,7 @@ test.describe('Sessions E2E', () => {
     await page.getByRole('button', { name: /sign in/i }).click();
     
     // Wait for dashboard to load
-    await expect(page.getByText(/dashboard/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
   });
 
   test('should create a new session and display it in the schedule', async ({ page }) => {

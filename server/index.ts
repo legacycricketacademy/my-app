@@ -620,30 +620,7 @@ app.post('/api/players', createAuthMiddleware(), createPlayerHandler);
 app.post('/api/admin/players', createAuthMiddleware(), createPlayerHandler);
 app.post('/api/coach/players', createAuthMiddleware(), createPlayerHandler);
 
-// Session/Schedule route aliases (ensure all role paths work)
-const getSessionsHandler = async (req: Request, res: Response) => {
-  try {
-    console.log('GET /api/sessions', { userId: req.user?.id, role: req.user?.role });
-    
-    // Placeholder response - return empty array for now
-    // In real implementation, fetch from storage.getSessions() or similar
-    return res.status(200).json([]);
-  } catch (error) {
-    console.error('GET SESSIONS ERROR', { 
-      msg: error instanceof Error ? error.message : 'unknown',
-      userId: req.user?.id
-    });
-    return res.status(500).json({
-      ok: false,
-      error: 'fetch_failed',
-      message: 'Failed to fetch sessions'
-    });
-  }
-};
-
-app.get('/api/sessions', createAuthMiddleware(), getSessionsHandler);
-app.get('/api/coach/sessions', createAuthMiddleware(), getSessionsHandler);
-app.get('/api/admin/sessions', createAuthMiddleware(), getSessionsHandler);
+// Session/Schedule routes are now handled by sessionsRouter below
 
 // Fitness tracking endpoint
 app.get('/api/fitness/summary', createAuthMiddleware(), async (req: Request, res: Response) => {

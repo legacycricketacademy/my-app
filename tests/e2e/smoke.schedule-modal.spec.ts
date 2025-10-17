@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { loginAs, ADMIN_CREDENTIALS } from '../utils/auth';
 
+// Clear storage state for modal tests
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Schedule Modal Scrolling', () => {
   test.beforeEach(async ({ page }) => {
     // Login as admin

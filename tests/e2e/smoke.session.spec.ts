@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { loginAs, expectAuthenticated, expectUnauthenticated, ADMIN_CREDENTIALS } from '../utils/auth';
 
+// Clear storage state for session tests
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Session API', () => {
   test('should return unauthenticated for new session', async ({ page }) => {
     // Check session without logging in

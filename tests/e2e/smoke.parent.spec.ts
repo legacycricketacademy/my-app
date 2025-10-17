@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { loginAs, expectOneSidebar, PARENT_CREDENTIALS } from '../utils/auth';
 
+// Clear storage state for parent portal tests
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Parent Portal', () => {
   test.beforeEach(async ({ page }) => {
     // Login as parent before each test

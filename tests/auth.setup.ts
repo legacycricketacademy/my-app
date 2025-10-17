@@ -16,7 +16,7 @@ test('bootstrap auth and save storage state', async ({ page }) => {
   await page.getByRole('button', { name: /sign in/i }).click();
 
   // Wait for dashboard to appear (server sets session cookie)
-  await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible({ timeout: 15000 });
 
   // Persist session for subsequent tests
   await page.context().storageState({ path: 'playwright/.auth/admin.json' });

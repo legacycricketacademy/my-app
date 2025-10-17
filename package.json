@@ -26,6 +26,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:render": "cross-env BASE_URL=https://legacy-cricket-app.onrender.com playwright test",
     "test:e2e:report": "playwright show-report",
+    "e2e:live": "cross-env BASE_URL=https://cricket-academy-app.onrender.com ADMIN_EMAIL=admin@test.com ADMIN_PASSWORD=Test1234! playwright test --ui",
     "ci:e2e": "npx playwright install --with-deps && npx playwright test --reporter=line"
   },
   "dependencies": {
@@ -75,6 +76,7 @@
     "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",
     "date-fns": "^3.6.0",
+    "date-fns-tz": "^3.2.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.38.4",
     "drizzle-seed": "^0.3.1",

@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// Clear storage state for auth tests
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Authentication Flow', () => {
   test('should display login page with development accounts', async ({ page }) => {
     await page.goto('/auth');

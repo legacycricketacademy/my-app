@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test';
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
 
+// Clear storage state for payments tests
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Payments E2E', () => {
   test.beforeEach(async ({ page }) => {
     // Login as admin
@@ -11,7 +14,7 @@ test.describe('Payments E2E', () => {
     await page.getByRole('button', { name: /sign in/i }).click();
     
     // Wait for dashboard to load
-    await expect(page.getByText(/dashboard/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
   });
 
   test('should record a payment and display it in the list', async ({ page }) => {
