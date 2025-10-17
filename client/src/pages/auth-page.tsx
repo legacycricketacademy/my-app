@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 export default function AuthPage() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -26,6 +26,8 @@ export default function AuthPage() {
     setIsLoading(true);
 
     try {
+      console.log('Starting login process...');
+      
       // Step 1: Call login endpoint
       const loginResponse = await fetch('/api/dev/login', {
         method: 'POST',
@@ -34,38 +36,59 @@ export default function AuthPage() {
         credentials: 'include'
       });
 
+      console.log('Login response status:', loginResponse.status);
+
       if (!loginResponse.ok) {
         const errorData = await loginResponse.json();
         throw new Error(errorData.message || 'Login failed');
       }
 
       const loginData = await loginResponse.json();
+      console.log('Login data:', loginData);
       
       if (!loginData.ok || !loginData.user) {
         throw new Error('Login response invalid');
       }
 
       // Step 2: Verify session by calling whoami
+      console.log('Verifying session...');
       const whoamiResponse = await fetch('/api/whoami', {
         credentials: 'include'
       });
+
+      console.log('Whoami response status:', whoamiResponse.status);
 
       if (!whoamiResponse.ok) {
         throw new Error('Session verification failed');
       }
 
       const whoamiData = await whoamiResponse.json();
+      console.log('Whoami data:', whoamiData);
       
       if (!whoamiData.id || !whoamiData.role) {
         throw new Error('Session verification returned invalid user data');
       }
 
+      console.log('Login successful, navigating to dashboard...');
       toast({
         title: "Welcome back!",
         description: `You have been successfully signed in as ${whoamiData.role}.`,
       });
       
-      setLocation('/dashboard');
+      // Try React Router navigation first, fallback to hard navigation
+      try {
+        navigate('/dashboard');
+        // If navigate doesn't work, use hard navigation as fallback
+        setTimeout(() => {
+          if (window.location.pathname === '/auth') {
+            console.log('React Router navigation failed, using hard navigation...');
+            window.location.href = '/dashboard';
+          }
+        }, 1000);
+      } catch (navError) {
+        console.error('Navigation error:', navError);
+        window.location.href = '/dashboard';
+      }
     } catch (error: any) {
       toast({
         title: "Sign in failed",
