@@ -10,9 +10,9 @@ const dbg = (...args: any[]) => {
 };
 
 // Runtime guard: ensure date-fns-tz exports what we need
-if (!('zonedTimeToUtc' in tz)) {
-  console.error('[TZ] date-fns-tz missing zonedTimeToUtc export. Installed keys:', Object.keys(tz));
-  throw new Error('date-fns-tz export not found: zonedTimeToUtc');
+if (!('fromZonedTime' in tz)) {
+  console.error('[TZ] date-fns-tz missing fromZonedTime export. Installed keys:', Object.keys(tz));
+  throw new Error('date-fns-tz export not found: fromZonedTime');
 }
 
 // Validation schemas
@@ -35,7 +35,7 @@ const listSessionsSchema = z.object({
 
 // Helper to convert local time to UTC
 function convertToUTC(localTime: string, timezone: string): Date {
-  return tz.zonedTimeToUtc(localTime, timezone);
+  return tz.fromZonedTime(localTime, timezone);
 }
 
 // POST /api/sessions - Create a new session
