@@ -5,7 +5,6 @@
 
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
-import { signIn } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,12 +26,46 @@ export default function AuthPage() {
     setIsLoading(true);
 
     try {
-      await signIn(formData);
+      // Step 1: Call login endpoint
+      const loginResponse = await fetch('/api/dev/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+        credentials: 'include'
+      });
+
+      if (!loginResponse.ok) {
+        const errorData = await loginResponse.json();
+        throw new Error(errorData.message || 'Login failed');
+      }
+
+      const loginData = await loginResponse.json();
+      
+      if (!loginData.ok || !loginData.user) {
+        throw new Error('Login response invalid');
+      }
+
+      // Step 2: Verify session by calling whoami
+      const whoamiResponse = await fetch('/api/whoami', {
+        credentials: 'include'
+      });
+
+      if (!whoamiResponse.ok) {
+        throw new Error('Session verification failed');
+      }
+
+      const whoamiData = await whoamiResponse.json();
+      
+      if (!whoamiData.id || !whoamiData.role) {
+        throw new Error('Session verification returned invalid user data');
+      }
+
       toast({
         title: "Welcome back!",
-        description: "You have been successfully signed in.",
+        description: `You have been successfully signed in as ${whoamiData.role}.`,
       });
-      setLocation('/');
+      
+      setLocation('/dashboard');
     } catch (error: any) {
       toast({
         title: "Sign in failed",
@@ -113,9 +146,8 @@ export default function AuthPage() {
             <div className="mt-6 p-4 bg-gray-50 rounded-md">
               <h3 className="text-sm font-medium text-gray-900 mb-2">Development Accounts</h3>
               <div className="text-xs text-gray-600 space-y-1">
-                <div><strong>Parent:</strong> parent / password</div>
-                <div><strong>Admin:</strong> admin / password</div>
-                <div><strong>Coach:</strong> coach / password</div>
+                <div><strong>Parent:</strong> parent@test.com / Test1234!</div>
+                <div><strong>Admin:</strong> admin@test.com / Test1234!</div>
               </div>
               
               <div className="mt-3 pt-3 border-t border-gray-200">

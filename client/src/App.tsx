@@ -22,8 +22,6 @@ import ParentPaymentsPage from "@/pages/parent/payments";
 import AuthPageLocal from "@/pages/auth-page-local";
 import AuthPageDev from "@/pages/auth-page-dev";
 import Dashboard from "@/pages/dashboard";
-import SessionLoginPage from "@/pages/session-login";
-import SessionDashboardPage from "@/pages/session-dashboard";
 import PlayersPage from "@/pages/players-page";
 import SchedulePage from "@/pages/schedule-page";
 import AnnouncementsPage from "@/pages/announcements-page";
@@ -79,16 +77,6 @@ function AppRoutes() {
             <AuthPageDev />
           )
         }
-      />
-
-      {/* Session-based auth routes */}
-      <Route
-        path="/login"
-        element={<SessionLoginPage />}
-      />
-      <Route
-        path="/session-dashboard"
-        element={<SessionDashboardPage />}
       />
 
       {/* Main dashboard route with nested routes */}

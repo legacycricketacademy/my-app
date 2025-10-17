@@ -207,10 +207,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "You have been successfully logged out"
       });
       
-      // Redirect to auth page
-      if (window.location.pathname !== '/auth') {
-        window.location.href = `/auth?t=${Date.now()}`;
-      }
+      // Redirect to auth page with hard navigation
+      window.location.href = '/auth';
     },
     onError: (error: Error) => {
       toast({

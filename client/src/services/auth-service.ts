@@ -604,7 +604,7 @@ export async function logout(): Promise<AuthResponse> {
   
   // Try backend logout
   try {
-    const res = await fetch("/api/logout", {
+    const res = await fetch("/api/auth/logout", {
       method: "POST",
       credentials: "include",
       cache: "no-store",
