@@ -40,6 +40,10 @@ app.use(cors({
   credentials: true
 }));
 
+// Stripe webhook route (needs raw body, must be before express.json())
+import stripeRouter from './stripe.js';
+app.use('/api/stripe', stripeRouter);
+
 // Robust boot logging
 console.log('Environment check:', {
   NODE_ENV: process.env.NODE_ENV,

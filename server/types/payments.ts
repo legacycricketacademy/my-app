@@ -1,6 +1,6 @@
 export type Currency = 'INR' | 'USD';
 export type PayMethod = 'cash' | 'card' | 'upi' | 'bank';
-export type PayStatus = 'paid' | 'pending' | 'failed' | 'refunded';
+export type PayStatus = 'paid' | 'pending' | 'failed' | 'refunded' | 'completed';
 
 export interface Payment {
   id: string;
@@ -14,4 +14,6 @@ export interface Payment {
   notes?: string;
   createdAt: string; // ISO
   createdBy: string; // userId
+  // Stripe-specific fields
+  paymentIntentId?: string;
 }

@@ -2,11 +2,22 @@
 
 Comprehensive cricket academy management system for player development, coaching workflows, and family engagement.
 
+## Features
+
+- **Player Management**: Complete player profiles, age groups, and team organization
+- **Session Scheduling**: Training sessions with timezone support and calendar integration
+- **Payment Processing**: Manual payment recording + Stripe integration for real-time payments
+- **Parent Portal**: Dedicated interface for parents to view schedules, payments, and announcements
+- **Admin Dashboard**: Comprehensive management tools for coaches and administrators
+- **Real-time Notifications**: Email integration with SendGrid
+- **Responsive Design**: Mobile-first UI with Tailwind CSS
+
 ## Local PostgreSQL Setup
 
 ### Prerequisites
 - Node.js 20+
 - PostgreSQL 16+
+- Stripe account (for payment processing)
 
 ### Installation
 
@@ -27,13 +38,38 @@ sudo -u postgres createdb cricket_dev
 **Windows:**
 Download and install PostgreSQL from [postgresql.org](https://www.postgresql.org/download/windows/)
 
+### Stripe Setup
+
+1. **Create Stripe Account**: Sign up at [stripe.com](https://stripe.com)
+2. **Get API Keys**: 
+   - Go to Stripe Dashboard → Developers → API Keys
+   - Copy your **Publishable Key** (starts with `pk_`)
+   - Copy your **Secret Key** (starts with `sk_`)
+3. **Set up Webhook**:
+   - Go to Stripe Dashboard → Developers → Webhooks
+   - Add endpoint: `https://your-domain.com/api/stripe/webhook`
+   - Select events: `payment_intent.succeeded`, `payment_intent.payment_failed`
+   - Copy the **Webhook Secret** (starts with `whsec_`)
+
 ### Environment Setup
 
 Create a `.env` file in the project root:
 ```bash
+# Database
 DATABASE_URL=postgres://localhost:5432/cricket_dev
+
+# Session & Auth
 SESSION_SECRET=dev-secret-change-me
 NODE_ENV=development
+
+# Stripe Payment Processing
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+
+# Email (Optional)
+SENDGRID_API_KEY=your-sendgrid-key
+DEFAULT_FROM_EMAIL=your-email@example.com
 ```
 
 ### Development

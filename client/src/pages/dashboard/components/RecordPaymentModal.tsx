@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { StripePayment } from '@/features/payments/StripePayment';
 
 type Props = { open: boolean; onOpenChange: (open: boolean) => void; };
 
@@ -19,6 +21,7 @@ export default function RecordPaymentModal({ open, onOpenChange }: Props) {
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
   const [isPending, setIsPending] = useState(false);
+  const [useStripe, setUseStripe] = useState(false);
   const { toast } = useToast();
 
   const submit = async () => {
@@ -83,31 +86,88 @@ export default function RecordPaymentModal({ open, onOpenChange }: Props) {
             <Label htmlFor="playerName">Player Name (optional)</Label>
             <Input id="playerName" placeholder="Enter player name" value={playerName} onChange={e=>setPlayerName(e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="amount">Amount *</Label>
-              <Input 
-                id="amount" 
-                type="number" 
-                min={1} 
-                placeholder="0.00" 
-                value={amount} 
-                onChange={e=>setAmount(e.target.value ? Number(e.target.value) : '')} 
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Select value={currency} onValueChange={(v)=>setCurrency(v as any)}>
-                <SelectTrigger id="currency">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="INR">INR</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="use-stripe"
+              checked={useStripe}
+              onCheckedChange={setUseStripe}
+            />
+            <Label htmlFor="use-stripe">Collect payment now (Stripe)</Label>
           </div>
+          
+          {useStripe ? (
+            // Stripe Payment Component
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="amount">Amount *</Label>
+                  <Input 
+                    id="amount" 
+                    type="number" 
+                    min={1} 
+                    placeholder="0.00" 
+                    value={amount} 
+                    onChange={e=>setAmount(e.target.value ? Number(e.target.value) : '')} 
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="currency">Currency</Label>
+                  <Select value={currency} onValueChange={(v)=>setCurrency(v as any)}>
+                    <SelectTrigger id="currency">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="INR">INR</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {playerId && amount && Number(amount) > 0 && (
+                <StripePayment
+                  amount={Number(amount)}
+                  currency={currency}
+                  playerId={playerId}
+                  description={notes || `Payment for ${playerName || 'Player'}`}
+                  onSuccess={() => {
+                    toast({ title: 'Payment Successful', description: 'Payment completed successfully' });
+                    onOpenChange(false);
+                    window.location.reload();
+                  }}
+                  onCancel={() => setUseStripe(false)}
+                />
+              )}
+            </div>
+          ) : (
+            // Manual Payment Form
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="amount">Amount *</Label>
+                  <Input 
+                    id="amount" 
+                    type="number" 
+                    min={1} 
+                    placeholder="0.00" 
+                    value={amount} 
+                    onChange={e=>setAmount(e.target.value ? Number(e.target.value) : '')} 
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="currency">Currency</Label>
+                  <Select value={currency} onValueChange={(v)=>setCurrency(v as any)}>
+                    <SelectTrigger id="currency">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="INR">INR</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="method">Method</Label>
@@ -142,19 +202,24 @@ export default function RecordPaymentModal({ open, onOpenChange }: Props) {
               <Input id="reference" placeholder="Optional" value={reference} onChange={e=>setReference(e.target.value)} />
             </div>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea id="notes" placeholder="Add notes..." value={notes} onChange={e=>setNotes(e.target.value)} rows={3} />
+              <div className="grid gap-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea id="notes" placeholder="Add notes..." value={notes} onChange={e=>setNotes(e.target.value)} rows={3} />
+              </div>
+            </>
+          )}
+        </div>
+        
+        {!useStripe && (
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+              Cancel
+            </Button>
+            <Button onClick={submit} disabled={isPending}>
+              {isPending ? 'Saving...' : 'Save'}
+            </Button>
           </div>
-        </div>
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            Cancel
-          </Button>
-          <Button onClick={submit} disabled={isPending}>
-            {isPending ? 'Saving...' : 'Save'}
-          </Button>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );

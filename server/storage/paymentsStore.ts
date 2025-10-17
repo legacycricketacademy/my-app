@@ -19,3 +19,16 @@ export function createPayment(dto: Omit<Payment, 'id'|'createdAt'|'createdBy'>, 
   _payments.push(created);
   return created;
 }
+
+// Create payment with user object (for Stripe webhook)
+export function createPaymentWithUser(dto: Omit<Payment, 'id'|'createdAt'|'createdBy'>, user: { id: string; role: string }): Payment {
+  const created: Payment = { ...dto, id: randomUUID(), createdAt: new Date().toISOString(), createdBy: user.id };
+  _payments.push(created);
+  return created;
+}
+
+// Export the store instance for Stripe integration
+export const paymentsStore = {
+  list: listPayments,
+  create: createPaymentWithUser
+};
