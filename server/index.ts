@@ -604,6 +604,65 @@ app.post('/api/players', createAuthMiddleware(), createPlayerHandler);
 app.post('/api/admin/players', createAuthMiddleware(), createPlayerHandler);
 app.post('/api/coach/players', createAuthMiddleware(), createPlayerHandler);
 
+// Parent Portal API Routes - Placeholder implementations
+app.post('/api/parents/connect-child', createAuthMiddleware(), async (req: Request, res: Response) => {
+  try {
+    const { childEmail, note } = req.body;
+    
+    if (!childEmail) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Child email is required' 
+      });
+    }
+
+    console.log('Connect child request:', { parentId: req.user?.id, childEmail, note });
+    
+    // Placeholder response - actual implementation would create connection request in DB
+    return res.status(201).json({
+      ok: true,
+      success: true,
+      childEmail,
+      message: 'Connection request sent successfully'
+    });
+  } catch (error) {
+    console.error('Error in connect-child:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to send connection request'
+    });
+  }
+});
+
+app.post('/api/connection-requests', createAuthMiddleware(), async (req: Request, res: Response) => {
+  try {
+    const { childEmail, note } = req.body;
+    
+    if (!childEmail) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Child email is required' 
+      });
+    }
+
+    console.log('Connection request:', { parentId: req.user?.id, childEmail, note });
+    
+    // Placeholder response - actual implementation would create connection request in DB
+    return res.status(201).json({
+      ok: true,
+      success: true,
+      childEmail,
+      message: 'Connection request created successfully'
+    });
+  } catch (error) {
+    console.error('Error creating connection request:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create connection request'
+    });
+  }
+});
+
 // API 404 logging middleware
 app.use('/api', (req, res, next) => {
   console.warn('API 404', req.method, req.originalUrl);

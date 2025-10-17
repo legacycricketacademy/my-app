@@ -46,6 +46,7 @@ import MealPlansPage from "@/pages/dashboard/MealPlansPage";
 import FitnessTrackingPage from "@/pages/dashboard/FitnessTrackingPage";
 import SectionNotFound from "@/pages/dashboard/SectionNotFound";
 import ParentProfilePage from "@/pages/parent/profile";
+import ConnectChildPage from "@/pages/parent/connect-child-page";
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -141,6 +142,7 @@ function AppRoutes() {
         <Route path="/parent/schedule" element={<ParentSchedulePage />} />
         <Route path="/parent/announcements" element={<ParentAnnouncementsPage />} />
         <Route path="/parent/payments" element={<ParentPaymentsPage />} />
+        <Route path="/parent/connect-child" element={<ConnectChildPage />} />
         <Route path="/parent/profile" element={<ParentProfilePage />} />
       </Route>
 
