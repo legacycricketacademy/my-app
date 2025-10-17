@@ -94,54 +94,94 @@ declare global {
   }
 }
 
-// Global JWT authentication middleware factory
+// Global dual authentication middleware factory (Session OR JWT)
 export function createAuthMiddleware(storage: typeof multiTenantStorage = multiTenantStorage) {
   return function authMiddleware(req: Request, res: Response, next: NextFunction) {
-    // Check if user is already authenticated via session
-    if (req.isAuthenticated()) {
-      return next();
-    }
+    console.log('AUTH GUARD', { 
+      hasSession: !!req.session?.userId, 
+      hasBearer: !!req.headers.authorization?.startsWith('Bearer '),
+      hasCookieToken: !!req.cookies?.['access_token']
+    });
     
-    // Using imported response utilities for standardized responses
-    
-    // Otherwise check JWT tokens
-    const accessToken = req.cookies?.['access_token'];
-    if (!accessToken) {
-      return res.status(401).json(createUnauthorizedResponse(
-        "Unauthorized - No token provided"
-      ));
-    }
-    
-    try {
-      // Verify token
-      const decoded = jwt.verify(accessToken, JWT_ACCESS_SECRET);
-      const payload = decoded as JwtPayload;
-      
-      // Set user and academyId on request object
+    // Path 1: Check session-based authentication first
+    if (req.session?.userId) {
       req.user = { 
-        id: payload.userId,
-        role: payload.role,
-        academyId: payload.academyId
+        id: req.session.userId, 
+        role: req.session.userRole || 'parent',
+        academyId: req.session.academyId
       };
       
-      if (payload.academyId) {
-        req.academyId = payload.academyId;
+      if (req.session.academyId) {
+        req.academyId = req.session.academyId;
       }
       
+      console.log('AUTH GUARD: Session auth successful', { userId: req.user.id, role: req.user.role });
       return next();
-    } catch (error) {
-      // Check if token is expired
-      if ((error as Error).name === 'TokenExpiredError') {
-        // Could trigger refresh token flow here, but we'll handle that separately
-        return res.status(401).json(createUnauthorizedResponse(
-          "Token expired"
-        ));
-      }
-      
-      return res.status(401).json(createUnauthorizedResponse(
-        "Invalid token"
-      ));
     }
+    
+    // Path 2: Check Bearer token in Authorization header
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      
+      try {
+        const decoded = jwt.verify(token, JWT_ACCESS_SECRET);
+        const payload = decoded as JwtPayload;
+        
+        req.user = { 
+          id: payload.userId,
+          role: payload.role,
+          academyId: payload.academyId
+        };
+        
+        if (payload.academyId) {
+          req.academyId = payload.academyId;
+        }
+        
+        console.log('AUTH GUARD: Bearer token auth successful', { userId: req.user.id, role: req.user.role });
+        return next();
+      } catch (error) {
+        console.log('AUTH GUARD: Bearer token verification failed', { error: (error as Error).message });
+        if ((error as Error).name === 'TokenExpiredError') {
+          return res.status(401).json(createUnauthorizedResponse("Token expired"));
+        }
+        return res.status(401).json(createUnauthorizedResponse("Invalid token"));
+      }
+    }
+    
+    // Path 3: Check legacy cookie-based JWT tokens (for backward compatibility)
+    const accessToken = req.cookies?.['access_token'];
+    if (accessToken) {
+      try {
+        const decoded = jwt.verify(accessToken, JWT_ACCESS_SECRET);
+        const payload = decoded as JwtPayload;
+        
+        req.user = { 
+          id: payload.userId,
+          role: payload.role,
+          academyId: payload.academyId
+        };
+        
+        if (payload.academyId) {
+          req.academyId = payload.academyId;
+        }
+        
+        console.log('AUTH GUARD: Cookie token auth successful', { userId: req.user.id, role: req.user.role });
+        return next();
+      } catch (error) {
+        console.log('AUTH GUARD: Cookie token verification failed', { error: (error as Error).message });
+        if ((error as Error).name === 'TokenExpiredError') {
+          return res.status(401).json(createUnauthorizedResponse("Token expired"));
+        }
+        return res.status(401).json(createUnauthorizedResponse("Invalid token"));
+      }
+    }
+    
+    // No valid authentication found
+    console.log('AUTH GUARD: No valid authentication found');
+    return res.status(401).json(createUnauthorizedResponse(
+      "Unauthorized - No valid session or token provided"
+    ));
   };
 }
 

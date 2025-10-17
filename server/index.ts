@@ -11,7 +11,7 @@ import { setupVite, serveStatic, log } from "./vite.js";
 import { setupRedirects } from "./redirect.js";
 import { setupStaticRoutes } from "./static-routes.js";
 import { multiTenantStorage } from "./multi-tenant-storage.js";
-import { setupAuth } from "./auth.js";
+import { setupAuth, createAuthMiddleware } from "./auth.js";
 import { pool, dbHealth } from "../db/index.js";
 
 import { db } from "../db/index.js";
@@ -70,6 +70,14 @@ const sessionConfig = {
 
 app.use(session(sessionConfig));
 
+// Session configuration logging
+console.log('SESSION init', {
+  nodeEnv: process.env.NODE_ENV,
+  origin: process.env.APP_ORIGIN,
+  cookieSecure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+});
+
 // Setup authentication
 setupAuth(app);
 
@@ -127,7 +135,7 @@ app.get("/healthz", async (_req, res) => {
 });
 
 // Whoami endpoint (requires authentication)
-app.get("/api/whoami", (req, res) => {
+app.get("/api/whoami", createAuthMiddleware(), (req, res) => {
   if (req.user) {
     const { password, ...userWithoutPassword } = req.user as any;
     res.json({ 
@@ -147,6 +155,8 @@ app.post("/api/dev/login", async (req, res) => {
   try {
     const { email, password } = req.body as { email: string; password: string };
     
+    console.log('AUTH login start', { email });
+    
     // Development accounts for testing
     const devAccounts = {
       "admin@test.com": { password: "Test1234!", role: "admin", id: 1 },
@@ -156,38 +166,42 @@ app.post("/api/dev/login", async (req, res) => {
     const account = devAccounts[email as keyof typeof devAccounts];
     
     if (!account || account.password !== password) {
+      console.log('AUTH login failed', { email, reason: 'invalid credentials' });
       return res.status(401).json({
         success: false,
         message: "Invalid credentials"
       });
     }
     
-    // Create mock session
-    req.session.userId = account.id;
-    req.session.userRole = account.role;
+    // Regenerate session to avoid fixation
+    await new Promise<void>((resolve, reject) => 
+      req.session.regenerate(err => err ? reject(err) : resolve())
+    );
     
-    // Ensure session is saved before sending response
-    req.session.save((err) => {
-      if (err) {
-        console.error("Session save error:", err);
-        return res.status(500).json({
-          success: false,
-          message: "Session save failed"
-        });
+    // Set session data
+    req.session.userId = account.id;
+    req.session.userRole = account.role || 'parent';
+    
+    console.log('AUTH session cookie flags', req.session.cookie);
+    
+    // Save the session and only then send the response
+    await new Promise<void>((resolve, reject) => 
+      req.session.save(err => err ? reject(err) : resolve())
+    );
+    
+    console.log('AUTH login ok', { userId: account.id });
+    
+    return res.status(200).json({ 
+      ok: true, 
+      userId: account.id,
+      success: true,
+      message: "Dev login successful",
+      user: {
+        id: account.id,
+        email: email,
+        role: account.role,
+        fullName: email.split('@')[0]
       }
-      
-      console.log('login ok', { userId: account.id });
-      
-      res.json({
-        success: true,
-        message: "Dev login successful",
-        user: {
-          id: account.id,
-          email: email,
-          role: account.role,
-          fullName: email.split('@')[0]
-        }
-      });
     });
   } catch (error) {
     console.error("Dev login error:", error);
@@ -200,7 +214,11 @@ app.post("/api/dev/login", async (req, res) => {
 
 // Session verification endpoint
 app.get("/api/session", (req, res) => {
-  res.json({ authenticated: !!req.session.userId });
+  res.json({ 
+    authenticated: !!req.session.userId, 
+    userId: req.session.userId ?? null,
+    role: req.session.userRole ?? null
+  });
 });
 
 // Cookie check endpoint for debugging
@@ -222,16 +240,16 @@ app.get("/cookie-check", (req, res) => {
   });
 });
 
-// User info endpoint for frontend auth state
-app.get("/api/user", async (req, res) => {
+// User info endpoint for frontend auth state (works with both session and JWT)
+app.get("/api/user", createAuthMiddleware(), async (req, res) => {
   try {
-    // Check if user is logged in via session
-    if (req.session.userId && req.session.userRole) {
+    // Check if user is authenticated (either via session or JWT)
+    if (req.user) {
       const user = {
-        id: req.session.userId,
-        email: req.session.userRole === "admin" ? "admin@test.com" : "parent@test.com",
-        role: req.session.userRole,
-        fullName: req.session.userRole === "admin" ? "admin" : "parent"
+        id: req.user.id,
+        email: req.user.role === "admin" ? "admin@test.com" : "parent@test.com",
+        role: req.user.role,
+        fullName: req.user.role === "admin" ? "admin" : "parent"
       };
       
       return res.json({
