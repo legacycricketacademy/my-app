@@ -79,6 +79,47 @@ npm run build
 node dist/index.js
 ```
 
+## Testing
+
+### E2E Tests (Playwright)
+
+**Local Development (with local server):**
+```bash
+# Run all tests with UI (interactive)
+npm run test:e2e:ui
+
+# Run tests in headed mode (watch in browser)
+npm run test:e2e:headed
+
+# Run all tests headless
+npm run test:e2e
+
+# View last test report
+npm run test:e2e:report
+```
+
+**Against Render Deployment:**
+```bash
+# Run tests against live Render app
+npm run test:e2e:render
+```
+
+**Test Structure:**
+- `tests/e2e/smoke.login.spec.ts` - Login flow and authentication
+- `tests/e2e/smoke.nav.spec.ts` - Dashboard navigation and sidebar checks
+- `tests/e2e/smoke.parent.spec.ts` - Parent portal routes and layout
+- `tests/e2e/smoke.schedule-modal.spec.ts` - Schedule dialog scrolling and modals
+- `tests/e2e/smoke.session.spec.ts` - Session API and persistence
+
+**Test Credentials:**
+- Admin: `admin@test.com` / `Test1234!`
+- Parent: `parent@test.com` / `Test1234!`
+
+**CI/CD:**
+- Tests run automatically on push to `main` (GitHub Actions)
+- Tests run against Render after successful deployment
+- Reports and traces saved as artifacts
+
 ## Deploy on Render
 
 ### Configuration
