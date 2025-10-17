@@ -1,9 +1,9 @@
-name: E2E Tests
+name: E2E after Render deploy
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main]     # push to main triggers Render deploy
+  workflow_dispatch:     # manual run
   repository_dispatch:
     types: [render_deployed]
 

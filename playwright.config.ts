@@ -28,31 +28,16 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'chromium-admin',
-      use: { 
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium',
+      dependencies: ['setup'],
+      use: {
         ...devices['Desktop Chrome'],
-        storageState: 'storageState.admin.json'
-      },
-    },
-    {
-      name: 'chromium-parent',
-      use: { 
-        ...devices['Desktop Chrome'],
-        storageState: 'storageState.parent.json'
-      },
-    },
-    {
-      name: 'firefox',
-      use: { 
-        ...devices['Desktop Firefox'],
-        storageState: 'storageState.admin.json'
-      },
-    },
-    {
-      name: 'webkit',
-      use: { 
-        ...devices['Desktop Safari'],
-        storageState: 'storageState.admin.json'
+        storageState: 'playwright/.auth/admin.json',
       },
     },
   ],

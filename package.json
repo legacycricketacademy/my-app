@@ -21,11 +21,12 @@
     "db:seed": "tsx db/seed-pg.ts",
     "dev:client": "vite",
     "dev:server": "tsx server/index.ts",
-    "test:e2e": "cross-env RUN_LOCAL_WEB=1 BASE_URL=http://localhost:10000 playwright test",
-    "test:e2e:ui": "cross-env RUN_LOCAL_WEB=1 BASE_URL=http://localhost:10000 playwright test --ui",
-    "test:e2e:headed": "cross-env RUN_LOCAL_WEB=1 BASE_URL=http://localhost:10000 playwright test --headed",
+    "test:e2e": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
     "test:e2e:render": "cross-env BASE_URL=https://legacy-cricket-app.onrender.com playwright test",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "ci:e2e": "npx playwright install --with-deps && npx playwright test --reporter=line"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
