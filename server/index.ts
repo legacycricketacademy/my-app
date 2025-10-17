@@ -50,32 +50,31 @@ const isProd = process.env.NODE_ENV === 'production';
 if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET must be set');
 
 const sessionConfig = {
-  name: 'sid',
-  secret: process.env.SESSION_SECRET!,
-  resave: false,
-  saveUninitialized: false,
   store: isProd ? new (PGSession(session))({ 
     pool,
     tableName: 'session',
-    createTableIfMissing: true   // auto-create on first run
+    createTableIfMissing: true
   }) : undefined,
+  secret: process.env.SESSION_SECRET!,
+  name: 'connect.sid',
+  resave: false,
+  saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',   // required on Render (HTTPS)
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    httpOnly: true,
     path: '/',
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 30 * 24 * 60 * 60 * 1000
   }
 };
 
 app.use(session(sessionConfig));
 
 // Session configuration logging
-console.log('SESSION init', {
-  nodeEnv: process.env.NODE_ENV,
-  origin: process.env.APP_ORIGIN,
-  cookieSecure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+console.log('SESSION middleware mounted', {
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  origin: process.env.APP_ORIGIN
 });
 
 // Setup authentication
@@ -180,9 +179,7 @@ app.post("/api/dev/login", async (req, res) => {
     
     // Set session data
     req.session.userId = account.id;
-    req.session.userRole = account.role || 'parent';
-    
-    console.log('AUTH session cookie flags', req.session.cookie);
+    req.session.role = account.role || 'parent';
     
     // Save the session and only then send the response
     await new Promise<void>((resolve, reject) => 
@@ -193,15 +190,7 @@ app.post("/api/dev/login", async (req, res) => {
     
     return res.status(200).json({ 
       ok: true, 
-      userId: account.id,
-      success: true,
-      message: "Dev login successful",
-      user: {
-        id: account.id,
-        email: email,
-        role: account.role,
-        fullName: email.split('@')[0]
-      }
+      userId: account.id
     });
   } catch (error) {
     console.error("Dev login error:", error);
@@ -215,9 +204,8 @@ app.post("/api/dev/login", async (req, res) => {
 // Session verification endpoint
 app.get("/api/session", (req, res) => {
   res.json({ 
-    authenticated: !!req.session.userId, 
-    userId: req.session.userId ?? null,
-    role: req.session.userRole ?? null
+    authenticated: !!req.session?.userId, 
+    userId: req.session?.userId ?? null 
   });
 });
 

@@ -107,7 +107,7 @@ export function createAuthMiddleware(storage: typeof multiTenantStorage = multiT
     if (req.session?.userId) {
       req.user = { 
         id: req.session.userId, 
-        role: req.session.userRole || 'parent',
+        role: req.session.role || 'parent',
         academyId: req.session.academyId
       };
       
