@@ -6,14 +6,14 @@ const RUN_LOCAL_WEB = process.env.RUN_LOCAL_WEB === '1';
 const CI = !!process.env.CI;
 
 export default defineConfig({
-  testDir: './tests/e2e',
+  testDir: './tests',
   fullyParallel: true,
   forbidOnly: CI,
   retries: CI ? 2 : 0,
   workers: CI ? Math.max(1, os.cpus().length - 1) : undefined,
   reporter: 'html',
   timeout: 30000, // 30 seconds per test
-  globalSetup: "./global-setup.ts",
+  // globalSetup: "./global-setup.ts", // Disabled - using setup project instead
   use: {
     baseURL: BASE_URL,
     trace: 'on-first-retry',
