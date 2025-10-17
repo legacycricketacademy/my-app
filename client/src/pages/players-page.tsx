@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MainLayout } from "@/layout/main-layout";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -434,8 +433,7 @@ export default function PlayersPage() {
   };
   
   return (
-    <MainLayout title="Team Management">
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -1076,7 +1074,6 @@ export default function PlayersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
-    </MainLayout>
+    </div>
   );
 }
