@@ -10,6 +10,7 @@ import { User as SelectUser, users, userAuditLogs } from "@shared/schema";
 import { db } from "../db/index.js";
 import { requireAdmin, requireCoach, requireParent } from "./middleware/require-role";
 import { generateVerificationEmail, sendEmail } from "./email";
+import { safeLog } from "./debug.js";
 import {
   authenticate,
   authorize,
@@ -97,9 +98,9 @@ declare global {
 // Global dual authentication middleware factory (Session OR JWT)
 export function createAuthMiddleware(storage: typeof multiTenantStorage = multiTenantStorage) {
   return function authMiddleware(req: Request, res: Response, next: NextFunction) {
-    console.log('AUTH GUARD', { 
+    safeLog('AUTH GUARD', { 
       session: !!req.session?.userId, 
-      bearer: !!req.headers.authorization?.startsWith('Bearer ')
+      bearer: req.headers.authorization?.startsWith('Bearer ') === true
     });
     
     // Path 1: Check session-based authentication first
@@ -114,7 +115,7 @@ export function createAuthMiddleware(storage: typeof multiTenantStorage = multiT
         req.academyId = req.session.academyId;
       }
       
-      console.log('AUTH GUARD: Session auth successful', { userId: req.user.id, role: req.user.role });
+      safeLog('AUTH GUARD OK', { via: 'session', userId: req.user.id, role: req.user.role });
       return next();
     }
     
@@ -137,7 +138,7 @@ export function createAuthMiddleware(storage: typeof multiTenantStorage = multiT
           req.academyId = payload.academyId;
         }
         
-        console.log('AUTH GUARD: Bearer token auth successful', { userId: req.user.id, role: req.user.role });
+        safeLog('AUTH GUARD OK', { via: 'bearer', userId: req.user.id, role: req.user.role });
         return next();
       } catch (error) {
         console.log('AUTH GUARD: Bearer token verification failed', { error: (error as Error).message });

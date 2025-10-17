@@ -25,6 +25,10 @@ services:
         value: true
       - key: BYPASS_EMAIL_SENDING
         value: false
+      - key: DEBUG_AUTH
+        value: true
+      - key: DEBUG_HEADERS
+        value: false
       - key: DATABASE_URL
         fromDatabase:
           name: legacy-cricket-db

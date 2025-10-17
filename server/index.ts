@@ -19,6 +19,7 @@ import { users } from "../shared/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 import { MailService } from "@sendgrid/mail";
 import { sendAppEmail } from "./email.js";
+import { isDebugAuth, isDebugHeaders, safeLog, safeLogHeaders } from "./debug.js";
 
 // ---- __dirname for ES modules ----
 const __filename = fileURLToPath(import.meta.url);
@@ -76,6 +77,22 @@ const sessionConfig = {
 };
 
 app.use(session(sessionConfig));
+
+// Session middleware diagnostics
+safeLog('SESSION middleware mounted', {
+  cookieName: 'connect.sid',
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  path: '/'
+});
+
+// Debug session header middleware (only when DEBUG_AUTH=true)
+if (isDebugAuth) {
+  app.use((req, res, next) => {
+    res.set('X-Debug-Session', req.session?.userId ? String(req.session.userId) : 'none');
+    next();
+  });
+}
 
 // Session configuration logging
 console.log('SESSION middleware mounted', {
@@ -160,7 +177,7 @@ app.post("/api/dev/login", async (req, res) => {
   try {
     const { email, password } = req.body as { email: string; password: string };
     
-    console.log('AUTH login start', { email });
+    safeLog('AUTH login start', { email });
     
     // Development accounts for testing
     const devAccounts = {
@@ -171,7 +188,7 @@ app.post("/api/dev/login", async (req, res) => {
     const account = devAccounts[email as keyof typeof devAccounts];
     
     if (!account || account.password !== password) {
-      console.log('AUTH login failed', { email, reason: 'invalid credentials' });
+      safeLog('AUTH login failed', { email, reason: 'invalid credentials' });
       return res.status(401).json({
         success: false,
         message: "Invalid credentials"
@@ -182,17 +199,29 @@ app.post("/api/dev/login", async (req, res) => {
     await new Promise<void>((resolve, reject) => 
       req.session.regenerate(err => err ? reject(err) : resolve())
     );
+    safeLog('AUTH session regenerate ok');
     
     // Set session data
     req.session.userId = account.id;
     req.session.role = account.role || 'parent';
+    safeLog('AUTH session set', { userId: account.id, role: account.role });
+    
+    // Log cookie flags
+    safeLog('AUTH session cookie flags', {
+      secure: req.session.cookie.secure,
+      sameSite: req.session.cookie.sameSite,
+      path: req.session.cookie.path,
+      httpOnly: req.session.cookie.httpOnly,
+      maxAge: req.session.cookie.maxAge
+    });
     
     // Save the session and only then send the response
     await new Promise<void>((resolve, reject) => 
       req.session.save(err => err ? reject(err) : resolve())
     );
+    safeLog('AUTH session save ok');
     
-    console.log('AUTH login ok', { userId: account.id });
+    safeLog('AUTH login ok', { userId: account.id });
     
     // Return backward-compatible payload
     const payload = { 
@@ -231,6 +260,50 @@ app.post("/api/auth/logout", (req, res) => {
     });
     
     return res.status(200).json({ ok: true });
+  });
+});
+
+// Debug endpoints (read-only, no auth required)
+app.get("/api/_debug/ping", (req, res) => {
+  res.json({ ok: true, now: new Date().toISOString() });
+});
+
+app.get("/api/_debug/headers", (req, res) => {
+  if (!isDebugHeaders) {
+    return res.json({ ok: false, error: 'disabled' });
+  }
+  
+  res.json({
+    host: req.headers.host,
+    origin: req.headers.origin,
+    cookie: req.headers.cookie,
+    'user-agent': req.headers['user-agent']
+  });
+});
+
+app.get("/api/_debug/cookie", (req, res) => {
+  // Set a short-lived debug cookie with same flags as session
+  res.cookie('debugCookie', 'ok', {
+    path: '/',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 5 * 60 * 1000 // 5 minutes
+  });
+  
+  safeLog('DEBUG COOKIE', {
+    incomingCookie: req.headers.cookie || null,
+    sessionUser: req.session?.userId || null
+  });
+  
+  res.json({ set: true, note: 'check response Set-Cookie header' });
+});
+
+app.get("/api/_debug/session", (req, res) => {
+  res.json({
+    hasSession: !!req.session?.userId,
+    userId: req.session?.userId ?? null,
+    role: req.session?.role ?? null
   });
 });
 
