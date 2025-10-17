@@ -98,9 +98,8 @@ declare global {
 export function createAuthMiddleware(storage: typeof multiTenantStorage = multiTenantStorage) {
   return function authMiddleware(req: Request, res: Response, next: NextFunction) {
     console.log('AUTH GUARD', { 
-      hasSession: !!req.session?.userId, 
-      hasBearer: !!req.headers.authorization?.startsWith('Bearer '),
-      hasCookieToken: !!req.cookies?.['access_token']
+      session: !!req.session?.userId, 
+      bearer: !!req.headers.authorization?.startsWith('Bearer ')
     });
     
     // Path 1: Check session-based authentication first

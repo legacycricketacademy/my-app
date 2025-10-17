@@ -136,10 +136,9 @@ app.get("/healthz", async (_req, res) => {
 // Whoami endpoint (requires authentication)
 app.get("/api/whoami", createAuthMiddleware(), (req, res) => {
   if (req.user) {
-    const { password, ...userWithoutPassword } = req.user as any;
     res.json({ 
-      success: true, 
-      user: userWithoutPassword 
+      id: req.user.id, 
+      role: req.user.role 
     });
   } else {
     res.status(401).json({ 
@@ -188,10 +187,15 @@ app.post("/api/dev/login", async (req, res) => {
     
     console.log('AUTH login ok', { userId: account.id });
     
-    return res.status(200).json({ 
+    // Return backward-compatible payload
+    const payload = { 
       ok: true, 
-      userId: account.id
-    });
+      user: { 
+        id: account.id, 
+        role: account.role || 'parent' 
+      } 
+    };
+    return res.status(200).json(payload);
   } catch (error) {
     console.error("Dev login error:", error);
     res.status(500).json({
@@ -201,11 +205,36 @@ app.post("/api/dev/login", async (req, res) => {
   }
 });
 
+// Logout endpoint
+app.post("/api/auth/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('LOGOUT error:', err);
+      return res.status(500).json({ ok: false, error: 'Failed to destroy session' });
+    }
+    
+    console.log('LOGOUT destroyed');
+    
+    // Clear the cookie with same flags as login
+    res.clearCookie('connect.sid', {
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    });
+    
+    return res.status(200).json({ ok: true });
+  });
+});
+
 // Session verification endpoint
 app.get("/api/session", (req, res) => {
   res.json({ 
     authenticated: !!req.session?.userId, 
-    userId: req.session?.userId ?? null 
+    user: req.session?.userId ? { 
+      id: req.session.userId, 
+      role: req.session.role || 'parent' 
+    } : null 
   });
 });
 

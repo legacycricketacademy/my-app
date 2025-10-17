@@ -11,6 +11,10 @@ import { ThemeProvider } from '@/providers/theme-provider';
 import { AuthProvider } from '@/contexts/auth-context';
 import App from './App';
 import './index.css';
+import axios from 'axios';
+
+// Set up axios defaults for credentials
+axios.defaults.withCredentials = true;
 
 // Create a new query client
 const queryClient = new QueryClient({
