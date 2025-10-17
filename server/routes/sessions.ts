@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { fromZonedTime } from 'date-fns-tz';
+import * as tz from 'date-fns-tz';
 import { pool } from '../../db/index.js';
 import { requireAuth } from '../middleware/authz.js';
 
@@ -8,6 +8,12 @@ const r = Router();
 const dbg = (...args: any[]) => { 
   if (process.env.DEBUG_AUTH === 'true') console.log('[SESSIONS]', ...args); 
 };
+
+// Runtime guard: ensure date-fns-tz exports what we need
+if (!('zonedTimeToUtc' in tz)) {
+  console.error('[TZ] date-fns-tz missing zonedTimeToUtc export. Installed keys:', Object.keys(tz));
+  throw new Error('date-fns-tz export not found: zonedTimeToUtc');
+}
 
 // Validation schemas
 const createSessionSchema = z.object({
@@ -27,9 +33,9 @@ const listSessionsSchema = z.object({
   ageGroup: z.enum(['Under 10s', 'Under 12s', 'Under 14s', 'Under 16s', 'Under 19s', 'Open']).optional(),
 });
 
-// Helper to convert local time to UTC (date-fns-tz v3 API)
+// Helper to convert local time to UTC
 function convertToUTC(localTime: string, timezone: string): Date {
-  return fromZonedTime(localTime, timezone);
+  return tz.zonedTimeToUtc(localTime, timezone);
 }
 
 // POST /api/sessions - Create a new session

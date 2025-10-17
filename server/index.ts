@@ -761,8 +761,8 @@ import { SettingsStore } from './db/settingsStore.js';
 const settingsStore = new SettingsStore(pool);
 
 // Settings API routes
-import settingsRouter from './routes/settings.js';
-settingsRouter.setSettingsStore(settingsStore);
+import settingsRouter, { setSettingsStore } from './routes/settings.js';
+setSettingsStore(settingsStore);
 if (process.env.SETTINGS_API_ENABLED !== 'false') {
   app.use('/api/settings', settingsRouter);
 }
