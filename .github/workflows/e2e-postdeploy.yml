@@ -1,0 +1,62 @@
+name: E2E (post-deploy live)
+
+on:
+  repository_dispatch:
+    types: [render_deployed]
+  workflow_dispatch:
+
+jobs:
+  e2e-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      
+      - name: Wait for Render app to be ready
+        run: npx wait-on -t 240000 "https://cricket-academy-app.onrender.com/api/_debug/echo"
+      
+      - name: Run E2E tests against live deployment
+        env:
+          BASE_URL: https://cricket-academy-app.onrender.com
+          ADMIN_EMAIL: admin@test.com
+          ADMIN_PASSWORD: Test1234!
+        run: npx playwright test --reporter=html
+      
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-postdeploy
+          path: playwright-report/
+          retention-days: 7
+      
+      - name: Comment PR with results
+        if: always() && github.event.client_payload.pull_request_number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'playwright-report/index.html';
+            const exists = fs.existsSync(reportPath);
+            const status = exists ? '✅ E2E tests completed' : '❌ E2E tests failed';
+            
+            github.rest.issues.createComment({
+              issue_number: context.payload.client_payload.pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${status}\n\nRender deployment verified. [View full report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
+            });
+

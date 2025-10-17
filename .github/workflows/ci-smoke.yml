@@ -1,0 +1,57 @@
+name: CI Smoke (build + boot)
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-boot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Check critical exports
+        run: node scripts/check-exports.js
+      
+      - name: Boot server bundle
+        env:
+          PORT: 3000
+          NODE_ENV: production
+          APP_ORIGIN: http://localhost:3000
+          SESSION_SECRET: test-secret-ci-only
+          DATABASE_URL: postgresql://localhost:5432/test
+        run: |
+          node dist/index.js & echo $! > server.pid
+          sleep 5
+      
+      - name: Wait for server health check
+        run: |
+          npx wait-on -t 30000 http://localhost:3000/api/_debug/echo || (cat server.pid | xargs kill -9 2>/dev/null; exit 1)
+      
+      - name: Verify server responding
+        run: |
+          curl -f http://localhost:3000/api/_debug/echo || (cat server.pid | xargs kill -9 2>/dev/null; exit 1)
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            cat server.pid | xargs kill -9 2>/dev/null || true
+          fi
+
