@@ -189,7 +189,7 @@ export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
                       {form.watch('startDate') ? format(form.watch('startDate'), 'PPP') : 'Pick date'}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 z-[60]" align="start">
                     <Calendar
                       mode="single"
                       selected={form.watch('startDate')}
@@ -226,7 +226,7 @@ export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
                       {form.watch('endDate') ? format(form.watch('endDate'), 'PPP') : 'Pick date'}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 z-[60]" align="start">
                     <Calendar
                       mode="single"
                       selected={form.watch('endDate')}

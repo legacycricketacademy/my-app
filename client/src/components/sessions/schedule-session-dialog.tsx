@@ -180,7 +180,7 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[95vw] sm:w-[350px] p-0 relative z-50" align="center" side="bottom" sideOffset={5}>
+                      <PopoverContent className="w-[95vw] sm:w-[350px] p-0 z-[60]" align="center" side="bottom" sideOffset={5}>
                         <div className="flex flex-col">
                           <div className="sticky top-0 z-10 bg-background p-3 border-b">
                             <div className="mb-2">
@@ -333,7 +333,7 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[95vw] sm:w-[350px] p-0 relative z-50" align="center" side="bottom" sideOffset={5}>
+                      <PopoverContent className="w-[95vw] sm:w-[350px] p-0 z-[60]" align="center" side="bottom" sideOffset={5}>
                         <div className="flex flex-col">
                           <div className="sticky top-0 z-10 bg-background p-3 border-b">
                             <div className="mb-2">

@@ -83,7 +83,7 @@ export function DatePicker({
           {date ? format(date, "PPP") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[85vw] sm:w-auto p-0 relative z-50" align="center" side="bottom" sideOffset={5}>
+      <PopoverContent className="w-[85vw] sm:w-auto p-0 z-[60]" align="center" side="bottom" sideOffset={5}>
         <div className="flex flex-col">
           <div className="sticky top-0 z-10 bg-background p-2 border-b flex items-center justify-between">
             <div className="text-sm font-medium">
