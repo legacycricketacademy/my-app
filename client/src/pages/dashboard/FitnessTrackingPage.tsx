@@ -7,16 +7,21 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 
 export default function FitnessTrackingPage() {
-  const { data: fitnessData, isLoading, error, refetch } = useQuery({
+  const { data: fitnessResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/fitness/summary'],
     queryFn: async () => {
       const response = await fetch('/api/fitness/summary', {
         credentials: 'include'
       });
+      if (response.status === 404) {
+        return { ok: true, items: [], count: 0 };
+      }
       if (!response.ok) throw new Error('Failed to fetch fitness data');
       return response.json();
     }
   });
+
+  const fitnessData = fitnessResponse?.items ?? fitnessResponse ?? [];
 
   if (isLoading) {
     return (

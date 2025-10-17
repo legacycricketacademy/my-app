@@ -7,16 +7,21 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 
 export default function MealPlansPage() {
-  const { data: mealPlans, isLoading, error, refetch } = useQuery({
+  const { data: mealPlansResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/meal-plans'],
     queryFn: async () => {
       const response = await fetch('/api/meal-plans', {
         credentials: 'include'
       });
+      if (response.status === 404) {
+        return { ok: true, items: [], count: 0 };
+      }
       if (!response.ok) throw new Error('Failed to fetch meal plans');
       return response.json();
     }
   });
+
+  const mealPlans = mealPlansResponse?.items ?? mealPlansResponse ?? [];
 
   if (isLoading) {
     return (

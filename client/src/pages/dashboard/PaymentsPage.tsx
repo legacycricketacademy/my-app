@@ -7,16 +7,21 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 
 export default function PaymentsPage() {
-  const { data: payments, isLoading, error, refetch } = useQuery({
+  const { data: paymentsResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/payments'],
     queryFn: async () => {
       const response = await fetch('/api/payments', {
         credentials: 'include'
       });
+      if (response.status === 404) {
+        return { ok: true, items: [], count: 0 };
+      }
       if (!response.ok) throw new Error('Failed to fetch payments');
       return response.json();
     }
   });
+
+  const payments = paymentsResponse?.items ?? paymentsResponse ?? [];
 
   if (isLoading) {
     return (

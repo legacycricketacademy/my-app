@@ -7,16 +7,21 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 
 export default function AnnouncementsPage() {
-  const { data: announcements, isLoading, error, refetch } = useQuery({
+  const { data: announcementsResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/announcements'],
     queryFn: async () => {
       const response = await fetch('/api/announcements', {
         credentials: 'include'
       });
+      if (response.status === 404) {
+        return { ok: true, items: [], count: 0 };
+      }
       if (!response.ok) throw new Error('Failed to fetch announcements');
       return response.json();
     }
   });
+
+  const announcements = announcementsResponse?.items ?? announcementsResponse ?? [];
 
   if (isLoading) {
     return (

@@ -7,16 +7,21 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 
 export default function SchedulePage() {
-  const { data: sessions, isLoading, error, refetch } = useQuery({
+  const { data: sessionsResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/sessions'],
     queryFn: async () => {
       const response = await fetch('/api/sessions', {
         credentials: 'include'
       });
+      if (response.status === 404) {
+        return { ok: true, items: [], count: 0 };
+      }
       if (!response.ok) throw new Error('Failed to fetch sessions');
       return response.json();
     }
   });
+
+  const sessions = sessionsResponse?.items ?? sessionsResponse ?? [];
 
   if (isLoading) {
     return (

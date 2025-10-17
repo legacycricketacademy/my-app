@@ -645,6 +645,54 @@ app.get('/api/sessions', createAuthMiddleware(), getSessionsHandler);
 app.get('/api/coach/sessions', createAuthMiddleware(), getSessionsHandler);
 app.get('/api/admin/sessions', createAuthMiddleware(), getSessionsHandler);
 
+// Fitness tracking endpoint
+app.get('/api/fitness/summary', createAuthMiddleware(), async (req: Request, res: Response) => {
+  try {
+    console.log('GET /api/fitness/summary', { userId: req.user?.id, role: req.user?.role });
+    // Placeholder: return empty array
+    return res.status(200).json({ ok: true, items: [], count: 0 });
+  } catch (error) {
+    console.error('GET FITNESS ERROR', { msg: error instanceof Error ? error.message : 'unknown' });
+    return res.status(500).json({ ok: false, error: 'fetch_failed', message: 'Failed to fetch fitness data' });
+  }
+});
+
+// Meal plans endpoint
+app.get('/api/meal-plans', createAuthMiddleware(), async (req: Request, res: Response) => {
+  try {
+    console.log('GET /api/meal-plans', { userId: req.user?.id, role: req.user?.role });
+    // Placeholder: return empty array
+    return res.status(200).json({ ok: true, items: [], count: 0 });
+  } catch (error) {
+    console.error('GET MEAL PLANS ERROR', { msg: error instanceof Error ? error.message : 'unknown' });
+    return res.status(500).json({ ok: false, error: 'fetch_failed', message: 'Failed to fetch meal plans' });
+  }
+});
+
+// Announcements endpoint
+app.get('/api/announcements', createAuthMiddleware(), async (req: Request, res: Response) => {
+  try {
+    console.log('GET /api/announcements', { userId: req.user?.id, role: req.user?.role });
+    // Placeholder: return empty array
+    return res.status(200).json({ ok: true, items: [], count: 0 });
+  } catch (error) {
+    console.error('GET ANNOUNCEMENTS ERROR', { msg: error instanceof Error ? error.message : 'unknown' });
+    return res.status(500).json({ ok: false, error: 'fetch_failed', message: 'Failed to fetch announcements' });
+  }
+});
+
+// Payments endpoint
+app.get('/api/payments', createAuthMiddleware(), async (req: Request, res: Response) => {
+  try {
+    console.log('GET /api/payments', { userId: req.user?.id, role: req.user?.role, scope: req.query.scope });
+    // Placeholder: return empty array
+    return res.status(200).json({ ok: true, items: [], count: 0 });
+  } catch (error) {
+    console.error('GET PAYMENTS ERROR', { msg: error instanceof Error ? error.message : 'unknown' });
+    return res.status(500).json({ ok: false, error: 'fetch_failed', message: 'Failed to fetch payments' });
+  }
+});
+
 // Parent Portal API Routes - Placeholder implementations
 app.put('/api/parent/profile', createAuthMiddleware(), async (req: Request, res: Response) => {
   try {
