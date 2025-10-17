@@ -119,7 +119,7 @@ export function Sidebar() {
       
       {/* Coach Profile */}
       <div className="p-4 border-b border-gray-200">
-        <Link href="/profile" className="flex items-center space-x-3 hover:bg-gray-50 p-2 rounded-lg transition-colors">
+        <Link to="/profile" className="flex items-center space-x-3 hover:bg-gray-50 p-2 rounded-lg transition-colors">
           <Avatar>
             {user?.profileImage ? (
               <AvatarImage src={user.profileImage} alt={user?.fullName || "User"} />
@@ -138,7 +138,7 @@ export function Sidebar() {
         {navItems.map((item) => (
           <Link 
             key={item.path} 
-            href={item.path} 
+            to={item.path} 
             className={`flex items-center space-x-3 p-2 rounded-lg font-medium ${
               isActive(item.path) 
                 ? "bg-primary text-white" 
