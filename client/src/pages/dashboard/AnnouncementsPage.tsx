@@ -1,12 +1,14 @@
-import { MainLayout } from "@/layout/main-layout";
-
 export default function AnnouncementsPage() {
   return (
-    <MainLayout title="Announcements">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Announcements</h1>
-        <p>Manage team announcements and communications.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
+        <p className="text-gray-600">Manage team announcements and communications.</p>
       </div>
-    </MainLayout>
+      
+      <div className="bg-white rounded-lg border p-6">
+        <p className="text-gray-500">Announcements content will be implemented here.</p>
+      </div>
+    </div>
   );
 }

@@ -1,5 +1,4 @@
 import { format } from "date-fns";
-import { MainLayout } from "@/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { ScheduleCard } from "@/components/dashboard/schedule-card";
@@ -23,7 +22,7 @@ export default function Dashboard() {
   });
   
   return (
-    <MainLayout title="Dashboard">
+    <div className="space-y-6">
       {/* Dashboard Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
         <div>
@@ -105,7 +104,7 @@ export default function Dashboard() {
           <AnnouncementsCard />
         </div>
       </div>
-    </MainLayout>
+    </div>
   );
   
   function formatDistanceToNow(date: Date, options: { addSuffix: boolean }): string {

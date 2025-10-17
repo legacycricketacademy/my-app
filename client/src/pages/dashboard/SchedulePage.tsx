@@ -1,12 +1,14 @@
-import { MainLayout } from "@/layout/main-layout";
-
 export default function SchedulePage() {
   return (
-    <MainLayout title="Schedule">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Schedule</h1>
-        <p>Manage training sessions, matches, and events.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+        <p className="text-gray-600">Manage training sessions, matches, and events.</p>
       </div>
-    </MainLayout>
+      
+      <div className="bg-white rounded-lg border p-6">
+        <p className="text-gray-500">Schedule content will be implemented here.</p>
+      </div>
+    </div>
   );
 }

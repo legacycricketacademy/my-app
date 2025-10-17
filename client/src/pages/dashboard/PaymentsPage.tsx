@@ -1,12 +1,14 @@
-import { MainLayout } from "@/layout/main-layout";
-
 export default function PaymentsPage() {
   return (
-    <MainLayout title="Payments">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Payments</h1>
-        <p>Manage payments, fees, and billing.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
+        <p className="text-gray-600">Manage payments, fees, and billing.</p>
       </div>
-    </MainLayout>
+      
+      <div className="bg-white rounded-lg border p-6">
+        <p className="text-gray-500">Payments content will be implemented here.</p>
+      </div>
+    </div>
   );
 }

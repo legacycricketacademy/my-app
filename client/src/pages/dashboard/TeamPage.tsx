@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MainLayout } from "@/layout/main-layout";
 import PlayersPage from "@/pages/players-page";
 
 export default function TeamPage() {
