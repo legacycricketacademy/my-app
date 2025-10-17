@@ -4,53 +4,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/auth/session";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AuthPageDev() {
   const navigate = useNavigate();
+  const { loginMutation } = useAuth();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
+    
     try {
-      console.log('Attempting login with:', formData);
-      const response = await fetch('/api/dev/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-        credentials: 'include',
-      });
-
-      console.log('Login response status:', response.status);
-      const data = await response.json();
-      console.log('Login response data:', data);
-
-      if (response.ok) {
-        console.log('Dev login successful:', data);
-        // Redirect based on role
-        if (data.user.role === 'admin') {
-          console.log('Redirecting to admin dashboard');
-          navigate('/admin');
-        } else {
-          console.log('Redirecting to parent dashboard');
-          navigate('/dashboard/parent');
-        }
-      } else {
-        console.error('Login failed:', data);
-        alert(`Login failed: ${data.message || 'Unknown error'}`);
-      }
+      await loginMutation.mutateAsync(formData);
+      // Navigation will be handled by the auth system
+      navigate('/dashboard');
     } catch (error) {
+      // Error handling is done in the mutation
       console.error('Login error:', error);
-      alert(`Login error: ${error.message || 'Network error'}`);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -98,13 +73,13 @@ export default function AuthPageDev() {
                 placeholder="Enter your password"
               />
             </div>
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
-              {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loginMutation.isPending}
+                >
+                  {loginMutation.isPending ? "Signing in..." : "Sign In"}
+                </Button>
           </form>
           
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">

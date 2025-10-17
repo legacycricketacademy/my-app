@@ -543,7 +543,72 @@ app.get("/api/dashboard/payments", async (req, res) => {
   res.json(payments);
 });
 
-// ---- Academy context middleware ----
+// Player creation route aliases (fix "Add New Player" 404)
+const createPlayerHandler = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const { firstName, lastName, dateOfBirth, ageGroup, playerType, emergencyContact, medicalInformation } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !dateOfBirth) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "First name, last name, and date of birth are required" 
+      });
+    }
+
+    // Calculate age group if not provided
+    let calculatedAgeGroup = ageGroup;
+    if (!calculatedAgeGroup) {
+      const dob = new Date(dateOfBirth);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      
+      if (today.getMonth() < dob.getMonth() || 
+          (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) {
+        age--;
+      }
+      
+      calculatedAgeGroup = age < 8 ? "5-8 years" : "8+ years";
+    }
+
+    const playerData = {
+      firstName,
+      lastName,
+      dateOfBirth: new Date(dateOfBirth),
+      ageGroup: calculatedAgeGroup,
+      playerType: playerType || null,
+      emergencyContact: emergencyContact || null,
+      medicalInformation: medicalInformation || null,
+      parentId: req.user.id,
+      academyId: 1, // Default academy
+      pendingCoachReview: req.user.role === 'parent' // Parents need coach review
+    };
+
+    const newPlayer = await storage.createPlayer(playerData);
+    return res.status(201).json(newPlayer);
+  } catch (error) {
+    console.error('Error creating player:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: error instanceof Error ? error.message : 'Internal server error' 
+    });
+  }
+};
+
+// Add route aliases for player creation
+app.post('/api/players', createAuthMiddleware(), createPlayerHandler);
+app.post('/api/admin/players', createAuthMiddleware(), createPlayerHandler);
+app.post('/api/coach/players', createAuthMiddleware(), createPlayerHandler);
+
+// API 404 logging middleware
+app.use('/api', (req, res, next) => {
+  console.warn('API 404', req.method, req.originalUrl);
+  next();
+});
 app.use(async (req, _res, next) => {
   const academyPathRegex = /^\/academy\/([^/]+)/;
   const match = req.path.match(academyPathRegex);

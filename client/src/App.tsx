@@ -3,7 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/auth/session";
+import { RequireAuth, RedirectIfAuthed } from "@/auth/guards";
 import { ThemeProvider } from "@/providers/theme-provider";
 import {
   OfflineDetector,
@@ -67,27 +68,23 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Auth route */}
+      {/* Auth route - redirect to dashboard if authenticated */}
       <Route
         path="/auth"
         element={
-          user ? (
-            <Navigate to="/dashboard" />
-          ) : (
+          <RedirectIfAuthed>
             <AuthPageDev />
-          )
+          </RedirectIfAuthed>
         }
       />
 
-      {/* Main dashboard route with nested routes */}
+      {/* Main dashboard route with nested routes - require authentication */}
       <Route
         path="/dashboard"
         element={
-          user ? (
+          <RequireAuth>
             <DashboardLayout />
-          ) : (
-            <Navigate to="/auth" />
-          )
+          </RequireAuth>
         }
       >
         {/* Dashboard index route */}
@@ -114,8 +111,15 @@ function AppRoutes() {
         <Route path="*" element={<SectionNotFound />} />
       </Route>
 
-      {/* Legacy routes - redirect to dashboard */}
-      <Route path="/" element={<Navigate to="/dashboard" />} />
+      {/* Root path - redirect to auth if not authenticated */}
+      <Route
+        path="/"
+        element={
+          <RedirectIfAuthed>
+            <Navigate to="/auth" />
+          </RedirectIfAuthed>
+        }
+      />
       <Route path="/admin" element={<Navigate to="/dashboard" />} />
 
       {/* Parent dashboard routes */}

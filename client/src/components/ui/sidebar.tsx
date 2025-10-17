@@ -1,4 +1,4 @@
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/auth/session";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useLocation, Link } from "react-router-dom";
 import { 
@@ -50,18 +50,7 @@ export function Sidebar() {
   };
   
   const handleLogout = () => {
-    // EMERGENCY FIX: Just redirect to auth page immediately
-    try {
-      // Set a flag in localStorage that we'll check on page load
-      window.localStorage.setItem('force_logout', 'true');
-      
-      // Force redirect to auth page
-      window.location.href = '/auth';
-    } catch (error) {
-      console.error("Fallback logout error:", error);
-      // Just redirect anyway
-      window.location.href = '/auth';
-    }
+    logoutMutation.mutate();
   };
   
   // Base nav items for admins/coaches
