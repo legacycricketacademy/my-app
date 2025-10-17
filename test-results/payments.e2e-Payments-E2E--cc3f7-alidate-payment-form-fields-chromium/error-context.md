@@ -1,0 +1,155 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - generic:
+            - generic: Legacy Cricket
+            - img
+          - paragraph: Coach Dashboard
+        - generic:
+          - link:
+            - /url: /profile
+            - generic:
+              - generic: U
+            - generic:
+              - heading [level=4]: User
+              - paragraph: Administrator
+        - navigation:
+          - link:
+            - /url: /dashboard
+            - img
+            - generic: Dashboard
+          - link:
+            - /url: /dashboard/team
+            - img
+            - generic: Team Management
+          - link:
+            - /url: /dashboard/schedule
+            - img
+            - generic: Schedule
+          - link:
+            - /url: /dashboard/fitness
+            - img
+            - generic: Fitness Tracking
+          - link:
+            - /url: /dashboard/meal-plans
+            - img
+            - generic: Meal Plans
+          - link:
+            - /url: /dashboard/announcements
+            - img
+            - generic: Announcements
+          - link:
+            - /url: /dashboard/payments
+            - img
+            - generic: Payments
+          - link:
+            - /url: /settings
+            - img
+            - generic: Settings
+          - link:
+            - /url: /import-data
+            - img
+            - generic: Import Data
+          - link:
+            - /url: /manage-connections
+            - img
+            - generic: Manage Connections
+          - link:
+            - /url: /players-pending-review
+            - img
+            - generic: Pending Players
+          - link:
+            - /url: /coaches-pending-approval
+            - img
+            - generic: Coach Approvals
+        - generic:
+          - button:
+            - img
+            - generic: Sign Out
+          - generic:
+            - paragraph: "If normal sign out fails:"
+            - button:
+              - img
+              - generic: Force Sign Out
+            - generic:
+              - link:
+                - /url: /emergency-logout
+                - text: Open Emergency Logout Tool
+      - generic:
+        - banner:
+          - generic:
+            - heading [level=1]: Coach Dashboard
+          - generic:
+            - generic: User
+            - button:
+              - img
+              - text: Sign Out
+        - main:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=1]: Payments
+                  - paragraph: Manage payments, fees, and billing.
+                - button:
+                  - img
+                  - text: Record Payment
+              - generic:
+                - generic:
+                  - img
+                  - heading [level=3]: No payments recorded
+                  - paragraph: Payment records will appear here once players make payments.
+                  - button: Record Payment
+    - list
+    - list
+  - dialog "Record Payment" [ref=e2]:
+    - heading "Record Payment" [level=2] [ref=e4]
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: Player ID *
+        - textbox "Player ID *" [active] [ref=e8]:
+          - /placeholder: Enter player ID
+      - generic [ref=e9]:
+        - generic [ref=e10]: Player Name (optional)
+        - textbox "Player Name (optional)" [ref=e11]:
+          - /placeholder: Enter player name
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: Amount *
+          - spinbutton "Amount *" [ref=e15]
+        - generic [ref=e16]:
+          - generic [ref=e17]: Currency
+          - combobox "Currency" [ref=e18] [cursor=pointer]:
+            - generic: INR
+            - img [ref=e19]
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]: Method
+          - combobox "Method" [ref=e24] [cursor=pointer]:
+            - generic: Cash
+            - img [ref=e25]
+        - generic [ref=e27]:
+          - generic [ref=e28]: Status
+          - combobox "Status" [ref=e29] [cursor=pointer]:
+            - generic: Paid
+            - img [ref=e30]
+        - generic [ref=e32]:
+          - generic [ref=e33]: Reference
+          - textbox "Reference" [ref=e34]:
+            - /placeholder: Optional
+      - generic [ref=e35]:
+        - generic [ref=e36]: Notes
+        - textbox "Notes" [ref=e37]:
+          - /placeholder: Add notes...
+    - generic [ref=e38]:
+      - button "Cancel" [ref=e39] [cursor=pointer]
+      - button "Save" [ref=e40] [cursor=pointer]
+    - button "Close" [ref=e41] [cursor=pointer]:
+      - img [ref=e42]
+      - generic [ref=e45]: Close
+```

@@ -1,23 +1,102 @@
 # Page snapshot
 
 ```yaml
-- generic [active] [ref=e1]:
-  - generic [ref=e2]:
-    - banner [ref=e3]:
-      - img "502" [ref=e4]
-      - heading "Bad Gateway" [level=1] [ref=e6]
-    - main [ref=e7]:
-      - generic [ref=e8]: "Request ID: 99012ca2da9e6b3c-DFW"
-      - generic [ref=e9]: This service is currently unavailable. Please try again in a few minutes.
-      - generic [ref=e10]:
-        - text: If you are the site owner, refer to
-        - link "Render’s documentation" [ref=e11] [cursor=pointer]:
-          - /url: https://render.com/docs/troubleshooting-deploys#502-bad-gateway
-        - text: for troubleshooting.
-  - contentinfo [ref=e12]:
-    - generic [ref=e13]:
-      - text: Powered by
-      - link "Render" [ref=e14] [cursor=pointer]:
-        - /url: https://render.com
-        - img "Render" [ref=e15]
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: Legacy Cricket
+          - img [ref=e8]
+        - paragraph [ref=e18]: Coach Dashboard
+      - link "U User Administrator" [ref=e20] [cursor=pointer]:
+        - /url: /profile
+        - generic [ref=e22]: U
+        - generic [ref=e23]:
+          - heading "User" [level=4] [ref=e24]
+          - paragraph [ref=e25]: Administrator
+      - navigation [ref=e26]:
+        - link "Dashboard" [ref=e27] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e28]
+          - generic [ref=e33]: Dashboard
+        - link "Team Management" [ref=e34] [cursor=pointer]:
+          - /url: /dashboard/team
+          - img [ref=e35]
+          - generic [ref=e40]: Team Management
+        - link "Schedule" [ref=e41] [cursor=pointer]:
+          - /url: /dashboard/schedule
+          - img [ref=e42]
+          - generic [ref=e44]: Schedule
+        - link "Fitness Tracking" [ref=e45] [cursor=pointer]:
+          - /url: /dashboard/fitness
+          - img [ref=e46]
+          - generic [ref=e48]: Fitness Tracking
+        - link "Meal Plans" [ref=e49] [cursor=pointer]:
+          - /url: /dashboard/meal-plans
+          - img [ref=e50]
+          - generic [ref=e53]: Meal Plans
+        - link "Announcements" [ref=e54] [cursor=pointer]:
+          - /url: /dashboard/announcements
+          - img [ref=e55]
+          - generic [ref=e58]: Announcements
+        - link "Payments" [ref=e59] [cursor=pointer]:
+          - /url: /dashboard/payments
+          - img [ref=e60]
+          - generic [ref=e62]: Payments
+        - link "Settings" [ref=e63] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e64]
+          - generic [ref=e67]: Settings
+        - link "Import Data" [ref=e68] [cursor=pointer]:
+          - /url: /import-data
+          - img [ref=e69]
+          - generic [ref=e72]: Import Data
+        - link "Manage Connections" [ref=e73] [cursor=pointer]:
+          - /url: /manage-connections
+          - img [ref=e74]
+          - generic [ref=e77]: Manage Connections
+        - link "Pending Players" [ref=e78] [cursor=pointer]:
+          - /url: /players-pending-review
+          - img [ref=e79]
+          - generic [ref=e83]: Pending Players
+        - link "Coach Approvals" [ref=e84] [cursor=pointer]:
+          - /url: /coaches-pending-approval
+          - img [ref=e85]
+          - generic [ref=e89]: Coach Approvals
+      - generic [ref=e90]:
+        - button "Sign Out" [ref=e91] [cursor=pointer]:
+          - img
+          - generic [ref=e92]: Sign Out
+        - generic [ref=e93]:
+          - paragraph [ref=e94]: "If normal sign out fails:"
+          - button "Force Sign Out" [ref=e95] [cursor=pointer]:
+            - img
+            - generic [ref=e96]: Force Sign Out
+          - link "Open Emergency Logout Tool" [ref=e98] [cursor=pointer]:
+            - /url: /emergency-logout
+    - generic [ref=e99]:
+      - banner [ref=e100]:
+        - heading "Coach Dashboard" [level=1] [ref=e102]
+        - generic [ref=e103]:
+          - generic [ref=e104]: User
+          - button "Sign Out" [ref=e105] [cursor=pointer]:
+            - img
+            - text: Sign Out
+      - main [ref=e106]:
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - heading "Schedule" [level=1] [ref=e110]
+            - paragraph [ref=e111]: Manage training sessions, matches, and events.
+          - generic [ref=e112]:
+            - img [ref=e114]
+            - heading "Failed to load schedule" [level=3] [ref=e116]
+            - paragraph [ref=e117]: Unable to fetch training sessions. Please try again.
+            - button "Try Again" [ref=e118] [cursor=pointer]:
+              - img
+              - text: Try Again
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications (F8)":
+    - list
 ```
