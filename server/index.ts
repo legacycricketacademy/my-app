@@ -11,6 +11,7 @@ import { setupVite, serveStatic, log } from "./vite.js";
 import { setupRedirects } from "./redirect.js";
 import { setupStaticRoutes } from "./static-routes.js";
 import { multiTenantStorage } from "./multi-tenant-storage.js";
+import { storage } from "./storage.js";
 import { setupAuth, createAuthMiddleware } from "./auth.js";
 import { pool, dbHealth } from "../db/index.js";
 
@@ -546,16 +547,23 @@ app.get("/api/dashboard/payments", async (req, res) => {
 // Player creation route aliases (fix "Add New Player" 404)
 const createPlayerHandler = async (req: Request, res: Response) => {
   try {
+    console.log('POST /api/players', { userId: req.user?.id, role: req.user?.role });
+    
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const { firstName, lastName, dateOfBirth, ageGroup, playerType, emergencyContact, medicalInformation } = req.body;
 
+    console.log('CREATE PLAYER REQUEST', { firstName, lastName, dateOfBirth, ageGroup, userId: req.user.id });
+
     // Validate required fields
     if (!firstName || !lastName || !dateOfBirth) {
+      console.error('CREATE PLAYER ERROR: Missing required fields', { firstName: !!firstName, lastName: !!lastName, dateOfBirth: !!dateOfBirth });
       return res.status(400).json({ 
+        ok: false,
         success: false, 
+        error: 'missing_required_fields',
         message: "First name, last name, and date of birth are required" 
       });
     }
@@ -588,12 +596,20 @@ const createPlayerHandler = async (req: Request, res: Response) => {
       pendingCoachReview: req.user.role === 'parent' // Parents need coach review
     };
 
+    console.log('CREATE PLAYER: Calling storage.createPlayer', { parentId: playerData.parentId });
     const newPlayer = await storage.createPlayer(playerData);
-    return res.status(201).json(newPlayer);
+    console.log('CREATE PLAYER SUCCESS', { playerId: newPlayer.id });
+    return res.status(201).json({ ok: true, success: true, player: newPlayer });
   } catch (error) {
-    console.error('Error creating player:', error);
+    console.error('CREATE PLAYER ERROR', { 
+      msg: error instanceof Error ? error.message : 'unknown',
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: req.user?.id
+    });
     return res.status(500).json({ 
-      success: false, 
+      ok: false,
+      success: false,
+      error: 'create_failed',
       message: error instanceof Error ? error.message : 'Internal server error' 
     });
   }
@@ -603,6 +619,31 @@ const createPlayerHandler = async (req: Request, res: Response) => {
 app.post('/api/players', createAuthMiddleware(), createPlayerHandler);
 app.post('/api/admin/players', createAuthMiddleware(), createPlayerHandler);
 app.post('/api/coach/players', createAuthMiddleware(), createPlayerHandler);
+
+// Session/Schedule route aliases (ensure all role paths work)
+const getSessionsHandler = async (req: Request, res: Response) => {
+  try {
+    console.log('GET /api/sessions', { userId: req.user?.id, role: req.user?.role });
+    
+    // Placeholder response - return empty array for now
+    // In real implementation, fetch from storage.getSessions() or similar
+    return res.status(200).json([]);
+  } catch (error) {
+    console.error('GET SESSIONS ERROR', { 
+      msg: error instanceof Error ? error.message : 'unknown',
+      userId: req.user?.id
+    });
+    return res.status(500).json({
+      ok: false,
+      error: 'fetch_failed',
+      message: 'Failed to fetch sessions'
+    });
+  }
+};
+
+app.get('/api/sessions', createAuthMiddleware(), getSessionsHandler);
+app.get('/api/coach/sessions', createAuthMiddleware(), getSessionsHandler);
+app.get('/api/admin/sessions', createAuthMiddleware(), getSessionsHandler);
 
 // Parent Portal API Routes - Placeholder implementations
 app.put('/api/parent/profile', createAuthMiddleware(), async (req: Request, res: Response) => {
