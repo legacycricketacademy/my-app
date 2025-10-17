@@ -33,10 +33,17 @@ app.use(express.urlencoded({ extended: false }));
 app.set('trust proxy', 1);
 
 // CORS configuration using cors middleware
-app.use(cors({ 
-  origin: process.env.APP_ORIGIN ?? 'http://localhost:5173', 
-  credentials: true 
+app.use(cors({
+  origin: process.env.APP_ORIGIN ?? 'http://localhost:5173',
+  credentials: true
 }));
+
+// Robust boot logging
+console.log('Environment check:', {
+  NODE_ENV: process.env.NODE_ENV,
+  expressEnv: app.get('env'),
+  isDevelopment: app.get('env') !== 'production'
+});
 
 // Production validation
 if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.startsWith('sqlite:')) {
@@ -533,11 +540,6 @@ app.use((req, res, next) => {
 
   const isDevelopment =
     process.env.NODE_ENV === "development" || app.get("env") === "development";
-  console.log("Environment check:", {
-    NODE_ENV: process.env.NODE_ENV,
-    expressEnv: app.get("env"),
-    isDevelopment,
-  });
 
   if (isDevelopment) {
     console.log("Setting up Vite development server...");
@@ -547,7 +549,7 @@ app.use((req, res, next) => {
   }
 
   // Port configuration for Render
-  const port = Number(process.env.PORT) || 10000;
+  const port = Number(process.env.PORT) || 3000;
 
   server.listen(port, '0.0.0.0', () => {
     console.log(`server listening on :${port}`);
