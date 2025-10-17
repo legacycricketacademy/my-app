@@ -1,27 +1,48 @@
-import { useQuery } from '@tanstack/react-query';
-import { DollarSign, CreditCard, Calendar, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { DollarSign, CreditCard, Calendar, AlertCircle, Banknote, Smartphone, Building2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Badge } from '@/components/ui/badge';
+import { RecordPaymentModal } from './components/RecordPaymentModal';
+import { usePayments } from '@/api/payments';
+import { format, parseISO } from 'date-fns';
 
 export default function PaymentsPage() {
-  const { data: paymentsResponse, isLoading, error, refetch } = useQuery({
-    queryKey: ['/api/payments'],
-    queryFn: async () => {
-      const response = await fetch('/api/payments', {
-        credentials: 'include'
-      });
-      if (response.status === 404) {
-        return { ok: true, items: [], count: 0 };
-      }
-      if (!response.ok) throw new Error('Failed to fetch payments');
-      return response.json();
-    }
-  });
+  const [showRecordPaymentModal, setShowRecordPaymentModal] = useState(false);
+  const { data: payments, isLoading, error, refetch } = usePayments();
 
-  const payments = paymentsResponse?.items ?? paymentsResponse ?? [];
+  const getMethodIcon = (method: string) => {
+    switch (method) {
+      case 'cash':
+        return <Banknote className="h-4 w-4" />;
+      case 'card':
+        return <CreditCard className="h-4 w-4" />;
+      case 'upi':
+        return <Smartphone className="h-4 w-4" />;
+      case 'bank':
+        return <Building2 className="h-4 w-4" />;
+      default:
+        return <DollarSign className="h-4 w-4" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
+      case 'refunded':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   if (isLoading) {
     return (
@@ -59,7 +80,7 @@ export default function PaymentsPage() {
             <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
             <p className="text-gray-600">Manage payments, fees, and billing.</p>
           </div>
-          <Button>
+          <Button onClick={() => setShowRecordPaymentModal(true)}>
             <DollarSign className="h-4 w-4 mr-2" />
             Record Payment
           </Button>
@@ -72,7 +93,7 @@ export default function PaymentsPage() {
               description="Payment records will appear here once players make payments."
               action={{
                 label: "Record Payment",
-                onClick: () => console.log("Record payment clicked")
+                onClick: () => setShowRecordPaymentModal(true)
               }}
             />
           </CardContent>
@@ -88,7 +109,7 @@ export default function PaymentsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-600">Manage payments, fees, and billing.</p>
         </div>
-        <Button>
+        <Button onClick={() => setShowRecordPaymentModal(true)}>
           <DollarSign className="h-4 w-4 mr-2" />
           Record Payment
         </Button>
@@ -100,14 +121,12 @@ export default function PaymentsPage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center">
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  {payment.description || 'Payment'}
+                  {getMethodIcon(payment.method)}
+                  <span className="ml-2">{payment.playerName || 'Unknown Player'}</span>
                 </span>
-                <span className={`text-sm font-medium ${
-                  payment.status === 'paid' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {payment.status === 'paid' ? 'Paid' : 'Pending'}
-                </span>
+                <Badge className={getStatusColor(payment.status)}>
+                  {payment.status}
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -115,26 +134,41 @@ export default function PaymentsPage() {
                 <div className="flex items-center space-x-2">
                   <DollarSign className="h-4 w-4 text-gray-400" />
                   <span className="text-lg font-semibold">
-                    ${payment.amount || '0.00'}
+                    {payment.currency === 'INR' ? '₹' : '$'}{payment.amount.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4 text-gray-400" />
                   <span className="text-sm">
-                    {payment.date ? new Date(payment.date).toLocaleDateString() : 'No date'}
+                    {format(parseISO(payment.createdAt), 'MMM d, yyyy')}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <AlertCircle className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm">
-                    {payment.playerName || 'Unknown Player'}
+                  <span className="text-sm capitalize">
+                    {payment.method}
                   </span>
                 </div>
               </div>
+              {payment.notes && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-md">
+                  <p className="text-sm text-gray-600">{payment.notes}</p>
+                </div>
+              )}
+              {payment.reference && (
+                <div className="mt-2">
+                  <span className="text-xs text-gray-500">Reference: {payment.reference}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      <RecordPaymentModal 
+        open={showRecordPaymentModal} 
+        onOpenChange={setShowRecordPaymentModal} 
+      />
     </div>
   );
 }

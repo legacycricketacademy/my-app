@@ -779,6 +779,31 @@ app.post('/api/connection-requests', createAuthMiddleware(), async (req: Request
   }
 });
 
+// Settings store initialization
+import { SettingsStore } from './db/settingsStore.js';
+const settingsStore = new SettingsStore(pool);
+
+// Settings API routes
+import settingsRouter from './routes/settings.js';
+settingsRouter.setSettingsStore(settingsStore);
+if (process.env.SETTINGS_API_ENABLED !== 'false') {
+  app.use('/api/settings', settingsRouter);
+}
+
+// Sessions API routes
+import sessionsRouter from './routes/sessions.js';
+app.use('/api/sessions', sessionsRouter);
+app.use('/api/coach/sessions', sessionsRouter);
+app.use('/api/admin/sessions', sessionsRouter);
+
+// Payments API routes
+import paymentsRouter from './routes/payments.js';
+app.use('/api/payments', paymentsRouter);
+
+// Announcements API routes
+import announcementsRouter from './routes/announcements.js';
+app.use('/api/announcements', announcementsRouter);
+
 // API 404 logging middleware
 app.use('/api', (req, res, next) => {
   console.warn('API 404', req.method, req.originalUrl);

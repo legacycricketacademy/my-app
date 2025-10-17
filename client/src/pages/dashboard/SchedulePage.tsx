@@ -1,27 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Calendar, Clock, MapPin, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
+import { NewSessionModal } from '@/features/sessions/NewSessionModal';
+import { useListSessions } from '@/features/sessions/useSessions';
+import { format, parseISO } from 'date-fns';
 
 export default function SchedulePage() {
-  const { data: sessionsResponse, isLoading, error, refetch } = useQuery({
-    queryKey: ['/api/sessions'],
-    queryFn: async () => {
-      const response = await fetch('/api/sessions', {
-        credentials: 'include'
-      });
-      if (response.status === 404) {
-        return { ok: true, items: [], count: 0 };
-      }
-      if (!response.ok) throw new Error('Failed to fetch sessions');
-      return response.json();
-    }
-  });
+  const [showNewSessionModal, setShowNewSessionModal] = useState(false);
+  const { data: sessionsResponse, isLoading, error, refetch } = useListSessions();
 
-  const sessions = sessionsResponse?.items ?? sessionsResponse ?? [];
+  const sessions = sessionsResponse?.sessions ?? [];
 
   if (isLoading) {
     return (
@@ -59,7 +51,7 @@ export default function SchedulePage() {
             <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
             <p className="text-gray-600">Manage training sessions, matches, and events.</p>
           </div>
-          <Button>
+          <Button onClick={() => setShowNewSessionModal(true)}>
             <Calendar className="h-4 w-4 mr-2" />
             Add Session
           </Button>
@@ -72,7 +64,7 @@ export default function SchedulePage() {
               description="Create your first training session or match to get started."
               action={{
                 label: "Add Session",
-                onClick: () => console.log("Add session clicked")
+                onClick: () => setShowNewSessionModal(true)
               }}
             />
           </CardContent>
@@ -88,7 +80,7 @@ export default function SchedulePage() {
           <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
           <p className="text-gray-600">Manage training sessions, matches, and events.</p>
         </div>
-        <Button>
+        <Button onClick={() => setShowNewSessionModal(true)}>
           <Calendar className="h-4 w-4 mr-2" />
           Add Session
         </Button>
@@ -101,7 +93,7 @@ export default function SchedulePage() {
               <CardTitle className="flex items-center justify-between">
                 <span>{session.title}</span>
                 <span className="text-sm font-normal text-gray-500">
-                  {session.sessionType}
+                  {session.ageGroup}
                 </span>
               </CardTitle>
             </CardHeader>
@@ -110,11 +102,7 @@ export default function SchedulePage() {
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-gray-400" />
                   <span className="text-sm">
-                    {new Date(session.startTime).toLocaleDateString()} at{' '}
-                    {new Date(session.startTime).toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
+                    {format(parseISO(session.startUtc), 'EEE, d MMM • h:mm a')} - {format(parseISO(session.endUtc), 'h:mm a')}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -124,14 +112,24 @@ export default function SchedulePage() {
                 <div className="flex items-center space-x-2">
                   <Users className="h-4 w-4 text-gray-400" />
                   <span className="text-sm">
-                    {session.currentAttendees}/{session.maxAttendees} players
+                    0/{session.maxAttendees} players
                   </span>
                 </div>
               </div>
+              {session.notes && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-md">
+                  <p className="text-sm text-gray-600">{session.notes}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      <NewSessionModal 
+        open={showNewSessionModal} 
+        onOpenChange={setShowNewSessionModal} 
+      />
     </div>
   );
 }
