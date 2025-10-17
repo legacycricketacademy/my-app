@@ -1,14 +1,9 @@
 import express, { Router } from 'express';
-import Stripe from 'stripe';
+import { getStripe } from './lib/stripe-init.js';
 import { paymentsStore } from './storage/paymentsStore.js';
 import { requireAuth } from './middleware/authz.js';
 
 const router = Router();
-
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-12-18.acacia',
-});
 
 const dbg = (...args: any[]) => { 
   if (process.env.DEBUG_AUTH === 'true') console.log('[STRIPE]', ...args); 
@@ -22,6 +17,15 @@ router.post('/payment-intents', requireAuth, async (req: any, res) => {
       role: req.user?.role,
       body: req.body 
     });
+
+    const stripe = getStripe();
+    if (!stripe) {
+      return res.status(503).json({
+        ok: false,
+        error: 'stripe_not_configured',
+        message: 'Payment processing is not available'
+      });
+    }
 
     const { amount, currency = 'inr', playerId, description } = req.body;
 
@@ -88,6 +92,12 @@ router.post('/payment-intents', requireAuth, async (req: any, res) => {
 // POST /api/stripe/webhook - Handle Stripe webhooks
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
+    const stripe = getStripe();
+    if (!stripe) {
+      console.error('[STRIPE] Webhook received but Stripe not configured');
+      return res.status(503).json({ ok: false, error: 'stripe_not_configured' });
+    }
+
     const sig = req.headers['stripe-signature'] as string;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 

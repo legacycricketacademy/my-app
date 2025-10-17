@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import passport from "passport";
@@ -70,8 +71,8 @@ const sessionConfig = {
   }) : undefined,
   secret: process.env.SESSION_SECRET!,
   name: 'connect.sid',
-  resave: false,
-  saveUninitialized: false,
+    resave: false,
+    saveUninitialized: false,
   cookie: {
     path: '/',
     httpOnly: true,
@@ -231,10 +232,10 @@ app.post("/api/dev/login", async (req, res) => {
     // Return backward-compatible payload
     const payload = { 
       ok: true, 
-      user: { 
-        id: account.id, 
+      user: {
+        id: account.id,
         role: account.role || 'parent' 
-      } 
+      }
     };
     return res.status(200).json(payload);
   } catch (error) {
