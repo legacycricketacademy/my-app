@@ -6,7 +6,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
-import { CreateAnnouncementModal } from './components/CreateAnnouncementModal';
+import CreateAnnouncementModal from './components/CreateAnnouncementModal';
 import { useAnnouncements } from '@/api/announcements';
 import { format, parseISO } from 'date-fns';
 

@@ -781,6 +781,21 @@ app.use('/api/payments', paymentsRouter);
 import announcementsRouter from './routes/announcements.js';
 app.use('/api/announcements', announcementsRouter);
 
+// TEMP diagnostics endpoint
+app.use('/api/_debug/echo', (req, res) => {
+  res.json({
+    ok: true,
+    method: req.method,
+    url: req.originalUrl,
+    hasUser: !!req.user,
+    cookies: Object.keys(req.cookies ?? {}),
+    headers: {
+      origin: req.headers.origin,
+      cookie: req.headers.cookie ? '[present]' : '[none]',
+    },
+  });
+});
+
 // API 404 logging middleware
 app.use('/api', (req, res, next) => {
   console.warn('API 404', req.method, req.originalUrl);

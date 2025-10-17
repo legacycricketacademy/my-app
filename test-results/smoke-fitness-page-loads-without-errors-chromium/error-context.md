@@ -1,0 +1,104 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: Legacy Cricket
+          - img [ref=e8]
+        - paragraph [ref=e18]: Coach Dashboard
+      - link "U User Administrator" [ref=e20] [cursor=pointer]:
+        - /url: /profile
+        - generic [ref=e22]: U
+        - generic [ref=e23]:
+          - heading "User" [level=4] [ref=e24]
+          - paragraph [ref=e25]: Administrator
+      - navigation [ref=e26]:
+        - link "Dashboard" [ref=e27] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e28]
+          - generic [ref=e33]: Dashboard
+        - link "Team Management" [ref=e34] [cursor=pointer]:
+          - /url: /dashboard/team
+          - img [ref=e35]
+          - generic [ref=e40]: Team Management
+        - link "Schedule" [ref=e41] [cursor=pointer]:
+          - /url: /dashboard/schedule
+          - img [ref=e42]
+          - generic [ref=e44]: Schedule
+        - link "Fitness Tracking" [ref=e45] [cursor=pointer]:
+          - /url: /dashboard/fitness
+          - img [ref=e46]
+          - generic [ref=e48]: Fitness Tracking
+        - link "Meal Plans" [ref=e49] [cursor=pointer]:
+          - /url: /dashboard/meal-plans
+          - img [ref=e50]
+          - generic [ref=e53]: Meal Plans
+        - link "Announcements" [ref=e54] [cursor=pointer]:
+          - /url: /dashboard/announcements
+          - img [ref=e55]
+          - generic [ref=e58]: Announcements
+        - link "Payments" [ref=e59] [cursor=pointer]:
+          - /url: /dashboard/payments
+          - img [ref=e60]
+          - generic [ref=e62]: Payments
+        - link "Settings" [ref=e63] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e64]
+          - generic [ref=e67]: Settings
+        - link "Import Data" [ref=e68] [cursor=pointer]:
+          - /url: /import-data
+          - img [ref=e69]
+          - generic [ref=e72]: Import Data
+        - link "Manage Connections" [ref=e73] [cursor=pointer]:
+          - /url: /manage-connections
+          - img [ref=e74]
+          - generic [ref=e77]: Manage Connections
+        - link "Pending Players" [ref=e78] [cursor=pointer]:
+          - /url: /players-pending-review
+          - img [ref=e79]
+          - generic [ref=e83]: Pending Players
+        - link "Coach Approvals" [ref=e84] [cursor=pointer]:
+          - /url: /coaches-pending-approval
+          - img [ref=e85]
+          - generic [ref=e89]: Coach Approvals
+      - generic [ref=e90]:
+        - button "Sign Out" [ref=e91] [cursor=pointer]:
+          - img
+          - generic [ref=e92]: Sign Out
+        - generic [ref=e93]:
+          - paragraph [ref=e94]: "If normal sign out fails:"
+          - button "Force Sign Out" [ref=e95] [cursor=pointer]:
+            - img
+            - generic [ref=e96]: Force Sign Out
+          - link "Open Emergency Logout Tool" [ref=e98] [cursor=pointer]:
+            - /url: /emergency-logout
+    - generic [ref=e99]:
+      - banner [ref=e100]:
+        - heading "Coach Dashboard" [level=1] [ref=e102]
+        - generic [ref=e103]:
+          - generic [ref=e104]: User
+          - button "Sign Out" [ref=e105] [cursor=pointer]:
+            - img
+            - text: Sign Out
+      - main [ref=e106]:
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e110]:
+              - heading "Fitness Tracking" [level=1] [ref=e111]
+              - paragraph [ref=e112]: Track player fitness, performance, and progress.
+            - button "Log Activity" [ref=e113] [cursor=pointer]:
+              - img
+              - text: Log Activity
+          - generic [ref=e116]:
+            - img [ref=e118]
+            - heading "No fitness data recorded" [level=3] [ref=e120]
+            - paragraph [ref=e121]: Start tracking player fitness and performance metrics.
+            - button "Log Activity" [ref=e122] [cursor=pointer]
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications (F8)":
+    - list
+```

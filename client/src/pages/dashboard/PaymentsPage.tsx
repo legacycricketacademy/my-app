@@ -2,17 +2,13 @@ import { useState } from 'react';
 import { DollarSign, CreditCard, Calendar, AlertCircle, Banknote, Smartphone, Building2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoadingState } from '@/components/ui/loading-state';
-import { ErrorState } from '@/components/ui/error-state';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Badge } from '@/components/ui/badge';
-import { RecordPaymentModal } from './components/RecordPaymentModal';
+import RecordPaymentModal from './components/RecordPaymentModal';
 import { usePayments } from '@/api/payments';
 import { format, parseISO } from 'date-fns';
 
 export default function PaymentsPage() {
-  const [showRecordPaymentModal, setShowRecordPaymentModal] = useState(false);
-  const { data: payments, isLoading, error, refetch } = usePayments();
+  const [open, setOpen] = useState(false);
+  const { data = [], isLoading, isError, refetch } = usePayments();
 
   const getMethodIcon = (method: string) => {
     switch (method) {
@@ -44,130 +40,88 @@ export default function PaymentsPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
-          <p className="text-gray-600">Manage payments, fees, and billing.</p>
-        </div>
-        <LoadingState message="Loading payments..." />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
-          <p className="text-gray-600">Manage payments, fees, and billing.</p>
-        </div>
-        <ErrorState 
-          title="Failed to load payments"
-          message="Unable to fetch payment information. Please try again."
-          onRetry={() => refetch()}
-        />
-      </div>
-    );
-  }
-
-  if (!payments || payments.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
-            <p className="text-gray-600">Manage payments, fees, and billing.</p>
-          </div>
-          <Button onClick={() => setShowRecordPaymentModal(true)}>
-            <DollarSign className="h-4 w-4 mr-2" />
-            Record Payment
-          </Button>
-        </div>
-        <Card>
-          <CardContent className="p-6">
-            <EmptyState
-              icon={DollarSign}
-              title="No payments recorded"
-              description="Payment records will appear here once players make payments."
-              action={{
-                label: "Record Payment",
-                onClick: () => setShowRecordPaymentModal(true)
-              }}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-600">Manage payments, fees, and billing.</p>
         </div>
-        <Button onClick={() => setShowRecordPaymentModal(true)}>
+        <Button onClick={() => setOpen(true)}>
           <DollarSign className="h-4 w-4 mr-2" />
           Record Payment
         </Button>
       </div>
 
-      <div className="grid gap-6">
-        {payments.map((payment: any) => (
-          <Card key={payment.id}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center">
-                  {getMethodIcon(payment.method)}
-                  <span className="ml-2">{payment.playerName || 'Unknown Player'}</span>
-                </span>
-                <Badge className={getStatusColor(payment.status)}>
-                  {payment.status}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center space-x-2">
-                  <DollarSign className="h-4 w-4 text-gray-400" />
-                  <span className="text-lg font-semibold">
-                    {payment.currency === 'INR' ? '₹' : '$'}{payment.amount.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm">
-                    {format(parseISO(payment.createdAt), 'MMM d, yyyy')}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <AlertCircle className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm capitalize">
-                    {payment.method}
-                  </span>
-                </div>
-              </div>
-              {payment.notes && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                  <p className="text-sm text-gray-600">{payment.notes}</p>
-                </div>
-              )}
-              {payment.reference && (
-                <div className="mt-2">
-                  <span className="text-xs text-gray-500">Reference: {payment.reference}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {isLoading ? (
+        <Card>
+          <CardContent className="p-8 text-center text-gray-500">
+            Loading payments…
+          </CardContent>
+        </Card>
+      ) : isError ? (
+        <Card>
+          <CardContent className="p-8">
+            <p className="mb-3 text-red-600">Failed to load payments.</p>
+            <Button variant="outline" onClick={() => refetch()}>Try Again</Button>
+          </CardContent>
+        </Card>
+      ) : data.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No payments recorded</h3>
+            <p className="text-gray-500 mb-4">Payment records will appear here once players make payments.</p>
+            <Button onClick={() => setOpen(true)}>Record Payment</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {data.map((p:any) => (
+                  <tr key={p.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {format(parseISO(p.createdAt), 'MMM d, yyyy h:mm a')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div className="flex items-center">
+                        {getMethodIcon(p.method)}
+                        <span className="ml-2">{p.playerName || p.playerId}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                      {p.currency === 'INR' ? '₹' : '$'}{p.amount.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                      {p.method}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(p.status)}`}>
+                        {p.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       <RecordPaymentModal 
-        open={showRecordPaymentModal} 
-        onOpenChange={setShowRecordPaymentModal} 
+        open={open} 
+        onOpenChange={setOpen}
       />
     </div>
   );

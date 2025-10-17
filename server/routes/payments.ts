@@ -1,125 +1,58 @@
 import { Router } from 'express';
-import { z } from 'zod';
-import { PaymentsStore } from '../storage/paymentsStore.js';
-import { requireAuth } from '../middleware/authz.js';
-import type { CreatePaymentRequest, ListPaymentsParams } from '../types/payments.js';
+import { listPayments, createPayment } from '../storage/paymentsStore.js';
+import type { Currency, PayMethod, PayStatus } from '../types/payments.js';
 
 const r = Router();
-const dbg = (...args: any[]) => { 
-  if (process.env.DEBUG_AUTH === 'true') console.log('[PAYMENTS]', ...args); 
-};
 
-// Initialize store
-const paymentsStore = new PaymentsStore();
+// Reuse your real auth guard if you have it (createAuthMiddleware). This minimal one keeps behavior same.
+function requireAuth(req:any, res:any, next:any){
+  if (req.user?.id) return next();
+  return res.status(401).json({ ok:false, error:'unauthorized', message:'Login required' });
+}
 
-// Validation schemas
-const createPaymentSchema = z.object({
-  playerId: z.string().min(1, 'Player ID is required'),
-  amount: z.number().positive('Amount must be positive'),
-  currency: z.enum(['INR', 'USD']).optional().default('INR'),
-  method: z.enum(['cash', 'card', 'upi', 'bank']),
-  status: z.enum(['paid', 'pending', 'failed', 'refunded']).optional().default('paid'),
-  reference: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-const listPaymentsSchema = z.object({
-  playerId: z.string().optional(),
-  status: z.string().optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
-});
-
-// GET /api/payments - List payments
-r.get('/', requireAuth, async (req: any, res) => {
+r.get('/', requireAuth, (req,res) => {
   try {
-    dbg('PAYMENTS_LIST', { 
-      userId: req.user.id, 
-      role: req.user.role,
-      params: req.query 
-    });
-
-    // Validate query parameters
-    const validation = listPaymentsSchema.safeParse(req.query);
-    if (!validation.success) {
-      return res.status(400).json({
-        ok: false,
-        error: 'validation_failed',
-        message: validation.error.errors.map(e => e.message).join(', ')
-      });
-    }
-
-    const params: ListPaymentsParams = validation.data;
-    const payments = await paymentsStore.list(params);
-
-    dbg('PAYMENTS_LIST success', { count: payments.length });
-
-    res.json({
-      ok: true,
-      data: payments
-    });
-
-  } catch (error: any) {
-    dbg('PAYMENTS_LIST error', { 
-      userId: req.user?.id, 
-      error: error.message,
-      stack: error.stack 
-    });
-
-    res.status(500).json({
-      ok: false,
-      error: 'list_failed',
-      message: error.message || 'Failed to fetch payments'
-    });
+    const params = {
+      playerId: req.query.playerId as string | undefined,
+      status: req.query.status as string | undefined,
+      from: req.query.from as string | undefined,
+      to: req.query.to as string | undefined,
+    };
+    console.log('[PAYMENTS_LIST]', { userId: req.user.id, params });
+    const data = listPayments(params);
+    res.json({ ok:true, data });
+  } catch (e:any) {
+    console.error('[PAYMENTS_LIST_ERROR]', e);
+    res.status(500).json({ ok:false, error:'list_failed', message:e?.message || 'Failed to list payments' });
   }
 });
 
-// POST /api/payments - Create payment
-r.post('/', requireAuth, async (req: any, res) => {
+r.post('/', requireAuth, (req,res) => {
   try {
-    dbg('PAYMENTS_CREATE start', { 
-      userId: req.user.id, 
-      role: req.user.role,
-      payload: req.body 
-    });
+    const body = req.body ?? {};
+    console.log('[PAYMENTS_CREATE_IN]', { userId: req.user.id, body });
 
-    // Validate request body
-    const validation = createPaymentSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({
-        ok: false,
-        error: 'validation_failed',
-        message: validation.error.errors.map(e => e.message).join(', ')
-      });
+    const { playerId, playerName, amount, currency, method, status, reference, notes } = body;
+
+    if (!playerId || typeof amount !== 'number' || isNaN(amount) || amount <= 0) {
+      console.warn('[PAYMENTS_CREATE_VALIDATION]', { playerId, amount });
+      return res.status(400).json({ ok:false, error:'validation', message:'playerId and amount>0 required' });
     }
 
-    const data: CreatePaymentRequest = validation.data;
+    const c = (currency ?? 'INR') as Currency;
+    const m = (method ?? 'cash') as PayMethod;
+    const s = (status ?? 'paid') as PayStatus;
 
-    // Create payment
-    const payment = await paymentsStore.create(data, req.user.id);
+    const created = createPayment(
+      { playerId, playerName, amount, currency:c, method:m, status:s, reference, notes },
+      req.user.id
+    );
 
-    dbg('PAYMENTS_CREATE success', { 
-      userId: req.user.id, 
-      paymentId: payment.id 
-    });
-
-    res.status(201).json({
-      ok: true,
-      data: payment
-    });
-
-  } catch (error: any) {
-    dbg('PAYMENTS_CREATE error', { 
-      userId: req.user?.id, 
-      error: error.message,
-      stack: error.stack 
-    });
-
-    res.status(500).json({
-      ok: false,
-      error: 'create_failed',
-      message: error.message || 'Failed to create payment'
-    });
+    console.log('[PAYMENTS_CREATE_OK]', { id: created.id });
+    res.status(201).json({ ok:true, data: created });
+  } catch (e:any) {
+    console.error('[PAYMENTS_CREATE_ERROR]', e);
+    res.status(500).json({ ok:false, error:'create_failed', message:e?.message || 'Failed to create payment' });
   }
 });
 

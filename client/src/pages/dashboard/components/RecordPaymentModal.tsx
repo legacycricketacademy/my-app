@@ -1,228 +1,132 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { CreditCard, Banknote, Smartphone, Building2 } from 'lucide-react';
-
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useCreatePayment } from '@/api/payments';
-import { toast } from '@/hooks/use-toast';
 
-const formSchema = z.object({
-  playerId: z.string().min(1, 'Player is required'),
-  amount: z.number().positive('Amount must be positive'),
-  currency: z.enum(['INR', 'USD']).default('INR'),
-  method: z.enum(['cash', 'card', 'upi', 'bank']),
-  status: z.enum(['paid', 'pending', 'failed', 'refunded']).default('paid'),
-  reference: z.string().optional(),
-  notes: z.string().optional(),
-});
+type Props = { open: boolean; onOpenChange: (open: boolean) => void; };
 
-type FormData = z.infer<typeof formSchema>;
+export default function RecordPaymentModal({ open, onOpenChange }: Props) {
+  const [playerId, setPlayerId] = useState('');
+  const [playerName, setPlayerName] = useState('');
+  const [amount, setAmount] = useState<number | ''>('');
+  const [currency, setCurrency] = useState<'INR'|'USD'>('INR');
+  const [method, setMethod] = useState<'cash'|'card'|'upi'|'bank'>('cash');
+  const [status, setStatus] = useState<'paid'|'pending'|'failed'|'refunded'>('paid');
+  const [reference, setReference] = useState('');
+  const [notes, setNotes] = useState('');
+  const [isPending, setIsPending] = useState(false);
+  const { toast } = useToast();
 
-interface RecordPaymentModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-// Mock players data - in real app, this would come from API
-const mockPlayers = [
-  { id: 'player_1', name: 'John Doe' },
-  { id: 'player_2', name: 'Jane Smith' },
-  { id: 'player_3', name: 'Mike Johnson' },
-  { id: 'player_4', name: 'Sarah Wilson' },
-];
-
-export function RecordPaymentModal({ open, onOpenChange }: RecordPaymentModalProps) {
-  const createPayment = useCreatePayment();
-
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      playerId: '',
-      amount: 0,
-      currency: 'INR',
-      method: 'cash',
-      status: 'paid',
-      reference: '',
-      notes: '',
-    },
-  });
-
-  const onSubmit = async (data: FormData) => {
-    try {
-      await createPayment.mutateAsync(data);
-
-      toast({
-        title: 'Success',
-        description: 'Payment recorded successfully',
-      });
-
-      form.reset();
-      onOpenChange(false);
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to record payment',
-        variant: 'destructive',
-      });
+  const submit = async () => {
+    if (!playerId || !amount || Number(amount) <= 0) {
+      toast({ title: 'Validation Error', description: 'Player and positive amount are required.', variant: 'destructive' });
+      return;
     }
-  };
-
-  const getMethodIcon = (method: string) => {
-    switch (method) {
-      case 'cash':
-        return <Banknote className="h-4 w-4" />;
-      case 'card':
-        return <CreditCard className="h-4 w-4" />;
-      case 'upi':
-        return <Smartphone className="h-4 w-4" />;
-      case 'bank':
-        return <Building2 className="h-4 w-4" />;
-      default:
-        return <Banknote className="h-4 w-4" />;
+    
+    setIsPending(true);
+    try {
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          playerId,
+          playerName: playerName || undefined,
+          amount: Number(amount),
+          currency,
+          method,
+          status,
+          reference: reference || undefined,
+          notes: notes || undefined,
+        }),
+      });
+      const json = await res.json();
+      if (json?.ok) {
+        toast({ title: 'Success', description: 'Payment recorded' });
+        onOpenChange(false);
+        // Reset form
+        setPlayerId('');
+        setPlayerName('');
+        setAmount('');
+        setReference('');
+        setNotes('');
+        // Reload the page to refresh the list
+        window.location.reload();
+      } else {
+        toast({ title: 'Error', description: json?.message || 'Failed to record payment', variant: 'destructive' });
+        console.warn('PAYMENT_POST_FAIL', json);
+      }
+    } catch (err:any) {
+      toast({ title: 'Network Error', description: 'Network error while recording payment', variant: 'destructive' });
+      console.error('PAYMENT_POST_ERR', err);
+    } finally {
+      setIsPending(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Record Payment</DialogTitle>
-          <DialogDescription>
-            Record a payment for a player.
-          </DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto space-y-6 px-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Player Selection */}
-            <div className="md:col-span-2">
-              <Label htmlFor="playerId">Player *</Label>
-              <Select
-                value={form.watch('playerId')}
-                onValueChange={(value) => form.setValue('playerId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a player" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockPlayers.map((player) => (
-                    <SelectItem key={player.id} value={player.id}>
-                      {player.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.playerId && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.playerId.message}</p>
-              )}
-            </div>
-
-            {/* Amount */}
-            <div>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="playerId">Player ID *</Label>
+            <Input id="playerId" placeholder="Enter player ID" value={playerId} onChange={e=>setPlayerId(e.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="playerName">Player Name (optional)</Label>
+            <Input id="playerName" placeholder="Enter player name" value={playerName} onChange={e=>setPlayerName(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
               <Label htmlFor="amount">Amount *</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                {...form.register('amount', { valueAsNumber: true })}
+              <Input 
+                id="amount" 
+                type="number" 
+                min={1} 
+                placeholder="0.00" 
+                value={amount} 
+                onChange={e=>setAmount(e.target.value ? Number(e.target.value) : '')} 
               />
-              {form.formState.errors.amount && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.amount.message}</p>
-              )}
             </div>
-
-            {/* Currency */}
-            <div>
+            <div className="grid gap-2">
               <Label htmlFor="currency">Currency</Label>
-              <Select
-                value={form.watch('currency')}
-                onValueChange={(value) => form.setValue('currency', value as 'INR' | 'USD')}
-              >
-                <SelectTrigger>
+              <Select value={currency} onValueChange={(v)=>setCurrency(v as any)}>
+                <SelectTrigger id="currency">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="INR">INR (₹)</SelectItem>
-                  <SelectItem value="USD">USD ($)</SelectItem>
+                  <SelectItem value="INR">INR</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
                 </SelectContent>
               </Select>
-              {form.formState.errors.currency && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.currency.message}</p>
-              )}
             </div>
-
-            {/* Payment Method */}
-            <div>
-              <Label htmlFor="method">Payment Method *</Label>
-              <Select
-                value={form.watch('method')}
-                onValueChange={(value) => form.setValue('method', value as any)}
-              >
-                <SelectTrigger>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="method">Method</Label>
+              <Select value={method} onValueChange={(v)=>setMethod(v as any)}>
+                <SelectTrigger id="method">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cash">
-                    <div className="flex items-center gap-2">
-                      <Banknote className="h-4 w-4" />
-                      Cash
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="card">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      Card
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="upi">
-                    <div className="flex items-center gap-2">
-                      <Smartphone className="h-4 w-4" />
-                      UPI
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="bank">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      Bank Transfer
-                    </div>
-                  </SelectItem>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
+                  <SelectItem value="bank">Bank</SelectItem>
                 </SelectContent>
               </Select>
-              {form.formState.errors.method && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.method.message}</p>
-              )}
             </div>
-
-            {/* Status */}
-            <div>
+            <div className="grid gap-2">
               <Label htmlFor="status">Status</Label>
-              <Select
-                value={form.watch('status')}
-                onValueChange={(value) => form.setValue('status', value as any)}
-              >
-                <SelectTrigger>
+              <Select value={status} onValueChange={(v)=>setStatus(v as any)}>
+                <SelectTrigger id="status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -232,56 +136,25 @@ export function RecordPaymentModal({ open, onOpenChange }: RecordPaymentModalPro
                   <SelectItem value="refunded">Refunded</SelectItem>
                 </SelectContent>
               </Select>
-              {form.formState.errors.status && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.status.message}</p>
-              )}
             </div>
-
-            {/* Reference */}
-            <div>
+            <div className="grid gap-2">
               <Label htmlFor="reference">Reference</Label>
-              <Input
-                id="reference"
-                placeholder="Transaction ID, check number, etc."
-                {...form.register('reference')}
-              />
-              {form.formState.errors.reference && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.reference.message}</p>
-              )}
+              <Input id="reference" placeholder="Optional" value={reference} onChange={e=>setReference(e.target.value)} />
             </div>
           </div>
-
-          {/* Notes */}
-          <div>
-            <Label htmlFor="notes">Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Additional information about the payment..."
-              {...form.register('notes')}
-            />
-            {form.formState.errors.notes && (
-              <p className="text-sm text-red-500 mt-1">{form.formState.errors.notes.message}</p>
-            )}
+          <div className="grid gap-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea id="notes" placeholder="Add notes..." value={notes} onChange={e=>setNotes(e.target.value)} rows={3} />
           </div>
-        </form>
-
-        <DialogFooter className="sticky bottom-0 bg-background border-t pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={createPayment.isPending}
-          >
+        </div>
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={createPayment.isPending}
-          >
-            {createPayment.isPending ? 'Recording...' : 'Record Payment'}
+          <Button onClick={submit} disabled={isPending}>
+            {isPending ? 'Saving...' : 'Save'}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

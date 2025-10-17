@@ -1,22 +1,13 @@
+export type Audience = 'all' | 'players' | 'parents' | 'coaches';
+export type Priority = 'low' | 'normal' | 'high';
+
 export interface Announcement {
   id: string;
   title: string;
   body: string;
-  audience: 'all' | 'players' | 'parents' | 'coaches';
-  priority: 'low' | 'normal' | 'high';
+  audience: Audience;
+  priority: Priority;
   createdAt: string;
-  createdBy: string; // userId
-  publishAt?: string; // optional schedule
-}
-
-export interface CreateAnnouncementRequest {
-  title: string;
-  body: string;
-  audience?: 'all' | 'players' | 'parents' | 'coaches';
-  priority?: 'low' | 'normal' | 'high';
-  publishAt?: string;
-}
-
-export interface ListAnnouncementsParams {
-  audience?: string;
+  createdBy: string;
+  publishAt?: string; // ISO optional
 }

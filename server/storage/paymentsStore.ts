@@ -1,70 +1,21 @@
-import type { Payment, CreatePaymentRequest, ListPaymentsParams } from '../types/payments.js';
+import { Payment } from '../types/payments.js';
+import { randomUUID } from 'crypto';
 
-export class PaymentsStore {
-  private payments: Payment[] = [];
-  private nextId = 1;
+const _payments: Payment[] = [];
 
-  async list(params: ListPaymentsParams = {}): Promise<Payment[]> {
-    let filtered = [...this.payments];
+export function listPayments(params?: {
+  playerId?: string; status?: string; from?: string; to?: string;
+}): Payment[] {
+  let out = [..._payments];
+  if (params?.playerId) out = out.filter(p => p.playerId === params.playerId);
+  if (params?.status) out = out.filter(p => p.status === params.status);
+  if (params?.from) out = out.filter(p => p.createdAt >= params.from!);
+  if (params?.to) out = out.filter(p => p.createdAt <= params.to!);
+  return out.sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+}
 
-    if (params.playerId) {
-      filtered = filtered.filter(p => p.playerId === params.playerId);
-    }
-
-    if (params.status) {
-      filtered = filtered.filter(p => p.status === params.status);
-    }
-
-    if (params.from) {
-      const fromDate = new Date(params.from);
-      filtered = filtered.filter(p => new Date(p.createdAt) >= fromDate);
-    }
-
-    if (params.to) {
-      const toDate = new Date(params.to);
-      filtered = filtered.filter(p => new Date(p.createdAt) <= toDate);
-    }
-
-    // Sort by creation date, newest first
-    return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }
-
-  async create(dto: CreatePaymentRequest, userId: string): Promise<Payment> {
-    const payment: Payment = {
-      id: `payment_${this.nextId++}`,
-      playerId: dto.playerId,
-      playerName: dto.playerName,
-      amount: dto.amount,
-      currency: dto.currency || 'INR',
-      method: dto.method,
-      status: dto.status || 'paid',
-      reference: dto.reference,
-      notes: dto.notes,
-      createdAt: new Date().toISOString(),
-      createdBy: userId,
-    };
-
-    this.payments.push(payment);
-    return payment;
-  }
-
-  async getById(id: string): Promise<Payment | null> {
-    return this.payments.find(p => p.id === id) || null;
-  }
-
-  async update(id: string, updates: Partial<Payment>): Promise<Payment | null> {
-    const index = this.payments.findIndex(p => p.id === id);
-    if (index === -1) return null;
-
-    this.payments[index] = { ...this.payments[index], ...updates };
-    return this.payments[index];
-  }
-
-  async delete(id: string): Promise<boolean> {
-    const index = this.payments.findIndex(p => p.id === id);
-    if (index === -1) return false;
-
-    this.payments.splice(index, 1);
-    return true;
-  }
+export function createPayment(dto: Omit<Payment, 'id'|'createdAt'|'createdBy'>, userId: string): Payment {
+  const created: Payment = { ...dto, id: randomUUID(), createdAt: new Date().toISOString(), createdBy: userId };
+  _payments.push(created);
+  return created;
 }
