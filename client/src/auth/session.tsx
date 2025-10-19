@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 
 // Auth context type
 interface AuthContextType {
-  user: { id: number; role: string } | null;
+  user: { id: number; role: string; email?: string; emailVerified?: boolean } | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   loginMutation: any;

@@ -5,6 +5,7 @@ import { PageLoader } from "@/components/ui/page-loader";
 import { useAuth } from "@/auth/session";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 
 export function DashboardLayout() {
   const { user, logoutMutation } = useAuth();
@@ -35,6 +36,12 @@ export function DashboardLayout() {
             </Button>
           </div>
         </header>
+        
+        {/* Email Verification Banner */}
+        <EmailVerificationBanner 
+          emailVerified={user?.emailVerified ?? true}
+          userId={user?.id?.toString()}
+        />
         
         {/* Main Content */}
         <main className="flex-1 overflow-auto">

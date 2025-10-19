@@ -70,6 +70,12 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 # Email (Optional)
 SENDGRID_API_KEY=your-sendgrid-key
 DEFAULT_FROM_EMAIL=your-email@example.com
+
+# Keycloak (Optional - for email verification)
+KEYCLOAK_URL=https://your-keycloak-domain.com
+KEYCLOAK_REALM=your-realm
+KEYCLOAK_CLIENT_ID=your-client-id
+KEYCLOAK_CLIENT_SECRET=your-client-secret
 ```
 
 ### Development

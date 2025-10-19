@@ -788,6 +788,10 @@ app.use('/api/payments', paymentsRouter);
 import announcementsRouter from './routes/announcements.js';
 app.use('/api/announcements', createAuthMiddleware(), announcementsRouter);
 
+// Keycloak admin operations (email verification)
+import keycloakRouter from './routes/keycloak.js';
+app.use('/api/keycloak', createAuthMiddleware(), keycloakRouter);
+
 // TEMP diagnostics endpoint
 app.use('/api/_debug/echo', (req, res) => {
   res.json({

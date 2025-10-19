@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/ui/page-loader";
 import { cn } from "@/lib/utils";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 
 export function ParentDashboardLayout() {
   const location = useLocation();
@@ -109,6 +110,12 @@ export function ParentDashboardLayout() {
         <header className="bg-white border-b border-gray-200 px-6 py-4">
           <h1 className="text-xl font-semibold text-gray-900">Parent Portal</h1>
         </header>
+        
+        {/* Email Verification Banner */}
+        <EmailVerificationBanner 
+          emailVerified={user?.emailVerified ?? true}
+          userId={user?.id?.toString()}
+        />
         
         {/* Page Content */}
         <main className="flex-1 overflow-auto">
