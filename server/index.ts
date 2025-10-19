@@ -582,13 +582,42 @@ const createPlayerHandler = async (req: Request, res: Response) => {
     console.log('CREATE PLAYER REQUEST', { firstName, lastName, dateOfBirth, ageGroup, userId: req.user.id });
 
     // Validate required fields
-    if (!firstName || !lastName || !dateOfBirth) {
-      console.error('CREATE PLAYER ERROR: Missing required fields', { firstName: !!firstName, lastName: !!lastName, dateOfBirth: !!dateOfBirth });
+    if (!firstName || !lastName) {
       return res.status(400).json({ 
         ok: false,
         success: false, 
-        error: 'missing_required_fields',
-        message: "First name, last name, and date of birth are required" 
+        error: 'bad_request',
+        message: 'First and last name required' 
+      });
+    }
+    
+    if (!dateOfBirth) {
+      return res.status(400).json({ 
+        ok: false,
+        success: false, 
+        error: 'bad_request',
+        message: 'Date of birth required' 
+      });
+    }
+    
+    // Validate date of birth
+    const dob = new Date(dateOfBirth);
+    if (isNaN(dob.getTime())) {
+      return res.status(400).json({ 
+        ok: false,
+        success: false, 
+        error: 'bad_request',
+        message: 'Invalid date of birth' 
+      });
+    }
+    
+    const now = new Date();
+    if (dob.getTime() > now.getTime()) {
+      return res.status(400).json({ 
+        ok: false,
+        success: false, 
+        error: 'bad_request',
+        message: 'Date of birth cannot be in the future' 
       });
     }
 

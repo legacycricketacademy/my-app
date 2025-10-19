@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
-import DateField from "@/components/DateField";
+import { DobField } from "@/components/DobField";
+import { FormProvider } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -673,26 +674,10 @@ export default function PlayersPage() {
                     )}
                   />
                   
-                  <FormField
-                    control={form.control}
-                    name="dateOfBirth"
-                    render={({ field, fieldState }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Date of Birth *</FormLabel>
-                        <FormControl>
-                          <DateField
-                            value={field.value}
-                            onChange={(date) => field.onChange(date)}
-                            maxDate={new Date()}
-                            placeholder="Pick a date"
-                            aria-label="Date of Birth"
-                            id="dateOfBirth"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Date of Birth */}
+                  <FormProvider {...form}>
+                    <DobField />
+                  </FormProvider>
                   
                   <FormField
                     control={form.control}
@@ -867,26 +852,10 @@ export default function PlayersPage() {
                     )}
                   />
                   
-                  <FormField
-                    control={editForm.control}
-                    name="dateOfBirth"
-                    render={({ field, fieldState }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Date of Birth *</FormLabel>
-                        <FormControl>
-                          <DateField
-                            value={field.value}
-                            onChange={(date) => field.onChange(date)}
-                            maxDate={new Date()}
-                            placeholder="Pick a date"
-                            aria-label="Date of Birth"
-                            id="editDateOfBirth"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Date of Birth */}
+                  <FormProvider {...editForm}>
+                    <DobField />
+                  </FormProvider>
                   
                   <FormField
                     control={editForm.control}

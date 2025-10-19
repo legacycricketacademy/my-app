@@ -1,20 +1,17 @@
+import { http } from '@/lib/http';
+
 export async function listSessions(params?: Record<string,string>) {
   const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-  const res = await fetch('/api/sessions' + qs, { credentials: 'include' });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok || json?.ok === false) throw new Error(json?.message || 'Failed to load sessions');
-  // Return the whole response to preserve the shape { ok: true, sessions: [] }
-  return json;
+  const res = await http<any>('/api/sessions' + qs);
+  if (!res.ok) throw new Error(res.message || 'Failed to load sessions');
+  return res.data;
 }
 
 export async function createSession(payload: any) {
-  const res = await fetch('/api/sessions', {
+  const res = await http<any>('/api/sessions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
     body: JSON.stringify(payload),
   });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok || json?.ok === false) throw new Error(json?.message || 'Create failed');
-  return json.session ?? json.data ?? json;
+  if (!res.ok) throw new Error(res.message || 'Create failed');
+  return res.data.session ?? res.data.item ?? res.data;
 }
