@@ -5,10 +5,11 @@ import { PageLoader } from "@/components/ui/page-loader";
 import { useAuth } from "@/auth/session";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
-import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
+import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 
 export function DashboardLayout() {
   const { user, logoutMutation } = useAuth();
+  const shouldShowBanner = user && user.emailVerified === false; // explicit false
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -38,10 +39,7 @@ export function DashboardLayout() {
         </header>
         
         {/* Email Verification Banner */}
-        <EmailVerificationBanner 
-          emailVerified={user?.emailVerified ?? true}
-          userId={user?.id?.toString()}
-        />
+        {shouldShowBanner && <VerifyEmailBanner />}
         
         {/* Main Content */}
         <main className="flex-1 overflow-auto">

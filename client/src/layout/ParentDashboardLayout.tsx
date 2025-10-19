@@ -15,11 +15,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/ui/page-loader";
 import { cn } from "@/lib/utils";
-import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
+import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 
 export function ParentDashboardLayout() {
   const location = useLocation();
   const { user, logoutMutation } = useAuth();
+  const shouldShowBanner = user && user.emailVerified === false; // explicit false
   
   const navigation = [
     { name: "Dashboard", href: "/dashboard/parent", icon: Home },
@@ -112,10 +113,7 @@ export function ParentDashboardLayout() {
         </header>
         
         {/* Email Verification Banner */}
-        <EmailVerificationBanner 
-          emailVerified={user?.emailVerified ?? true}
-          userId={user?.id?.toString()}
-        />
+        {shouldShowBanner && <VerifyEmailBanner />}
         
         {/* Page Content */}
         <main className="flex-1 overflow-auto">

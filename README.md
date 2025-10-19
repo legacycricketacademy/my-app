@@ -76,7 +76,28 @@ KEYCLOAK_URL=https://your-keycloak-domain.com
 KEYCLOAK_REALM=your-realm
 KEYCLOAK_CLIENT_ID=your-client-id
 KEYCLOAK_CLIENT_SECRET=your-client-secret
+KEYCLOAK_EMAIL_VERIFY_ENABLED=true
 ```
+
+### Email Verification (Keycloak)
+
+The app can display a dismissible banner for users with unverified emails and trigger Keycloak's built-in email verification flow:
+
+**How it works:**
+- Users with `email_verified === false` see a banner on authenticated pages
+- Clicking "Resend verification email" calls `POST /api/keycloak/resend-verify`
+- Server uses Keycloak Admin API to trigger the `VERIFY_EMAIL` required action
+- Keycloak sends the verification email (no custom tokens needed)
+- Once user clicks the link in the email, Keycloak marks email as verified
+- Banner disappears on next login
+
+**Configuration:**
+- Requires Keycloak service account with `manage-users` permission
+- Uses `KEYCLOAK_CLIENT_SECRET` for service account authentication
+- Admin token is cached server-side with automatic refresh
+- Feature can be disabled via `KEYCLOAK_EMAIL_VERIFY_ENABLED=false`
+
+**Note:** This does not affect SendGrid integration for transactional emails.
 
 ### Development
 

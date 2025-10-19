@@ -789,8 +789,8 @@ import announcementsRouter from './routes/announcements.js';
 app.use('/api/announcements', createAuthMiddleware(), announcementsRouter);
 
 // Keycloak admin operations (email verification)
-import keycloakRouter from './routes/keycloak.js';
-app.use('/api/keycloak', createAuthMiddleware(), keycloakRouter);
+import { keycloakRoutes } from './routes/keycloak.js';
+app.use('/api/keycloak', keycloakRoutes(createAuthMiddleware));
 
 // TEMP diagnostics endpoint
 app.use('/api/_debug/echo', (req, res) => {

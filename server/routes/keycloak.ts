@@ -1,29 +1,26 @@
 // server/routes/keycloak.ts
 import { Router } from 'express';
-import { sendVerificationEmail } from '../lib/keycloak-admin.js';
+import { triggerVerifyEmail } from '../lib/keycloak-admin.js';
 
-const router = Router();
+// Assumes you already have session auth middleware that populates req.user { id, email, email_verified? }
+export function keycloakRoutes(createAuthMiddleware: () => any) {
+  const r = Router();
+  const auth = createAuthMiddleware();
 
-// POST /api/keycloak/resend-verify
-router.post('/resend-verify', async (req: any, res) => {
-  // Require authentication
-  if (!req.user?.id) {
-    return res.status(401).json({ 
-      ok: false, 
-      error: 'unauthorized', 
-      message: 'Authentication required' 
-    });
-  }
+  // POST /api/keycloak/resend-verify
+  r.post('/resend-verify', auth, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ ok: false, error: 'unauthorized' });
 
-  console.log('[keycloak-resend] Resending verification email for user:', req.user.id);
+      const out = await triggerVerifyEmail(String(userId));
+      if (!out.ok) return res.status(out.status ?? 500).json({ ok: false, error: 'resend_failed', message: out.message });
+      return res.json({ ok: true });
+    } catch (e: any) {
+      console.error('[KC] resend-verify error', e);
+      return res.status(500).json({ ok: false, error: 'server_error' });
+    }
+  });
 
-  const result = await sendVerificationEmail(req.user.id);
-  
-  if (result.ok) {
-    return res.json({ ok: true, message: 'Verification email sent' });
-  } else {
-    return res.status(500).json(result);
-  }
-});
-
-export default router;
+  return r;
+}

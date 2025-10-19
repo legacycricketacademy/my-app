@@ -1,110 +1,60 @@
 // server/lib/keycloak-admin.ts
 import fetch from 'node-fetch';
 
-interface KeycloakAdminToken {
-  access_token: string;
-  expires_at: number;
+const {
+  KEYCLOAK_URL,
+  KEYCLOAK_REALM,
+  KEYCLOAK_CLIENT_ID,
+  KEYCLOAK_CLIENT_SECRET,
+  KEYCLOAK_EMAIL_VERIFY_ENABLED = 'true',
+} = process.env;
+
+type TokenCache = { token?: string; exp?: number };
+const cache: TokenCache = {};
+
+function enabled() {
+  return KEYCLOAK_EMAIL_VERIFY_ENABLED !== 'false'
+    && KEYCLOAK_URL && KEYCLOAK_REALM && KEYCLOAK_CLIENT_ID && KEYCLOAK_CLIENT_SECRET;
 }
 
-let cachedToken: KeycloakAdminToken | null = null;
+export async function getAdminToken(): Promise<string | null> {
+  if (!enabled()) return null;
+  const now = Math.floor(Date.now() / 1000);
+  if (cache.token && cache.exp && cache.exp - 30 > now) return cache.token;
 
-async function getAdminToken(): Promise<string | null> {
-  const keycloakUrl = process.env.KEYCLOAK_URL;
-  const realm = process.env.KEYCLOAK_REALM;
-  const clientId = process.env.KEYCLOAK_CLIENT_ID;
-  const clientSecret = process.env.KEYCLOAK_CLIENT_SECRET;
+  const url = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`;
+  const body = new URLSearchParams({
+    grant_type: 'client_credentials',
+    client_id: KEYCLOAK_CLIENT_ID!,
+    client_secret: KEYCLOAK_CLIENT_SECRET!,
+  });
 
-  if (!keycloakUrl || !realm || !clientId || !clientSecret) {
-    console.warn('[keycloak-admin] Missing Keycloak config for admin operations');
+  const res = await fetch(url, { method: 'POST', body });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    console.error('[KC] token fetch failed', res.status, txt);
     return null;
   }
-
-  // Check if cached token is still valid (with 60s buffer)
-  if (cachedToken && cachedToken.expires_at > Date.now() + 60000) {
-    return cachedToken.access_token;
-  }
-
-  try {
-    const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;
-    const params = new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: clientId,
-      client_secret: clientSecret,
-    });
-
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    });
-
-    if (!response.ok) {
-      console.error('[keycloak-admin] Failed to get admin token:', response.status);
-      return null;
-    }
-
-    const data: any = await response.json();
-    cachedToken = {
-      access_token: data.access_token,
-      expires_at: Date.now() + (data.expires_in * 1000),
-    };
-
-    console.log('[keycloak-admin] Admin token obtained');
-    return cachedToken.access_token;
-  } catch (error) {
-    console.error('[keycloak-admin] Error getting admin token:', error);
-    return null;
-  }
+  const json: any = await res.json();
+  cache.token = json.access_token;
+  cache.exp = Math.floor(Date.now() / 1000) + (json.expires_in ?? 60);
+  return cache.token!;
 }
 
-export async function sendVerificationEmail(userId: string): Promise<{ ok: boolean; error?: string; message?: string }> {
-  const keycloakUrl = process.env.KEYCLOAK_URL;
-  const realm = process.env.KEYCLOAK_REALM;
-  const clientId = process.env.KEYCLOAK_CLIENT_ID;
-
-  if (!keycloakUrl || !realm || !clientId) {
-    return { ok: false, error: 'keycloak_not_configured', message: 'Keycloak is not configured' };
-  }
-
+export async function triggerVerifyEmail(userId: string): Promise<{ ok: boolean; status?: number; message?: string }> {
+  if (!enabled()) return { ok: false, status: 503, message: 'Keycloak email verify disabled or misconfigured' };
   const token = await getAdminToken();
-  if (!token) {
-    return { ok: false, error: 'admin_token_failed', message: 'Failed to obtain admin token' };
-  }
+  if (!token) return { ok: false, status: 503, message: 'Keycloak admin token unavailable' };
 
-  try {
-    const url = `${keycloakUrl}/admin/realms/${realm}/users/${userId}/execute-actions-email`;
-    const params = new URLSearchParams({
-      client_id: clientId,
-      lifespan: '86400', // 24 hours
-    });
+  const url = `${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/users/${encodeURIComponent(userId)}/execute-actions-email?client_id=${encodeURIComponent(KEYCLOAK_CLIENT_ID!)}&lifespan=86400`;
+  const res = await fetch(url, {
+    method: 'PUT', // Keycloak accepts PUT here
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(['VERIFY_EMAIL']),
+  });
 
-    const response = await fetch(`${url}?${params.toString()}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(['VERIFY_EMAIL']),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[keycloak-admin] Failed to send verification email:', response.status, errorText);
-      return { 
-        ok: false, 
-        error: 'verification_email_failed', 
-        message: `Failed to send verification email: ${response.status}` 
-      };
-    }
-
-    console.log('[keycloak-admin] Verification email sent for user:', userId);
-    return { ok: true };
-  } catch (error) {
-    console.error('[keycloak-admin] Error sending verification email:', error);
-    return { 
-      ok: false, 
-      error: 'server_error', 
-      message: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
+  if (res.ok || res.status === 204) return { ok: true };
+  const txt = await res.text().catch(() => '');
+  console.error('[KC] verify-email failed', res.status, txt);
+  return { ok: false, status: res.status, message: txt || 'verify-email failed' };
 }
