@@ -58,7 +58,7 @@ app.set('trust proxy', 1);
 
 // CORS configuration using cors middleware
 app.use(cors({
-  origin: process.env.APP_ORIGIN ?? ['http://localhost:3000', 'https://cricket-academy-app.onrender.com'],
+  origin: process.env.APP_ORIGIN ?? 'http://localhost:3000',
   credentials: true,
 }));
 
@@ -791,6 +791,10 @@ app.use('/api/announcements', createAuthMiddleware(), announcementsRouter);
 // Keycloak admin operations (email verification)
 import { keycloakRoutes } from './routes/keycloak.js';
 app.use('/api/keycloak', keycloakRoutes(createAuthMiddleware));
+
+// Fitness API routes (in-memory fallback)
+import fitnessRouter from './routes/fitness.js';
+app.use('/api/fitness', createAuthMiddleware(), fitnessRouter);
 
 // TEMP diagnostics endpoint
 app.use('/api/_debug/echo', (req, res) => {

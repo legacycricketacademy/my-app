@@ -1,113 +1,55 @@
-import { useState } from 'react';
-import { useCreateAnnouncement } from '@/api/announcements';
-import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import React from 'react';
+import { useCreateAnnouncement } from '../../../api/announcements-simple';
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void; };
-
-export default function CreateAnnouncementModal({ open, onOpenChange }: Props) {
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [audience, setAudience] = useState<'all'|'players'|'parents'|'coaches'>('all');
-  const [priority, setPriority] = useState<'low'|'normal'|'high'>('normal');
-  const [publishAt, setPublishAt] = useState('');
+export default function CreateAnnouncementModal({ open, onClose }: { open:boolean; onClose:()=>void }) {
   const create = useCreateAnnouncement();
-  const { toast } = useToast();
+  const [title, setTitle] = React.useState('');
+  const [body, setBody] = React.useState('');
+  const [audience, setAudience] = React.useState<'all'|'players'|'parents'|'coaches'>('all');
+  const [priority, setPriority] = React.useState<'low'|'normal'|'high'>('normal');
+  if (!open) return null;
 
-  const submit = async () => {
-    if (!title || !body) {
-      toast({ title: 'Validation Error', description: 'Title and body are required.', variant: 'destructive' });
-      return;
-    }
-    const res:any = await create.mutateAsync({ title, body, audience, priority, publishAt: publishAt || undefined });
-    if (res?.ok) { 
-      toast({ title: 'Success', description: 'Announcement created' });
-      onOpenChange(false);
-      // Reset form
-      setTitle('');
-      setBody('');
-      setAudience('all');
-      setPriority('normal');
-      setPublishAt('');
-    } else {
-      toast({ title: 'Error', description: res?.message ?? 'Failed to create announcement', variant: 'destructive' });
-    }
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await create.mutateAsync({ title, body, audience, priority });
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Create Announcement</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input id="title" placeholder="Enter announcement title" value={title} onChange={e=>setTitle(e.target.value)} />
+    <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center">
+      <form onSubmit={onSubmit} className="bg-white rounded-xl p-6 w-full max-w-xl space-y-4">
+        <h3 className="text-xl font-semibold">Create Announcement</h3>
+
+        <div className="space-y-2">
+          <label className="text-sm">Title</label>
+          <input value={title} onChange={e=>setTitle(e.target.value)} className="w-full border rounded-md px-3 py-2" required />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm">Message</label>
+          <textarea value={body} onChange={e=>setBody(e.target.value)} className="w-full border rounded-md px-3 py-2 h-28" required />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm">Audience</label>
+            <select value={audience} onChange={e=>setAudience(e.target.value as any)} className="w-full border rounded-md px-3 py-2">
+              <option value="all">All</option><option value="players">Players</option><option value="parents">Parents</option><option value="coaches">Coaches</option>
+            </select>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="body">Message *</Label>
-            <Textarea 
-              id="body" 
-              placeholder="Enter your message..." 
-              value={body} 
-              onChange={e=>setBody(e.target.value)} 
-              rows={5}
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="audience">Audience</Label>
-              <Select value={audience} onValueChange={(v)=>setAudience(v as any)}>
-                <SelectTrigger id="audience">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="players">Players</SelectItem>
-                  <SelectItem value="parents">Parents</SelectItem>
-                  <SelectItem value="coaches">Coaches</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select value={priority} onValueChange={(v)=>setPriority(v as any)}>
-                <SelectTrigger id="priority">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="publishAt">Publish At</Label>
-              <Input 
-                id="publishAt" 
-                type="datetime-local" 
-                value={publishAt} 
-                onChange={e=>setPublishAt(e.target.value)} 
-              />
-            </div>
+          <div className="space-y-2">
+            <label className="text-sm">Priority</label>
+            <select value={priority} onChange={e=>setPriority(e.target.value as any)} className="w-full border rounded-md px-3 py-2">
+              <option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option>
+            </select>
           </div>
         </div>
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={create.isPending}>
-            Cancel
-          </Button>
-          <Button onClick={submit} disabled={create.isPending}>
-            {create.isPending ? 'Creating...' : 'Create'}
-          </Button>
+
+        <div className="flex justify-end gap-3 pt-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-md border">Cancel</button>
+          <button disabled={create.isPending} className="px-4 py-2 rounded-md bg-blue-600 text-white">
+            {create.isPending ? 'Creating…' : 'Create'}
+          </button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </form>
+    </div>
   );
 }
