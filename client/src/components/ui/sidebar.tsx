@@ -62,7 +62,7 @@ export function Sidebar() {
     { label: "Meal Plans", icon: <Utensils className="h-5 w-5" />, path: "/dashboard/meal-plans" },
     { label: "Announcements", icon: <Send className="h-5 w-5" />, path: "/dashboard/announcements" },
     { label: "Payments", icon: <DollarSign className="h-5 w-5" />, path: "/dashboard/payments" },
-    { label: "Settings", icon: <Settings className="h-5 w-5" />, path: "/settings" },
+    { label: "Settings", icon: <Settings className="h-5 w-5" />, path: "/dashboard/settings" },
   ];
 
   // Parent nav items

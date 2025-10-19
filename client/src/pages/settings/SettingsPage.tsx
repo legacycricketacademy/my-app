@@ -7,6 +7,7 @@ import AcademyConfig from './components/AcademyConfig';
 import AccessRolesSettings from './components/AccessRolesSettings';
 import DataManagement from './components/DataManagement';
 import { useState } from 'react';
+import { useAuth } from '@/auth/session';
 
 const TABS = [
   { key:'profile', label:'Profile', node:<ProfileSettings/> },
@@ -20,9 +21,10 @@ const TABS = [
 
 export default function SettingsPage() {
   const [tab, setTab] = useState('profile');
-  const role = (window as any).__SESSION_ROLE__ ?? 'admin'; // or bring from context
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
-  const tabs = TABS.filter(t => !t.admin || role === 'admin');
+  const tabs = TABS.filter(t => !t.admin || isAdmin);
   const active = tabs.find(t => t.key === tab) ?? tabs[0];
 
   return (
