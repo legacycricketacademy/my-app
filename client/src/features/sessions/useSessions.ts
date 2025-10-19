@@ -1,23 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listSessions, createSession } from './api';
-import type { CreateSessionRequest, ListSessionsParams } from './types';
 
-export function useListSessions(params: ListSessionsParams = {}) {
-  return useQuery({
-    queryKey: ['sessions', params],
+export function useListSessions(params?: Record<string,string>) {
+  return useQuery({ 
+    queryKey: ['sessions', params], 
     queryFn: () => listSessions(params),
     staleTime: 30 * 1000, // 30 seconds
   });
 }
 
 export function useCreateSession() {
-  const queryClient = useQueryClient();
-
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: CreateSessionRequest) => createSession(payload),
-    onSuccess: () => {
-      // Invalidate and refetch sessions list
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
-    },
+    mutationFn: createSession,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sessions'] }),
   });
 }

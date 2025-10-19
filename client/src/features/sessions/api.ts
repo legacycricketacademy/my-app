@@ -1,51 +1,20 @@
-import type { 
-  CreateSessionRequest, 
-  CreateSessionResponse, 
-  ListSessionsParams, 
-  ListSessionsResponse,
-  SessionErrorResponse 
-} from './types';
-
-const API_BASE = import.meta.env.VITE_API_BASE ?? window.location.origin;
-
-export async function listSessions(params: ListSessionsParams = {}): Promise<ListSessionsResponse> {
-  const searchParams = new URLSearchParams();
-  if (params.from) searchParams.set('from', params.from);
-  if (params.to) searchParams.set('to', params.to);
-  if (params.ageGroup) searchParams.set('ageGroup', params.ageGroup);
-
-  const url = `${API_BASE}/api/sessions${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const error: SessionErrorResponse = await response.json();
-    throw new Error(error.message || 'Failed to fetch sessions');
-  }
-
-  return response.json();
+export async function listSessions(params?: Record<string,string>) {
+  const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+  const res = await fetch('/api/sessions' + qs, { credentials: 'include' });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || json?.ok === false) throw new Error(json?.message || 'Failed to load sessions');
+  // Return the whole response to preserve the shape { ok: true, sessions: [] }
+  return json;
 }
 
-export async function createSession(payload: CreateSessionRequest): Promise<CreateSessionResponse> {
-  const response = await fetch(`${API_BASE}/api/sessions`, {
+export async function createSession(payload: any) {
+  const res = await fetch('/api/sessions', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(payload),
   });
-
-  if (!response.ok) {
-    const error: SessionErrorResponse = await response.json();
-    throw new Error(error.message || 'Failed to create session');
-  }
-
-  return response.json();
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || json?.ok === false) throw new Error(json?.message || 'Create failed');
+  return json.session ?? json.data ?? json;
 }

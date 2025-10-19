@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format, addHours } from 'date-fns';
 import { CalendarIcon, ClockIcon, MapPinIcon, UsersIcon, FileTextIcon } from 'lucide-react';
+import { toUtcISO, detectTZ } from './date-utils';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,7 +58,7 @@ interface NewSessionModalProps {
 }
 
 export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
-  const [timezone, setTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [timezone, setTimezone] = useState(() => detectTZ());
   const createSession = useCreateSession();
 
   const form = useForm<FormData>({
@@ -77,9 +78,12 @@ export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
 
   const onSubmit = async (data: FormData) => {
     try {
-      // Combine date and time
+      // Combine date and time into local ISO strings (with seconds)
       const startLocal = `${format(data.startDate, 'yyyy-MM-dd')}T${data.startTime}:00`;
       const endLocal = `${format(data.endDate, 'yyyy-MM-dd')}T${data.endTime}:00`;
+
+      // Get current timezone
+      const tz = detectTZ();
 
       await createSession.mutateAsync({
         title: data.title,
@@ -87,7 +91,7 @@ export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
         location: data.location,
         startLocal,
         endLocal,
-        timezone,
+        timezone: tz,
         maxAttendees: data.maxAttendees,
         notes: data.notes || undefined,
       });

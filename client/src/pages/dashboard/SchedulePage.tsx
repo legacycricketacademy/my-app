@@ -11,9 +11,9 @@ import { format, parseISO } from 'date-fns';
 
 export default function SchedulePage() {
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
-  const { data: sessionsResponse, isLoading, error, refetch } = useListSessions();
+  const { data, isLoading, error, refetch } = useListSessions();
 
-  const sessions = sessionsResponse?.sessions ?? [];
+  const sessions = data?.sessions ?? [];
 
   if (isLoading) {
     return (
@@ -28,6 +28,29 @@ export default function SchedulePage() {
   }
 
   if (error) {
+    // Check if it's a 401 error
+    const is401 = error instanceof Error && error.message.includes('401');
+    
+    if (is401) {
+      return (
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+            <p className="text-gray-600">Manage training sessions, matches, and events.</p>
+          </div>
+          <Card>
+            <CardContent className="p-8 text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Your session has expired</h3>
+              <p className="text-gray-600 mb-4">Please sign in again to continue.</p>
+              <Button onClick={() => window.location.href = '/auth'}>
+                Sign In
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    
     return (
       <div className="space-y-6">
         <div>
