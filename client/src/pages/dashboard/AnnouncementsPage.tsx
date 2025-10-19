@@ -7,15 +7,20 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import CreateAnnouncementModal from './components/CreateAnnouncementModal';
-import { useAnnouncements } from '@/api/announcements';
+import { useQuery } from '@tanstack/react-query';
+import { getJson } from '@/lib/http';
+import { toItems } from '@/lib/api-shape';
 import { format, parseISO } from 'date-fns';
 
 export default function AnnouncementsPage() {
   const [showCreateAnnouncementModal, setShowCreateAnnouncementModal] = useState(false);
-  const { data, isLoading, isError } = useAnnouncements();
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['announcements', 'recent'],
+    queryFn: () => getJson('/api/announcements/recent'),
+  });
   
   // Safe array handling - ensure data is always an array
-  const announcements = Array.isArray(data) ? data : [];
+  const announcements = toItems<any>(data);
 
   const getAudienceIcon = (audience: string) => {
     switch (audience) {

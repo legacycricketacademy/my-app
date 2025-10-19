@@ -3,12 +3,20 @@ import { DollarSign, CreditCard, Calendar, AlertCircle, Banknote, Smartphone, Bu
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import RecordPaymentModal from './components/RecordPaymentModal';
-import { usePayments } from '@/api/payments';
+import { useQuery } from '@tanstack/react-query';
+import { getJson } from '@/lib/http';
+import { toItems } from '@/lib/api-shape';
 import { format, parseISO } from 'date-fns';
 
 export default function PaymentsPage() {
   const [open, setOpen] = useState(false);
-  const { data = [], isLoading, isError, refetch } = usePayments();
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['payments', 'pending'],
+    queryFn: () => getJson('/api/payments/pending'),
+  });
+  
+  // Safe array handling
+  const payments = toItems<any>(data);
 
   const getMethodIcon = (method: string) => {
     switch (method) {
@@ -63,10 +71,10 @@ export default function PaymentsPage() {
         <Card>
           <CardContent className="p-8">
             <p className="mb-3 text-red-600">Failed to load payments.</p>
-            <Button variant="outline" onClick={() => refetch()}>Try Again</Button>
+            <Button variant="outline" onClick={() => window.location.reload()}>Try Again</Button>
           </CardContent>
         </Card>
-      ) : data.length === 0 ? (
+      ) : payments.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
             <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -89,7 +97,7 @@ export default function PaymentsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {data.map((p:any) => (
+                {payments.map((p:any) => (
                   <tr key={p.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {format(parseISO(p.createdAt), 'MMM d, yyyy h:mm a')}

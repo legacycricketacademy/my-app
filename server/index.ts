@@ -37,8 +37,8 @@ app.set('trust proxy', 1);
 
 // CORS configuration using cors middleware
 app.use(cors({
-  origin: process.env.APP_ORIGIN ?? 'http://localhost:5173',
-  credentials: true
+  origin: process.env.APP_ORIGIN ?? ['http://localhost:3000', 'https://cricket-academy-app.onrender.com'],
+  credentials: true,
 }));
 
 // Stripe webhook route (needs raw body, must be before express.json())
@@ -70,15 +70,14 @@ const sessionConfig = {
     createTableIfMissing: true
   }) : undefined,
   secret: process.env.SESSION_SECRET!,
-  name: 'connect.sid',
-    resave: false,
-    saveUninitialized: false,
+  name: 'sid',
+  resave: false,
+  saveUninitialized: false,
   cookie: {
-    path: '/',
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 30 * 24 * 60 * 60 * 1000
+    sameSite: 'none',      // REQUIRED for cross-site cookies on Render
+    secure: true,          // REQUIRED on HTTPS
+    maxAge: 1000 * 60 * 60 * 24 * 7,
   }
 };
 
@@ -788,6 +787,10 @@ app.use('/api/_debug/echo', (req, res) => {
     },
   });
 });
+
+// Dashboard alias routes (safe endpoints to prevent 404s)
+import aliasRoutes from './routes/aliases.js';
+app.use('/api', aliasRoutes);
 
 // API 404 logging middleware
 app.use('/api', (req, res, next) => {
