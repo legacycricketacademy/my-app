@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "sonner";
 import { AuthProvider, useAuth } from "@/auth/session";
 import { RequireAuth, RedirectIfAuthed } from "@/auth/guards";
 import { ThemeProvider } from "@/providers/theme-provider";
@@ -45,7 +46,9 @@ import PaymentsPage from "@/pages/dashboard/PaymentsPage";
 import MealPlansPage from "@/pages/dashboard/MealPlansPage";
 import FitnessTrackingPage from "@/pages/dashboard/FitnessTrackingPage";
 import SectionNotFound from "@/pages/dashboard/SectionNotFound";
+import SettingsPage from "@/pages/settings/SettingsPage";
 import ParentProfilePage from "@/pages/parent/profile";
+import ParentSettingsPage from "@/pages/parent/SettingsPage";
 import ConnectChildPage from "@/pages/parent/connect-child-page";
 import FullCalendarPage from "@/pages/parent/FullCalendarPage";
 import PaymentTransactionsPage from "@/pages/parent/PaymentTransactionsPage";
@@ -111,6 +114,7 @@ function AppRoutes() {
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="meal-plans" element={<MealPlansPage />} />
         <Route path="fitness" element={<FitnessTrackingPage />} />
+        <Route path="settings" element={<SettingsPage />} />
         
         {/* Dashboard catch-all */}
         <Route path="*" element={<SectionNotFound />} />
@@ -148,6 +152,7 @@ function AppRoutes() {
         <Route path="/parent/payments/transactions" element={<PaymentTransactionsPage />} />
         <Route path="/parent/connect-child" element={<ConnectChildPage />} />
         <Route path="/parent/profile" element={<ParentProfilePage />} />
+        <Route path="/parent/settings" element={<ParentSettingsPage />} />
       </Route>
 
       {/* Test parent routes */}
@@ -205,6 +210,7 @@ function App() {
               <AppRoutes />
             </BrowserRouter>
             <Toaster />
+            <SonnerToaster />
             <OfflineDetector />
             <OnlineStatusIndicator />
           </ThemeProvider>

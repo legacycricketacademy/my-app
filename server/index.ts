@@ -748,13 +748,8 @@ app.post('/api/connection-requests', createAuthMiddleware(), async (req: Request
   }
 });
 
-// Settings store initialization
-import { SettingsStore } from './db/settingsStore.js';
-const settingsStore = new SettingsStore(pool);
-
-// Settings API routes
-import settingsRouter, { setSettingsStore } from './routes/settings.js';
-setSettingsStore(settingsStore);
+// Settings API routes (uses file-based store)
+import settingsRouter from './routes/settings.js';
 if (process.env.SETTINGS_API_ENABLED !== 'false') {
   app.use('/api/settings', settingsRouter);
 }
