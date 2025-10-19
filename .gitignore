@@ -6,4 +6,5 @@ vite.config.ts.*
 *.tar.gznode_modules/
 .env
 *.log
+.data-settings.json
 

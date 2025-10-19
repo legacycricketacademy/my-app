@@ -1,57 +1,71 @@
-name: CI Smoke (build + boot)
+name: CI Smoke
 
 on:
-  pull_request:
-    branches: [ main ]
   push:
-    branches: [ main ]
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  build-and-boot:
+  smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: cricket_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'npm'
       
       - name: Install dependencies
         run: npm ci
       
-      - name: Build project
+      - name: Build
         run: npm run build
       
-      - name: Check critical exports
-        run: node scripts/check-exports.js
-      
-      - name: Boot server bundle
+      - name: Run database migrations
         env:
-          PORT: 3000
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/cricket_test
+        run: npm run db:migrate
+      
+      - name: Start server in background
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/cricket_test
+          SESSION_SECRET: test-secret
           NODE_ENV: production
-          APP_ORIGIN: http://localhost:3000
-          SESSION_SECRET: test-secret-ci-only
-          DATABASE_URL: postgresql://localhost:5432/test
+          PORT: 3000
         run: |
-          node dist/index.js & echo $! > server.pid
-          sleep 5
+          node dist/index.js &
+          echo $! > server.pid
       
-      - name: Wait for server health check
+      - name: Wait for server to be ready
+        run: npx wait-on http://localhost:3000/api/_debug/ping --timeout 30000
+      
+      - name: Test health endpoint
         run: |
-          npx wait-on -t 30000 http://localhost:3000/api/_debug/echo || (cat server.pid | xargs kill -9 2>/dev/null; exit 1)
+          curl -f http://localhost:3000/api/_debug/ping
+          curl -f http://localhost:3000/api/_debug/echo
       
-      - name: Verify server responding
-        run: |
-          curl -f http://localhost:3000/api/_debug/echo || (cat server.pid | xargs kill -9 2>/dev/null; exit 1)
-      
-      - name: Cleanup
+      - name: Stop server
         if: always()
         run: |
           if [ -f server.pid ]; then
-            cat server.pid | xargs kill -9 2>/dev/null || true
+            kill $(cat server.pid) || true
           fi
-

@@ -105,6 +105,74 @@ npm run db:studio
 npm run db:seed
 ```
 
+## Settings
+
+### API Endpoints
+
+The settings system provides persistent storage for user and academy configuration:
+
+**Endpoints:**
+- `GET /api/settings/:section` - Fetch settings for a specific section
+- `PUT /api/settings/:section` - Update settings for a specific section
+
+**Authentication:** All endpoints require authentication
+
+**Available Sections:**
+- `profile` - User profile (name, email, phone)
+- `notifications` - Notification preferences (email, SMS, push)
+- `payments` - Payment settings (Stripe, currency, receipt email)
+- `support` - Support information (contact email, WhatsApp, FAQ)
+- **Admin-only sections:**
+  - `academy` - Academy configuration (name, timezone, logo)
+  - `access` - Access control (invite-only mode)
+  - `data` - Data management (export, anonymization)
+
+**Example:**
+```bash
+# Get profile settings
+curl -X GET http://localhost:3000/api/settings/profile \
+  -H "Cookie: sid=..." \
+  --include
+
+# Update profile settings
+curl -X PUT http://localhost:3000/api/settings/profile \
+  -H "Content-Type: application/json" \
+  -H "Cookie: sid=..." \
+  -d '{"fullName": "John Doe", "email": "john@example.com", "phone": "+1234567890"}' \
+  --include
+```
+
+### How Settings Are Stored
+
+Settings use a **file-based JSON store** (`.data-settings.json`) for persistence:
+
+**Key Strategy:**
+- **Admin users**: Settings stored under key `"academy"` (organization-wide)
+- **Parent/Coach users**: Settings stored under key `userId` (user-specific)
+
+**Persistence:**
+- All settings changes are automatically saved to `.data-settings.json`
+- File survives server restarts
+- Safe for development and small-scale production use
+- **Note:** Add `.data-settings.json` to `.gitignore` to avoid committing sensitive data
+
+**Example file structure:**
+```json
+{
+  "academy": {
+    "profile": { "fullName": "Admin User", "email": "admin@academy.com" },
+    "academy": { "name": "Elite Cricket Academy", "timezone": "Asia/Kolkata" }
+  },
+  "user-123": {
+    "profile": { "fullName": "Parent Name", "email": "parent@example.com" },
+    "notifications": { "email": true, "sms": false, "push": true }
+  }
+}
+```
+
+**Migration Path:**
+To migrate to database storage (Postgres), replace `server/storage/settingsStore.ts` with a DB-backed implementation. The API routes remain unchanged.
+
 ## Build
 
 ```bash

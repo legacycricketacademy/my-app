@@ -23,6 +23,27 @@ import { MailService } from "@sendgrid/mail";
 import { sendAppEmail } from "./email.js";
 import { isDebugAuth, isDebugHeaders, safeLog, safeLogHeaders } from "./debug.js";
 
+// ---- Global crash guards ----
+const isProd = process.env.NODE_ENV === 'production';
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[crash-guard] Unhandled Rejection at:', promise, 'reason:', reason);
+  // In production, log but don't exit - keep the process alive
+  if (!isProd) {
+    console.error('[crash-guard] Exiting in dev mode');
+    process.exit(1);
+  }
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[crash-guard] Uncaught Exception:', error);
+  // In production, log but don't exit unless it's a fatal startup error
+  if (!isProd) {
+    console.error('[crash-guard] Exiting in dev mode');
+    process.exit(1);
+  }
+});
+
 // ---- __dirname for ES modules ----
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,7 +81,6 @@ if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.startsWit
 }
 
 // Sessions
-const isProd = process.env.NODE_ENV === 'production';
 if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET must be set');
 
 const sessionConfig = {
@@ -270,7 +290,7 @@ app.post("/api/auth/logout", (req, res) => {
 
 // Debug endpoints (read-only, no auth required)
 app.get("/api/_debug/ping", (req, res) => {
-  res.json({ ok: true, now: new Date().toISOString() });
+  res.json({ ok: true, ts: Date.now(), now: new Date().toISOString() });
 });
 
 app.get("/api/_debug/headers", (req, res) => {
@@ -780,6 +800,11 @@ app.use('/api/_debug/echo', (req, res) => {
       origin: req.headers.origin,
       cookie: req.headers.cookie ? '[present]' : '[none]',
     },
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      PORT_SET: !!process.env.PORT,
+      stripeEnabled: !!process.env.STRIPE_SECRET_KEY,
+    },
   });
 });
 
@@ -873,7 +898,8 @@ app.use((req, res, next) => {
   const port = Number(process.env.PORT) || 3000;
 
   server.listen(port, '0.0.0.0', () => {
-    console.log(`server listening on :${port}`);
+    console.log(`[express] listening on ${port}`);
     console.log('sessions: using connect-pg-simple with table "session" (auto-create enabled)');
+    console.log('[BOOT] env=%s stripe=%s', process.env.NODE_ENV ?? 'unknown', !!process.env.STRIPE_SECRET_KEY ? 'ready' : 'missing');
   });
 })();

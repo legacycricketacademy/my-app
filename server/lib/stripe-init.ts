@@ -1,18 +1,29 @@
 import Stripe from "stripe";
 
 let stripe: Stripe | null = null;
+let initialized = false;
 
-export function getStripe() {
+export function getStripe(): Stripe | null {
+  if (initialized) return stripe;
+  
+  initialized = true;
   const apiKey = process.env.STRIPE_SECRET_KEY;
+  
   if (!apiKey) {
-    console.warn("⚠️ Stripe not configured - STRIPE_SECRET_KEY missing");
+    console.warn("[stripe] Stripe disabled (no STRIPE_SECRET_KEY)");
     return null;
   }
-  if (!stripe) {
+  
+  try {
     stripe = new Stripe(apiKey, {
-      apiVersion: "2025-09-30.clover",
+      apiVersion: "2024-12-18.acacia",
     });
-    console.log("✅ Stripe initialized");
+    console.log("[stripe] Stripe client initialized");
+    return stripe;
+  } catch (error) {
+    console.error("[stripe] Failed to initialize Stripe client:", error);
+    return null;
   }
-  return stripe;
 }
+
+export const stripeReady = !!process.env.STRIPE_SECRET_KEY;

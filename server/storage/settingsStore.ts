@@ -19,9 +19,26 @@ type Key = string; // userId for parent/coach, 'academy' for org
 
 const SNAP = path.join(process.cwd(), '.data-settings.json');
 let DB: Record<Key, SettingsDoc> = {};
-try { if (fs.existsSync(SNAP)) DB = JSON.parse(fs.readFileSync(SNAP,'utf8')); } catch {}
 
-function persist() { try { fs.writeFileSync(SNAP, JSON.stringify(DB, null, 2)); } catch {} }
+// Safe initialization
+try { 
+  if (fs.existsSync(SNAP)) {
+    DB = JSON.parse(fs.readFileSync(SNAP,'utf8')); 
+    console.log('[settings] Loaded settings from .data-settings.json');
+  } else {
+    console.log('[settings] No existing settings file, starting fresh');
+  }
+} catch (e) { 
+  console.error('[settings] Failed to load settings file, using in-memory:', e);
+}
+
+function persist() { 
+  try { 
+    fs.writeFileSync(SNAP, JSON.stringify(DB, null, 2)); 
+  } catch (e) {
+    console.error('[settings] Failed to persist settings:', e);
+  }
+}
 
 export function getSettings(key: Key): SettingsDoc {
   return DB[key] ?? (DB[key] = {});
