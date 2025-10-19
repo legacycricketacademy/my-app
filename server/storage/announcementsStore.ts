@@ -14,3 +14,16 @@ export function createAnnouncement(dto: Omit<Announcement,'id'|'createdAt'|'crea
   _anncs.push(created);
   return created;
 }
+
+// Create announcement with user object (for consistency with other stores)
+export function createAnnouncementWithUser(dto: Omit<Announcement,'id'|'createdAt'|'createdBy'>, user: { id: string; role: string }): Announcement {
+  const created: Announcement = { ...dto, id: randomUUID(), createdAt: new Date().toISOString(), createdBy: user.id };
+  _anncs.push(created);
+  return created;
+}
+
+// Export the store instance for consistency
+export const announcementsStore = {
+  list: listAnnouncements,
+  create: createAnnouncementWithUser
+};

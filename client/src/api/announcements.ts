@@ -1,29 +1,41 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-const q = (p?:Record<string,any>) =>
-  p ? '?' + Object.entries(p).filter(([,v])=>v!=null && v!=='').map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&') : '';
+function ensureArray(v) {
+  return Array.isArray(v) ? v : [];
+}
 
-export function useAnnouncements(params?: { audience?: string }) {
+export function useAnnouncements(params) {
+  const qs = params?.audience ? `?audience=${encodeURIComponent(params.audience)}` : '';
   return useQuery({
     queryKey: ['announcements', params],
     queryFn: async () => {
-      const res = await fetch(`/api/announcements${q(params)}`, { credentials:'include' });
-      return res.json();
+      const res = await fetch(`/api/announcements${qs}`, { credentials: 'include' });
+      if (res.status === 401) {
+        window.location.assign('/auth');
+        return [];
+      }
+      const data = await res.json().catch(() => ({}));
+      return data?.ok ? ensureArray(data.data) : [];
     },
-    select: (r) => (r?.ok ? r.data : []),
   });
 }
 
 export function useCreateAnnouncement() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body:any) => {
+    mutationFn: async (body) => {
       const res = await fetch('/api/announcements', {
-        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(body),
       });
+      if (res.status === 401) {
+        window.location.assign('/auth');
+        return { ok: false };
+      }
       return res.json();
     },
-    onSuccess: (r:any) => { if (r?.ok) qc.invalidateQueries({ queryKey:['announcements'] }); },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['announcements'] }),
   });
 }

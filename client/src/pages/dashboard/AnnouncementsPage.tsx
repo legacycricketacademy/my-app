@@ -12,7 +12,10 @@ import { format, parseISO } from 'date-fns';
 
 export default function AnnouncementsPage() {
   const [showCreateAnnouncementModal, setShowCreateAnnouncementModal] = useState(false);
-  const { data: announcements, isLoading, error, refetch } = useAnnouncements();
+  const { data, isLoading, isError } = useAnnouncements();
+  
+  // Safe array handling - ensure data is always an array
+  const announcements = Array.isArray(data) ? data : [];
 
   const getAudienceIcon = (audience: string) => {
     switch (audience) {
@@ -54,7 +57,7 @@ export default function AnnouncementsPage() {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div className="space-y-6">
         <div>
@@ -64,7 +67,7 @@ export default function AnnouncementsPage() {
         <ErrorState 
           title="Failed to load announcements"
           message="Unable to fetch announcements. Please try again."
-          onRetry={() => refetch()}
+          onRetry={() => window.location.reload()}
         />
       </div>
     );

@@ -651,18 +651,6 @@ app.get('/api/meal-plans', createAuthMiddleware(), async (req: Request, res: Res
   }
 });
 
-// Announcements endpoint
-app.get('/api/announcements', createAuthMiddleware(), async (req: Request, res: Response) => {
-  try {
-    console.log('GET /api/announcements', { userId: req.user?.id, role: req.user?.role });
-    // Placeholder: return empty array
-    return res.status(200).json({ ok: true, items: [], count: 0 });
-  } catch (error) {
-    console.error('GET ANNOUNCEMENTS ERROR', { msg: error instanceof Error ? error.message : 'unknown' });
-    return res.status(500).json({ ok: false, error: 'fetch_failed', message: 'Failed to fetch announcements' });
-  }
-});
-
 // Payments endpoint
 app.get('/api/payments', createAuthMiddleware(), async (req: Request, res: Response) => {
   try {
@@ -784,7 +772,7 @@ app.use('/api/payments', paymentsRouter);
 
 // Announcements API routes
 import announcementsRouter from './routes/announcements.js';
-app.use('/api/announcements', announcementsRouter);
+app.use('/api/announcements', createAuthMiddleware(), announcementsRouter);
 
 // TEMP diagnostics endpoint
 app.use('/api/_debug/echo', (req, res) => {

@@ -1,37 +1,40 @@
 import { Router } from 'express';
-import { listAnnouncements, createAnnouncement } from '../storage/announcementsStore.js';
-import type { Audience, Priority } from '../types/announcements.js';
+import { announcementsStore } from '../storage/announcementsStore.js';
 
-const r = Router();
+const router = Router();
 
-function requireAuth(req:any, res:any, next:any){
-  if (req.user?.id) return next();
-  return res.status(401).json({ ok:false, error:'unauthorized', message:'Login required' });
-}
+// GET /api/announcements
+router.get('/', async (req, res) => {
+  if (!req.user) {
+    return res
+      .status(401)
+      .json({ ok: false, error: 'unauthorized', message: 'Please sign in' });
+  }
 
-r.get('/', requireAuth, (req,res) => {
   try {
-    console.log('ANNOUNCEMENTS_LIST', { userId: req.user?.id, query: req.query });
-    const data = listAnnouncements({ audience: (req.query.audience as string) || undefined });
-    res.json({ ok:true, data });
-  } catch (e:any) {
-    console.error('ANNOUNCEMENTS_LIST error', e);
-    res.status(500).json({ ok:false, error:'list_failed', message:e?.message || 'Failed to list announcements' });
+    const items = await announcementsStore.list({});
+    return res.json({ ok: true, data: Array.isArray(items) ? items : [] });
+  } catch (err) {
+    console.error('ANNOUNCEMENTS_LIST error:', err);
+    return res.status(500).json({ ok: false, error: 'server_error' });
   }
 });
 
-r.post('/', requireAuth, (req,res) => {
+// POST /api/announcements
+router.post('/', async (req, res) => {
+  if (!req.user) {
+    return res
+      .status(401)
+      .json({ ok: false, error: 'unauthorized', message: 'Please sign in' });
+  }
+
   try {
-    console.log('ANNOUNCEMENTS_CREATE', { userId: req.user?.id, body: req.body });
-    const { title, body, audience='all', priority='normal', publishAt } = req.body ?? {};
-    if (!title || !body) return res.status(400).json({ ok:false, error:'validation', message:'title and body are required' });
-    const created = createAnnouncement({ title, body, audience:audience as Audience, priority:priority as Priority, publishAt }, req.user.id);
-    console.log('ANNOUNCEMENTS_CREATE success', { id: created.id });
-    res.status(201).json({ ok:true, data: created });
-  } catch (e:any) {
-    console.error('ANNOUNCEMENTS_CREATE error', e);
-    res.status(500).json({ ok:false, error:'create_failed', message:e?.message || 'Failed to create announcement' });
+    const created = await announcementsStore.create(req.body, req.user);
+    return res.json({ ok: true, data: created });
+  } catch (err) {
+    console.error('ANNOUNCEMENTS_CREATE error:', err);
+    return res.status(500).json({ ok: false, error: 'create_failed' });
   }
 });
 
-export default r;
+export default router;
