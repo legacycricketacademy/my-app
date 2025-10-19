@@ -110,3 +110,23 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Date Picker Portal Styles */
+.datepicker-portal,
+.react-datepicker,
+.react-datepicker__portal {
+  z-index: 9999 !important;
+}
+
+.react-datepicker__portal .react-datepicker__navigation {
+  top: 10px;
+}
+
+.react-datepicker__portal {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Popovers above dialogs */
+.z-calendar {
+  z-index: 9999 !important;
+}

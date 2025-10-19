@@ -95,8 +95,8 @@ const sessionConfig = {
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    sameSite: 'none',      // REQUIRED for cross-site cookies on Render
-    secure: true,          // REQUIRED on HTTPS
+    sameSite: isProd ? 'none' : 'lax',      // 'none' for cross-site cookies on Render, 'lax' for dev
+    secure: isProd,                          // HTTPS required in production
     maxAge: 1000 * 60 * 60 * 24 * 7,
   }
 };

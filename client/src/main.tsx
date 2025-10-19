@@ -27,6 +27,19 @@ const queryClient = new QueryClient({
   },
 });
 
+// Create portal roots for date pickers (so they render above modals)
+if (!document.getElementById('app-date-portal')) {
+  const portal = document.createElement('div');
+  portal.id = 'app-date-portal';
+  document.body.appendChild(portal);
+}
+
+if (!document.getElementById('calendar-portal')) {
+  const calendarPortal = document.createElement('div');
+  calendarPortal.id = 'calendar-portal';
+  document.body.appendChild(calendarPortal);
+}
+
 // Render the app
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

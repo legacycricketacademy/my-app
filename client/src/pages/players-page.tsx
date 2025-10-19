@@ -7,9 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import DateField from "@/components/DateField";
 import {
   Form,
   FormControl,
@@ -58,7 +56,7 @@ const playerFormSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   dateOfBirth: z.date({
     required_error: "Date of birth is required",
-  }),
+  }).max(new Date(), "Date of birth cannot be in the future"),
   ageGroup: z.string().min(1, "Age group is required"),
   playerType: z.string().optional(),
   emergencyContact: z.string().optional(),
@@ -678,13 +676,17 @@ export default function PlayersPage() {
                   <FormField
                     control={form.control}
                     name="dateOfBirth"
-                    render={({ field }) => (
+                    render={({ field, fieldState }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Date of Birth *</FormLabel>
                         <FormControl>
-                          <DatePicker 
-                            date={field.value} 
-                            setDate={(date) => field.onChange(date)} 
+                          <DateField
+                            value={field.value}
+                            onChange={(date) => field.onChange(date)}
+                            maxDate={new Date()}
+                            placeholder="Pick a date"
+                            aria-label="Date of Birth"
+                            id="dateOfBirth"
                           />
                         </FormControl>
                         <FormMessage />
@@ -868,13 +870,17 @@ export default function PlayersPage() {
                   <FormField
                     control={editForm.control}
                     name="dateOfBirth"
-                    render={({ field }) => (
+                    render={({ field, fieldState }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Date of Birth *</FormLabel>
                         <FormControl>
-                          <DatePicker 
-                            date={field.value} 
-                            setDate={(date) => field.onChange(date)} 
+                          <DateField
+                            value={field.value}
+                            onChange={(date) => field.onChange(date)}
+                            maxDate={new Date()}
+                            placeholder="Pick a date"
+                            aria-label="Date of Birth"
+                            id="editDateOfBirth"
                           />
                         </FormControl>
                         <FormMessage />

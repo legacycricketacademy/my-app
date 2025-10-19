@@ -29,6 +29,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useCreateSession } from './useSessions';
@@ -189,14 +190,16 @@ export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
                       {form.watch('startDate') ? format(form.watch('startDate'), 'PPP') : 'Pick date'}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-[60]" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={form.watch('startDate')}
-                      onSelect={(date) => date && form.setValue('startDate', date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
+                  <PopoverPrimitive.Portal>
+                    <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={form.watch('startDate')}
+                        onSelect={(date) => date && form.setValue('startDate', date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </PopoverPrimitive.Portal>
                 </Popover>
                 <Input
                   type="time"
@@ -226,14 +229,16 @@ export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
                       {form.watch('endDate') ? format(form.watch('endDate'), 'PPP') : 'Pick date'}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-[60]" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={form.watch('endDate')}
-                      onSelect={(date) => date && form.setValue('endDate', date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
+                  <PopoverPrimitive.Portal>
+                    <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={form.watch('endDate')}
+                        onSelect={(date) => date && form.setValue('endDate', date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </PopoverPrimitive.Portal>
                 </Popover>
                 <Input
                   type="time"
