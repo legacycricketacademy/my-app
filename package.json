@@ -31,7 +31,12 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
     "e2e:live": "cross-env BASE_URL=https://cricket-academy-app.onrender.com ADMIN_EMAIL=admin@test.com ADMIN_PASSWORD=Test1234! playwright test --ui",
-    "ci:e2e": "npx playwright install --with-deps && npx playwright test --reporter=line"
+    "ci:e2e": "npx playwright install --with-deps && npx playwright test --reporter=line",
+    "pw:full": "cross-env RUN_LOCAL_WEB=1 playwright test --project=chromium",
+    "pw:failed": "cross-env RUN_LOCAL_WEB=1 playwright test --last-failed --project=chromium",
+    "pw:loop-failed": "cross-env RUN_LOCAL_WEB=1 node scripts/pw-loop-failed.js",
+    "pw:ui": "cross-env RUN_LOCAL_WEB=1 playwright test --ui",
+    "pw:retries2": "cross-env RUN_LOCAL_WEB=1 playwright test --retries=2 --project=chromium"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

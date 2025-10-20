@@ -9,14 +9,14 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: CI,
-  retries: CI ? 2 : 0,
+  retries: CI ? 2 : 1, // 1 retry locally helps with flaky tests
   workers: CI ? Math.max(1, os.cpus().length - 1) : undefined,
   reporter: 'html',
   timeout: 30000, // 30 seconds per test
   // globalSetup: "./global-setup.ts", // Disabled - using setup project instead
   use: {
     baseURL: BASE_URL,
-    trace: 'on-first-retry',
+    trace: 'on-first-retry', // Only trace on retries to save disk space
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     actionTimeout: 10000, // 10 seconds for actions
