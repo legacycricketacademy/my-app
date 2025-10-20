@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as os from 'os';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:10000';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const RUN_LOCAL_WEB = process.env.RUN_LOCAL_WEB === '1';
 const CI = !!process.env.CI;
 
@@ -43,7 +43,7 @@ export default defineConfig({
   ],
 
   webServer: RUN_LOCAL_WEB ? {
-    command: 'npm run dev',
+    command: 'npm start',
     url: BASE_URL,
     reuseExistingServer: !CI,
     timeout: 120 * 1000,

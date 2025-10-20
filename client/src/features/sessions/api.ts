@@ -4,8 +4,11 @@ import { asArray } from '@/lib/arrays';
 export async function listSessions(params?: Record<string,string>) {
   try {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const sessions = await http<any[]>('/api/sessions' + qs);
-    return { sessions: asArray(sessions) };
+    const res = await http<any[]>('/api/sessions' + qs);
+    if (!res.ok) {
+      throw new Error(res.message || 'Failed to fetch sessions');
+    }
+    return { sessions: asArray(res.data) };
   } catch (e) {
     if (e instanceof Error && e.message.includes('401')) {
       window.location.assign('/auth');
@@ -17,11 +20,14 @@ export async function listSessions(params?: Record<string,string>) {
 
 export async function createSession(payload: any) {
   try {
-    const session = await http<any>('/api/sessions', {
+    const res = await http<any>('/api/sessions', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    return session;
+    if (!res.ok) {
+      throw new Error(res.message || 'Failed to create session');
+    }
+    return res.data;
   } catch (e) {
     if (e instanceof Error && e.message.includes('401')) {
       window.location.assign('/auth');
