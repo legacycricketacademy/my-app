@@ -188,7 +188,7 @@ export async function loginWithBackend(data: LoginData): Promise<AuthResponse<Us
       });
     }
 
-    const res = await fetch("/api/login", {
+    const res = await fetch("/api/dev/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
