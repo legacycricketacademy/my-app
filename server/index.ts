@@ -1,11 +1,11 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
-import session from "express-session";
 import passport from "passport";
 import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
-import PGSession from 'connect-pg-simple';
+import { buildSessionMiddleware } from "./lib/sessionConfig.js";
+import { isProd } from "./lib/env.js";
 
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
@@ -24,8 +24,6 @@ import { sendAppEmail } from "./email.js";
 import { isDebugAuth, isDebugHeaders, safeLog, safeLogHeaders } from "./debug.js";
 
 // ---- Global crash guards ----
-const isProd = process.env.NODE_ENV === 'production';
-
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[crash-guard] Unhandled Rejection at:', promise, 'reason:', reason);
   // In production, log but don't exit - keep the process alive
@@ -80,41 +78,9 @@ if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.startsWit
   process.exit(1);
 }
 
-// Sessions
-if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET must be set');
-
-const sessionConfig: any = {
-  secret: process.env.SESSION_SECRET!,
-  name: 'connect.sid',  // Standard express-session cookie name
-  resave: false,
-  saveUninitialized: true,  // true to ensure cookie is set even for unauthenticated sessions
-  cookie: {
-    httpOnly: true,
-    sameSite: isProd ? 'none' : 'lax',      // 'none' for cross-site cookies on Render, 'lax' for dev
-    secure: isProd,                          // HTTPS required in production
-    path: '/',                               // Explicit path
-    maxAge: 1000 * 60 * 60 * 24 * 7,
-  }
-};
-
-// Only add PG store in production (requires DATABASE_URL)
-if (isProd && process.env.DATABASE_URL) {
-  const { Pool } = await import('pg');
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
-  });
-  sessionConfig.store = new (PGSession(session))({ 
-    pool,
-    tableName: 'session',
-    createTableIfMissing: true
-  });
-  console.log('✅ Using PostgreSQL session store');
-} else {
-  console.log('✅ Using memory session store (development)');
-}
-
-app.use(session(sessionConfig));
+// Session middleware (must be before routes)
+app.set('trust proxy', 1);
+app.use(buildSessionMiddleware());
 
 // Session middleware diagnostics
 safeLog('SESSION middleware mounted', {
@@ -210,8 +176,14 @@ app.get("/api/whoami", createAuthMiddleware(), (req, res) => {
   }
 });
 
-// Dev login bypass endpoint (for testing without Firebase)
+// Dev login bypass endpoint (for testing without Firebase) - ONLY IN DEV
 app.post("/api/dev/login", async (req, res) => {
+  // Safety: never allow in production
+  if (isProd) {
+    console.warn('⚠️ Dev login attempted in production - rejected');
+    return res.status(404).json({ error: 'Not found' });
+  }
+  
   try {
     const { email, password } = req.body as { email: string; password: string };
     
@@ -243,64 +215,23 @@ app.post("/api/dev/login", async (req, res) => {
       });
     }
     
-    // Regenerate session to avoid fixation (only if regenerate exists)
-    if (typeof req.session.regenerate === 'function') {
-      await new Promise<void>((resolve, reject) => 
-        req.session.regenerate(err => err ? reject(err) : resolve())
-      );
-      safeLog('AUTH session regenerate ok');
-    } else {
-      safeLog('AUTH session regenerate skipped (not available)');
-    }
-    
-    // Set session data
+    // Set session data (no regenerate in dev to avoid issues)
     req.session.userId = account.id;
     req.session.role = account.role || 'parent';
     safeLog('AUTH session set', { userId: account.id, role: account.role });
     
-    // Log cookie flags
-    safeLog('AUTH session cookie flags', {
-      secure: req.session.cookie.secure,
-      sameSite: req.session.cookie.sameSite,
-      path: req.session.cookie.path,
-      httpOnly: req.session.cookie.httpOnly,
-      maxAge: req.session.cookie.maxAge
+    // Save session explicitly and wait for completion
+    await new Promise<void>((resolve, reject) => {
+      req.session.save(err => {
+        if (err) {
+          console.error('Session save error:', err);
+          reject(err);
+        } else {
+          safeLog('AUTH session save ok');
+          resolve();
+        }
+      });
     });
-    
-    // Save the session and only then send the response (only if save exists)
-    if (typeof req.session.save === 'function') {
-      await new Promise<void>((resolve, reject) => 
-        req.session.save(err => err ? reject(err) : resolve())
-      );
-      safeLog('AUTH session save ok');
-    } else {
-      safeLog('AUTH session save skipped (not available)');
-    }
-    
-    safeLog('AUTH login ok', { userId: account.id });
-    
-    // Log the session ID to verify it's set
-    console.log('Session after login:', {
-      sessionID: req.sessionID,
-      userId: req.session.userId,
-      role: req.session.role,
-      cookie: {
-        name: sessionConfig.name,
-        httpOnly: req.session.cookie.httpOnly,
-        secure: req.session.cookie.secure,
-        sameSite: req.session.cookie.sameSite,
-        path: req.session.cookie.path
-      }
-    });
-    
-    // Manually set the cookie to ensure it's sent
-    // This is a workaround for session middleware not setting it automatically
-    if (req.sessionID) {
-      const secure = isProd ? '; Secure' : '';
-      const cookieValue = `${sessionConfig.name}=${req.sessionID}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${60 * 60 * 24 * 7}`;
-      res.setHeader('Set-Cookie', cookieValue);
-      console.log('✅ Manually set cookie (isProd=' + isProd + '):', cookieValue);
-    }
     
     // Return backward-compatible payload
     const payload = { 

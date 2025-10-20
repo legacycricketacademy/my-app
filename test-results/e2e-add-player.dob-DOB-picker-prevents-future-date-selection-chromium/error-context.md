@@ -3,32 +3,12 @@
 ```yaml
 - generic [ref=e2]:
   - generic [ref=e4]:
-    - generic [ref=e5]:
-      - heading "Legacy Cricket Academy" [level=3] [ref=e6]
-      - paragraph [ref=e7]: Development Login
+    - heading "Something went wrong" [level=2] [ref=e5]
+    - paragraph [ref=e7]: The application encountered an error. Please try refreshing the page.
     - generic [ref=e8]:
-      - generic [ref=e9]:
-        - generic [ref=e10]:
-          - text: Email
-          - textbox "Email" [ref=e11]:
-            - /placeholder: Enter your email
-        - generic [ref=e12]:
-          - text: Password
-          - textbox "Password" [ref=e13]:
-            - /placeholder: Enter your password
-        - button "Sign In" [ref=e14] [cursor=pointer]
-      - generic [ref=e15]:
-        - heading "Development Accounts" [level=3] [ref=e16]
-        - generic [ref=e17]:
-          - generic [ref=e18]:
-            - generic [ref=e19]: parent@test.com
-            - button "Use" [ref=e20] [cursor=pointer]
-          - generic [ref=e21]:
-            - generic [ref=e22]: admin@test.com
-            - button "Use" [ref=e23] [cursor=pointer]
-  - region "Notifications (F8)":
-    - list
-  - region "Notifications alt+T"
+      - paragraph [ref=e9]: "ReferenceError: useToast is not defined"
+      - generic [ref=e10]: at Lne (http://localhost:3000/assets/index-CD5cxH4h.js:1972:251538) at Fne (http://localhost:3000/assets/index-CD5cxH4h.js:1972:270321) at p7 (http://localhost:3000/assets/index-CD5cxH4h.js:1905:3367) at TI (http://localhost:3000/assets/index-CD5cxH4h.js:1905:6795) at Suspense at div at main at div at div at Rne (http://localhost:3000/assets/index-CD5cxH4h.js:1972:244680) at fN (http://localhost:3000/assets/index-CD5cxH4h.js:1905:60547) at p7 (http://localhost:3000/assets/index-CD5cxH4h.js:1905:3367) at C7 (http://localhost:3000/assets/index-CD5cxH4h.js:1905:7820) at ase (http://localhost:3000/assets/index-CD5cxH4h.js:1975:2841) at S7 (http://localhost:3000/assets/index-CD5cxH4h.js:1905:6983) at Y7 (http://localhost:3000/assets/index-CD5cxH4h.js:1905:16374) at uR (http://localhost:3000/assets/index-CD5cxH4h.js:395:23191) at AW (http://localhost:3000/assets/index-CD5cxH4h.js:1905:58715) at m2 (http://localhost:3000/assets/index-CD5cxH4h.js:40:95545) at LW (http://localhost:3000/assets/index-CD5cxH4h.js:1905:63556) at ise at Az (http://localhost:3000/assets/index-CD5cxH4h.js:1894:12835) at uR (http://localhost:3000/assets/index-CD5cxH4h.js:395:23191) at m2 (http://localhost:3000/assets/index-CD5cxH4h.js:40:95545)
+    - button "Refresh Page" [ref=e11] [cursor=pointer]
   - region "Notifications (F8)":
     - list
 ```

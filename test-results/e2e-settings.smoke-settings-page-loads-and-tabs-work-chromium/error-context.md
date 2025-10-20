@@ -85,16 +85,30 @@
             - text: Sign Out
       - main [ref=e106]:
         - generic [ref=e108]:
-          - generic [ref=e109]:
-            - heading "Schedule" [level=1] [ref=e110]
-            - paragraph [ref=e111]: Manage training sessions, matches, and events.
-          - generic [ref=e112]:
-            - img [ref=e114]
-            - heading "Failed to load schedule" [level=3] [ref=e116]
-            - paragraph [ref=e117]: Unable to fetch training sessions. Please try again.
-            - button "Try Again" [ref=e118] [cursor=pointer]:
-              - img
-              - text: Try Again
+          - generic [ref=e109]: Settings
+          - generic [ref=e110]:
+            - button "Profile" [ref=e111] [cursor=pointer]
+            - button "Notifications" [ref=e112] [cursor=pointer]
+            - button "Payments" [ref=e113] [cursor=pointer]
+            - button "Support" [ref=e114] [cursor=pointer]
+            - button "Academy Config" [ref=e115] [cursor=pointer]
+            - button "Access & Roles" [ref=e116] [cursor=pointer]
+            - button "Data Management" [ref=e117] [cursor=pointer]
+          - generic [ref=e119]:
+            - generic [ref=e120]: Profile
+            - generic [ref=e122]:
+              - generic [ref=e123]:
+                - generic [ref=e124]: Full name
+                - textbox "Full name" [ref=e125]
+              - generic [ref=e126]:
+                - generic [ref=e127]: Email
+                - textbox "Email" [ref=e128]
+              - generic [ref=e129]:
+                - generic [ref=e130]: Phone
+                - textbox "Phone" [ref=e131]
+            - generic [ref=e132]:
+              - button "Cancel" [ref=e133] [cursor=pointer]
+              - button "Save" [ref=e134] [cursor=pointer]
   - region "Notifications (F8)":
     - list
   - region "Notifications alt+T"

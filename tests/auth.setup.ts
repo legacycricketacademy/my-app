@@ -1,35 +1,16 @@
 import { test, expect } from '@playwright/test';
 
-// These come from environment variables (set in CI via GitHub Secrets)
 const email = process.env.E2E_EMAIL || 'admin@test.com';
 const password = process.env.E2E_PASSWORD || 'Test1234!';
 
 test('bootstrap auth and save storage state', async ({ page }) => {
   console.log('🔵 Starting auth setup with:', email);
   
-  // Listen for console messages and network requests
-  page.on('console', msg => console.log('Browser console:', msg.text()));
-  page.on('response', async response => {
-    if (response.url().includes('/api/')) {
-      console.log(`API Response: ${response.status()} ${response.url()}`);
-      
-      // Check for Set-Cookie header on login response
-      if (response.url().includes('/dev/login')) {
-        const headers = await response.allHeaders();
-        console.log('Login response headers:', JSON.stringify({
-          'set-cookie': headers['set-cookie'],
-          'content-type': headers['content-type']
-        }, null, 2));
-      }
-    }
-  });
-  
   // Navigate to login page
   await page.goto('/auth', { waitUntil: 'networkidle' });
   console.log('✅ On login page');
 
-  // Use the dev account "Use" button to fill the form
-  console.log('Looking for dev account "Use" buttons...');
+  // Check for dev "Use" button that fills credentials
   const useButtons = page.getByRole('button', { name: /^use$/i });
   const buttonCount = await useButtons.count();
   console.log(`Found ${buttonCount} "Use" buttons`);
@@ -46,40 +27,31 @@ test('bootstrap auth and save storage state', async ({ page }) => {
     await page.getByPlaceholder(/password/i).fill(password);
   }
   
-  // Take screenshot before signing in
-  await page.screenshot({ path: 'test-results/before-sign-in.png', fullPage: true });
-  
-  // Now click the Sign In button
+  // Now click the Sign In button to actually submit
   const signInButton = page.getByRole('button', { name: /sign in/i });
   await signInButton.click();
   console.log('✅ Clicked Sign In button');
   
-  // Wait a moment to see what happens
-  await page.waitForTimeout(2000);
-  
-  // Check current URL
-  console.log('Current URL after click:', page.url());
-  
-  // Take screenshot after clicking
-  await page.screenshot({ path: 'test-results/after-sign-in.png', fullPage: true });
-  
-  // Check for any obvious error messages
-  const errorMessage = page.locator('[role="alert"], .error, .alert-error').first();
-  if (await errorMessage.isVisible().catch(() => false)) {
-    const errorText = await errorMessage.textContent();
-    console.log('⚠️ Error message visible:', errorText);
+  // Wait for navigation away from /auth to any dashboard route
+  try {
+    await page.waitForURL(/\/(dashboard|admin|parent|coach)(\/.*)?$/i, { timeout: 15000 });
+    console.log('✅ Navigated to dashboard URL:', page.url());
+  } catch (e) {
+    // Fallback: wait for any non-auth URL
+    await page.waitForURL((url) => !url.pathname.startsWith('/auth'), { timeout: 15000 });
+    console.log('✅ Navigated away from /auth to:', page.url());
   }
-
-  // Wait for the API responses to complete
-  await page.waitForTimeout(3000);
   
-  console.log('✅ Login request completed');
-  console.log('Final URL:', page.url());
+  // Wait for page to load (use domcontentloaded instead of networkidle to avoid hanging)
+  await page.waitForLoadState('domcontentloaded');
+  
+  // Give it a moment for any async requests
+  await page.waitForTimeout(1000);
   
   // Check if there are any cookies
   const cookies = await page.context().cookies();
   console.log('Cookies count:', cookies.length);
-  const sessionCookie = cookies.find(c => c.name === 'sid' || c.name === 'connect.sid');
+  const sessionCookie = cookies.find(c => c.name === 'connect.sid' || c.name === 'sid');
   if (sessionCookie) {
     console.log('✅ Found session cookie:', sessionCookie.name);
   } else {
@@ -87,7 +59,7 @@ test('bootstrap auth and save storage state', async ({ page }) => {
     console.log('All cookies:', cookies.map(c => c.name).join(', '));
   }
   
-  // Save storage state regardless of navigation
+  // Save storage state for authenticated tests
   console.log('✅ Saving storage state');
   await page.context().storageState({ path: 'playwright/.auth/admin.json' });
   console.log('✅ Auth setup complete!');

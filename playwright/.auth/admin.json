@@ -1,44 +1,44 @@
 {
   "cookies": [
     {
-      "name": "connect.sid",
-      "value": "T5adoQcf0EGeZDaa0ScJWuPPi6rZZ7cd",
-      "domain": "localhost",
-      "path": "/",
-      "expires": 1761590161.867455,
-      "httpOnly": true,
-      "secure": true,
-      "sameSite": "Lax"
-    },
-    {
       "name": "m",
-      "value": "df3fbe19-1841-4a20-a390-0999f6676c3c662efe",
+      "value": "730d1d04-79e3-4244-afe5-b220ba988c60f7575d",
       "domain": "m.stripe.com",
       "path": "/",
-      "expires": 1795545361.896219,
+      "expires": 1795546440.604154,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None"
     },
     {
       "name": "__stripe_mid",
-      "value": "c6d81e0f-c406-4e17-82e8-4469f250206180adaf",
+      "value": "5fe62c74-2d3b-4b85-83c3-b2fd3d9c9eb3c73ef4",
       "domain": "localhost",
       "path": "/",
-      "expires": 1792521361,
+      "expires": 1792522440,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Strict"
     },
     {
       "name": "__stripe_sid",
-      "value": "15c86cf0-02e5-47dc-b769-7d7f526b8c522143c5",
+      "value": "3823198f-03b5-4377-bef6-b235c302619ea72eee",
       "domain": "localhost",
       "path": "/",
-      "expires": 1760987161,
+      "expires": 1760988240,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Strict"
+    },
+    {
+      "name": "connect.sid",
+      "value": "s%3Ay5JvL0RpKyhsPrzz6_hjelYRnLoH8TQC.a3ocRDlDa%2FvXEfH5oLlo%2BTYydSmRZr20UmHEXAQz8qc",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1761591240.67522,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
     }
   ],
   "origins": []
