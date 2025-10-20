@@ -116,8 +116,7 @@ function AppRoutes() {
         <Route path="fitness" element={<FitnessTrackingPage />} />
         <Route path="settings" element={<SettingsPage />} />
         
-        {/* Dashboard catch-all */}
-        <Route path="*" element={<SectionNotFound />} />
+        {/* Remove the catch-all route that was causing issues */}
       </Route>
 
       {/* Root path - redirect to auth if not authenticated */}
@@ -129,31 +128,36 @@ function AppRoutes() {
           </RedirectIfAuthed>
         }
       />
-      <Route path="/admin" element={<Navigate to="/dashboard" />} />
+      
+      {/* Admin redirect - move outside dashboard routes */}
+      <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
 
       {/* Parent Portal Routes - Single Layout with Outlet */}
       <Route
+        path="/parent"
         element={
           <RequireAuth>
             {user?.role === "parent" ? (
               <ParentDashboardLayout />
             ) : (
-              <Navigate to="/dashboard" />
+              <Navigate to="/dashboard" replace />
             )}
           </RequireAuth>
         }
       >
-        <Route path="/dashboard/parent" element={<EnhancedParentDashboard />} />
-        <Route path="/parent" element={<Navigate to="/dashboard/parent" />} />
-        <Route path="/parent/schedule" element={<ParentSchedulePage />} />
-        <Route path="/parent/schedule/full" element={<FullCalendarPage />} />
-        <Route path="/parent/announcements" element={<ParentAnnouncementsPage />} />
-        <Route path="/parent/payments" element={<ParentPaymentsPage />} />
-        <Route path="/parent/payments/transactions" element={<PaymentTransactionsPage />} />
-        <Route path="/parent/connect-child" element={<ConnectChildPage />} />
-        <Route path="/parent/profile" element={<ParentProfilePage />} />
-        <Route path="/parent/settings" element={<ParentSettingsPage />} />
+        <Route index element={<EnhancedParentDashboard />} />
+        <Route path="schedule" element={<ParentSchedulePage />} />
+        <Route path="schedule/full" element={<FullCalendarPage />} />
+        <Route path="announcements" element={<ParentAnnouncementsPage />} />
+        <Route path="payments" element={<ParentPaymentsPage />} />
+        <Route path="payments/transactions" element={<PaymentTransactionsPage />} />
+        <Route path="connect-child" element={<ConnectChildPage />} />
+        <Route path="profile" element={<ParentProfilePage />} />
+        <Route path="settings" element={<ParentSettingsPage />} />
       </Route>
+      
+      {/* Parent dashboard redirect */}
+      <Route path="/dashboard/parent" element={<Navigate to="/parent" replace />} />
 
       {/* Test parent routes */}
       <Route path="/simple-parent" element={<SimpleReactDashboard />} />
