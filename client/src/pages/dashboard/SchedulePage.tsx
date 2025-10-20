@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,20 @@ export default function SchedulePage() {
   const { data, isLoading, error, refetch } = useListSessions();
 
   const sessions = data?.sessions ?? [];
+
+  console.log('=== SchedulePage Debug ===');
+  console.log('1. Component rendered');
+  console.log('2. showNewSessionModal state:', showNewSessionModal);
+  console.log('3. sessions count:', sessions.length);
+  console.log('4. isLoading:', isLoading);
+  console.log('5. error:', error?.message);
+  console.log('6. NewSessionModal component:', NewSessionModal);
+  console.log('========================');
+
+  // Watch for state changes
+  useEffect(() => {
+    console.log('🔄 showNewSessionModal changed to:', showNewSessionModal);
+  }, [showNewSessionModal]);
 
   if (isLoading) {
     return (
@@ -103,10 +117,35 @@ export default function SchedulePage() {
           <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
           <p className="text-gray-600">Manage training sessions, matches, and events.</p>
         </div>
-        <Button onClick={() => setShowNewSessionModal(true)}>
-          <Calendar className="h-4 w-4 mr-2" />
-          Add Session
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔵 Add Session button clicked');
+              console.log('🔵 Current state before:', showNewSessionModal);
+              setShowNewSessionModal(prev => {
+                console.log('🔵 setState callback: prev=', prev, ', setting to true');
+                return true;
+              });
+              console.log('🔵 setState called');
+            }}
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Add Session
+          </Button>
+          
+          {/* Test with direct boolean */}
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              console.log('🟢 Test button - setting state directly to true');
+              setShowNewSessionModal(true);
+            }}
+          >
+            Test Modal
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6">
@@ -149,9 +188,36 @@ export default function SchedulePage() {
         ))}
       </div>
 
+      {/* Debug indicators */}
+      <div className="fixed bottom-4 left-4 bg-blue-500 text-white p-2 rounded z-[9999] text-xs">
+        Modal State: {showNewSessionModal ? 'OPEN' : 'CLOSED'}
+      </div>
+      
+      {showNewSessionModal && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white p-4 rounded z-[9999]">
+          ✅ State is TRUE - Modal should be visible
+        </div>
+      )}
+      
+      {/* Simple conditional render test */}
+      {showNewSessionModal && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center">
+          <div className="bg-white p-8 rounded-lg">
+            <h2 className="text-xl font-bold mb-4">TEST: Modal State is TRUE</h2>
+            <p>If you see this, state is working but Dialog component might be the issue</p>
+            <Button onClick={() => setShowNewSessionModal(false)} className="mt-4">
+              Close Test Overlay
+            </Button>
+          </div>
+        </div>
+      )}
+      
       <NewSessionModal 
         open={showNewSessionModal} 
-        onOpenChange={setShowNewSessionModal} 
+        onOpenChange={(open) => {
+          console.log('🔴 onOpenChange called with:', open);
+          setShowNewSessionModal(open);
+        }} 
       />
     </div>
   );
