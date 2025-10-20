@@ -10,24 +10,37 @@ export function MealPlanCard() {
   const [ageGroup, setAgeGroup] = useState<string>("Under 12s");
   const [selectedDay, setSelectedDay] = useState<number>(1); // 1 = Monday
 
-  const { data: mealPlans, isLoading } = useQuery<any[]>({
+  const { data: mealPlansData, isLoading } = useQuery<any[]>({
     queryKey: ["/api/meal-plans/age-group", ageGroup],
     queryFn: () => fetch(`/api/meal-plans/age-group/${ageGroup}`).then(res => res.json())
   });
 
+  // Safe array handling with logging for debugging
+  const mealPlans = Array.isArray(mealPlansData) ? mealPlansData : [];
+  if (!Array.isArray(mealPlansData)) {
+    console.log('DEBUG: mealPlans data is not an array:', typeof mealPlansData, mealPlansData);
+  }
+
   const currentMealPlan = mealPlans?.[0]; // Most recent meal plan
 
-  const { data: mealItems, isLoading: isLoadingItems } = useQuery<any[]>({
+  const { data: mealItemsData, isLoading: isLoadingItems } = useQuery<any[]>({
     queryKey: ["/api/meal-plans", currentMealPlan?.id],
     queryFn: () => currentMealPlan ? fetch(`/api/meal-plans/${currentMealPlan.id}`).then(res => res.json()) : null,
     enabled: !!currentMealPlan
   });
 
+  // Safe array handling for meal items
+  const mealItems = Array.isArray(mealItemsData) ? mealItemsData : [];
+  if (!Array.isArray(mealItemsData)) {
+    console.log('DEBUG: mealItems data is not an array:', typeof mealItemsData, mealItemsData);
+  }
+
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   const getMealsByDay = (day: number) => {
     if (!mealItems?.items) return [];
-    return mealItems.items.filter(item => item.dayOfWeek === day);
+    const items = Array.isArray(mealItems.items) ? mealItems.items : [];
+    return items.filter(item => item.dayOfWeek === day);
   };
 
   const selectedDayMeals = getMealsByDay(selectedDay);

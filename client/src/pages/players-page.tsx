@@ -127,10 +127,16 @@ export default function PlayersPage() {
     }
   });
   
-  const { data: players, isLoading } = useQuery<any[]>({
+  const { data: playersData, isLoading } = useQuery<any[]>({
     queryKey: ["/api/players", ageGroup],
     queryFn: () => api.get(`/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`)
   });
+  
+  // Safe array handling with logging for debugging
+  const players = Array.isArray(playersData) ? playersData : [];
+  if (!Array.isArray(playersData)) {
+    console.log('DEBUG: players data is not an array:', typeof playersData, playersData);
+  }
   
   const createPlayerMutation = useMutation({
     mutationFn: async (data: any) => {

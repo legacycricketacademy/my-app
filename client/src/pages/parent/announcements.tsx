@@ -13,10 +13,16 @@ export default function ParentAnnouncementsPage() {
   const [activeTab, setActiveTab] = useState<string>("all");
   
   // Fetch announcements
-  const { data: announcements, isLoading } = useQuery<any[]>({
+  const { data: announcementsData, isLoading } = useQuery<any[]>({
     queryKey: ["/api/parent/announcements"],
     queryFn: () => fetch("/api/parent/announcements").then(res => res.json())
   });
+  
+  // Safe array handling with logging for debugging
+  const announcements = Array.isArray(announcementsData) ? announcementsData : [];
+  if (!Array.isArray(announcementsData)) {
+    console.log('DEBUG: announcements data is not an array:', typeof announcementsData, announcementsData);
+  }
   
   // Format date for display
   const formatAnnouncementDate = (dateString: string) => {

@@ -13,13 +13,19 @@ export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [ageGroupFilter, setAgeGroupFilter] = useState<string>("all");
   
-  const { data: upcomingSessions, isLoading } = useQuery<any[]>({
+  const { data: upcomingSessionsData, isLoading } = useQuery<any[]>({
     queryKey: ["/api/sessions/all"], // Fetch ALL sessions regardless of date
     queryFn: () => fetch("/api/sessions/all").then(res => res.json())
   });
   
+  // Safe array handling with logging for debugging
+  const upcomingSessions = Array.isArray(upcomingSessionsData) ? upcomingSessionsData : [];
+  if (!Array.isArray(upcomingSessionsData)) {
+    console.log('DEBUG: upcomingSessions data is not an array:', typeof upcomingSessionsData, upcomingSessionsData);
+  }
+  
   // Filter sessions for the selected date
-  const selectedDateSessions = upcomingSessions?.filter(session => {
+  const selectedDateSessions = upcomingSessions.filter(session => {
     if (!selectedDate) return false;
     
     const sessionDate = new Date(session.startTime);
@@ -182,7 +188,7 @@ export default function SchedulePage() {
             <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-gray-200">
               {Array.from({ length: 7 }).map((_, index) => {
                 const date = addDays(new Date(), index);
-                const daySessions = upcomingSessions?.filter(session => {
+                const daySessions = upcomingSessions.filter(session => {
                   const sessionDate = new Date(session.startTime);
                   return (
                     sessionDate >= startOfDay(date) && 

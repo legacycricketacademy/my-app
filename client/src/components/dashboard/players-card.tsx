@@ -13,12 +13,18 @@ export function PlayersCard() {
   const [ageGroup, setAgeGroup] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   
-  const { data: players, isLoading } = useQuery<any[]>({
+  const { data: playersData, isLoading } = useQuery<any[]>({
     queryKey: ["/api/players", ageGroup],
     queryFn: () => api.get(`/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`)
   });
   
-  const filteredPlayers = players?.filter(player => {
+  // Safe array handling with logging for debugging
+  const players = Array.isArray(playersData) ? playersData : [];
+  if (!Array.isArray(playersData)) {
+    console.log('DEBUG: players data is not an array:', typeof playersData, playersData);
+  }
+  
+  const filteredPlayers = players.filter(player => {
     if (!searchQuery) return true;
     const fullName = `${player.firstName} ${player.lastName}`.toLowerCase();
     return fullName.includes(searchQuery.toLowerCase()) || 

@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 export default function PaymentTransactionsPage() {
   const navigate = useNavigate();
 
-  const { data: payments, isLoading, error, refetch } = useQuery({
+  const { data: paymentsData, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/payments', 'parent', 100],
     queryFn: async () => {
       const response = await fetch('/api/payments?scope=parent&limit=100', {
@@ -29,10 +29,16 @@ export default function PaymentTransactionsPage() {
     }
   });
 
+  // Safe array handling with logging for debugging
+  const payments = Array.isArray(paymentsData) ? paymentsData : [];
+  if (!Array.isArray(paymentsData)) {
+    console.log('DEBUG: payments data is not an array:', typeof paymentsData, paymentsData);
+  }
+
   // Calculate totals
-  const totalPaid = payments?.filter((p: any) => p.status === 'paid')
+  const totalPaid = payments.filter((p: any) => p.status === 'paid')
     .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0) || 0;
-  const totalPending = payments?.filter((p: any) => p.status === 'pending')
+  const totalPending = payments.filter((p: any) => p.status === 'pending')
     .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0) || 0;
 
   if (isLoading) {

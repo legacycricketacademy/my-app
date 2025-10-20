@@ -15,11 +15,17 @@ export default function PaymentsPage() {
   const [status, setStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   
-  const { data: pendingPayments, isLoading } = useQuery<any[]>({
+  const { data: pendingPaymentsData, isLoading } = useQuery<any[]>({
     queryKey: ["/api/payments/pending"],
   });
   
-  const filteredPayments = pendingPayments?.filter(payment => {
+  // Safe array handling with logging for debugging
+  const pendingPayments = Array.isArray(pendingPaymentsData) ? pendingPaymentsData : [];
+  if (!Array.isArray(pendingPaymentsData)) {
+    console.log('DEBUG: pendingPayments data is not an array:', typeof pendingPaymentsData, pendingPaymentsData);
+  }
+  
+  const filteredPayments = pendingPayments.filter(payment => {
     // Apply status filter
     if (status !== "all" && payment.status !== status) {
       return false;
@@ -146,7 +152,7 @@ export default function PaymentsPage() {
                 <div>
                   <p className="text-sm text-gray-500">Due This Week</p>
                   <h3 className="text-2xl font-bold">
-                    {isLoading ? "..." : filteredPayments?.filter(p => {
+                    {isLoading ? "..." : filteredPayments.filter(p => {
                       const daysOverdue = getDaysOverdue(p.dueDate);
                       return daysOverdue <= 0 && daysOverdue > -7 && p.status !== "paid";
                     }).length || 0}
@@ -165,7 +171,7 @@ export default function PaymentsPage() {
                 <div>
                   <p className="text-sm text-gray-500">Overdue</p>
                   <h3 className="text-2xl font-bold">
-                    {isLoading ? "..." : filteredPayments?.filter(p => {
+                    {isLoading ? "..." : filteredPayments.filter(p => {
                       const daysOverdue = getDaysOverdue(p.dueDate);
                       return daysOverdue > 0 && p.status !== "paid";
                     }).length || 0}
