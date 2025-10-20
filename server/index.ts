@@ -176,6 +176,79 @@ app.get("/api/whoami", createAuthMiddleware(), (req, res) => {
   }
 });
 
+// Database setup endpoint (for Render e2e testing)
+app.post("/api/test/setup-db", async (req, res) => {
+  // Always allow for now (for e2e testing)
+  try {
+    // Import database
+    const { db } = await import('./db/index.js');
+    
+    console.log('🔧 Setting up database tables...');
+
+    // Create core tables using raw SQL
+    await db.execute(`
+      CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+        username text UNIQUE,
+        email text UNIQUE NOT NULL,
+        password_hash text,
+        role text NOT NULL DEFAULT 'parent',
+        created_at timestamptz DEFAULT now()
+      );
+    `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS user_audit_logs (
+        id bigserial PRIMARY KEY,
+        user_id uuid,
+        event text NOT NULL,
+        ip text,
+        created_at timestamptz DEFAULT now()
+      );
+    `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS "session" (
+        "sid" varchar NOT NULL,
+        "sess" json NOT NULL,
+        "expire" timestamp(6) NOT NULL,
+        CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
+      );
+    `);
+
+    await db.execute(`
+      CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+    `);
+
+    // Seed a default admin account
+    await db.execute(`
+      INSERT INTO users (username, email, role)
+      VALUES ('admin','admin@test.com','admin')
+      ON CONFLICT (email) DO NOTHING;
+    `);
+
+    console.log('✅ Database tables created successfully');
+
+    return res.json({ 
+      ok: true, 
+      message: "Database setup completed",
+      tables: ["users", "user_audit_logs", "session"]
+    });
+
+  } catch (error) {
+    console.error("Error setting up database:", error);
+    return res.status(500).json({ 
+      ok: false, 
+      error: "setup_failed", 
+      message: error instanceof Error ? error.message : "Unknown error" 
+    });
+  }
+});
+
 // Test user creation endpoint (for Render e2e testing)
 app.post("/api/test/setup-users", async (req, res) => {
   // Only allow in production if E2E_TESTING is enabled
