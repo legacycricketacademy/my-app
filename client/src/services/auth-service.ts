@@ -181,6 +181,7 @@ const useDevLogin =
   (!import.meta.env.PROD); // local dev defaults to true
 
 const BACKEND_LOGIN_PATH = useDevLogin ? "/api/dev/login" : "/api/auth/login";
+console.info("[Auth] Using backend login path:", BACKEND_LOGIN_PATH);
 
 /**
  * Login directly with backend (no Firebase)
