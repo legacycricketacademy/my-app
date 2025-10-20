@@ -83,12 +83,7 @@ if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.startsWit
 // Sessions
 if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET must be set');
 
-const sessionConfig = {
-  store: isProd ? new (PGSession(session))({ 
-    pool,
-    tableName: 'session',
-    createTableIfMissing: true
-  }) : undefined,
+const sessionConfig: any = {
   secret: process.env.SESSION_SECRET!,
   name: 'sid',
   resave: false,
@@ -100,6 +95,23 @@ const sessionConfig = {
     maxAge: 1000 * 60 * 60 * 24 * 7,
   }
 };
+
+// Only add PG store in production (requires DATABASE_URL)
+if (isProd && process.env.DATABASE_URL) {
+  const { Pool } = await import('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
+  });
+  sessionConfig.store = new (PGSession(session))({ 
+    pool,
+    tableName: 'session',
+    createTableIfMissing: true
+  });
+  console.log('✅ Using PostgreSQL session store');
+} else {
+  console.log('✅ Using memory session store (development)');
+}
 
 app.use(session(sessionConfig));
 
@@ -204,6 +216,16 @@ app.post("/api/dev/login", async (req, res) => {
     
     safeLog('AUTH login start', { email });
     
+    // Check if session is available
+    if (!req.session) {
+      console.error('SESSION NOT AVAILABLE in dev login');
+      return res.status(500).json({
+        success: false,
+        message: "Session middleware not configured"
+      });
+    }
+    safeLog('AUTH session available', { hasSession: !!req.session });
+    
     // Development accounts for testing
     const devAccounts = {
       "admin@test.com": { password: "Test1234!", role: "admin", id: 1 },
@@ -220,11 +242,15 @@ app.post("/api/dev/login", async (req, res) => {
       });
     }
     
-    // Regenerate session to avoid fixation
-    await new Promise<void>((resolve, reject) => 
-      req.session.regenerate(err => err ? reject(err) : resolve())
-    );
-    safeLog('AUTH session regenerate ok');
+    // Regenerate session to avoid fixation (only if regenerate exists)
+    if (typeof req.session.regenerate === 'function') {
+      await new Promise<void>((resolve, reject) => 
+        req.session.regenerate(err => err ? reject(err) : resolve())
+      );
+      safeLog('AUTH session regenerate ok');
+    } else {
+      safeLog('AUTH session regenerate skipped (not available)');
+    }
     
     // Set session data
     req.session.userId = account.id;
@@ -240,11 +266,15 @@ app.post("/api/dev/login", async (req, res) => {
       maxAge: req.session.cookie.maxAge
     });
     
-    // Save the session and only then send the response
-    await new Promise<void>((resolve, reject) => 
-      req.session.save(err => err ? reject(err) : resolve())
-    );
-    safeLog('AUTH session save ok');
+    // Save the session and only then send the response (only if save exists)
+    if (typeof req.session.save === 'function') {
+      await new Promise<void>((resolve, reject) => 
+        req.session.save(err => err ? reject(err) : resolve())
+      );
+      safeLog('AUTH session save ok');
+    } else {
+      safeLog('AUTH session save skipped (not available)');
+    }
     
     safeLog('AUTH login ok', { userId: account.id });
     
@@ -258,10 +288,12 @@ app.post("/api/dev/login", async (req, res) => {
     };
     return res.status(200).json(payload);
   } catch (error) {
-    console.error("Dev login error:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error("Dev login error:", errorMessage, error);
+    safeLog('AUTH error', { error: errorMessage, stack: error instanceof Error ? error.stack : undefined });
     res.status(500).json({
       success: false,
-      message: "Login failed"
+      message: `Login failed: ${errorMessage}`
     });
   }
 });
