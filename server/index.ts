@@ -176,11 +176,124 @@ app.get("/api/whoami", createAuthMiddleware(), (req, res) => {
   }
 });
 
+// Test user creation endpoint (for Render e2e testing)
+app.post("/api/test/setup-users", async (req, res) => {
+  // Only allow in production if E2E_TESTING is enabled
+  const allowSetup = !isProd || process.env.E2E_TESTING === 'true';
+
+  if (!allowSetup) {
+    console.warn('⚠️ Test user setup attempted in production - rejected');
+    return res.status(404).json({ error: 'Not found' });
+  }
+
+  try {
+    // Import database and schema
+    const { db } = await import('./db/index.js');
+    const schema = await import('@shared/schema.js');
+    const { hashSync, genSaltSync } = await import('bcrypt');
+    const { eq } = await import('drizzle-orm');
+
+    console.log('🔧 Setting up test users...');
+
+    // Create default academy if it doesn't exist
+    let defaultAcademy;
+    const academyExists = await db.query.academies.findFirst({
+      where: eq(schema.academies.name, "Legacy Cricket Academy")
+    });
+
+    if (!academyExists) {
+      const [academy] = await db.insert(schema.academies).values({
+        name: "Legacy Cricket Academy",
+        slug: "legacy-cricket-academy",
+        description: "The main cricket academy for player development",
+        address: "123 Cricket Lane, Sports City",
+        phone: "+1234567890",
+        email: "info@legacycricket.com",
+        logoUrl: "/assets/logo.png",
+        primaryColor: "#1e40af",
+        secondaryColor: "#60a5fa",
+        stripeAccountId: null,
+        subscriptionTier: "pro",
+        maxPlayers: 200,
+        maxCoaches: 10,
+        status: "active",
+      }).returning();
+      defaultAcademy = academy;
+      console.log("✅ Default academy created with ID:", academy.id);
+    } else {
+      defaultAcademy = academyExists;
+      console.log("✅ Default academy already exists with ID:", academyExists.id);
+    }
+
+    const academyId = defaultAcademy.id;
+
+    // Create admin user
+    const adminExists = await db.query.users.findFirst({
+      where: eq(schema.users.username, "admin")
+    });
+
+    if (!adminExists) {
+      const salt = genSaltSync(10);
+      await db.insert(schema.users).values({
+        username: "admin",
+        password: hashSync("password", salt),
+        email: "admin@test.com",
+        fullName: "Admin User",
+        role: "admin",
+        academyId: academyId,
+        status: "active",
+        isActive: true,
+        isEmailVerified: true,
+      });
+      console.log("✅ Admin user created");
+    } else {
+      console.log("✅ Admin user already exists");
+    }
+
+    // Create parent user
+    const parentExists = await db.query.users.findFirst({
+      where: eq(schema.users.username, "parent")
+    });
+
+    if (!parentExists) {
+      const salt = genSaltSync(10);
+      await db.insert(schema.users).values({
+        username: "parent",
+        password: hashSync("password", salt),
+        email: "parent@test.com",
+        fullName: "Parent User",
+        role: "parent",
+        academyId: academyId,
+        status: "active",
+        isActive: true,
+        isEmailVerified: true,
+      });
+      console.log("✅ Parent user created");
+    } else {
+      console.log("✅ Parent user already exists");
+    }
+
+    return res.json({ 
+      ok: true, 
+      message: "Test users setup completed",
+      users: ["admin", "parent"]
+    });
+
+  } catch (error) {
+    console.error("Error setting up test users:", error);
+    return res.status(500).json({ 
+      ok: false, 
+      error: "setup_failed", 
+      message: error instanceof Error ? error.message : "Unknown error" 
+    });
+  }
+});
+
 // Dev login bypass endpoint (for testing without Firebase)
 app.post("/api/dev/login", async (req, res) => {
   // Allow in dev OR if E2E_TESTING flag is set (for Render e2e tests)
   const allowDevLogin = !isProd || process.env.E2E_TESTING === 'true' || process.env.ENABLE_DEV_LOGIN === 'true';
-  
+
   if (!allowDevLogin) {
     console.warn('⚠️ Dev login attempted in production - rejected');
     return res.status(404).json({ error: 'Not found' });
