@@ -1,14 +1,20 @@
-// client/src/api/settings.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { http } from '@/lib/http';
+import { http, HttpError } from '@/lib/http';
 
 export const useSettingsGet = <T = any>(section: string) =>
   useQuery<T>({ 
     queryKey:['settings', section], 
     queryFn: async () => {
-      const res = await http<any>(`/api/settings/${section}`);
-      if (!res.ok) throw new Error(res.message || 'Failed to load settings');
-      return res.data?.data ?? res.data;
+      try {
+        const data = await http<T>(`/api/settings/${section}`);
+        return data;
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 401) {
+          window.location.assign('/auth');
+          return {} as T;
+        }
+        throw e;
+      }
     }
   });
 
@@ -16,9 +22,19 @@ export const useSettingsSave = (section: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (body:any) => {
-      const res = await http<any>(`/api/settings/${section}`, { method:'PUT', body: JSON.stringify(body) });
-      if (!res.ok) throw new Error(res.message || 'Failed to save settings');
-      return res.data;
+      try {
+        const data = await http<any>(`/api/settings/${section}`, { 
+          method:'PUT', 
+          body: JSON.stringify(body) 
+        });
+        return data;
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 401) {
+          window.location.assign('/auth');
+          return null;
+        }
+        throw e;
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey:['settings', section] })
   });

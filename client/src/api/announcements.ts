@@ -1,24 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { http } from '@/lib/http';
-
-function ensureArray(v: any) {
-  return Array.isArray(v) ? v : [];
-}
+import { http, HttpError } from '@/lib/http';
+import { asArray } from '@/lib/arrays';
 
 export function useAnnouncements(params?: { audience?: string }) {
   const qs = params?.audience ? `?audience=${encodeURIComponent(params.audience)}` : '';
   return useQuery({
     queryKey: ['announcements', params],
     queryFn: async () => {
-      const res = await http<any>(`/api/announcements${qs}`);
-      if (!res.ok) {
-        if (res.error === 'unauthorized') {
+      try {
+        const announcements = await http<any[]>(`/api/announcements${qs}`);
+        return asArray(announcements);
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 401) {
           window.location.assign('/auth');
           return [];
         }
-        throw new Error(res.message || 'Failed to load announcements');
+        throw e;
       }
-      return ensureArray(res.data?.items ?? res.data?.data ?? res.data);
     },
   });
 }
@@ -27,18 +25,19 @@ export function useCreateAnnouncement() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (body: any) => {
-      const res = await http<any>('/api/announcements', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        if (res.error === 'unauthorized') {
+      try {
+        const announcement = await http<any>('/api/announcements', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+        return announcement;
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 401) {
           window.location.assign('/auth');
-          return { ok: false };
+          return null;
         }
-        throw new Error(res.message || 'Failed to create announcement');
+        throw e;
       }
-      return res.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['announcements'] }),
   });

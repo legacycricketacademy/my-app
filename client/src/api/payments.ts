@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { http, HttpError } from '@/lib/http';
+import { asArray } from '@/lib/arrays';
 
 const q = (p?:Record<string,any>) =>
   p ? '?' + Object.entries(p).filter(([,v])=>v!=null && v!=='').map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&') : '';
@@ -7,10 +9,17 @@ export function usePayments(params?: { playerId?: string; status?: string; from?
   return useQuery({
     queryKey: ['payments', params],
     queryFn: async () => {
-      const res = await fetch(`/api/payments${q(params)}`, { credentials:'include' });
-      return res.json();
+      try {
+        const payments = await http<any[]>(`/api/payments${q(params)}`);
+        return asArray(payments);
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 401) {
+          window.location.assign('/auth');
+          return [];
+        }
+        throw e;
+      }
     },
-    select: (r) => (r?.ok ? r.data : []),
   });
 }
 
@@ -18,12 +27,20 @@ export function useCreatePayment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (body:any) => {
-      const res = await fetch('/api/payments', {
-        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
-        body: JSON.stringify(body),
-      });
-      return res.json();
+      try {
+        const payment = await http<any>('/api/payments', {
+          method:'POST',
+          body: JSON.stringify(body),
+        });
+        return payment;
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 401) {
+          window.location.assign('/auth');
+          return null;
+        }
+        throw e;
+      }
     },
-    onSuccess: (r:any) => { if (r?.ok) qc.invalidateQueries({ queryKey:['payments'] }); },
+    onSuccess: () => qc.invalidateQueries({ queryKey:['payments'] }),
   });
 }
