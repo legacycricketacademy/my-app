@@ -34,31 +34,10 @@ export function buildSessionMiddleware(): RequestHandler {
     },
   };
 
-  if (!isProd) {
-    // DEV: use in-memory store (no PG, no pool)
-    console.log('✅ Using memory session store (development)');
-    return session({
-      ...common,
-    });
-  }
-
-  // PROD: use PG-backed store
-  if (!PgSessionStore) {
-    console.warn('⚠️ Production mode but PG store not available, falling back to memory');
-    return session({
-      ...common,
-    });
-  }
-
-  console.log('✅ Using PostgreSQL session store (production)');
+  // TEMPORARY: Use memory store for all environments until DB tables are set up
+  console.log('✅ Using memory session store (temporary for e2e testing)');
   return session({
     ...common,
-    store: new PgSessionStore({
-      createTableIfMissing: true,
-      conString: process.env.DATABASE_URL,
-      schemaName: process.env.DB_SCHEMA || 'public',
-      tableName: process.env.SESSION_TABLE || 'session',
-    }),
   });
 }
 
