@@ -174,6 +174,14 @@ export async function loginWithFirebaseDirect(data: LoginData): Promise<AuthResp
   }
 }
 
+// --- AUTH SERVICE FALLBACK (backend login) ---
+// Toggle via VITE_ENABLE_DEV_LOGIN=true on Render when you want test users.
+const useDevLogin =
+  (import.meta.env.PROD && import.meta.env.VITE_ENABLE_DEV_LOGIN === "true") ||
+  (!import.meta.env.PROD); // local dev defaults to true
+
+const BACKEND_LOGIN_PATH = useDevLogin ? "/api/dev/login" : "/api/auth/login";
+
 /**
  * Login directly with backend (no Firebase)
  */
@@ -188,30 +196,19 @@ export async function loginWithBackend(data: LoginData): Promise<AuthResponse<Us
       });
     }
 
-    const res = await fetch("/api/dev/login", {
+    // Important: cookies for session auth
+    const res = await fetch(BACKEND_LOGIN_PATH, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
       credentials: "include",
+      body: JSON.stringify(data),
     });
     
     if (!res.ok) {
-      let message = "Login failed";
-      
-      if (res.status === 401) {
-        message = "The username or password you entered is incorrect. Please try again.";
-      } else if (res.status === 403) {
-        message = "Your account has been locked or deactivated. Please contact support.";
-      } else if (res.status === 429) {
-        message = "Too many login attempts. Please try again later.";
-      }
-      
-      return {
-        success: false,
-        message,
-        status: res.status,
-        code: `http/${res.status}`
-      };
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        `Backend login failed (${res.status}). Path=${BACKEND_LOGIN_PATH}. Body=${text}`
+      );
     }
     
     const userData = await res.json();
