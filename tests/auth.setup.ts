@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const email = process.env.E2E_EMAIL || 'admin@test.com';
-const password = process.env.E2E_PASSWORD || 'Test1234!';
+const password = process.env.E2E_PASSWORD || 'password'; // Use seeded password from db/seed-pg.ts
 
 test('bootstrap auth and save storage state', async ({ page }) => {
   console.log('🔵 Starting auth setup with:', email);
@@ -25,6 +25,25 @@ test('bootstrap auth and save storage state', async ({ page }) => {
     // Production or different login page - fill form manually
     console.log('📍 Production/standard login page - filling manually');
     
+    // Debug: see what's actually on the page
+    const pageContent = await page.content();
+    const hasEmailInput = pageContent.includes('type="email"') || pageContent.includes('name="email"');
+    const hasPasswordInput = pageContent.includes('type="password"') || pageContent.includes('name="password"');
+    console.log('Page has email input:', hasEmailInput);
+    console.log('Page has password input:', hasPasswordInput);
+    
+    // Get all input elements to see what's available
+    const allInputs = await page.locator('input').all();
+    console.log('Total input elements found:', allInputs.length);
+    for (let i = 0; i < allInputs.length; i++) {
+      const input = allInputs[i];
+      const type = await input.getAttribute('type');
+      const name = await input.getAttribute('name');
+      const id = await input.getAttribute('id');
+      const placeholder = await input.getAttribute('placeholder');
+      console.log(`Input ${i}: type=${type}, name=${name}, id=${id}, placeholder=${placeholder}`);
+    }
+    
     // Try multiple selectors for email field
     const emailSelectors = [
       page.getByPlaceholder(/email/i),
@@ -32,6 +51,7 @@ test('bootstrap auth and save storage state', async ({ page }) => {
       page.locator('input[name="email"]'),
       page.locator('input[type="email"]'),
       page.locator('#email'),
+      page.locator('input').first(), // Fallback: use first input
     ];
     
     let emailFilled = false;
@@ -49,7 +69,8 @@ test('bootstrap auth and save storage state', async ({ page }) => {
     }
     
     if (!emailFilled) {
-      throw new Error('Could not find email input field');
+      await page.screenshot({ path: 'test-results/login-page-debug.png', fullPage: true });
+      throw new Error('Could not find email input field - see login-page-debug.png');
     }
     
     // Try multiple selectors for password field
