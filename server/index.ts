@@ -85,13 +85,14 @@ if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET must be set');
 
 const sessionConfig: any = {
   secret: process.env.SESSION_SECRET!,
-  name: 'sid',
+  name: 'connect.sid',  // Standard express-session cookie name
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,  // true to ensure cookie is set even for unauthenticated sessions
   cookie: {
     httpOnly: true,
     sameSite: isProd ? 'none' : 'lax',      // 'none' for cross-site cookies on Render, 'lax' for dev
     secure: isProd,                          // HTTPS required in production
+    path: '/',                               // Explicit path
     maxAge: 1000 * 60 * 60 * 24 * 7,
   }
 };
