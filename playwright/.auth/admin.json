@@ -2,43 +2,43 @@
   "cookies": [
     {
       "name": "m",
-      "value": "730d1d04-79e3-4244-afe5-b220ba988c60f7575d",
+      "value": "c9692916-887f-41f6-a0e8-bab39de66b31fe984c",
       "domain": "m.stripe.com",
       "path": "/",
-      "expires": 1795546440.604154,
+      "expires": 1795547022.686282,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None"
     },
     {
       "name": "__stripe_mid",
-      "value": "5fe62c74-2d3b-4b85-83c3-b2fd3d9c9eb3c73ef4",
-      "domain": "localhost",
+      "value": "f68a390e-e4fb-4b63-8b96-6f1379d1c698327e1e",
+      "domain": ".cricket-academy-app.onrender.com",
       "path": "/",
-      "expires": 1792522440,
+      "expires": 1792523022,
       "httpOnly": false,
-      "secure": false,
+      "secure": true,
       "sameSite": "Strict"
     },
     {
       "name": "__stripe_sid",
-      "value": "3823198f-03b5-4377-bef6-b235c302619ea72eee",
-      "domain": "localhost",
+      "value": "21448a90-86af-4530-95f3-ee43a880948f0cf5ab",
+      "domain": ".cricket-academy-app.onrender.com",
       "path": "/",
-      "expires": 1760988240,
+      "expires": 1760988822,
       "httpOnly": false,
-      "secure": false,
+      "secure": true,
       "sameSite": "Strict"
     },
     {
-      "name": "connect.sid",
-      "value": "s%3Ay5JvL0RpKyhsPrzz6_hjelYRnLoH8TQC.a3ocRDlDa%2FvXEfH5oLlo%2BTYydSmRZr20UmHEXAQz8qc",
-      "domain": "localhost",
+      "name": "sid",
+      "value": "s%3AB9ZknHnB_16T218avXLexCSr-szj_tn8.Pqt35l6vlOOwYhHZu4zgLw7qFRtoY%2BKfomHor9Xm6Bg",
+      "domain": "cricket-academy-app.onrender.com",
       "path": "/",
-      "expires": 1761591240.67522,
+      "expires": 1761591823.09921,
       "httpOnly": true,
-      "secure": false,
-      "sameSite": "Lax"
+      "secure": true,
+      "sameSite": "None"
     }
   ],
   "origins": []
