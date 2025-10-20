@@ -1,11 +1,11 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
-import session from "express-session";
 import passport from "passport";
 import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
-import PGSession from 'connect-pg-simple';
+import { buildSessionMiddleware } from "./lib/sessionConfig.js";
+import { isProd } from "./lib/env.js";
 
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
@@ -24,8 +24,6 @@ import { sendAppEmail } from "./email.js";
 import { isDebugAuth, isDebugHeaders, safeLog, safeLogHeaders } from "./debug.js";
 
 // ---- Global crash guards ----
-const isProd = process.env.NODE_ENV === 'production';
-
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[crash-guard] Unhandled Rejection at:', promise, 'reason:', reason);
   // In production, log but don't exit - keep the process alive
@@ -80,28 +78,9 @@ if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.startsWit
   process.exit(1);
 }
 
-// Sessions
-if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET must be set');
-
-const sessionConfig = {
-  store: isProd ? new (PGSession(session))({ 
-    pool,
-    tableName: 'session',
-    createTableIfMissing: true
-  }) : undefined,
-  secret: process.env.SESSION_SECRET!,
-  name: 'sid',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    sameSite: isProd ? 'none' : 'lax',      // 'none' for cross-site cookies on Render, 'lax' for dev
-    secure: isProd,                          // HTTPS required in production
-    maxAge: 1000 * 60 * 60 * 24 * 7,
-  }
-};
-
-app.use(session(sessionConfig));
+// Session middleware (must be before routes)
+app.set('trust proxy', 1);
+app.use(buildSessionMiddleware());
 
 // Session middleware diagnostics
 safeLog('SESSION middleware mounted', {
@@ -197,12 +176,28 @@ app.get("/api/whoami", createAuthMiddleware(), (req, res) => {
   }
 });
 
-// Dev login bypass endpoint (for testing without Firebase)
+// Dev login bypass endpoint (for testing without Firebase) - ONLY IN DEV
 app.post("/api/dev/login", async (req, res) => {
+  // Safety: never allow in production
+  if (isProd) {
+    console.warn('⚠️ Dev login attempted in production - rejected');
+    return res.status(404).json({ error: 'Not found' });
+  }
+  
   try {
     const { email, password } = req.body as { email: string; password: string };
     
     safeLog('AUTH login start', { email });
+    
+    // Check if session is available
+    if (!req.session) {
+      console.error('SESSION NOT AVAILABLE in dev login');
+      return res.status(500).json({
+        success: false,
+        message: "Session middleware not configured"
+      });
+    }
+    safeLog('AUTH session available', { hasSession: !!req.session });
     
     // Development accounts for testing
     const devAccounts = {
@@ -220,33 +215,23 @@ app.post("/api/dev/login", async (req, res) => {
       });
     }
     
-    // Regenerate session to avoid fixation
-    await new Promise<void>((resolve, reject) => 
-      req.session.regenerate(err => err ? reject(err) : resolve())
-    );
-    safeLog('AUTH session regenerate ok');
-    
-    // Set session data
+    // Set session data (no regenerate in dev to avoid issues)
     req.session.userId = account.id;
     req.session.role = account.role || 'parent';
     safeLog('AUTH session set', { userId: account.id, role: account.role });
     
-    // Log cookie flags
-    safeLog('AUTH session cookie flags', {
-      secure: req.session.cookie.secure,
-      sameSite: req.session.cookie.sameSite,
-      path: req.session.cookie.path,
-      httpOnly: req.session.cookie.httpOnly,
-      maxAge: req.session.cookie.maxAge
+    // Save session explicitly and wait for completion
+    await new Promise<void>((resolve, reject) => {
+      req.session.save(err => {
+        if (err) {
+          console.error('Session save error:', err);
+          reject(err);
+        } else {
+          safeLog('AUTH session save ok');
+          resolve();
+        }
+      });
     });
-    
-    // Save the session and only then send the response
-    await new Promise<void>((resolve, reject) => 
-      req.session.save(err => err ? reject(err) : resolve())
-    );
-    safeLog('AUTH session save ok');
-    
-    safeLog('AUTH login ok', { userId: account.id });
     
     // Return backward-compatible payload
     const payload = { 
@@ -258,10 +243,12 @@ app.post("/api/dev/login", async (req, res) => {
     };
     return res.status(200).json(payload);
   } catch (error) {
-    console.error("Dev login error:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error("Dev login error:", errorMessage, error);
+    safeLog('AUTH error', { error: errorMessage, stack: error instanceof Error ? error.stack : undefined });
     res.status(500).json({
       success: false,
-      message: "Login failed"
+      message: `Login failed: ${errorMessage}`
     });
   }
 });
