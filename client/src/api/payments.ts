@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { http, HttpError } from '@/lib/http';
+import { http } from '@/lib/http';
 import { asArray } from '@/lib/arrays';
 
 const q = (p?:Record<string,any>) =>
@@ -13,7 +13,7 @@ export function usePayments(params?: { playerId?: string; status?: string; from?
         const payments = await http<any[]>(`/api/payments${q(params)}`);
         return asArray(payments);
       } catch (e) {
-        if (e instanceof HttpError && e.status === 401) {
+        if (e instanceof Error && e.message.includes('401')) {
           window.location.assign('/auth');
           return [];
         }
@@ -34,7 +34,7 @@ export function useCreatePayment() {
         });
         return payment;
       } catch (e) {
-        if (e instanceof HttpError && e.status === 401) {
+        if (e instanceof Error && e.message.includes('401')) {
           window.location.assign('/auth');
           return null;
         }

@@ -1,4 +1,4 @@
-import { http, HttpError } from '@/lib/http';
+import { http } from '@/lib/http';
 import { asArray } from '@/lib/arrays';
 
 export async function listSessions(params?: Record<string,string>) {
@@ -7,7 +7,7 @@ export async function listSessions(params?: Record<string,string>) {
     const sessions = await http<any[]>('/api/sessions' + qs);
     return { sessions: asArray(sessions) };
   } catch (e) {
-    if (e instanceof HttpError && e.status === 401) {
+    if (e instanceof Error && e.message.includes('401')) {
       window.location.assign('/auth');
       return { sessions: [] };
     }
@@ -23,7 +23,7 @@ export async function createSession(payload: any) {
     });
     return session;
   } catch (e) {
-    if (e instanceof HttpError && e.status === 401) {
+    if (e instanceof Error && e.message.includes('401')) {
       window.location.assign('/auth');
       return null;
     }

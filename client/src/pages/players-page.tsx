@@ -30,9 +30,9 @@ import { format, parseISO } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { api } from "../lib/api";
+import { http } from "@/lib/http";
 import { queryClient } from "../lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { 
   Search, 
   UserPlus, 
@@ -55,15 +55,13 @@ import {
 const playerFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  dateOfBirth: z.date({
-    required_error: "Date of birth is required",
-  }).max(new Date(), "Date of birth cannot be in the future"),
-  ageGroup: z.string().min(1, "Age group is required"),
-  playerType: z.string().optional(),
+  dateOfBirth: z.string().min(1, "Date of birth is required"), // YYYY-MM-DD
+  ageGroup: z.enum(['Under 10s','Under 12s','Under 14s','Under 16s','Under 19s','Open']),
+  playerType: z.string().min(1, "Player type is required"),
   emergencyContact: z.string().optional(),
   medicalInformation: z.string().optional(),
-  parentEmail: z.string().email("Invalid email address"),
   parentName: z.string().min(1, "Parent name is required"),
+  parentEmail: z.string().email("Invalid email address"),
 });
 
 type PlayerFormValues = z.infer<typeof playerFormSchema>;
@@ -104,6 +102,7 @@ export default function PlayersPage() {
     defaultValues: {
       firstName: "",
       lastName: "",
+      dateOfBirth: "",
       ageGroup: "Under 12s",
       playerType: "Batsman",
       emergencyContact: "",
@@ -118,6 +117,7 @@ export default function PlayersPage() {
     defaultValues: {
       firstName: "",
       lastName: "",
+      dateOfBirth: "",
       ageGroup: "Under 12s", 
       playerType: "Batsman",
       emergencyContact: "",
@@ -128,8 +128,14 @@ export default function PlayersPage() {
   });
   
   const { data: playersData, isLoading } = useQuery<any[]>({
-    queryKey: ["/api/players", ageGroup],
-    queryFn: () => api.get(`/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`)
+    queryKey: ["players", ageGroup],
+    queryFn: async () => {
+      const res = await http<any[]>(`/api/players${ageGroup !== "all" ? `?ageGroup=${ageGroup}` : ""}`);
+      if (!res.ok) {
+        throw new Error(res.message || 'Failed to load players');
+      }
+      return res.data;
+    }
   });
   
   // Safe array handling with logging for debugging
@@ -139,25 +145,25 @@ export default function PlayersPage() {
   }
   
   const createPlayerMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await api.post("/players", data);
+    mutationFn: async (data: PlayerFormValues) => {
+      const payload = { ...data, dateOfBirth: new Date(data.dateOfBirth).toISOString() };
+      const res = await http<{ id: string }>('/api/players', { 
+        method: 'POST', 
+        body: JSON.stringify(payload) 
+      });
+      if (!res.ok) {
+        throw new Error(res.message ?? res.error);
+      }
+      return res.data;
     },
     onSuccess: () => {
-      toast({
-        title: "Player created successfully",
-        description: "The new player has been added to the database.",
-        variant: "default",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      toast.success('Player added');
+      queryClient.invalidateQueries({ queryKey: ["players"] });
       setShowAddPlayerDialog(false);
       form.reset();
     },
     onError: (error: Error) => {
-      toast({
-        title: "Failed to create player",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error('Failed to create player', { description: error.message });
     }
   });
   
@@ -218,30 +224,7 @@ export default function PlayersPage() {
   });
 
   function onSubmit(data: PlayerFormValues) {
-    try {
-      // Make sure dateOfBirth is a valid Date before formatting
-      if (!(data.dateOfBirth instanceof Date) || isNaN(data.dateOfBirth.getTime())) {
-        throw new Error("Invalid date of birth");
-      }
-      
-      // Format the date to ISO string for the API
-      const formattedData = {
-        ...data,
-        dateOfBirth: data.dateOfBirth.toISOString(),
-      };
-      
-      // Debug info
-      console.log("Submitting player data:", formattedData);
-      
-      createPlayerMutation.mutate(formattedData);
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      toast({
-        title: "Error",
-        description: "There was a problem with your submission. Please ensure all fields are correctly filled.",
-        variant: "destructive",
-      });
-    }
+    createPlayerMutation.mutate(data);
   }
   
   function onEditSubmit(data: PlayerFormValues) {
@@ -698,9 +681,12 @@ export default function PlayersPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            <SelectItem value="Under 10s">Under 10s</SelectItem>
                             <SelectItem value="Under 12s">Under 12s</SelectItem>
                             <SelectItem value="Under 14s">Under 14s</SelectItem>
                             <SelectItem value="Under 16s">Under 16s</SelectItem>
+                            <SelectItem value="Under 19s">Under 19s</SelectItem>
+                            <SelectItem value="Open">Open</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -876,9 +862,12 @@ export default function PlayersPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            <SelectItem value="Under 10s">Under 10s</SelectItem>
                             <SelectItem value="Under 12s">Under 12s</SelectItem>
                             <SelectItem value="Under 14s">Under 14s</SelectItem>
                             <SelectItem value="Under 16s">Under 16s</SelectItem>
+                            <SelectItem value="Under 19s">Under 19s</SelectItem>
+                            <SelectItem value="Open">Open</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

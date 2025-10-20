@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { http, HttpError } from '@/lib/http';
+import { http } from '@/lib/http';
 import { asArray } from '@/lib/arrays';
 
 export function useAnnouncements(params?: { audience?: string }) {
@@ -11,7 +11,7 @@ export function useAnnouncements(params?: { audience?: string }) {
         const announcements = await http<any[]>(`/api/announcements${qs}`);
         return asArray(announcements);
       } catch (e) {
-        if (e instanceof HttpError && e.status === 401) {
+        if (e instanceof Error && e.message.includes('401')) {
           window.location.assign('/auth');
           return [];
         }
@@ -32,7 +32,7 @@ export function useCreateAnnouncement() {
         });
         return announcement;
       } catch (e) {
-        if (e instanceof HttpError && e.status === 401) {
+        if (e instanceof Error && e.message.includes('401')) {
           window.location.assign('/auth');
           return null;
         }

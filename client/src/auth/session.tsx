@@ -6,6 +6,7 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { http } from '@/lib/http';
 
 // Auth context type
 interface AuthContextType {
@@ -39,21 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ['/api/session'],
     queryFn: async () => {
       try {
-        const res = await fetch('/api/session', {
-          credentials: 'include',
-          headers: {
-            'Cache-Control': 'no-cache',
-          },
-        });
-        
+        const res = await http<any>('/api/session');
         if (!res.ok) {
           if (res.status === 401) {
             return { authenticated: false, user: null };
           }
-          throw new Error('Failed to fetch session data');
+          throw new Error(res.message || 'Failed to fetch session data');
         }
-        
-        return await res.json();
+        return res.data;
       } catch (error) {
         console.error('Error fetching session data:', error);
         return { authenticated: false, user: null };
@@ -70,40 +64,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      const loginResponse = await fetch('/api/dev/login', {
+      const loginRes = await http<any>('/api/dev/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
-        credentials: 'include'
       });
 
-      if (!loginResponse.ok) {
-        const errorData = await loginResponse.json();
-        throw new Error(errorData.message || 'Login failed');
+      if (!loginRes.ok) {
+        throw new Error(loginRes.message || 'Login failed');
       }
 
-      const loginData = await loginResponse.json();
-      
-      if (!loginData.ok || !loginData.user) {
+      if (!loginRes.data.ok || !loginRes.data.user) {
         throw new Error('Login response invalid');
       }
 
       // Verify session after login
-      const sessionResponse = await fetch('/api/session', {
-        credentials: 'include'
-      });
+      const sessionRes = await http<any>('/api/session');
 
-      if (!sessionResponse.ok) {
+      if (!sessionRes.ok) {
         throw new Error('Session verification failed');
       }
 
-      const sessionData = await sessionResponse.json();
-      
-      if (!sessionData.authenticated || !sessionData.user) {
+      if (!sessionRes.data.authenticated || !sessionRes.data.user) {
         throw new Error('Login succeeded but session missing; check cookies');
       }
 
-      return sessionData;
+      return sessionRes.data;
     },
     onSuccess: (response) => {
       // Update session data in cache
@@ -127,16 +112,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/auth/logout', {
+      const res = await http<any>('/api/auth/logout', {
         method: 'POST',
-        credentials: 'include'
       });
 
-      if (!response.ok) {
-        throw new Error('Logout failed');
+      if (!res.ok) {
+        throw new Error(res.message || 'Logout failed');
       }
 
-      return await response.json();
+      return res.data;
     },
     onSuccess: () => {
       // Clear session data from cache

@@ -825,6 +825,10 @@ app.use('/api/keycloak', keycloakRoutes(createAuthMiddleware));
 import fitnessRouter from './routes/fitness.js';
 app.use('/api/fitness', createAuthMiddleware(), fitnessRouter);
 
+// Players API routes
+import playersRouter from './routes/players.js';
+app.use('/api/players', playersRouter);
+
 // TEMP diagnostics endpoint
 app.use('/api/_debug/echo', (req, res) => {
   res.json({

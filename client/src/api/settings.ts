@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { http, HttpError } from '@/lib/http';
+import { http } from '@/lib/http';
 
 export const useSettingsGet = <T = any>(section: string) =>
   useQuery<T>({ 
@@ -9,7 +9,7 @@ export const useSettingsGet = <T = any>(section: string) =>
         const data = await http<T>(`/api/settings/${section}`);
         return data;
       } catch (e) {
-        if (e instanceof HttpError && e.status === 401) {
+        if (e instanceof Error && e.message.includes('401')) {
           window.location.assign('/auth');
           return {} as T;
         }
@@ -29,7 +29,7 @@ export const useSettingsSave = (section: string) => {
         });
         return data;
       } catch (e) {
-        if (e instanceof HttpError && e.status === 401) {
+        if (e instanceof Error && e.message.includes('401')) {
           window.location.assign('/auth');
           return null;
         }

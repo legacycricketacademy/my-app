@@ -20,9 +20,12 @@ const createSessionSchema = z.object({
   title: z.string().min(3).max(80),
   ageGroup: z.enum(['Under 10s', 'Under 12s', 'Under 14s', 'Under 16s', 'Under 19s', 'Open']),
   location: z.string().min(1),
-  startLocal: z.string().datetime(),
-  endLocal: z.string().datetime(),
-  timezone: z.string(),
+  // Support both old format (startLocal/endLocal/timezone) and new format (startUtc/endUtc)
+  startLocal: z.string().datetime().optional(),
+  endLocal: z.string().datetime().optional(),
+  timezone: z.string().optional(),
+  startUtc: z.string().datetime().optional(),
+  endUtc: z.string().datetime().optional(),
   maxAttendees: z.number().min(1).max(200).optional().default(20),
   notes: z.string().optional(),
 });
@@ -59,15 +62,31 @@ r.post('/', requireAuth, async (req: any, res) => {
 
     const data = validation.data;
 
-    // Convert local times to UTC
-    const startUtc = convertToUTC(data.startLocal, data.timezone);
-    const endUtc = convertToUTC(data.endLocal, data.timezone);
+    // Determine UTC times from either new format (startUtc/endUtc) or old format (startLocal/endLocal/timezone)
+    let startUtc: Date;
+    let endUtc: Date;
+
+    if (data.startUtc && data.endUtc) {
+      // New format: direct UTC
+      startUtc = new Date(data.startUtc);
+      endUtc = new Date(data.endUtc);
+    } else if (data.startLocal && data.endLocal && data.timezone) {
+      // Old format: convert local to UTC
+      startUtc = convertToUTC(data.startLocal, data.timezone);
+      endUtc = convertToUTC(data.endLocal, data.timezone);
+    } else {
+      return res.status(400).json({
+        ok: false,
+        error: 'validation_error',
+        message: 'Either provide startUtc+endUtc OR startLocal+endLocal+timezone'
+      });
+    }
 
     // Validate business rules
     if (endUtc <= startUtc) {
       return res.status(400).json({
         ok: false,
-        error: 'invalid_duration',
+        error: 'validation_error',
         message: 'End time must be after start time'
       });
     }
@@ -77,7 +96,7 @@ r.post('/', requireAuth, async (req: any, res) => {
     if (durationHours > 8) {
       return res.status(400).json({
         ok: false,
-        error: 'duration_too_long',
+        error: 'validation_error',
         message: 'Session duration cannot exceed 8 hours'
       });
     }
@@ -110,7 +129,7 @@ r.post('/', requireAuth, async (req: any, res) => {
 
     res.status(201).json({
       ok: true,
-      session: {
+      data: {
         id: session.id,
         title: session.title,
         ageGroup: session.age_group,

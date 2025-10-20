@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format, addHours } from 'date-fns';
-import { CalendarIcon, ClockIcon, MapPinIcon, UsersIcon, FileTextIcon } from 'lucide-react';
-import { toUtcISO, detectTZ } from './date-utils';
+import { nowLocalISO, localMinutesToUtcIso } from '@/lib/datetime';
+import { http } from '@/lib/http';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,30 +26,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import * as PopoverPrimitive from '@radix-ui/react-popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { useCreateSession } from './useSessions';
-import { toast } from '@/hooks/use-toast';
 
 const ageGroups = ['Under 10s', 'Under 12s', 'Under 14s', 'Under 16s', 'Under 19s', 'Open'] as const;
 
 const formSchema = z.object({
-  title: z.string().min(3, 'Title must be at least 3 characters').max(80, 'Title must be less than 80 characters'),
+  title: z.string().min(3, 'Title is too short'),
   ageGroup: z.enum(ageGroups),
   location: z.string().min(1, 'Location is required'),
-  startDate: z.date(),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format'),
-  endDate: z.date(),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format'),
-  maxAttendees: z.number().min(1).max(200),
+  startLocal: z.string().min(1, 'Start is required'),
+  endLocal: z.string().min(1, 'End is required'),
+  maxAttendees: z.coerce.number().min(1).max(200),
   notes: z.string().optional(),
-});
+}).refine(v => new Date(v.endLocal) > new Date(v.startLocal), {
+  path: ['endLocal'],
+  message: 'End must be after start',
+}).refine(v => {
+  const start = new Date(v.startLocal).getTime()
+  const end = new Date(v.endLocal).getTime()
+  return (end - start) <= 8*60*60*1000
+}, { path: ['endLocal'], message: 'Max duration is 8 hours' });
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -58,63 +54,49 @@ interface NewSessionModalProps {
 }
 
 export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
-  const [timezone, setTimezone] = useState(() => detectTZ());
-  const createSession = useCreateSession();
-
+  const queryClient = useQueryClient();
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
       ageGroup: 'Under 12s',
       location: '',
-      startDate: new Date(),
-      startTime: '16:00',
-      endDate: new Date(),
-      endTime: '18:00',
+      startLocal: nowLocalISO(),
+      endLocal: nowLocalISO(),
       maxAttendees: 20,
       notes: '',
     },
   });
 
-  const onSubmit = async (data: FormData) => {
-    try {
-      // Combine date and time into local ISO strings (with seconds)
-      const startLocal = `${format(data.startDate, 'yyyy-MM-dd')}T${data.startTime}:00`;
-      const endLocal = `${format(data.endDate, 'yyyy-MM-dd')}T${data.endTime}:00`;
+  const onSubmit = async (values: FormData) => {
+    const payload = {
+      title: values.title.trim(),
+      ageGroup: values.ageGroup,
+      location: values.location.trim(),
+      startUtc: localMinutesToUtcIso(values.startLocal),
+      endUtc: localMinutesToUtcIso(values.endLocal),
+      maxAttendees: values.maxAttendees,
+      notes: values.notes?.trim() || undefined,
+    };
 
-      // Get current timezone
-      const tz = detectTZ();
+    const res = await http<{ id: string }>('/api/sessions', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
 
-      await createSession.mutateAsync({
-        title: data.title,
-        ageGroup: data.ageGroup,
-        location: data.location,
-        startLocal,
-        endLocal,
-        timezone: tz,
-        maxAttendees: data.maxAttendees,
-        notes: data.notes || undefined,
-      });
-
-      toast({
-        title: 'Success',
-        description: 'Session scheduled successfully',
-      });
-
-      form.reset();
-      onOpenChange(false);
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create session',
-        variant: 'destructive',
-      });
+    if (!res.ok) {
+      return toast.error('Could not schedule session', { description: res.message ?? res.error });
     }
+
+    toast.success('Session scheduled');
+    queryClient.invalidateQueries({ queryKey: ['sessions'] });
+    form.reset();
+    onOpenChange(false);
   };
 
-  const detectTimezone = () => {
-    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  };
+  // Keep end >= start
+  const startLocal = form.watch('startLocal');
+  const minEnd = startLocal || nowLocalISO();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -179,84 +161,33 @@ export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
 
             {/* Start Date & Time */}
             <div>
-              <Label>Start Date & Time *</Label>
-              <div className="flex gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !form.watch('startDate') && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.watch('startDate') ? format(form.watch('startDate'), 'PPP') : 'Pick date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverPrimitive.Portal>
-                    <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={form.watch('startDate')}
-                        onSelect={(date) => date && form.setValue('startDate', date)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </PopoverPrimitive.Portal>
-                </Popover>
-                <Input
-                  type="time"
-                  className="w-24"
-                  {...form.register('startTime')}
-                />
-              </div>
-              {form.formState.errors.startDate && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.startDate.message}</p>
+              <Label htmlFor="startLocal">Start Date & Time *</Label>
+              <Input
+                id="startLocal"
+                type="datetime-local"
+                {...form.register('startLocal')}
+              />
+              {form.formState.errors.startLocal && (
+                <p className="text-sm text-red-500 mt-1">{form.formState.errors.startLocal.message}</p>
               )}
             </div>
 
             {/* End Date & Time */}
             <div>
-              <Label>End Date & Time *</Label>
-              <div className="flex gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !form.watch('endDate') && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.watch('endDate') ? format(form.watch('endDate'), 'PPP') : 'Pick date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverPrimitive.Portal>
-                    <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={form.watch('endDate')}
-                        onSelect={(date) => date && form.setValue('endDate', date)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </PopoverPrimitive.Portal>
-                </Popover>
-                <Input
-                  type="time"
-                  className="w-24"
-                  {...form.register('endTime')}
-                />
-              </div>
-              {form.formState.errors.endDate && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.endDate.message}</p>
+              <Label htmlFor="endLocal">End Date & Time *</Label>
+              <Input
+                id="endLocal"
+                type="datetime-local"
+                min={minEnd}
+                {...form.register('endLocal')}
+              />
+              {form.formState.errors.endLocal && (
+                <p className="text-sm text-red-500 mt-1">{form.formState.errors.endLocal.message}</p>
               )}
             </div>
 
             {/* Max Attendees */}
-            <div>
+            <div className="md:col-span-2">
               <Label htmlFor="maxAttendees">Max Attendees</Label>
               <Input
                 id="maxAttendees"
@@ -268,26 +199,6 @@ export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
               {form.formState.errors.maxAttendees && (
                 <p className="text-sm text-red-500 mt-1">{form.formState.errors.maxAttendees.message}</p>
               )}
-            </div>
-
-            {/* Timezone */}
-            <div>
-              <Label htmlFor="timezone">Timezone</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="timezone"
-                  value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={detectTimezone}
-                >
-                  Detect
-                </Button>
-              </div>
             </div>
           </div>
 
@@ -303,25 +214,24 @@ export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
               <p className="text-sm text-red-500 mt-1">{form.formState.errors.notes.message}</p>
             )}
           </div>
-        </form>
 
-        <DialogFooter className="sticky bottom-0 bg-background border-t pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={createSession.isPending}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={createSession.isPending}
-          >
-            {createSession.isPending ? 'Scheduling...' : 'Schedule Session'}
-          </Button>
-        </DialogFooter>
+          <DialogFooter className="sticky bottom-0 bg-background border-t pt-4 mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={form.formState.isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting ? 'Scheduling…' : 'Schedule Session'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
