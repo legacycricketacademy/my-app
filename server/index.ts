@@ -279,6 +279,29 @@ app.post("/api/dev/login", async (req, res) => {
     
     safeLog('AUTH login ok', { userId: account.id });
     
+    // Log the session ID to verify it's set
+    console.log('Session after login:', {
+      sessionID: req.sessionID,
+      userId: req.session.userId,
+      role: req.session.role,
+      cookie: {
+        name: sessionConfig.name,
+        httpOnly: req.session.cookie.httpOnly,
+        secure: req.session.cookie.secure,
+        sameSite: req.session.cookie.sameSite,
+        path: req.session.cookie.path
+      }
+    });
+    
+    // Manually set the cookie to ensure it's sent
+    // This is a workaround for session middleware not setting it automatically
+    if (req.sessionID) {
+      const secure = isProd ? '; Secure' : '';
+      const cookieValue = `${sessionConfig.name}=${req.sessionID}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${60 * 60 * 24 * 7}`;
+      res.setHeader('Set-Cookie', cookieValue);
+      console.log('✅ Manually set cookie (isProd=' + isProd + '):', cookieValue);
+    }
+    
     // Return backward-compatible payload
     const payload = { 
       ok: true, 

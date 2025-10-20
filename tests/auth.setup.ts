@@ -9,9 +9,18 @@ test('bootstrap auth and save storage state', async ({ page }) => {
   
   // Listen for console messages and network requests
   page.on('console', msg => console.log('Browser console:', msg.text()));
-  page.on('response', response => {
+  page.on('response', async response => {
     if (response.url().includes('/api/')) {
       console.log(`API Response: ${response.status()} ${response.url()}`);
+      
+      // Check for Set-Cookie header on login response
+      if (response.url().includes('/dev/login')) {
+        const headers = await response.allHeaders();
+        console.log('Login response headers:', JSON.stringify({
+          'set-cookie': headers['set-cookie'],
+          'content-type': headers['content-type']
+        }, null, 2));
+      }
     }
   });
   
