@@ -176,10 +176,12 @@ app.get("/api/whoami", createAuthMiddleware(), (req, res) => {
   }
 });
 
-// Dev login bypass endpoint (for testing without Firebase) - ONLY IN DEV
+// Dev login bypass endpoint (for testing without Firebase)
 app.post("/api/dev/login", async (req, res) => {
-  // Safety: never allow in production
-  if (isProd) {
+  // Allow in dev OR if E2E_TESTING flag is set (for Render e2e tests)
+  const allowDevLogin = !isProd || process.env.E2E_TESTING === 'true' || process.env.ENABLE_DEV_LOGIN === 'true';
+  
+  if (!allowDevLogin) {
     console.warn('⚠️ Dev login attempted in production - rejected');
     return res.status(404).json({ error: 'Not found' });
   }

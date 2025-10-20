@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
+      // Use dev login endpoint (enabled on Render via ENABLE_DEV_LOGIN flag for e2e testing)
       const loginRes = await http<any>('/api/dev/login', {
         method: 'POST',
         body: JSON.stringify(credentials),

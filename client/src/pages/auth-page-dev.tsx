@@ -40,12 +40,17 @@ export default function AuthPageDev() {
     setFormData({ email, password });
   };
 
+  // Check if we're in development (localhost or dev environment variable)
+  const isDev = window.location.hostname === 'localhost' || 
+                window.location.hostname === '127.0.0.1' ||
+                import.meta.env.DEV;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Legacy Cricket Academy</CardTitle>
-          <CardDescription>Development Login</CardDescription>
+          <CardDescription>{isDev ? 'Development Login' : 'Sign In'}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -82,31 +87,34 @@ export default function AuthPageDev() {
                 </Button>
           </form>
           
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">Development Accounts</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-blue-700">parent@test.com</span>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleDevAccountClick('parent@test.com', 'Test1234!')}
-                >
-                  Use
-                </Button>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-blue-700">admin@test.com</span>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleDevAccountClick('admin@test.com', 'Test1234!')}
-                >
-                  Use
-                </Button>
+          {/* Only show dev accounts in development */}
+          {isDev && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <h3 className="font-semibold text-blue-900 mb-2">Development Accounts</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-blue-700">parent@test.com</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleDevAccountClick('parent@test.com', 'Test1234!')}
+                  >
+                    Use
+                  </Button>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-blue-700">admin@test.com</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleDevAccountClick('admin@test.com', 'Test1234!')}
+                  >
+                    Use
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
