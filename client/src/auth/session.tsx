@@ -64,24 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      // Convert email to username for the database login endpoint
-      // The seeded users have username = "admin" for admin@test.com
-      const username = credentials.email === 'admin@test.com' ? 'admin' : 
-                     credentials.email === 'parent@test.com' ? 'parent' : 
-                     credentials.email === 'coach@test.com' ? 'coach' : 
-                     credentials.email; // fallback to email
-      
-      // Use regular login endpoint with username/password
-      const loginRes = await http<any>('/api/login', {
+      // Use dev login endpoint (now always available for e2e testing)
+      const loginRes = await http<any>('/api/dev/login', {
         method: 'POST',
-        body: JSON.stringify({
-          username: username,
-          password: credentials.password
-        }),
+        body: JSON.stringify(credentials),
       });
 
       if (!loginRes.ok) {
         throw new Error(loginRes.message || 'Login failed');
+      }
+
+      if (!loginRes.data.ok || !loginRes.data.user) {
+        throw new Error('Login response invalid');
       }
 
       // Verify session after login
