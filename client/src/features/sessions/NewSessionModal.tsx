@@ -56,8 +56,6 @@ interface NewSessionModalProps {
 export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
   const queryClient = useQueryClient();
   
-  console.log('NewSessionModal rendered with:', { open, onOpenChange });
-  
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -100,8 +98,6 @@ export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
   // Keep end >= start
   const startLocal = form.watch('startLocal');
   const minEnd = startLocal || nowLocalISO();
-
-  console.log('Rendering Dialog with open:', open);
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
