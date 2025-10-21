@@ -17,7 +17,7 @@ test('create announcement flow', async ({ page }) => {
 
   // Navigate to announcements
   await page.goto(`${BASE}/dashboard/announcements`);
-  await expect(page.getByRole('heading', { name: /announcements/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Announcements', exact: true })).toBeVisible();
 
   // Click Create Announcement button
   await page.getByRole('button', { name: /create announcement/i }).click();

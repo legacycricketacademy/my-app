@@ -92,11 +92,7 @@
             - button "Record Payment" [ref=e113] [cursor=pointer]:
               - img
               - text: Record Payment
-          - generic [ref=e115]:
-            - img [ref=e116]
-            - heading "No payments recorded" [level=3] [ref=e118]
-            - paragraph [ref=e119]: Payment records will appear here once players make payments.
-            - button "Record Payment" [ref=e120] [cursor=pointer]
+          - generic [ref=e115]: Loading payments…
   - region "Notifications (F8)":
     - list
   - region "Notifications alt+T"

@@ -10,7 +10,7 @@ test('Add New Player with Date of Birth picker', async ({ page }) => {
   await page.goto(`${BASE}/dashboard/team`);
   
   // Wait for page to load
-  await expect(page.getByRole('heading', { name: /team/i })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Team Management', exact: true })).toBeVisible({ timeout: 10000 });
   
   // Click "Add New Player" button
   const addButton = page.getByRole('button', { name: /add new player/i });

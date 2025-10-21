@@ -17,7 +17,7 @@ test('record payment flow', async ({ page }) => {
 
   // Navigate to payments
   await page.goto(`${BASE}/dashboard/payments`);
-  await expect(page.getByRole('heading', { name: /payments/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Payments', exact: true })).toBeVisible();
 
   // Click Record Payment button
   await page.getByRole('button', { name: /record payment/i }).click();

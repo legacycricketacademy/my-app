@@ -10,7 +10,7 @@ test('Schedule session with calendar OK button', async ({ page }) => {
   await page.goto(`${BASE}/dashboard/schedule`);
   
   // Wait for page to load
-  await expect(page.getByRole('heading', { name: /schedule/i })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Schedule', exact: true })).toBeVisible({ timeout: 10000 });
   
   // Click "Add Session" button
   const addButton = page.getByRole('button', { name: /add session/i });
