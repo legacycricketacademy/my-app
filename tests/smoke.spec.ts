@@ -63,8 +63,8 @@ test('sessions endpoint responds correctly', async ({ request }) => {
 });
 
 test('parent portal loads with single sidebar', async ({ page }) => {
-  // Navigate to parent portal
-  await page.goto('/dashboard/parent');
+  // Navigate to parent portal (use /parent as /dashboard/parent redirects there)
+  await page.goto('/parent');
   
   // Check for any visible content (heading, card, or text)
   await page.waitForLoadState('load');

@@ -1,0 +1,235 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: Legacy Cricket
+          - img [ref=e8]
+        - paragraph [ref=e18]: Coach Dashboard
+      - link "U User Administrator" [ref=e20] [cursor=pointer]:
+        - /url: /profile
+        - generic [ref=e22]: U
+        - generic [ref=e23]:
+          - heading "User" [level=4] [ref=e24]
+          - paragraph [ref=e25]: Administrator
+      - navigation [ref=e26]:
+        - link "Dashboard" [ref=e27] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e28]
+          - generic [ref=e33]: Dashboard
+        - link "Team Management" [ref=e34] [cursor=pointer]:
+          - /url: /dashboard/team
+          - img [ref=e35]
+          - generic [ref=e40]: Team Management
+        - link "Schedule" [ref=e41] [cursor=pointer]:
+          - /url: /dashboard/schedule
+          - img [ref=e42]
+          - generic [ref=e44]: Schedule
+        - link "Fitness Tracking" [ref=e45] [cursor=pointer]:
+          - /url: /dashboard/fitness
+          - img [ref=e46]
+          - generic [ref=e48]: Fitness Tracking
+        - link "Meal Plans" [ref=e49] [cursor=pointer]:
+          - /url: /dashboard/meal-plans
+          - img [ref=e50]
+          - generic [ref=e53]: Meal Plans
+        - link "Announcements" [ref=e54] [cursor=pointer]:
+          - /url: /dashboard/announcements
+          - img [ref=e55]
+          - generic [ref=e58]: Announcements
+        - link "Payments" [ref=e59] [cursor=pointer]:
+          - /url: /dashboard/payments
+          - img [ref=e60]
+          - generic [ref=e62]: Payments
+        - link "Settings" [ref=e63] [cursor=pointer]:
+          - /url: /dashboard/settings
+          - img [ref=e64]
+          - generic [ref=e67]: Settings
+        - link "Import Data" [ref=e68] [cursor=pointer]:
+          - /url: /import-data
+          - img [ref=e69]
+          - generic [ref=e72]: Import Data
+        - link "Manage Connections" [ref=e73] [cursor=pointer]:
+          - /url: /manage-connections
+          - img [ref=e74]
+          - generic [ref=e77]: Manage Connections
+        - link "Pending Players" [ref=e78] [cursor=pointer]:
+          - /url: /players-pending-review
+          - img [ref=e79]
+          - generic [ref=e83]: Pending Players
+        - link "Coach Approvals" [ref=e84] [cursor=pointer]:
+          - /url: /coaches-pending-approval
+          - img [ref=e85]
+          - generic [ref=e89]: Coach Approvals
+      - generic [ref=e90]:
+        - button "Sign Out" [ref=e91] [cursor=pointer]:
+          - img
+          - generic [ref=e92]: Sign Out
+        - generic [ref=e93]:
+          - paragraph [ref=e94]: "If normal sign out fails:"
+          - button "Force Sign Out" [ref=e95] [cursor=pointer]:
+            - img
+            - generic [ref=e96]: Force Sign Out
+          - link "Open Emergency Logout Tool" [ref=e98] [cursor=pointer]:
+            - /url: /emergency-logout
+    - generic [ref=e99]:
+      - banner [ref=e100]:
+        - heading "Coach Dashboard" [level=1] [ref=e102]
+        - generic [ref=e103]:
+          - generic [ref=e104]: User
+          - button "Sign Out" [ref=e105] [cursor=pointer]:
+            - img
+            - text: Sign Out
+      - main [ref=e106]:
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e110]:
+              - heading "Dashboard" [level=1] [ref=e111]
+              - paragraph [ref=e112]: Tuesday, October 21, 2025
+            - generic [ref=e113]:
+              - link "Add New Player" [ref=e114] [cursor=pointer]:
+                - /url: /players/add
+                - button "Add New Player" [ref=e115]:
+                  - img
+                  - generic [ref=e116]: Add New Player
+              - button "Schedule New Session" [ref=e117] [cursor=pointer]:
+                - img
+                - generic [ref=e118]: Schedule New Session
+          - generic [ref=e119]:
+            - generic [ref=e121]:
+              - generic [ref=e122]:
+                - paragraph [ref=e123]: Registered Players
+                - heading "0" [level=3] [ref=e124]
+                - paragraph [ref=e125]:
+                  - img [ref=e126]
+                  - generic [ref=e128]: +4 since last month
+              - img [ref=e131]
+            - generic [ref=e137]:
+              - generic [ref=e138]:
+                - paragraph [ref=e139]: Upcoming Sessions
+                - heading "0" [level=3] [ref=e140]
+                - paragraph [ref=e141]:
+                  - generic [ref=e142]: "Next: Today at 4:00 PM"
+              - img [ref=e145]
+            - generic [ref=e149]:
+              - generic [ref=e150]:
+                - paragraph [ref=e151]: Pending Payments
+                - heading "$0.00" [level=3] [ref=e152]
+                - paragraph [ref=e153]:
+                  - generic [ref=e154]: 0 players with pending fees
+              - img [ref=e157]
+            - generic [ref=e160]:
+              - generic [ref=e161]:
+                - paragraph [ref=e162]: Recent Announcements
+                - heading "0" [level=3] [ref=e163]
+                - paragraph [ref=e164]:
+                  - generic [ref=e165]: No recent announcements
+              - img [ref=e168]
+          - generic [ref=e171]:
+            - generic [ref=e172]:
+              - generic [ref=e173]:
+                - generic [ref=e174]:
+                  - heading "Today's Schedule" [level=3] [ref=e175]
+                  - link "View All" [ref=e176] [cursor=pointer]:
+                    - /url: /schedule
+                - paragraph [ref=e179]: No sessions scheduled for today
+              - generic [ref=e180]:
+                - generic [ref=e181]:
+                  - heading "Team Fitness Progress" [level=3] [ref=e182]
+                  - combobox [ref=e184] [cursor=pointer]:
+                    - generic: This Week
+                    - img [ref=e185]
+                - generic [ref=e187]:
+                  - generic [ref=e188]:
+                    - heading "Running Speed" [level=4] [ref=e190]
+                    - generic [ref=e192]:
+                      - generic [ref=e193]: Avg. 0 km/h
+                      - generic [ref=e194]: "Target: 16.0 km/h"
+                  - generic [ref=e195]:
+                    - heading "Endurance" [level=4] [ref=e197]
+                    - generic [ref=e199]:
+                      - generic [ref=e200]: Avg. 0 min
+                      - generic [ref=e201]: "Target: 30.0 min"
+                  - generic [ref=e202]:
+                    - heading "Strength" [level=4] [ref=e204]
+                    - generic [ref=e206]:
+                      - generic [ref=e207]: Avg. 0 units
+                      - generic [ref=e208]: "Target: 15.0 units"
+                  - link "View Detailed Fitness Report" [ref=e210] [cursor=pointer]:
+                    - /url: /fitness
+                    - generic [ref=e211]: View Detailed Fitness Report
+                    - img
+            - generic [ref=e213]:
+              - generic [ref=e214]:
+                - generic [ref=e215]:
+                  - heading "Players" [level=3] [ref=e216]
+                  - generic [ref=e217]:
+                    - combobox [ref=e218] [cursor=pointer]:
+                      - generic: All Age Groups
+                      - img [ref=e219]
+                    - link "View All" [ref=e221] [cursor=pointer]:
+                      - /url: /players
+                - generic [ref=e222]:
+                  - generic [ref=e223]:
+                    - textbox "Search players..." [ref=e224]
+                    - img [ref=e225]
+                  - paragraph [ref=e230]: No players found
+              - generic [ref=e231]:
+                - generic [ref=e232]:
+                  - heading "Weekly Meal Plan" [level=3] [ref=e233]
+                  - combobox [ref=e234] [cursor=pointer]:
+                    - generic: Under 12s
+                    - img [ref=e235]
+                - generic [ref=e237]:
+                  - generic [ref=e238]:
+                    - button "Sun" [ref=e239] [cursor=pointer]
+                    - button "Mon" [ref=e240] [cursor=pointer]
+                    - button "Tue" [ref=e241] [cursor=pointer]
+                    - button "Wed" [ref=e242] [cursor=pointer]
+                    - button "Thu" [ref=e243] [cursor=pointer]
+                    - button "Fri" [ref=e244] [cursor=pointer]
+                    - button "Sat" [ref=e245] [cursor=pointer]
+                  - paragraph [ref=e248]: No meal plan available for this day
+                  - generic [ref=e249]:
+                    - button "Download" [ref=e250] [cursor=pointer]:
+                      - img
+                      - generic: Download
+                    - button "Share" [ref=e251] [cursor=pointer]:
+                      - img
+                      - generic: Share
+            - generic [ref=e252]:
+              - generic [ref=e253]:
+                - generic [ref=e254]:
+                  - heading "Payment Tracker" [level=3] [ref=e255]
+                  - link "View All" [ref=e256] [cursor=pointer]:
+                    - /url: /payments
+                - generic [ref=e257]:
+                  - generic [ref=e258]:
+                    - heading "Payment Status" [level=4] [ref=e259]
+                    - combobox [ref=e260] [cursor=pointer]:
+                      - generic: This Month
+                      - img [ref=e261]
+                  - generic [ref=e264]:
+                    - generic [ref=e265]:
+                      - generic [ref=e266]: NaN%
+                      - generic [ref=e267]: Paid
+                    - img [ref=e268]
+                  - heading "Pending Payments" [level=4] [ref=e271]
+                  - paragraph [ref=e274]: No pending payments
+                  - button "Send All Reminders" [ref=e276] [cursor=pointer]:
+                    - img
+                    - generic [ref=e277]: Send All Reminders
+              - generic [ref=e278]:
+                - generic [ref=e279]:
+                  - heading "Announcements" [level=3] [ref=e280]
+                  - button "New Announcement" [ref=e281] [cursor=pointer]
+                - paragraph [ref=e284]: No announcements available
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - region "Notifications (F8)":
+    - list
+```
