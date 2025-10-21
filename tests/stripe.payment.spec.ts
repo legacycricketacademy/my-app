@@ -5,10 +5,10 @@ test.use({ storageState: 'playwright/.auth/admin.json' }); // pre-auth state
 test('stripe payment element renders in record payment modal', async ({ page }) => {
   // Navigate to payments page
   await page.goto('/dashboard/payments');
-  await expect(page.getByRole('heading', { name: /payments/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Payments', exact: true })).toBeVisible();
 
-  // Click Record Payment button
-  const recordButton = page.getByRole('button', { name: /record payment/i });
+  // Click Record Payment button (use first() to avoid multiple matches)
+  const recordButton = page.getByRole('button', { name: /record payment/i }).first();
   await recordButton.click();
 
   // Wait for modal to open
@@ -54,7 +54,7 @@ test('stripe payment modal handles missing publishable key gracefully', async ({
   
   // Navigate to payments page
   await page.goto('/dashboard/payments');
-  await page.getByRole('button', { name: /record payment/i }).click();
+  await page.getByRole('button', { name: /record payment/i }).first().click();
 
   // Fill in required fields
   await page.getByPlaceholder('Enter player ID').fill('test-player-123');
@@ -79,7 +79,7 @@ test('stripe payment intent creation fails gracefully', async ({ page }) => {
 
   // Navigate to payments page
   await page.goto('/dashboard/payments');
-  await page.getByRole('button', { name: /record payment/i }).click();
+  await page.getByRole('button', { name: /record payment/i }).first().click();
 
   // Fill in required fields
   await page.getByPlaceholder('Enter player ID').fill('test-player-123');
