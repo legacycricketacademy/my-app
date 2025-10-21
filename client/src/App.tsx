@@ -106,7 +106,9 @@ function AppRoutes() {
         <Route
           index
           element={
-            isTestingParentView ? (
+            isParentUser ? (
+              <Navigate to="/parent" replace />
+            ) : isTestingParentView ? (
               <EnhancedParentDashboard />
             ) : (
               <Dashboard />
