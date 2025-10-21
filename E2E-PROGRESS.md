@@ -1,9 +1,19 @@
 # E2E Test Progress on Render
 
-## Current Status
-- **20 passed** ✅
-- **44 failed** ❌
+## Current Status (Latest)
+- **24 passed** ✅ (+4 from previous run)
+- **40 failed** ❌ (-4 from previous run)
 - **1 skipped** ⏭️
+
+## Progress Made
+
+### Fixes Applied:
+1. ✅ **Dev login endpoint** - Creates users and sessions correctly
+2. ✅ **PostgreSQL session store** - Sessions persist across server restarts
+3. ✅ **Session authentication in redirects** - Fixed `server/redirect.ts` to check `req.session.userId` in addition to Passport auth
+4. ✅ **Auth setup test** - More lenient wait strategy (uses 'load' instead of 'networkidle')
+5. ✅ **Training sessions table** - Created on Render with correct schema
+6. ✅ **Safe array handling** - Announcements, payments, and schedule pages handle API responses safely
 
 ## Root Cause Analysis
 
