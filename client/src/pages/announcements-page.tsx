@@ -23,12 +23,26 @@ export default function AnnouncementsPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isNewAnnouncementOpen, setIsNewAnnouncementOpen] = useState<boolean>(false);
   
-  const { data: announcements, isLoading } = useQuery<any[]>({
+  const { data: announcementsData, isLoading, error } = useQuery<any>({
     queryKey: ["/api/announcements/recent", 100], // Fetch up to 100 announcements
-    queryFn: () => fetch("/api/announcements/recent?limit=100").then(res => res.json())
+    queryFn: async () => {
+      const res = await fetch("/api/announcements/recent?limit=100", { credentials: 'include' });
+      if (!res.ok) throw new Error(`Failed to fetch announcements: ${res.status}`);
+      const json = await res.json();
+      return json;
+    }
   });
   
-  const filteredAnnouncements = announcements?.filter(announcement => {
+  // Safely extract array from response (handle various API response shapes)
+  const announcements = Array.isArray(announcementsData) 
+    ? announcementsData 
+    : announcementsData?.data 
+    ? (Array.isArray(announcementsData.data) ? announcementsData.data : [])
+    : announcementsData?.items
+    ? (Array.isArray(announcementsData.items) ? announcementsData.items : [])
+    : [];
+  
+  const filteredAnnouncements = announcements.filter(announcement => {
     // Apply tab filter
     if (tab !== "all") {
       if (!announcement.targetGroups?.includes(tab)) {
@@ -157,7 +171,12 @@ export default function AnnouncementsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {isLoading ? (
+            {error ? (
+              <div className="p-10 text-center">
+                <div className="text-red-500 mb-2">Error loading announcements</div>
+                <div className="text-sm text-gray-500">{error instanceof Error ? error.message : 'Unknown error'}</div>
+              </div>
+            ) : isLoading ? (
               <div className="p-6 space-y-4">
                 {Array(4).fill(0).map((_, i) => (
                   <div key={i} className="border-l-4 border-gray-200 p-3 rounded-r animate-pulse">
