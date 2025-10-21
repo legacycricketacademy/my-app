@@ -35,6 +35,8 @@ import RegisterDebug from "@/pages/register-debug";
 // Admin Pages
 import AdminDashboard from "@/pages/admin/admin-dashboard";
 import CoachesPendingApprovalPage from "@/pages/admin/coaches-pending-approval";
+import AdminFitness from "@/pages/admin/Fitness";
+import ParentFitness from "@/pages/parent/Fitness";
 
 // Dashboard Pages
 import { DashboardLayout } from "@/layout/DashboardLayout";
@@ -113,7 +115,7 @@ function AppRoutes() {
         <Route path="schedule" element={<DashboardSchedulePage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="meal-plans" element={<MealPlansPage />} />
-        <Route path="fitness" element={<FitnessTrackingPage />} />
+        <Route path="fitness" element={<AdminFitness />} />
         <Route path="settings" element={<SettingsPage />} />
         
         {/* Remove the catch-all route that was causing issues */}
