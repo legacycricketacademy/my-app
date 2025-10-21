@@ -9,6 +9,8 @@ import registerRouter from "./routes/register.js";
 import availabilityRouter from "./routes/availability.js";
 import announcementsRouter from "./routes/announcements.js";
 import mailboxRouter from "./routes/_mailbox.js";
+import { flags } from "./utils/flags.js";
+import registrationRouter from "./routes/registration.js";
 
 export function registerRoutes(app: Express) {
   // Test auth routes (only available in test mode)
@@ -46,6 +48,11 @@ export function registerRoutes(app: Express) {
 
   // Registration API (public) - parent registration form
   app.use("/api/registration", registerRouter);
+
+  // New registration system with role approval (feature-flagged)
+  if (flags.featureGoLive) {
+    app.use("/api/registration", registrationRouter);
+  }
 
   // Availability API (public for now, can add auth later)
   app.use("/api/availability", availabilityRouter);

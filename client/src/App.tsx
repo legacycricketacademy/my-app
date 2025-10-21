@@ -41,6 +41,7 @@ import ParentFitness from "@/pages/parent/Fitness";
 import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
 import ParentAvailability from "@/pages/parent/Availability";
+import { flags } from "@/utils/featureFlags";
 
 // Dashboard Pages
 import { DashboardLayout } from "@/layout/DashboardLayout";
@@ -204,7 +205,7 @@ function AppRoutes() {
 
       {/* Auth routes */}
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {flags.featureGoLive && <Route path="/register" element={<Register />} />}
 
       {/* Catch-all route */}
       <Route path="*" element={<NotFound />} />

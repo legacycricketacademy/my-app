@@ -1,18 +1,8 @@
 import { Router } from "express";
-import { _mailbox, _mailboxClear } from "../utils/email.js";
-
-const router = Router();
-
-// GET /api/_mailbox - returns all messages in the test mailbox
-router.get("/", (_req, res) => {
-  res.json({ messages: _mailbox() });
-});
-
-// POST /api/_mailbox/clear - clears the mailbox
-router.post("/clear", (_req, res) => {
-  _mailboxClear();
-  res.json({ ok: true, cleared: true });
-});
-
-export default router;
-
+import { _mailbox, _mailboxClear } from "@/utils/email";
+import { flags } from "@/utils/flags";
+const r = Router();
+r.use((req,res,next)=> flags.testMailbox ? next() : res.status(404).end());
+r.get("/", (_req,res)=> res.json({ messages: _mailbox() }));
+r.post("/clear", (_req,res)=> { _mailboxClear(); res.json({ ok:true }); });
+export default r;

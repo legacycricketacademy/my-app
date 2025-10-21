@@ -11,10 +11,10 @@ export default function Login() {
         <input id="password" name="password" type="password" placeholder="Password" data-testid="input-password" required />
         <button type="submit" data-testid="btn-login" className="btn btn-primary w-full mt-3">Login</button>
       </form>
-      <hr className="my-4" />
-      <p className="text-center text-sm">
-        Don't have an account? <Link to="/register" data-testid="link-register" className="text-blue-500 font-semibold">Register</Link>
-      </p>
+      <div className="mt-4 text-center">
+        <span>Don't have an account? </span>
+        <a href="/register" className="link" data-testid="link-register">Register</a>
+      </div>
     </div>
   );
 }
