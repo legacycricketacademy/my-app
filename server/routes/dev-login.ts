@@ -48,17 +48,32 @@ export function registerDevLogin(app: Express, pool: Pool) {
         CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")
       `);
       
+      // Drop old training_sessions table if it has wrong columns
+      try {
+        const tableCheck = await pool.query(`
+          SELECT column_name FROM information_schema.columns 
+          WHERE table_name = 'training_sessions' AND column_name = 'start_time'
+        `);
+        if (tableCheck.rows.length > 0) {
+          console.log('[DEV LOGIN] Dropping old training_sessions table with wrong column names');
+          await pool.query(`DROP TABLE IF EXISTS training_sessions CASCADE`);
+        }
+      } catch (e) {
+        // Table doesn't exist, that's fine
+      }
+      
       await pool.query(`
         CREATE TABLE IF NOT EXISTS training_sessions (
           id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
           title text NOT NULL,
           age_group text NOT NULL,
           location text NOT NULL,
-          start_time timestamptz NOT NULL,
-          end_time timestamptz NOT NULL,
+          start_utc timestamptz NOT NULL,
+          end_utc timestamptz NOT NULL,
           max_attendees integer DEFAULT 20,
           notes text,
           created_at timestamptz DEFAULT now(),
+          updated_at timestamptz DEFAULT now(),
           created_by uuid REFERENCES users(id)
         )
       `);
