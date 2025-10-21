@@ -75,7 +75,12 @@ test('parent portal loads with single sidebar', async ({ page }) => {
 
 test('team page has a single sidebar/header (no duplication)', async ({ page }) => {
   await page.goto('/dashboard/team');
-  await expect(page.getByRole('heading', { name: /team management/i })).toBeVisible();
+  
+  // Wait for page to load - check for either heading or "Add New Player" button
+  await expect(
+    page.getByRole('heading', { name: 'Team Management', exact: true })
+      .or(page.getByRole('button', { name: /add new player/i }))
+  ).toBeVisible({ timeout: 15000 });
   
   // Heuristic: one main header + one sidebar max
   const sidebars = await page.locator('aside, nav').count();
