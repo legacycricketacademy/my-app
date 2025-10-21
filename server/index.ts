@@ -186,7 +186,7 @@ app.post("/api/test/setup-db", async (req, res) => {
   // Always allow for now (for e2e testing)
   try {
     // Import database
-    const { db } = await import('./db/index.js');
+    const { db } = await import('../db/index.js');
     
     console.log('🔧 Setting up database tables...');
 
@@ -266,7 +266,7 @@ app.post("/api/test/setup-users", async (req, res) => {
 
   try {
     // Import database and schema
-    const { db } = await import('./db/index.js');
+    const { db } = await import('../db/index.js');
     const schema = await import('@shared/schema.js');
     const { hashSync, genSaltSync } = await import('bcrypt');
     const { eq } = await import('drizzle-orm');
