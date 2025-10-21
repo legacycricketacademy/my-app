@@ -2,28 +2,19 @@ import { test, expect } from '@playwright/test';
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
 
-// Clear storage state for announcements tests
-test.use({ storageState: { cookies: [], origins: [] } });
-
 test.describe('Announcements E2E', () => {
+  // Use the authenticated session from setup
   test.beforeEach(async ({ page }) => {
-    // Login as admin
-    await page.goto(`${BASE}/auth`);
-    await page.getByPlaceholder('Enter your email').fill(process.env.ADMIN_EMAIL || 'admin@test.com');
-    await page.getByPlaceholder('Enter your password').fill(process.env.ADMIN_PASSWORD || 'Test1234!');
-    await page.getByRole('button', { name: /sign in/i }).click();
+    // Navigate directly to announcements (auth is already set from setup project)
+    await page.goto(`${BASE}/dashboard/announcements`);
     
-    // Wait for dashboard to load
-    await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+    // Wait for page to load
+    await expect(page.getByRole('heading', { name: 'Announcements', exact: true })).toBeVisible();
   });
 
   test('should create an announcement and display it in the list', async ({ page }) => {
-    // Navigate to announcements page
-    await page.goto(`${BASE}/dashboard/announcements`);
-    await expect(page.getByText('Announcements')).toBeVisible();
-
-    // Click Create Announcement button
-    await page.getByRole('button', { name: /create announcement/i }).click();
+    // Click New Announcement button (page already loaded from beforeEach)
+    await page.getByRole('button', { name: /new announcement/i }).click();
     
     // Wait for modal to open
     await expect(page.getByText('Create Announcement')).toBeVisible();
@@ -42,8 +33,8 @@ test.describe('Announcements E2E', () => {
     // Fill in message
     await page.getByPlaceholder('Enter your announcement message...').fill('Due to weather conditions, today\'s training session has been cancelled. We will reschedule for tomorrow at the same time.');
     
-    // Submit the form
-    await page.getByRole('button', { name: /create announcement/i }).click();
+    // Submit the form (use dialog scoped button)
+    await page.locator('dialog').getByRole('button', { name: /create announcement/i }).click();
     
     // Wait for success toast
     await expect(page.getByText('Announcement created successfully')).toBeVisible();
@@ -59,23 +50,17 @@ test.describe('Announcements E2E', () => {
   });
 
   test('should show empty state when no announcements exist', async ({ page }) => {
-    // Navigate to announcements page
-    await page.goto(`${BASE}/dashboard/announcements`);
-    
-    // Should see empty state
+    // Should see empty state (page already loaded from beforeEach)
     await expect(page.getByText('No announcements yet')).toBeVisible();
     await expect(page.getByText('Create announcements to keep players and parents informed.')).toBeVisible();
   });
 
   test('should validate announcement form fields', async ({ page }) => {
-    // Navigate to announcements page
-    await page.goto(`${BASE}/dashboard/announcements`);
+    // Click New Announcement button (page already loaded from beforeEach)
+    await page.getByRole('button', { name: /new announcement/i }).click();
     
-    // Click Create Announcement button
-    await page.getByRole('button', { name: /create announcement/i }).click();
-    
-    // Try to submit without filling required fields
-    await page.getByRole('button', { name: /create announcement/i }).click();
+    // Try to submit without filling required fields (use the submit button inside dialog)
+    await page.locator('dialog').getByRole('button', { name: /create announcement/i }).click();
     
     // Should see validation errors
     await expect(page.getByText('Title is required')).toBeVisible();
@@ -83,11 +68,8 @@ test.describe('Announcements E2E', () => {
   });
 
   test('should show character count for announcement body', async ({ page }) => {
-    // Navigate to announcements page
-    await page.goto(`${BASE}/dashboard/announcements`);
-    
-    // Click Create Announcement button
-    await page.getByRole('button', { name: /create announcement/i }).click();
+    // Click New Announcement button (page already loaded from beforeEach)
+    await page.getByRole('button', { name: /new announcement/i }).click();
     
     // Type in the message field
     const messageField = page.getByPlaceholder('Enter your announcement message...');
