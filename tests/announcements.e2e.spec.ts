@@ -13,8 +13,8 @@ test.describe('Announcements E2E', () => {
   });
 
   test('should create an announcement and display it in the list', async ({ page }) => {
-    // Click New Announcement button (page already loaded from beforeEach)
-    await page.getByRole('button', { name: /new announcement/i }).click();
+    // Click Create Announcement button (page already loaded from beforeEach)
+    await page.getByRole('button', { name: /create announcement/i }).click();
     
     // Wait for modal to open
     await expect(page.getByText('Create Announcement')).toBeVisible();
@@ -56,8 +56,8 @@ test.describe('Announcements E2E', () => {
   });
 
   test('should validate announcement form fields', async ({ page }) => {
-    // Click New Announcement button (page already loaded from beforeEach)
-    await page.getByRole('button', { name: /new announcement/i }).click();
+    // Click Create Announcement button (page already loaded from beforeEach)
+    await page.getByRole('button', { name: /create announcement/i }).click();
     
     // Try to submit without filling required fields (use the submit button inside dialog)
     await page.locator('dialog').getByRole('button', { name: /create announcement/i }).click();
@@ -68,8 +68,8 @@ test.describe('Announcements E2E', () => {
   });
 
   test('should show character count for announcement body', async ({ page }) => {
-    // Click New Announcement button (page already loaded from beforeEach)
-    await page.getByRole('button', { name: /new announcement/i }).click();
+    // Click Create Announcement button (page already loaded from beforeEach)
+    await page.getByRole('button', { name: /create announcement/i }).click();
     
     // Type in the message field
     const messageField = page.getByPlaceholder('Enter your announcement message...');

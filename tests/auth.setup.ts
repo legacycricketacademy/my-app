@@ -13,10 +13,11 @@ test('bootstrap auth and save storage state', async ({ page }) => {
   await page.goto('/auth', { waitUntil: 'load', timeout: 30000 });
   console.log('✅ On auth page');
   
-  // Use dev login API directly
+  // Use dev login API directly (increased timeout for Render cold starts)
   const response = await page.request.post('/api/dev/login', {
     data: { email },
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 30000 // 30 seconds for Render cold start
   });
   
   if (!response.ok()) {
