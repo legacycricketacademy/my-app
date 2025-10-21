@@ -87,16 +87,16 @@
         - generic [ref=e108]:
           - generic [ref=e109]:
             - generic [ref=e110]:
-              - heading "Payments" [level=1] [ref=e111]
-              - paragraph [ref=e112]: Manage payments, fees, and billing.
-            - button "Record Payment" [ref=e113] [cursor=pointer]:
+              - heading "Schedule" [level=1] [ref=e111]
+              - paragraph [ref=e112]: Manage training sessions, matches, and events.
+            - button "Add Session" [ref=e113] [cursor=pointer]:
               - img
-              - text: Record Payment
-          - generic [ref=e115]:
-            - img [ref=e116]
-            - heading "No payments recorded" [level=3] [ref=e118]
-            - paragraph [ref=e119]: Payment records will appear here once players make payments.
-            - button "Record Payment" [ref=e120] [cursor=pointer]
+              - text: Add Session
+          - generic [ref=e116]:
+            - img [ref=e118]
+            - heading "No sessions scheduled" [level=3] [ref=e120]
+            - paragraph [ref=e121]: Create your first training session or match to get started.
+            - button "Add Session" [ref=e122] [cursor=pointer]
   - region "Notifications (F8)":
     - list
   - region "Notifications alt+T"
