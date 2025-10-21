@@ -14,7 +14,7 @@ test.describe("Parent registration + email notifications", () => {
     await page.goto(`${BASE_URL}/login`);
     
     // Wait for page to load
-    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Sign in to Legacy Cricket Academy/i })).toBeVisible();
     
     // Click register link
     await page.getByTestId("link-register").click();
