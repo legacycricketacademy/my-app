@@ -13,16 +13,23 @@ export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [ageGroupFilter, setAgeGroupFilter] = useState<string>("all");
   
-  const { data: upcomingSessionsData, isLoading } = useQuery<any[]>({
+  const { data: upcomingSessionsData, isLoading, error } = useQuery<any>({
     queryKey: ["/api/sessions/all"], // Fetch ALL sessions regardless of date
-    queryFn: () => fetch("/api/sessions/all").then(res => res.json())
+    queryFn: async () => {
+      const res = await fetch("/api/sessions/all", { credentials: 'include' });
+      if (!res.ok) throw new Error(`Failed to fetch sessions: ${res.status}`);
+      return await res.json();
+    }
   });
   
-  // Safe array handling with logging for debugging
-  const upcomingSessions = Array.isArray(upcomingSessionsData) ? upcomingSessionsData : [];
-  if (!Array.isArray(upcomingSessionsData)) {
-    console.log('DEBUG: upcomingSessions data is not an array:', typeof upcomingSessionsData, upcomingSessionsData);
-  }
+  // Safe array handling - extract from various API response shapes
+  const upcomingSessions = Array.isArray(upcomingSessionsData) 
+    ? upcomingSessionsData 
+    : upcomingSessionsData?.data 
+    ? (Array.isArray(upcomingSessionsData.data) ? upcomingSessionsData.data : [])
+    : upcomingSessionsData?.items
+    ? (Array.isArray(upcomingSessionsData.items) ? upcomingSessionsData.items : [])
+    : [];
   
   // Filter sessions for the selected date
   const selectedDateSessions = upcomingSessions.filter(session => {

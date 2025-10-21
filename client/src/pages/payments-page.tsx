@@ -15,15 +15,23 @@ export default function PaymentsPage() {
   const [status, setStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   
-  const { data: pendingPaymentsData, isLoading } = useQuery<any[]>({
+  const { data: pendingPaymentsData, isLoading, error } = useQuery<any>({
     queryKey: ["/api/payments/pending"],
+    queryFn: async () => {
+      const res = await fetch("/api/payments/pending", { credentials: 'include' });
+      if (!res.ok) throw new Error(`Failed to fetch payments: ${res.status}`);
+      return await res.json();
+    }
   });
   
-  // Safe array handling with logging for debugging
-  const pendingPayments = Array.isArray(pendingPaymentsData) ? pendingPaymentsData : [];
-  if (!Array.isArray(pendingPaymentsData)) {
-    console.log('DEBUG: pendingPayments data is not an array:', typeof pendingPaymentsData, pendingPaymentsData);
-  }
+  // Safe array handling - extract from various API response shapes
+  const pendingPayments = Array.isArray(pendingPaymentsData) 
+    ? pendingPaymentsData 
+    : pendingPaymentsData?.data 
+    ? (Array.isArray(pendingPaymentsData.data) ? pendingPaymentsData.data : [])
+    : pendingPaymentsData?.items
+    ? (Array.isArray(pendingPaymentsData.items) ? pendingPaymentsData.items : [])
+    : [];
   
   const filteredPayments = pendingPayments.filter(payment => {
     // Apply status filter
