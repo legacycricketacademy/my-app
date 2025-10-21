@@ -32,14 +32,35 @@ export function registerDevLogin(app: Express, pool: Pool) {
           password_hash text,
           role text NOT NULL DEFAULT 'parent',
           created_at timestamptz DEFAULT now()
-        );
+        )
+      `);
+      
+      await pool.query(`
         CREATE TABLE IF NOT EXISTS "session" (
           "sid" varchar NOT NULL,
           "sess" json NOT NULL,
           "expire" timestamp(6) NOT NULL,
           CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
-        );
-        CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+        )
+      `);
+      
+      await pool.query(`
+        CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")
+      `);
+      
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS training_sessions (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          title text NOT NULL,
+          age_group text NOT NULL,
+          location text NOT NULL,
+          start_time timestamptz NOT NULL,
+          end_time timestamptz NOT NULL,
+          max_attendees integer DEFAULT 20,
+          notes text,
+          created_at timestamptz DEFAULT now(),
+          created_by uuid REFERENCES users(id)
+        )
       `);
 
       // Upsert user

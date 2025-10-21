@@ -14,9 +14,9 @@ export default function SchedulePage() {
   const [ageGroupFilter, setAgeGroupFilter] = useState<string>("all");
   
   const { data: upcomingSessionsData, isLoading, error } = useQuery<any>({
-    queryKey: ["/api/sessions/all"], // Fetch ALL sessions regardless of date
+    queryKey: ["/api/sessions"], // Fetch sessions
     queryFn: async () => {
-      const res = await fetch("/api/sessions/all", { credentials: 'include' });
+      const res = await fetch("/api/sessions", { credentials: 'include' });
       if (!res.ok) throw new Error(`Failed to fetch sessions: ${res.status}`);
       return await res.json();
     }

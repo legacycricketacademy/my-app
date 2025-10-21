@@ -87,16 +87,16 @@
         - generic [ref=e108]:
           - generic [ref=e109]:
             - generic [ref=e110]:
-              - heading "Announcements" [level=1] [ref=e111]
-              - paragraph [ref=e112]: Manage team announcements and communications.
-            - button "Create Announcement" [ref=e113] [cursor=pointer]:
+              - heading "Payments" [level=1] [ref=e111]
+              - paragraph [ref=e112]: Manage payments, fees, and billing.
+            - button "Record Payment" [ref=e113] [cursor=pointer]:
               - img
-              - text: Create Announcement
-          - generic [ref=e116]:
-            - img [ref=e118]
-            - heading "No announcements yet" [level=3] [ref=e121]
-            - paragraph [ref=e122]: Create announcements to keep players and parents informed.
-            - button "Create Announcement" [ref=e123] [cursor=pointer]
+              - text: Record Payment
+          - generic [ref=e115]:
+            - img [ref=e116]
+            - heading "No payments recorded" [level=3] [ref=e118]
+            - paragraph [ref=e119]: Payment records will appear here once players make payments.
+            - button "Record Payment" [ref=e120] [cursor=pointer]
   - region "Notifications (F8)":
     - list
   - region "Notifications alt+T"
