@@ -10,8 +10,8 @@ test.describe('Schedule Session E2E', () => {
   });
 
   test('should open schedule session dialog and fill form', async ({ page }) => {
-    // Click the "Schedule New Session" button
-    await page.getByRole('button', { name: /schedule new session/i }).click();
+    // Click the "Add Session" button (there are two, click the first one)
+    await page.getByRole('button', { name: /add session/i }).first().click();
     
     // Wait for dialog to open
     await expect(page.getByRole('heading', { name: 'Schedule New Training Session', exact: true })).toBeVisible();
@@ -70,8 +70,8 @@ test.describe('Schedule Session E2E', () => {
   });
 
   test('should validate required fields', async ({ page }) => {
-    // Click the "Schedule New Session" button
-    await page.getByRole('button', { name: /schedule new session/i }).click();
+    // Click the "Add Session" button (there are two, click the first one)
+    await page.getByRole('button', { name: /add session/i }).first().click();
     
     // Wait for dialog to open
     await expect(page.getByRole('heading', { name: 'Schedule New Training Session', exact: true })).toBeVisible();

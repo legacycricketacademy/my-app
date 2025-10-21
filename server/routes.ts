@@ -5,6 +5,9 @@ import { verifyJwt, requireRole } from "./middleware/verifyJwt";
 // import { setupApiRoutes } from "./api-routes";
 import { isTestAuth, testLogin, testLogout } from "./auth/test-auth.js";
 import paymentsRouter from "./routes/payments.js";
+import registerRouter from "./routes/register.js";
+import availabilityRouter from "./routes/availability.js";
+import announcementsRouter from "./routes/announcements.js";
 
 export function registerRoutes(app: Express) {
   // Test auth routes (only available in test mode)
@@ -39,6 +42,15 @@ export function registerRoutes(app: Express) {
 
   // Payments API (feature-flagged for testing)
   app.use("/api/payments", paymentsRouter);
+
+  // Registration API (public)
+  app.use("/api/register", registerRouter);
+
+  // Availability API (public for now, can add auth later)
+  app.use("/api/availability", availabilityRouter);
+
+  // Announcements API (public for now, can add auth later)
+  app.use("/api/announcements", announcementsRouter);
 
   // Setup API routes
   // setupApiRoutes(app);

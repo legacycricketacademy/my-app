@@ -1,0 +1,13 @@
+*** Begin Patch ***
+Update File: server/src/index.ts
+@@
+ import sessionsRouter from "./routes/sessions";
++import registerRouter from "./routes/register";
++import availabilityRouter from "./routes/availability";
++import announcementsRouter from "./routes/announcements";
+@@
+ app.use("/api/sessions", sessionsRouter);
++app.use("/api/register", registerRouter);
++app.use("/api/availability", availabilityRouter);
++app.use("/api/announcements", announcementsRouter);
+*** End Patch ***

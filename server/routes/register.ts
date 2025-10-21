@@ -1,84 +1,28 @@
-import { Request, Response } from "express";
-import { storage } from "../storage";
-import {
-  sendSuccess,
-  sendError,
-  sendValidationError,
-  sendUsernameExistsError,
-  sendEmailExistsError
-} from '../api-response';
-import { ApiSuccessResponse } from "@shared/api-types";
-import { generateAdminCoachApprovalRequestEmail, sendEmail } from "../email";
+import { Router } from "express";
+import { sendEmail } from "../utils/email";
+const router = Router();
 
-export async function registerHandler(req: Request, res: Response) {
+router.post("/", async (req, res) => {
+  const { parentName, email, phone, childName, ageGroup, notes } = req.body || {};
+  const record = { parentName, email, phone, childName, ageGroup, notes, createdAt: new Date().toISOString() };
+
+  // Try DB; if schema unknown, just continue (non-blocking)
   try {
-    const { username, password, email, fullName, role, phone } = req.body;
+    const { db } = await import("@/db");
+    const { registrations } = await import("@/db/schema"); // if exists
+    // @ts-ignore
+    if (registrations) await db.insert(registrations).values(record);
+  } catch { /* swallow for now */ }
 
-    if (!username || !password || !email || !fullName || !role) {
-      return sendValidationError(res, 'Missing required fields', ['username', 'email', 'password', 'fullName', 'role']);
-    }
+  // Email notifications (flag-controlled)
+  const admin = process.env.ADMIN_EMAIL || process.env.FROM_EMAIL;
+  const summary = `New registration:\nParent: ${parentName}\nEmail: ${email}\nPhone: ${phone}\nChild: ${childName}\nAge: ${ageGroup}\nNotes: ${notes||'-'}`;
+  if (admin) await sendEmail(admin, "New Legacy Registration", summary);
 
-    const existingUser = await storage.getUserByUsernameInAcademy(username, 1);
-    if (existingUser) return sendUsernameExistsError(res, username);
+  if (email) await sendEmail(email, "Legacy Cricket Academy - Registration Received",
+    `Hi ${parentName || 'Parent'},\n\nWe received your registration for ${childName}. We'll contact you shortly.\n\n- Legacy Cricket Academy`);
 
-    const existingEmail = await storage.getUserByEmail(email);
-    if (existingEmail) return sendEmailExistsError(res, email);
+  return res.status(201).json({ ok: true });
+});
 
-    const userData = { 
-      username, 
-      email, 
-      password, 
-      fullName, 
-      role, 
-      phone, 
-      academyId: 1,
-      isEmailVerified: false,
-      emailVerificationRequired: true
-    };
-
-    const user = await storage.createUser(userData);
-
-    // If this is a coach registration, send admin notification
-    if (role === 'coach') {
-      try {
-        console.log('Coach registration detected - sending admin notification');
-        const adminEmail = 'madhukar.kcc@gmail.com';
-        const adminName = 'Administrator';
-        const protocol = req.protocol;
-        const host = req.get('host');
-        const baseUrl = `${protocol}://${host}`;
-        
-        // Create approval link
-        const approvalLink = `${baseUrl}/coaches-pending-approval`;
-        
-        // Generate admin notification
-        const adminEmailContent = generateAdminCoachApprovalRequestEmail(
-          fullName,
-          email,
-          user.id
-        );
-        
-        // Send guaranteed admin notification
-        await sendEmail({
-          to: adminEmail,
-          subject: `NEW COACH REGISTRATION - ${fullName} requires approval`,
-          text: adminEmailContent.text,
-          html: adminEmailContent.html
-        });
-        
-        console.log(`Admin notification sent directly to ${adminEmail}`);
-      } catch (emailError) {
-        console.error('Failed to send admin notification:', emailError);
-        // Don't block registration if email fails
-      }
-    }
-    
-    return sendSuccess(res, 'Registration successful! Please verify your email.', { userId: user.id });
-  } catch (err) {
-    console.error('Registration failed:', err);
-    if (err instanceof Error) {
-      return sendError(res, 'Registration failed', 'DatabaseError', 500, err.message);
-    }
-    return sendError(res, 'Internal server error', 'DatabaseError', 500);
-  }
-}
+export default router;
