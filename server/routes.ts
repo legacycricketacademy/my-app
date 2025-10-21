@@ -4,6 +4,7 @@ import { createServer } from "http";
 import { verifyJwt, requireRole } from "./middleware/verifyJwt";
 // import { setupApiRoutes } from "./api-routes";
 import { isTestAuth, testLogin, testLogout } from "./auth/test-auth.js";
+import paymentsRouter from "./routes/payments.js";
 
 export function registerRoutes(app: Express) {
   // Test auth routes (only available in test mode)
@@ -35,6 +36,9 @@ export function registerRoutes(app: Express) {
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", keycloak_enabled: process.env.KEYCLOAK_ENABLED });
   });
+
+  // Payments API (feature-flagged for testing)
+  app.use("/api/payments", paymentsRouter);
 
   // Setup API routes
   // setupApiRoutes(app);

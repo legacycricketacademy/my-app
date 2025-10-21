@@ -1,0 +1,36 @@
+feat: Add Phase 1 Safe Payment System with E2E Tests
+
+Implements feature-flagged payment system for safe E2E testing:
+
+✨ Features:
+- Feature-flagged in-memory payment store for testing
+- Complete payments UI with data-testid attributes
+- Full payment lifecycle E2E tests
+- Safe by default (flags disabled)
+
+📦 Server Changes:
+- New `/api/payments` router with GET/POST/PUT endpoints
+- Feature flag: E2E_FAKE_PAYMENTS (disabled by default)
+- Falls back to database gracefully when flag is off
+- No schema changes required
+
+🎨 Client Changes:
+- Redesigned PaymentsPage with test IDs
+- Clean UI for recording and managing payments
+- Pending/Paid payment lists
+- Mark as paid functionality
+
+🧪 Test Changes:
+- New payments.e2e.spec.ts with 3 comprehensive tests
+- Tests full payment flow: record → pending → mark paid → paid
+- Tests multiple payments handling
+- Tests form cancellation
+
+🔒 Safety:
+- Feature flags disabled by default
+- No production impact
+- No Stripe integration (Phase 1)
+- Zero risk to data
+
+Related to user priority: "Focus on parent payment flows"
+

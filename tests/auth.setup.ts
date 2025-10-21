@@ -9,27 +9,56 @@ test('bootstrap auth and save storage state', async ({ page }) => {
   // Use dev login API directly instead of UI form
   console.log('📍 Using dev login API directly');
   
-  // Navigate to auth page first to establish session
-  await page.goto('/auth', { waitUntil: 'load', timeout: 30000 });
+  // Navigate to auth page first to establish session (increased timeout for Render cold start)
+  await page.goto('/auth', { waitUntil: 'load', timeout: 60000 });
   console.log('✅ On auth page');
   
-  // Use dev login API directly (increased timeout for Render cold starts)
-  const response = await page.request.post('/api/dev/login', {
-    data: { email },
-    headers: { 'Content-Type': 'application/json' },
-    timeout: 30000 // 30 seconds for Render cold start
-  });
+  // Use dev login API directly with retry logic for Render cold starts
+  let response;
+  let lastError;
+  const maxRetries = 3;
   
-  if (!response.ok()) {
-    const errorText = await response.text();
-    throw new Error(`Dev login failed: ${response.status()} ${errorText}`);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 Login attempt ${attempt}/${maxRetries}...`);
+      response = await page.request.post('/api/dev/login', {
+        data: { email },
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 60000 // 60 seconds for Render cold start
+      });
+      
+      if (response.ok()) {
+        break; // Success!
+      }
+      
+      const errorText = await response.text();
+      lastError = `Status ${response.status()}: ${errorText}`;
+      console.log(`⚠️ Attempt ${attempt} failed: ${lastError}`);
+      
+      if (attempt < maxRetries) {
+        console.log('⏳ Waiting 10 seconds before retry...');
+        await page.waitForTimeout(10000);
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+      console.log(`⚠️ Attempt ${attempt} threw error: ${lastError}`);
+      
+      if (attempt < maxRetries) {
+        console.log('⏳ Waiting 10 seconds before retry...');
+        await page.waitForTimeout(10000);
+      }
+    }
+  }
+  
+  if (!response || !response.ok()) {
+    throw new Error(`Dev login failed after ${maxRetries} attempts. Last error: ${lastError}`);
   }
   
   const loginResult = await response.json();
   console.log('✅ Dev login successful:', loginResult);
   
   // Verify we're authenticated by checking /api/user
-  const userResponse = await page.request.get('/api/user');
+  const userResponse = await page.request.get('/api/user', { timeout: 30000 });
   if (!userResponse.ok()) {
     throw new Error(`User verification failed: ${userResponse.status()}`);
   }

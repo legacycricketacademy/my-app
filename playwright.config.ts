@@ -30,6 +30,7 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: /auth\.setup\.ts/,
+      timeout: 90000, // 90 seconds for setup (allows for Render cold starts + retries)
       use: { ...devices['Desktop Chrome'] },
     },
     {
