@@ -2,20 +2,17 @@ import session from 'express-session';
 import type { RequestHandler } from 'express';
 import { COOKIE_SECRET, SESSION_NAME, isProd } from './env.js';
 
-// Lazy import PG store only in prod so dev never loads it
+// PG store setup for production
 let PgSessionStore: any = null;
 if (isProd) {
   try {
-    // Dynamic import for production only - use async import for ESM
-    import('connect-pg-simple').then((module) => {
-      const connectPgSimple = module.default;
-      PgSessionStore = connectPgSimple(session);
-      console.log('✅ PostgreSQL session store loaded (production)');
-    }).catch((e) => {
-      console.error('❌ Failed to load connect-pg-simple:', e);
-    });
+    // Synchronous require for production (CommonJS interop)
+    const connectPgSimple = require('connect-pg-simple');
+    PgSessionStore = connectPgSimple(session);
+    console.log('✅ PostgreSQL session store loaded (production)');
   } catch (e) {
     console.error('❌ Failed to load connect-pg-simple:', e);
+    console.warn('⚠️ Falling back to memory session store');
   }
 }
 
@@ -34,8 +31,20 @@ export function buildSessionMiddleware(): RequestHandler {
     },
   };
 
-  // TEMPORARY: Use memory store for all environments until DB tables are set up
-  console.log('✅ Using memory session store (temporary for e2e testing)');
+  // In production, use PG store if available; otherwise fall back to memory
+  if (isProd && PgSessionStore && process.env.DATABASE_URL) {
+    console.log('✅ Using PostgreSQL session store (production)');
+    return session({
+      ...common,
+      store: new PgSessionStore({
+        conString: process.env.DATABASE_URL,
+        createTableIfMissing: true,
+        ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
+      }),
+    });
+  }
+
+  console.log('✅ Using memory session store (development or PG not available)');
   return session({
     ...common,
   });
