@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 import cors from "cors";
 import { buildSessionMiddleware } from "./lib/sessionConfig.js";
 import { isProd } from "./lib/env.js";
-import { devLoginRouter } from "./routes/dev-login.js";
+import { registerDevLogin } from "./routes/dev-login.js";
 
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
@@ -106,9 +106,9 @@ console.log('SESSION middleware mounted', {
   origin: process.env.APP_ORIGIN
 });
 
-// Mount dev login router EARLY (before auth guards)
-app.use("/api", devLoginRouter);
-console.log('DEV LOGIN router mounted at /api/dev/login (enabled:', process.env.ENABLE_DEV_LOGIN === 'true', ')');
+// Mount dev login route EARLY (before auth guards)
+registerDevLogin(app, pool);
+console.log('DEV LOGIN route registered at /api/dev/login (enabled:', process.env.ENABLE_DEV_LOGIN === 'true', ')');
 
 // Setup authentication
 setupAuth(app);
