@@ -1,23 +1,14 @@
 # Page snapshot
 
 ```yaml
-- generic [active] [ref=e1]:
-  - generic [ref=e2]:
-    - banner [ref=e3]:
-      - img "502" [ref=e4]
-      - heading "Bad Gateway" [level=1] [ref=e6]
-    - main [ref=e7]:
-      - generic [ref=e8]: "Request ID: 991dbde7e8f8f05e-DFW"
-      - generic [ref=e9]: This service is currently unavailable. Please try again in a few minutes.
-      - generic [ref=e10]:
-        - text: If you are the site owner, refer to
-        - link "Render’s documentation" [ref=e11] [cursor=pointer]:
-          - /url: https://render.com/docs/troubleshooting-deploys#502-bad-gateway
-        - text: for troubleshooting.
-  - contentinfo [ref=e12]:
-    - generic [ref=e13]:
-      - text: Powered by
-      - link "Render" [ref=e14] [cursor=pointer]:
-        - /url: https://render.com
-        - img "Render" [ref=e15]
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - heading "Something went wrong" [level=2] [ref=e5]
+    - paragraph [ref=e7]: The application encountered an error. Please try refreshing the page.
+    - generic [ref=e8]:
+      - paragraph [ref=e9]: "ReferenceError: useToast is not defined"
+      - generic [ref=e10]: at Fne (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1972:251640) at Une (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1972:270423) at g7 (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1905:3367) at RI (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1905:6795) at Suspense at div at main at div at div at Ine (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1972:244782) at hN (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1905:60547) at g7 (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1905:3367) at _7 (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1905:7820) at ise (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1975:2841) at C7 (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1905:6983) at Q7 (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1905:16374) at dR (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:395:23191) at DW (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1905:58715) at p2 (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:40:95545) at FW (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1905:63556) at ose at Dz (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:1894:12679) at dR (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:395:23191) at p2 (https://cricket-academy-app.onrender.com/assets/index-BIGysrS9.js:40:95545)
+    - button "Refresh Page" [ref=e11] [cursor=pointer]
+  - region "Notifications (F8)":
+    - list
 ```

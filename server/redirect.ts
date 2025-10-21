@@ -4,10 +4,32 @@
  */
 import { Express } from 'express';
 
+// Helper to check if user is authenticated (supports both Passport and session-based auth)
+function isUserAuthenticated(req: any): boolean {
+  // Check Passport authentication
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    return true;
+  }
+  
+  // Check session-based authentication
+  if (req.session?.userId) {
+    // Populate req.user if not already set
+    if (!req.user) {
+      req.user = {
+        id: req.session.userId,
+        role: req.session.role || 'parent'
+      };
+    }
+    return true;
+  }
+  
+  return false;
+}
+
 export function setupRedirects(app: Express) {
   // Add a middleware to check if user is logged in and redirect accordingly
   app.get('/dashboard', (req, res) => {
-    if (!req.isAuthenticated()) {
+    if (!isUserAuthenticated(req)) {
       return res.redirect('/auth');
     }
     
@@ -25,7 +47,7 @@ export function setupRedirects(app: Express) {
   
   // Authorization check middleware for role-based routes
   app.use(['/parent/*', '/parent', '/dashboard/parent'], (req, res, next) => {
-    if (!req.isAuthenticated()) {
+    if (!isUserAuthenticated(req)) {
       return res.redirect('/auth');
     }
     
@@ -45,7 +67,7 @@ export function setupRedirects(app: Express) {
   
   // Coach routes
   app.use(['/coach/*', '/coach', '/dashboard/coach'], (req, res, next) => {
-    if (!req.isAuthenticated()) {
+    if (!isUserAuthenticated(req)) {
       return res.redirect('/auth');
     }
     
@@ -60,7 +82,7 @@ export function setupRedirects(app: Express) {
   
   // Admin routes
   app.use(['/admin/*', '/admin', '/dashboard/admin'], (req, res, next) => {
-    if (!req.isAuthenticated()) {
+    if (!isUserAuthenticated(req)) {
       return res.redirect('/auth');
     }
     

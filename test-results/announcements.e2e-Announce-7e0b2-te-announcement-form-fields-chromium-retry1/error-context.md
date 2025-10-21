@@ -86,17 +86,15 @@
       - main [ref=e106]:
         - generic [ref=e108]:
           - generic [ref=e109]:
-            - generic [ref=e110]:
-              - heading "Announcements" [level=1] [ref=e111]
-              - paragraph [ref=e112]: Manage team announcements and communications.
-            - button "Create Announcement" [ref=e113] [cursor=pointer]:
+            - heading "Announcements" [level=1] [ref=e110]
+            - paragraph [ref=e111]: Manage team announcements and communications.
+          - generic [ref=e112]:
+            - img [ref=e114]
+            - heading "Failed to load announcements" [level=3] [ref=e116]
+            - paragraph [ref=e117]: Unable to fetch announcements. Please try again.
+            - button "Try Again" [ref=e118] [cursor=pointer]:
               - img
-              - text: Create Announcement
-          - generic [ref=e116]:
-            - img [ref=e118]
-            - heading "No announcements yet" [level=3] [ref=e121]
-            - paragraph [ref=e122]: Create announcements to keep players and parents informed.
-            - button "Create Announcement" [ref=e123] [cursor=pointer]
+              - text: Try Again
   - region "Notifications (F8)":
     - list
   - region "Notifications alt+T"

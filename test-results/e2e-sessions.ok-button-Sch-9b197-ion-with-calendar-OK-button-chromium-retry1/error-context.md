@@ -1,23 +1,24 @@
 # Page snapshot
 
 ```yaml
-- generic [active] [ref=e1]:
-  - generic [ref=e2]:
-    - banner [ref=e3]:
-      - img "502" [ref=e4]
-      - heading "Bad Gateway" [level=1] [ref=e6]
-    - main [ref=e7]:
-      - generic [ref=e8]: "Request ID: 991dbd2fc8dc6bba-PDX"
-      - generic [ref=e9]: This service is currently unavailable. Please try again in a few minutes.
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - heading "Legacy Cricket Academy" [level=3] [ref=e6]
+      - paragraph [ref=e7]: Sign In
+    - generic [ref=e9]:
       - generic [ref=e10]:
-        - text: If you are the site owner, refer to
-        - link "Render’s documentation" [ref=e11] [cursor=pointer]:
-          - /url: https://render.com/docs/troubleshooting-deploys#502-bad-gateway
-        - text: for troubleshooting.
-  - contentinfo [ref=e12]:
-    - generic [ref=e13]:
-      - text: Powered by
-      - link "Render" [ref=e14] [cursor=pointer]:
-        - /url: https://render.com
-        - img "Render" [ref=e15]
+        - text: Email
+        - textbox "Email" [ref=e11]:
+          - /placeholder: Enter your email
+      - generic [ref=e12]:
+        - text: Password
+        - textbox "Password" [ref=e13]:
+          - /placeholder: Enter your password
+      - button "Sign In" [ref=e14] [cursor=pointer]
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - region "Notifications (F8)":
+    - list
 ```

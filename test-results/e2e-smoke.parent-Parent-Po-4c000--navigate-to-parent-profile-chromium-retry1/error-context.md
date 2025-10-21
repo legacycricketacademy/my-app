@@ -2,20 +2,215 @@
 
 ```yaml
 - generic [ref=e2]:
-  - generic [ref=e4]:
-    - generic [ref=e5]:
-      - heading "Legacy Cricket Academy" [level=3] [ref=e6]
-      - paragraph [ref=e7]: Sign In
-    - generic [ref=e9]:
-      - generic [ref=e10]:
-        - text: Email
-        - textbox "Email" [ref=e11]:
-          - /placeholder: Enter your email
-      - generic [ref=e12]:
-        - text: Password
-        - textbox "Password" [ref=e13]:
-          - /placeholder: Enter your password
-      - button "Sign In" [ref=e14] [cursor=pointer]
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: Legacy Cricket
+          - img [ref=e8]
+        - paragraph [ref=e18]: Parent Portal
+      - link "U User Parent" [ref=e20] [cursor=pointer]:
+        - /url: /profile
+        - generic [ref=e22]: U
+        - generic [ref=e23]:
+          - heading "User" [level=4] [ref=e24]
+          - paragraph [ref=e25]: Parent
+      - navigation [ref=e26]:
+        - link "Dashboard" [ref=e27] [cursor=pointer]:
+          - /url: /parent
+          - img [ref=e28]
+          - generic [ref=e33]: Dashboard
+        - link "Schedule" [ref=e34] [cursor=pointer]:
+          - /url: /parent/schedule
+          - img [ref=e35]
+          - generic [ref=e37]: Schedule
+        - link "Fitness Tracking" [ref=e38] [cursor=pointer]:
+          - /url: /parent/fitness
+          - img [ref=e39]
+          - generic [ref=e41]: Fitness Tracking
+        - link "Meal Plans" [ref=e42] [cursor=pointer]:
+          - /url: /parent/meal-plans
+          - img [ref=e43]
+          - generic [ref=e46]: Meal Plans
+        - link "Announcements" [ref=e47] [cursor=pointer]:
+          - /url: /parent/announcements
+          - img [ref=e48]
+          - generic [ref=e51]: Announcements
+        - link "Connect Child" [ref=e52] [cursor=pointer]:
+          - /url: /parent/connect-child
+          - img [ref=e53]
+          - generic [ref=e56]: Connect Child
+        - link "Payments" [ref=e57] [cursor=pointer]:
+          - /url: /parent/payments
+          - img [ref=e58]
+          - generic [ref=e60]: Payments
+        - link "My Profile" [ref=e61] [cursor=pointer]:
+          - /url: /profile
+          - img [ref=e62]
+          - generic [ref=e65]: My Profile
+      - generic [ref=e66]:
+        - button "Sign Out" [ref=e67] [cursor=pointer]:
+          - img
+          - generic [ref=e68]: Sign Out
+        - generic [ref=e69]:
+          - paragraph [ref=e70]: "If normal sign out fails:"
+          - button "Force Sign Out" [ref=e71] [cursor=pointer]:
+            - img
+            - generic [ref=e72]: Force Sign Out
+          - link "Open Emergency Logout Tool" [ref=e74] [cursor=pointer]:
+            - /url: /emergency-logout
+    - generic [ref=e75]:
+      - banner [ref=e76]:
+        - heading "Parent Portal" [level=1] [ref=e78]
+        - generic [ref=e79]:
+          - generic [ref=e80]: User
+          - button "Sign Out" [ref=e81] [cursor=pointer]:
+            - img
+            - text: Sign Out
+      - main [ref=e82]:
+        - generic [ref=e84]:
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - heading "Dashboard" [level=1] [ref=e87]
+              - paragraph [ref=e88]: Monday, October 20, 2025
+            - generic [ref=e89]:
+              - link "Add New Player" [ref=e90] [cursor=pointer]:
+                - /url: /players/add
+                - button "Add New Player" [ref=e91]:
+                  - img
+                  - generic [ref=e92]: Add New Player
+              - button "Schedule New Session" [ref=e93] [cursor=pointer]:
+                - img
+                - generic [ref=e94]: Schedule New Session
+          - generic [ref=e95]:
+            - generic [ref=e97]:
+              - generic [ref=e98]:
+                - paragraph [ref=e99]: Registered Players
+                - heading "0" [level=3] [ref=e100]
+                - paragraph [ref=e101]:
+                  - img [ref=e102]
+                  - generic [ref=e104]: +4 since last month
+              - img [ref=e107]
+            - generic [ref=e113]:
+              - generic [ref=e114]:
+                - paragraph [ref=e115]: Upcoming Sessions
+                - heading "0" [level=3] [ref=e116]
+                - paragraph [ref=e117]:
+                  - generic [ref=e118]: "Next: Today at 4:00 PM"
+              - img [ref=e121]
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - paragraph [ref=e127]: Pending Payments
+                - heading "$0.00" [level=3] [ref=e128]
+                - paragraph [ref=e129]:
+                  - generic [ref=e130]: 0 players with pending fees
+              - img [ref=e133]
+            - generic [ref=e136]:
+              - generic [ref=e137]:
+                - paragraph [ref=e138]: Recent Announcements
+                - heading "0" [level=3] [ref=e139]
+                - paragraph [ref=e140]:
+                  - generic [ref=e141]: No recent announcements
+              - img [ref=e144]
+          - generic [ref=e147]:
+            - generic [ref=e148]:
+              - generic [ref=e149]:
+                - generic [ref=e150]:
+                  - heading "Today's Schedule" [level=3] [ref=e151]
+                  - link "View All" [ref=e152] [cursor=pointer]:
+                    - /url: /schedule
+                - paragraph [ref=e155]: No sessions scheduled for today
+              - generic [ref=e156]:
+                - generic [ref=e157]:
+                  - heading "Team Fitness Progress" [level=3] [ref=e158]
+                  - combobox [ref=e160] [cursor=pointer]:
+                    - generic: This Week
+                    - img [ref=e161]
+                - generic [ref=e163]:
+                  - generic [ref=e164]:
+                    - heading "Running Speed" [level=4] [ref=e166]
+                    - generic [ref=e168]:
+                      - generic [ref=e169]: Avg. 0 km/h
+                      - generic [ref=e170]: "Target: 16.0 km/h"
+                  - generic [ref=e171]:
+                    - heading "Endurance" [level=4] [ref=e173]
+                    - generic [ref=e175]:
+                      - generic [ref=e176]: Avg. 0 min
+                      - generic [ref=e177]: "Target: 30.0 min"
+                  - generic [ref=e178]:
+                    - heading "Strength" [level=4] [ref=e180]
+                    - generic [ref=e182]:
+                      - generic [ref=e183]: Avg. 0 units
+                      - generic [ref=e184]: "Target: 15.0 units"
+                  - link "View Detailed Fitness Report" [ref=e186] [cursor=pointer]:
+                    - /url: /fitness
+                    - generic [ref=e187]: View Detailed Fitness Report
+                    - img [ref=e188]
+            - generic [ref=e190]:
+              - generic [ref=e191]:
+                - generic [ref=e192]:
+                  - heading "Players" [level=3] [ref=e193]
+                  - generic [ref=e194]:
+                    - combobox [ref=e195] [cursor=pointer]:
+                      - generic: All Age Groups
+                      - img [ref=e196]
+                    - link "View All" [ref=e198] [cursor=pointer]:
+                      - /url: /players
+                - generic [ref=e199]:
+                  - generic [ref=e200]:
+                    - textbox "Search players..." [ref=e201]
+                    - img [ref=e202]
+                  - paragraph [ref=e207]: No players found
+              - generic [ref=e208]:
+                - generic [ref=e209]:
+                  - heading "Weekly Meal Plan" [level=3] [ref=e210]
+                  - combobox [ref=e211] [cursor=pointer]:
+                    - generic: Under 12s
+                    - img [ref=e212]
+                - generic [ref=e214]:
+                  - generic [ref=e215]:
+                    - button "Sun" [ref=e216] [cursor=pointer]
+                    - button "Mon" [ref=e217] [cursor=pointer]
+                    - button "Tue" [ref=e218] [cursor=pointer]
+                    - button "Wed" [ref=e219] [cursor=pointer]
+                    - button "Thu" [ref=e220] [cursor=pointer]
+                    - button "Fri" [ref=e221] [cursor=pointer]
+                    - button "Sat" [ref=e222] [cursor=pointer]
+                  - paragraph [ref=e225]: No meal plan available for this day
+                  - generic [ref=e226]:
+                    - button "Download" [ref=e227] [cursor=pointer]:
+                      - img
+                      - generic [ref=e228]: Download
+                    - button "Share" [ref=e229] [cursor=pointer]:
+                      - img
+                      - generic [ref=e230]: Share
+            - generic [ref=e231]:
+              - generic [ref=e232]:
+                - generic [ref=e233]:
+                  - heading "Payment Tracker" [level=3] [ref=e234]
+                  - link "View All" [ref=e235] [cursor=pointer]:
+                    - /url: /payments
+                - generic [ref=e236]:
+                  - generic [ref=e237]:
+                    - heading "Payment Status" [level=4] [ref=e238]
+                    - combobox [ref=e239] [cursor=pointer]:
+                      - generic: This Month
+                      - img [ref=e240]
+                  - generic [ref=e243]:
+                    - generic [ref=e244]:
+                      - generic [ref=e245]: NaN%
+                      - generic [ref=e246]: Paid
+                    - img [ref=e247]
+                  - heading "Pending Payments" [level=4] [ref=e250]
+                  - paragraph [ref=e253]: No pending payments
+                  - button "Send All Reminders" [ref=e255] [cursor=pointer]:
+                    - img
+                    - generic [ref=e256]: Send All Reminders
+              - generic [ref=e257]:
+                - generic [ref=e258]:
+                  - heading "Announcements" [level=3] [ref=e259]
+                  - button "New Announcement" [ref=e260] [cursor=pointer]
+                - paragraph [ref=e263]: No announcements available
   - region "Notifications (F8)":
     - list
   - region "Notifications alt+T"

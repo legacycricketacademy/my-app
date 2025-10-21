@@ -15,7 +15,7 @@
         - text: Password
         - textbox "Password" [ref=e13]:
           - /placeholder: Enter your password
-      - button "Sign In" [ref=e14] [cursor=pointer]
+      - button "Sign In" [ref=e14]
   - region "Notifications (F8)":
     - list
   - region "Notifications alt+T"
