@@ -11,7 +11,7 @@ export default function Register() {
   }
   return (
     <div className="max-w-md mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4" data-testid="heading-register">Register for Legacy Cricket Academy</h1>
+      <h1 className="text-2xl font-bold mb-4" data-testid="heading-register">Player Registration</h1>
       <form onSubmit={submit} data-testid="form-register" className="grid gap-2">
         <input placeholder="Parent name" value={f.parentName} onChange={e=>setF({...f,parentName:e.target.value})} data-testid="reg-parent-name" required />
         <input placeholder="Email" type="email" value={f.email} onChange={e=>setF({...f,email:e.target.value})} data-testid="reg-email" required />
