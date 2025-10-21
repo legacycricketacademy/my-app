@@ -36,7 +36,10 @@
     "pw:failed": "cross-env RUN_LOCAL_WEB=1 playwright test --last-failed --project=chromium",
     "pw:loop-failed": "cross-env RUN_LOCAL_WEB=1 node scripts/pw-loop-failed.js",
     "pw:ui": "cross-env RUN_LOCAL_WEB=1 playwright test --ui",
-    "pw:retries2": "cross-env RUN_LOCAL_WEB=1 playwright test --retries=2 --project=chromium"
+    "pw:retries2": "cross-env RUN_LOCAL_WEB=1 playwright test --retries=2 --project=chromium",
+    "test:both": "playwright test -c playwright.multi.config.ts",
+    "test:desktop": "playwright test --project='Desktop Chrome' -c playwright.multi.config.ts",
+    "test:mobile": "playwright test --project='Mobile Chrome (Pixel 5)' -c playwright.multi.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
