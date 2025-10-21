@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { sendEmail } from "../utils/email";
+import { sendEmail } from "../utils/email.js";
 const router = Router();
 
 router.post("/", async (req, res) => {
@@ -8,19 +8,41 @@ router.post("/", async (req, res) => {
 
   // Try DB; if schema unknown, just continue (non-blocking)
   try {
-    const { db } = await import("@/db");
-    const { registrations } = await import("@/db/schema"); // if exists
+    const { db } = await import("../../db/index.js");
+    const { registrations } = await import("../../shared/schema.js");
     // @ts-ignore
     if (registrations) await db.insert(registrations).values(record);
   } catch { /* swallow for now */ }
 
-  // Email notifications (flag-controlled)
-  const admin = process.env.ADMIN_EMAIL || process.env.FROM_EMAIL;
-  const summary = `New registration:\nParent: ${parentName}\nEmail: ${email}\nPhone: ${phone}\nChild: ${childName}\nAge: ${ageGroup}\nNotes: ${notes||'-'}`;
-  if (admin) await sendEmail(admin, "New Legacy Registration", summary);
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.FROM_EMAIL || "";
+  const coachList = (process.env.COACH_EMAILS || "").split(",").map(s=>s.trim()).filter(Boolean);
 
-  if (email) await sendEmail(email, "Legacy Cricket Academy - Registration Received",
-    `Hi ${parentName || 'Parent'},\n\nWe received your registration for ${childName}. We'll contact you shortly.\n\n- Legacy Cricket Academy`);
+  // 1) Parent confirmation
+  if (email) {
+    await sendEmail(
+      email,
+      "Legacy: Registration Received",
+      `Hi ${parentName || 'Parent'},\n\nWe received your registration for ${childName}. We'll contact you shortly.\n\n- Legacy Cricket Academy`
+    );
+  }
+
+  // 2) Admin alert
+  if (adminEmail) {
+    await sendEmail(
+      adminEmail,
+      "Legacy: New Registration",
+      `New registration received:\n\nParent: ${parentName} (${email})\nChild: ${childName} (${ageGroup})\nPhone: ${phone}\nNotes: ${notes || '-'}`
+    );
+  }
+
+  // 3) Coaches broadcast
+  if (coachList.length) {
+    await sendEmail(
+      coachList,
+      "Legacy: New Registration",
+      `New registration:\n\nChild: ${childName} (${ageGroup})\nParent: ${parentName}\nCheck dashboard for details.`
+    );
+  }
 
   return res.status(201).json({ ok: true });
 });

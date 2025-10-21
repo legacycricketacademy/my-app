@@ -6,7 +6,7 @@ export default function Register() {
   const [ok, setOk] = useState<string|null>(null);
   async function submit(e:any){ 
     e.preventDefault();
-    const r = await fetch("/api/register", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(f) });
+    const r = await fetch("/api/registration", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(f) });
     setOk(r.ok ? "Thank you! We received your registration." : "Something went wrong. Please try again.");
   }
   return (

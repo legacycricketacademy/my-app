@@ -8,6 +8,7 @@ import paymentsRouter from "./routes/payments.js";
 import registerRouter from "./routes/register.js";
 import availabilityRouter from "./routes/availability.js";
 import announcementsRouter from "./routes/announcements.js";
+import mailboxRouter from "./routes/_mailbox.js";
 
 export function registerRoutes(app: Express) {
   // Test auth routes (only available in test mode)
@@ -43,14 +44,17 @@ export function registerRoutes(app: Express) {
   // Payments API (feature-flagged for testing)
   app.use("/api/payments", paymentsRouter);
 
-  // Registration API (public)
-  app.use("/api/register", registerRouter);
+  // Registration API (public) - parent registration form
+  app.use("/api/registration", registerRouter);
 
   // Availability API (public for now, can add auth later)
   app.use("/api/availability", availabilityRouter);
 
   // Announcements API (public for now, can add auth later)
   app.use("/api/announcements", announcementsRouter);
+
+  // Test-only mailbox for E2E email assertions (always available)
+  app.use("/api/_mailbox", mailboxRouter);
 
   // Setup API routes
   // setupApiRoutes(app);
