@@ -57,7 +57,7 @@ test.describe("Parent registration + email notifications", () => {
         );
         
         // Check for admin email
-        const adminEmail = process.env.ADMIN_EMAIL || "admin@test.com";
+        const adminEmail = "madhukar.kcc@gmail.com"; // Known admin email on Render
         foundAdmin = msgs.some((m: any) => 
           /New Registration/i.test(m.subject) && 
           JSON.stringify(m.to).includes(adminEmail)
