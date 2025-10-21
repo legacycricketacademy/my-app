@@ -17,7 +17,7 @@ test.describe('Parent Portal', () => {
     await expectOneSidebar(page);
     
     // Verify parent dashboard loaded
-    await expect(page.locator('h1')).toBeVisible();
+    await expect(page.locator('h1').first()).toBeVisible();
   });
 
   test('should navigate to parent schedule without overlay', async ({ page }) => {
@@ -50,7 +50,7 @@ test.describe('Parent Portal', () => {
     await expect(page.locator('h1:has-text("Profile"), h1:has-text("My Profile")')).toBeVisible();
     
     // Should show email or name
-    await expect(page.locator('text=/email|name/i')).toBeVisible();
+    await expect(page.locator('text=/email|name/i').first()).toBeVisible();
     
     // Verify only one sidebar
     await expectOneSidebar(page);
