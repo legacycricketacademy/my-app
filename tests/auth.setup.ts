@@ -6,9 +6,12 @@ const password = process.env.E2E_PASSWORD || 'password'; // Use seeded password 
 test('bootstrap auth and save storage state', async ({ page }) => {
   console.log('🔵 Starting auth setup with:', email);
   
-  // Navigate to login page
-  await page.goto('/auth', { waitUntil: 'networkidle' });
+  // Navigate to login page (use 'load' instead of 'networkidle' for Render)
+  await page.goto('/auth', { waitUntil: 'load', timeout: 30000 });
   console.log('✅ On login page');
+  
+  // Wait for page to be interactive
+  await page.waitForLoadState('domcontentloaded');
 
   // Check for dev "Use" button (dev environment only)
   const useButtons = page.getByRole('button', { name: /^use$/i });
