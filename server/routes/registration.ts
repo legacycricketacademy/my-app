@@ -1,7 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
-import { sendEmail } from "@/utils/email";
-import { flags } from "@/utils/flags";
+import { sendEmail } from "../utils/email";
+import { flags } from "../utils/flags";
 
 type Rec = {
   id: number; parentName: string; email: string; phone?: string;

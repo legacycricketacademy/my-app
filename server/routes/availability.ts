@@ -13,8 +13,8 @@ router.get("/", async (req, res) => {
     return res.json(rows);
   }
   try {
-    const { db, eq } = await import("@/db");
-    const { availability } = await import("@/db/schema");
+    const { db, eq } = await import("../db");
+    const { availability } = await import("../db/schema");
     let q = db.select().from(availability);
     // @ts-ignore
     if (parentId && availability?.parentId) q = q.where(eq(availability.parentId, parentId));
@@ -33,8 +33,8 @@ router.post("/", async (req, res) => {
     return res.status(201).json(row);
   }
   try {
-    const { db, eq } = await import("@/db");
-    const { availability } = await import("@/db/schema");
+    const { db, eq } = await import("../db");
+    const { availability } = await import("../db/schema");
     // Upsert-ish
     // @ts-ignore
     const [row] = await db.insert(availability).values({ parentId, sessionId, status })
