@@ -62,8 +62,8 @@ type SessionFormValues = z.infer<typeof sessionFormSchema>;
 
 export function ScheduleSessionDialog() {
   const [open, setOpen] = useState(false);
-  const [tempStartDate, setTempStartDate] = useState<Date | null>(null);
-  const [tempEndDate, setTempEndDate] = useState<Date | null>(null);
+  const [startPopoverOpen, setStartPopoverOpen] = useState(false);
+  const [endPopoverOpen, setEndPopoverOpen] = useState(false);
   const [isCustomLocation, setIsCustomLocation] = useState(false);
   const [customLocation, setCustomLocation] = useState("");
   const { toast } = useToast();
@@ -122,6 +122,13 @@ export function ScheduleSessionDialog() {
     createSessionMutation.mutate(data);
   }
 
+  // Helper function to create date with time
+  const createDateWithTime = (date: Date, hours: number, minutes: number) => {
+    const newDate = new Date(date);
+    newDate.setHours(hours, minutes, 0, 0);
+    return newDate;
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -161,7 +168,7 @@ export function ScheduleSessionDialog() {
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Start Date & Time</FormLabel>
-                    <Popover>
+                    <Popover open={startPopoverOpen} onOpenChange={setStartPopoverOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -180,125 +187,91 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[95vw] sm:w-[350px] p-0 z-[60]" align="center" side="bottom" sideOffset={5}>
+                      <PopoverContent className="w-auto p-0" align="start">
                         <div className="flex flex-col">
-                          <div className="sticky top-0 z-10 bg-background p-3 border-b">
-                            <div className="mb-2">
-                              <div className="text-sm font-medium mb-1">Select Time:</div>
-                              <div className="flex items-center gap-2">
-                                <select 
-                                  className="startTime-hour-select flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                  value={field.value ? field.value.getHours() : new Date().getHours()}
-                                  onChange={(e) => {
-                                    const hours = parseInt(e.target.value);
-                                    const newDate = field.value ? new Date(field.value) : new Date();
-                                    newDate.setHours(hours);
-                                    setTempStartDate(newDate);
-                                  }}
-                                >
-                                  {Array.from({ length: 24 }, (_, i) => (
-                                    <option key={i} value={i}>
-                                      {i.toString().padStart(2, '0')}
-                                    </option>
-                                  ))}
-                                </select>
-                                <span className="text-lg font-medium">:</span>
-                                <select 
-                                  className="startTime-minute-select flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                  value={field.value ? field.value.getMinutes() : new Date().getMinutes()}
-                                  onChange={(e) => {
-                                    const minutes = parseInt(e.target.value);
-                                    const newDate = field.value ? new Date(field.value) : new Date();
-                                    newDate.setMinutes(minutes);
-                                    setTempStartDate(newDate);
-                                  }}
-                                >
-                                  {Array.from({ length: 60 }, (_, i) => (
-                                    <option key={i} value={i}>
-                                      {i.toString().padStart(2, '0')}
-                                    </option>
-                                  ))}
-                                </select>
+                          {/* Time Selection */}
+                          <div className="p-3 border-b">
+                            <div className="text-sm font-medium mb-2">Select Time:</div>
+                            <div className="flex items-center gap-2">
+                              <select 
+                                className="flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                value={field.value ? field.value.getHours() : new Date().getHours()}
+                                onChange={(e) => {
+                                  const hours = parseInt(e.target.value);
+                                  const currentDate = field.value || new Date();
+                                  const newDate = createDateWithTime(currentDate, hours, currentDate.getMinutes());
+                                  field.onChange(newDate);
+                                }}
+                              >
+                                {Array.from({ length: 24 }, (_, i) => (
+                                  <option key={i} value={i}>
+                                    {i.toString().padStart(2, '0')}
+                                  </option>
+                                ))}
+                              </select>
+                              <span className="text-lg font-medium">:</span>
+                              <select 
+                                className="flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                value={field.value ? field.value.getMinutes() : new Date().getMinutes()}
+                                onChange={(e) => {
+                                  const minutes = parseInt(e.target.value);
+                                  const currentDate = field.value || new Date();
+                                  const newDate = createDateWithTime(currentDate, currentDate.getHours(), minutes);
+                                  field.onChange(newDate);
+                                }}
+                              >
+                                {Array.from({ length: 60 }, (_, i) => (
+                                  <option key={i} value={i}>
+                                    {i.toString().padStart(2, '0')}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {field.value && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                Current: {format(field.value, "h:mm a")}
                               </div>
-                              {field.value && (
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  Current: {field.value ? format(field.value, "h:mm a") : "Not set"}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center justify-end space-x-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  // Close the popover without confirmation
-                                  const buttonElement = document.activeElement as HTMLElement;
-                                  buttonElement?.blur();
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => {
-                                  // If we have a temporary date, commit it
-                                  if (tempStartDate) {
-                                    // For date changes, always update hour/minute from the dropdown selectors
-                                    const hourElement = document.querySelector('.startTime-hour-select') as HTMLSelectElement;
-                                    const minuteElement = document.querySelector('.startTime-minute-select') as HTMLSelectElement;
-                                    
-                                    if (hourElement && minuteElement) {
-                                      const hour = parseInt(hourElement.value);
-                                      const minute = parseInt(minuteElement.value);
-                                      
-                                      // Create new date to avoid mutations
-                                      const updatedDate = new Date(tempStartDate);
-                                      updatedDate.setHours(hour);
-                                      updatedDate.setMinutes(minute);
-                                      
-                                      // Update the form field
-                                      field.onChange(updatedDate);
-                                    } else {
-                                      // Fallback if selectors aren't found
-                                      field.onChange(tempStartDate);
-                                    }
-                                  }
-                                  
-                                  // Close the popover
-                                  const buttonElement = document.activeElement as HTMLElement;
-                                  buttonElement?.blur();
-                                }}
-                              >
-                                OK
-                              </Button>
-                            </div>
+                            )}
                           </div>
-                          <div className="overflow-y-auto overflow-x-hidden p-1" style={{ maxHeight: 'min(calc(60vh - 50px), 350px)', minHeight: '300px' }}>
+                          
+                          {/* Calendar */}
+                          <div className="p-3">
                             <Calendar
                               mode="single"
                               selected={field.value}
                               onSelect={(date) => {
                                 if (date) {
-                                  // Create a new date object
-                                  const newDate = new Date(date);
-                                  
-                                  // Set time from existing value or dropdown selections
-                                  const hour = field.value ? field.value.getHours() : new Date().getHours();
-                                  const minute = field.value ? field.value.getMinutes() : new Date().getMinutes();
-                                  
-                                  newDate.setHours(hour);
-                                  newDate.setMinutes(minute);
-                                  
-                                  // Update both the temporary state AND the field value
-                                  setTempStartDate(newDate);
+                                  const currentTime = field.value || new Date();
+                                  const newDate = createDateWithTime(
+                                    date, 
+                                    currentTime.getHours(), 
+                                    currentTime.getMinutes()
+                                  );
                                   field.onChange(newDate);
                                 }
                               }}
                               initialFocus
                               className="rounded-md border"
                             />
+                          </div>
+                          
+                          {/* Action Buttons */}
+                          <div className="flex items-center justify-end space-x-2 p-3 border-t">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setStartPopoverOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => setStartPopoverOpen(false)}
+                            >
+                              OK
+                            </Button>
                           </div>
                         </div>
                       </PopoverContent>
@@ -314,7 +287,7 @@ export function ScheduleSessionDialog() {
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>End Date & Time</FormLabel>
-                    <Popover>
+                    <Popover open={endPopoverOpen} onOpenChange={setEndPopoverOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -333,140 +306,98 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[95vw] sm:w-[350px] p-0 z-[60]" align="center" side="bottom" sideOffset={5}>
+                      <PopoverContent className="w-auto p-0" align="start">
                         <div className="flex flex-col">
-                          <div className="sticky top-0 z-10 bg-background p-3 border-b">
-                            <div className="mb-2">
-                              <div className="text-sm font-medium mb-1">Select Time:</div>
-                              <div className="flex items-center gap-2">
-                                <select 
-                                  className="endTime-hour-select flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                  value={field.value ? field.value.getHours() : new Date().getHours()+1}
-                                  onChange={(e) => {
-                                    const hours = parseInt(e.target.value);
-                                    const newDate = field.value ? new Date(field.value) : new Date();
-                                    newDate.setHours(hours);
-                                    setTempEndDate(newDate);
-                                  }}
-                                >
-                                  {Array.from({ length: 24 }, (_, i) => (
-                                    <option key={i} value={i}>
-                                      {i.toString().padStart(2, '0')}
-                                    </option>
-                                  ))}
-                                </select>
-                                <span className="text-lg font-medium">:</span>
-                                <select 
-                                  className="endTime-minute-select flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                  value={field.value ? field.value.getMinutes() : new Date().getMinutes()}
-                                  onChange={(e) => {
-                                    const minutes = parseInt(e.target.value);
-                                    const newDate = field.value ? new Date(field.value) : new Date();
-                                    newDate.setMinutes(minutes);
-                                    setTempEndDate(newDate);
-                                  }}
-                                >
-                                  {Array.from({ length: 60 }, (_, i) => (
-                                    <option key={i} value={i}>
-                                      {i.toString().padStart(2, '0')}
-                                    </option>
-                                  ))}
-                                </select>
+                          {/* Time Selection */}
+                          <div className="p-3 border-b">
+                            <div className="text-sm font-medium mb-2">Select Time:</div>
+                            <div className="flex items-center gap-2">
+                              <select 
+                                className="flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                value={field.value ? field.value.getHours() : (form.getValues('startTime')?.getHours() || new Date().getHours()) + 1}
+                                onChange={(e) => {
+                                  const hours = parseInt(e.target.value);
+                                  const currentDate = field.value || new Date();
+                                  const newDate = createDateWithTime(currentDate, hours, currentDate.getMinutes());
+                                  field.onChange(newDate);
+                                }}
+                              >
+                                {Array.from({ length: 24 }, (_, i) => (
+                                  <option key={i} value={i}>
+                                    {i.toString().padStart(2, '0')}
+                                  </option>
+                                ))}
+                              </select>
+                              <span className="text-lg font-medium">:</span>
+                              <select 
+                                className="flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                value={field.value ? field.value.getMinutes() : form.getValues('startTime')?.getMinutes() || new Date().getMinutes()}
+                                onChange={(e) => {
+                                  const minutes = parseInt(e.target.value);
+                                  const currentDate = field.value || new Date();
+                                  const newDate = createDateWithTime(currentDate, currentDate.getHours(), minutes);
+                                  field.onChange(newDate);
+                                }}
+                              >
+                                {Array.from({ length: 60 }, (_, i) => (
+                                  <option key={i} value={i}>
+                                    {i.toString().padStart(2, '0')}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {field.value && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                Current: {format(field.value, "h:mm a")}
                               </div>
-                              {field.value && (
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  Current: {field.value ? format(field.value, "h:mm a") : "Not set"}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center justify-end space-x-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  // Close the popover without confirmation
-                                  const buttonElement = document.activeElement as HTMLElement;
-                                  buttonElement?.blur();
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => {
-                                  // If we have a temporary date, commit it
-                                  if (tempEndDate) {
-                                    // For date changes, always update hour/minute from the dropdown selectors
-                                    const hourElement = document.querySelector('.endTime-hour-select') as HTMLSelectElement;
-                                    const minuteElement = document.querySelector('.endTime-minute-select') as HTMLSelectElement;
-                                    
-                                    if (hourElement && minuteElement) {
-                                      const hour = parseInt(hourElement.value);
-                                      const minute = parseInt(minuteElement.value);
-                                      
-                                      // Create new date to avoid mutations
-                                      const updatedDate = new Date(tempEndDate);
-                                      updatedDate.setHours(hour);
-                                      updatedDate.setMinutes(minute);
-                                      
-                                      // Update the form field
-                                      field.onChange(updatedDate);
-                                    } else {
-                                      // Fallback if selectors aren't found
-                                      field.onChange(tempEndDate);
-                                    }
-                                  }
-                                  
-                                  // Close the popover
-                                  const buttonElement = document.activeElement as HTMLElement;
-                                  buttonElement?.blur();
-                                }}
-                              >
-                                OK
-                              </Button>
-                            </div>
+                            )}
                           </div>
-                          <div className="overflow-y-auto overflow-x-hidden p-1" style={{ maxHeight: 'min(calc(60vh - 50px), 350px)', minHeight: '300px' }}>
+                          
+                          {/* Calendar */}
+                          <div className="p-3">
                             <Calendar
                               mode="single"
                               selected={field.value}
                               onSelect={(date) => {
                                 if (date) {
-                                  // Create a new date object
-                                  const newDate = new Date(date);
+                                  const startTime = form.getValues('startTime');
+                                  const currentTime = field.value || new Date();
                                   
-                                  // Set time from existing value or dropdown selections
-                                  let hour, minute;
-                                  
-                                  if (field.value) {
-                                    // Use current end time if available
-                                    hour = field.value.getHours();
-                                    minute = field.value.getMinutes(); 
-                                  } else if (form.getValues('startTime')) {
-                                    // Default to start time + 1 hour
-                                    const startTime = form.getValues('startTime');
-                                    hour = startTime.getHours() + 1;
-                                    minute = startTime.getMinutes();
+                                  let hours, minutes;
+                                  if (startTime) {
+                                    hours = startTime.getHours() + 1;
+                                    minutes = startTime.getMinutes();
                                   } else {
-                                    // Fallback to current time + 1 hour
-                                    const now = new Date();
-                                    hour = now.getHours() + 1;
-                                    minute = now.getMinutes();
+                                    hours = currentTime.getHours();
+                                    minutes = currentTime.getMinutes();
                                   }
                                   
-                                  newDate.setHours(hour);
-                                  newDate.setMinutes(minute);
-                                  
-                                  // Update both temp state AND the field value directly
-                                  setTempEndDate(newDate);
+                                  const newDate = createDateWithTime(date, hours, minutes);
                                   field.onChange(newDate);
                                 }
                               }}
                               initialFocus
                               className="rounded-md border"
                             />
+                          </div>
+                          
+                          {/* Action Buttons */}
+                          <div className="flex items-center justify-end space-x-2 p-3 border-t">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEndPopoverOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => setEndPopoverOpen(false)}
+                            >
+                              OK
+                            </Button>
                           </div>
                         </div>
                       </PopoverContent>
