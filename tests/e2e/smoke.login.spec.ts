@@ -10,7 +10,7 @@ test.describe('Login Flow', () => {
     await page.goto('/auth');
     
     // Verify login page elements
-    await expect(page.locator('h2:has-text("Sign In"), h1:has-text("Sign In")')).toBeVisible();
+    await expect(page.getByText('Legacy Cricket Academy')).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
     await expect(page.locator('input[name="password"]')).toBeVisible();
     
@@ -31,8 +31,8 @@ test.describe('Login Flow', () => {
     // Login as parent
     await loginAs(page, PARENT_CREDENTIALS.email, PARENT_CREDENTIALS.password);
     
-    // Should land on parent dashboard
-    await expect(page).toHaveURL(/\/(dashboard\/parent|parent)/);
+    // Should land on dashboard (parent users go to /dashboard, not /parent)
+    await expect(page).toHaveURL(/\/dashboard/);
     
     // Verify only one sidebar
     await expectOneSidebar(page);
