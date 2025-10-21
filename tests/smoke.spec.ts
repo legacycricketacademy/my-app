@@ -24,7 +24,7 @@ test('team management opens Add New Player modal', async ({ page }) => {
 
 test('schedule page loads (empty is OK)', async ({ page }) => {
   await page.goto('/dashboard/schedule');
-  await expect(page.getByRole('heading', { name: /schedule/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Schedule', exact: true })).toBeVisible();
   
   // Either empty state or session cards; both acceptable
   const hasContent = await page.locator('h3:has-text("No sessions scheduled")').isVisible();
@@ -43,12 +43,12 @@ test('meal plans page loads without errors', async ({ page }) => {
 
 test('announcements page loads without errors', async ({ page }) => {
   await page.goto('/dashboard/announcements');
-  await expect(page.getByRole('heading', { name: /announcements/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Announcements', exact: true })).toBeVisible();
 });
 
 test('payments page loads without errors', async ({ page }) => {
   await page.goto('/dashboard/payments');
-  await expect(page.getByRole('heading', { name: /payments/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Payments', exact: true })).toBeVisible();
 });
 
 test('sessions endpoint responds correctly', async ({ request }) => {
