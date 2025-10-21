@@ -86,17 +86,11 @@
       - main [ref=e106]:
         - generic [ref=e108]:
           - generic [ref=e109]:
-            - generic [ref=e110]:
-              - heading "Schedule" [level=1] [ref=e111]
-              - paragraph [ref=e112]: Manage training sessions, matches, and events.
-            - button "Add Session" [ref=e113] [cursor=pointer]:
-              - img
-              - text: Add Session
-          - generic [ref=e116]:
-            - img [ref=e118]
-            - heading "No sessions scheduled" [level=3] [ref=e120]
-            - paragraph [ref=e121]: Create your first training session or match to get started.
-            - button "Add Session" [ref=e122] [cursor=pointer]
+            - heading "Schedule" [level=1] [ref=e110]
+            - paragraph [ref=e111]: Manage training sessions, matches, and events.
+          - generic [ref=e113]:
+            - img [ref=e114]
+            - paragraph [ref=e116]: Loading schedule...
   - region "Notifications (F8)":
     - list
   - region "Notifications alt+T"
