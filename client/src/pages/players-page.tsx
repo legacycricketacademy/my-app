@@ -425,7 +425,7 @@ export default function PlayersPage() {
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 heading">Team Management</h1>
+            <h1 className="text-2xl font-bold text-gray-800 heading" data-testid="heading-team-management">Team Management</h1>
             <p className="text-gray-600">Manage your players and teams</p>
           </div>
           

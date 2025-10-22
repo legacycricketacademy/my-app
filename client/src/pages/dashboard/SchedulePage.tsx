@@ -19,7 +19,7 @@ export default function SchedulePage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+          <h1 className="text-2xl font-bold text-gray-900" data-testid="heading-schedule">Schedule</h1>
           <p className="text-gray-600">Manage training sessions, matches, and events.</p>
         </div>
         <LoadingState message="Loading schedule..." />
@@ -35,7 +35,7 @@ export default function SchedulePage() {
       return (
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+            <h1 className="text-2xl font-bold text-gray-900" data-testid="heading-schedule">Schedule</h1>
             <p className="text-gray-600">Manage training sessions, matches, and events.</p>
           </div>
           <Card>
@@ -54,7 +54,7 @@ export default function SchedulePage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+          <h1 className="text-2xl font-bold text-gray-900" data-testid="heading-schedule">Schedule</h1>
           <p className="text-gray-600">Manage training sessions, matches, and events.</p>
         </div>
         <ErrorState 
@@ -71,7 +71,7 @@ export default function SchedulePage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+            <h1 className="text-2xl font-bold text-gray-900" data-testid="heading-schedule">Schedule</h1>
             <p className="text-gray-600">Manage training sessions, matches, and events.</p>
           </div>
           <Button onClick={() => setShowNewSessionModal(true)}>
@@ -105,7 +105,7 @@ export default function SchedulePage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+          <h1 className="text-2xl font-bold text-gray-900" data-testid="heading-schedule">Schedule</h1>
           <p className="text-gray-600">Manage training sessions, matches, and events.</p>
         </div>
         <Button onClick={() => setShowNewSessionModal(true)}>
