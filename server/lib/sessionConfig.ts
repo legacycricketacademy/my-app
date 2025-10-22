@@ -17,6 +17,8 @@ if (isProd) {
 }
 
 export function buildSessionMiddleware(): RequestHandler {
+  const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN || undefined;
+  
   const common = {
     name: SESSION_NAME,
     secret: COOKIE_SECRET,
@@ -24,8 +26,9 @@ export function buildSessionMiddleware(): RequestHandler {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: (isProd ? 'lax' : 'lax') as 'lax',
+      sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',  // 'none' for cross-site cookies on Render
       secure: isProd, // true on Render (https), false locally
+      domain: COOKIE_DOMAIN, // exact domain: cricket-academy-app.onrender.com
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },

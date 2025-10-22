@@ -1,36 +1,20 @@
-export type HttpOk<T> = { ok: true; data: T };
-export type HttpErr = { ok: false; error: string; message?: string; status: number };
+import axios from "axios";
 
-export async function http<T>(
-  input: RequestInfo | URL, 
-  init?: RequestInit
-): Promise<HttpOk<T> | HttpErr> {
-  const res = await fetch(input, {
-    credentials: 'include',
-    headers: { 
-      'Content-Type': 'application/json', 
-      ...(init?.headers || {}) 
-    },
-    ...init,
-  });
-  
-  const body = await res.json().catch(() => ({}));
-  
-  if (!res.ok) {
-    return {
-      ok: false,
-      error: body?.error ?? 'request_failed',
-      message: body?.message ?? res.statusText,
-      status: res.status
-    };
-  }
-  
-  return { ok: true, data: body as T };
+// Axios: include cookies by default
+axios.defaults.withCredentials = true;
+
+// Fetch wrapper that always includes credentials
+export async function http<T=any>(input: RequestInfo | URL, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(input, { credentials: "include", ...init });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  // try JSON, fallback text
+  const ct = res.headers.get("content-type") || "";
+  if (ct.includes("application/json")) return await res.json();
+  // @ts-ignore
+  return await res.text();
 }
 
-// Backward compatibility - getJson throws on error like old code
-export async function getJson<T = any>(url: string, init: RequestInit = {}): Promise<T> {
-  const res = await http<T>(url, init);
-  if (!res.ok) throw new Error(res.message || 'Request failed');
-  return res.data;
-}
+// Legacy compatibility export
+export const getJson = http;
+
+export default axios;

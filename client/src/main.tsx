@@ -13,6 +13,7 @@ import App from './App';
 import './index.css';
 import axios from 'axios';
 import "@/polyfills/useToast.global";
+import "@/lib/http";
 
 // Set up axios defaults for credentials
 axios.defaults.withCredentials = true;

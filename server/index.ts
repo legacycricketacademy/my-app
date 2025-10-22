@@ -4,6 +4,7 @@ import passport from "passport";
 import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
+import session from "express-session";
 import { buildSessionMiddleware } from "./lib/sessionConfig.js";
 import { isProd } from "./lib/env.js";
 import { registerDevLogin } from "./routes/dev-login.js";
@@ -49,17 +50,38 @@ const __dirname = path.dirname(__filename);
 
 // ---- Express app ----
 const app = express();
+
+// ---------- CORS ----------
+const ORIGIN = process.env.ORIGIN || process.env.CLIENT_URL || "http://localhost:5173";
+app.use(cors({
+  origin: ORIGIN,          // MUST match exact origin (no trailing slash)
+  credentials: true,       // allow cookies/sessions
+}));
+
+// Required on Render/Heroku to set Secure cookies correctly behind proxy
+app.set("trust proxy", 1);
+
+// ---------- Session ----------
+const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN || undefined; // e.g., cricket-academy-app.onrender.com
+const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "sid";
+const SESSION_SECRET = process.env.SESSION_SECRET || "change-me";
+
+app.use(session({
+  name: COOKIE_NAME,
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: true,                 // Render is HTTPS
+    sameSite: "none",             // allow cross-site (SPA + API on same domain still OK)
+    domain: COOKIE_DOMAIN,        // exact domain without protocol
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+  },
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// Trust proxy for production (Render)
-app.set('trust proxy', 1);
-
-// CORS configuration using cors middleware
-app.use(cors({
-  origin: process.env.APP_ORIGIN ?? 'http://localhost:3000',
-  credentials: true,
-}));
 
 // Stripe webhook route (needs raw body, must be before express.json())
 import stripeRouter from './stripe.js';
@@ -79,31 +101,21 @@ if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.startsWit
   process.exit(1);
 }
 
-// Session middleware (must be before routes)
-app.set('trust proxy', 1);
-app.use(buildSessionMiddleware());
-
 // Session middleware diagnostics
 safeLog('SESSION middleware mounted', {
-  cookieName: 'connect.sid',
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  cookieName: COOKIE_NAME,
+  secure: true,
+  sameSite: 'none',
+  domain: COOKIE_DOMAIN,
   path: '/'
 });
 
-// Debug session header middleware (only when DEBUG_AUTH=true)
-if (isDebugAuth) {
-  app.use((req, res, next) => {
-    res.set('X-Debug-Session', req.session?.userId ? String(req.session.userId) : 'none');
-    next();
-  });
-}
-
 // Session configuration logging
 console.log('SESSION middleware mounted', {
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-  origin: process.env.APP_ORIGIN
+  secure: true,
+  sameSite: 'none',
+  origin: ORIGIN,
+  domain: COOKIE_DOMAIN
 });
 
 // Mount dev login route EARLY (before auth guards)
@@ -456,7 +468,8 @@ app.post("/api/auth/logout", (req, res) => {
       path: '/',
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      domain: COOKIE_DOMAIN
     });
     
     return res.status(200).json({ ok: true });
@@ -466,6 +479,14 @@ app.post("/api/auth/logout", (req, res) => {
 // Debug endpoints (read-only, no auth required)
 app.get("/api/_debug/ping", (req, res) => {
   res.json({ ok: true, ts: Date.now(), now: new Date().toISOString() });
+});
+
+// Debug route to verify session/cookie quickly
+app.get("/api/_whoami", (req, res) => {
+  // adjust to your session shape if needed
+  // @ts-ignore
+  const user = req.session?.user || null;
+  res.json({ ok: true, user });
 });
 
 app.get("/api/_debug/headers", (req, res) => {
@@ -488,6 +509,7 @@ app.get("/api/_debug/cookie", (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: COOKIE_DOMAIN,
     maxAge: 5 * 60 * 1000 // 5 minutes
   });
   
