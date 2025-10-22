@@ -12,9 +12,10 @@ interface RequireAuthProps {
 }
 
 export function RequireAuth({ children }: RequireAuthProps) {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { loading, user } = useAuth();
 
-  if (isLoading) {
+  // Show loading state while authentication is being verified
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -23,7 +24,8 @@ export function RequireAuth({ children }: RequireAuthProps) {
     );
   }
 
-  if (!isAuthenticated) {
+  // Redirect to login if not authenticated
+  if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -35,9 +37,10 @@ interface RedirectIfAuthedProps {
 }
 
 export function RedirectIfAuthed({ children }: RedirectIfAuthedProps) {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { loading, user } = useAuth();
 
-  if (isLoading) {
+  // Show loading state while checking authentication
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -46,7 +49,8 @@ export function RedirectIfAuthed({ children }: RedirectIfAuthedProps) {
     );
   }
 
-  if (isAuthenticated) {
+  // Redirect to dashboard if already authenticated
+  if (user) {
     return <Navigate to="/dashboard" replace />;
   }
 

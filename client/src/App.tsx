@@ -61,7 +61,7 @@ import FullCalendarPage from "@/pages/parent/FullCalendarPage";
 import PaymentTransactionsPage from "@/pages/parent/PaymentTransactionsPage";
 
 function AppRoutes() {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
 
   // For testing - will display parent view when passing ?view=parent in URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -69,7 +69,7 @@ function AppRoutes() {
   const isTestingParentView = viewParam === "parent";
 
   // Show loading spinner while authentication is being verified
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
