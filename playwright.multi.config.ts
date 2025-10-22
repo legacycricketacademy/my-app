@@ -11,57 +11,25 @@ export default defineConfig({
   retries: CI ? 2 : 1,
   workers: CI ? 4 : undefined,
   reporter: [["html", { open: "never" }], ["list"]],
-  timeout: 90000, // 90 seconds per test (allows for Render cold starts + retries)
+  timeout: 60000, // 60 seconds per test
+  retries: 1,
+  // ensure same BASE_URL used everywhere
   use: {
     baseURL: BASE_URL,
+    storageState: "tests/.state/admin.json",   // <— use saved session
+    trace: "on-first-retry",
     actionTimeout: 15000,
     navigationTimeout: 60000,
-    trace: "retain-on-failure",
     video: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   expect: {
     timeout: 10000, // 10 seconds for expect assertions
   },
-
+  globalSetup: "./tests/setup/global.setup.ts",
   projects: [
-    // Setup project (runs first to create auth state)
-    {
-      name: 'setup',
-      testMatch: /auth\.setup\.ts/,
-      timeout: 90000, // 90 seconds for setup (allows for Render cold starts + retries)
-      use: { ...devices['Desktop Chrome'] },
-    },
-    
-    // Desktop Chrome (your current default)
-    {
-      name: "Desktop Chrome",
-      dependencies: ['setup'],
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: 'playwright/.auth/admin.json',
-      },
-    },
-    
-    // Mobile — Pixel 5 (Chromium + touch + DPR + UA + viewport)
-    {
-      name: "Mobile Chrome (Pixel 5)",
-      dependencies: ['setup'],
-      use: {
-        ...devices["Pixel 5"],
-        storageState: 'playwright/.auth/admin.json',
-      },
-    },
-    
-    // Uncomment for iOS WebKit emulation:
-    // {
-    //   name: "Mobile Safari (iPhone 13)",
-    //   dependencies: ['setup'],
-    //   use: {
-    //     ...devices["iPhone 13"],
-    //     storageState: 'playwright/.auth/admin.json',
-    //   },
-    // },
+    { name: "Desktop Chrome", use: { ...devices["Desktop Chrome"] } },
+    { name: "Mobile Chrome (Pixel 5)", use: { ...devices["Pixel 5"] } },
   ],
 
   webServer: RUN_LOCAL_WEB ? {

@@ -90,6 +90,7 @@ export function registerDevLogin(app: Express, pool: Pool) {
 
       // Set session
       req.session.userId = user.id;
+      req.session.user = user; // Add this line to match _whoami expectation
       (req.session as any).role = user.role;
       await new Promise<void>((resolve, reject) =>
         req.session.save(err => (err ? reject(err) : resolve()))
