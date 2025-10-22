@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSettingsGet, useSettingsSave } from '@/api/settings';
 import { NotificationsSchema, type NotificationsValues } from '../schemas';
 import { SettingsCard } from './SettingsCard';
-import { toast } from 'sonner';
+import { toast } from '@/shared/toast';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 

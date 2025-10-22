@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSettingsGet, useSettingsSave } from '@/api/settings';
 import { ProfileSchema, type ProfileValues } from '../schemas';
 import { SettingsCard } from './SettingsCard';
-import { toast } from 'sonner';
+import { toast } from '@/shared/toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 

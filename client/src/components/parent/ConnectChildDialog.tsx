@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/shared/toast';
 import {
   Dialog,
   DialogContent,
