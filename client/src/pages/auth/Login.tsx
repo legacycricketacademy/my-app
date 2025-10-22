@@ -7,14 +7,20 @@ export default function Login(){
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   return (
     <div className="max-w-sm mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">Sign in to Legacy Cricket Academy</h1>
       <form
         aria-label="login-form"
         onSubmit={async (e)=>{ e.preventDefault();
-          await login(email, password);
-          nav("/dashboard", { replace: true });
+          try {
+            setSubmitting(true);
+            await login(email, password);
+            nav("/dashboard", { replace: true });
+          } finally {
+            setSubmitting(false);
+          }
         }}
       >
         <label htmlFor="email">Email</label>
@@ -23,7 +29,9 @@ export default function Login(){
         <label htmlFor="password">Password</label>
         <input id="password" name="password" type="password" placeholder="Password" data-testid="input-password" required
                value={password} onChange={e=>setPassword(e.target.value)} />
-        <button type="submit" data-testid="btn-login" className="btn btn-primary w-full mt-3">Login</button>
+        <button type="submit" data-testid="btn-login" className="btn btn-primary w-full mt-3" disabled={submitting}>
+          {submitting ? "Signing in…" : "Login"}
+        </button>
       </form>
       <div className="mt-4 text-center">
         <span>Don't have an account? </span>

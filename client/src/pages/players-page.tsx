@@ -33,6 +33,7 @@ import * as z from "zod";
 import { http } from "@/lib/http";
 import { queryClient } from "../lib/queryClient";
 import { useToast, notify } from '@/shared/toast';
+import { isPendingLike } from '@/shared/pending';
 import { 
   Search, 
   UserPlus, 
@@ -785,8 +786,8 @@ export default function PlayersPage() {
                   <Button type="button" variant="outline" onClick={() => setShowAddPlayerDialog(false)}>
                     <span>Cancel</span>
                   </Button>
-                  <Button type="submit" disabled={createPlayerMutation.isPending}>
-                    {createPlayerMutation.isPending ? (
+                  <Button type="submit" disabled={isPendingLike(createPlayerMutation)}>
+                    {isPendingLike(createPlayerMutation) ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         <span>Saving...</span>
@@ -970,8 +971,8 @@ export default function PlayersPage() {
                     <X className="mr-2 h-4 w-4" />
                     <span>Cancel</span>
                   </Button>
-                  <Button type="submit" disabled={updatePlayerMutation.isPending}>
-                    {updatePlayerMutation.isPending ? (
+                  <Button type="submit" disabled={isPendingLike(updatePlayerMutation)}>
+                    {isPendingLike(updatePlayerMutation) ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         <span>Saving...</span>
@@ -1028,9 +1029,9 @@ export default function PlayersPage() {
                 type="button" 
                 variant="destructive"
                 onClick={() => playerToDelete && deletePlayerMutation.mutate(playerToDelete.id)}
-                disabled={deletePlayerMutation.isPending}
+                disabled={isPendingLike(deletePlayerMutation)}
               >
-                {deletePlayerMutation.isPending ? (
+                {isPendingLike(deletePlayerMutation) ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     <span>Deleting...</span>
