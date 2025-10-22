@@ -1,0 +1,11 @@
+*** Begin Patch
+*** Update File: client/src/shared/toast.tsx
+@@
+ export function useToast(){ return useContext(ToastCtx); }
++
++// ---- Compatibility shim ----
++// Some pages import `Toaster` from '@/shared/toast'. We intentionally export
++// a no-op component so the build doesn't fail. If you later add a real UI toaster,
++// you can render it here instead of returning null.
++export function Toaster() { return null; }
+*** End Patch
