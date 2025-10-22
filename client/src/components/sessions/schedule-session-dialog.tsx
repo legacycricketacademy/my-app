@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 import {
   Dialog,
@@ -187,7 +187,7 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 max-h-[80vh] overflow-y-auto" align="start">
                         <div className="flex flex-col">
                           {/* Time Selection */}
                           <div className="p-3 border-b">
@@ -255,8 +255,8 @@ export function ScheduleSessionDialog() {
                             />
                           </div>
                           
-                          {/* Action Buttons */}
-                          <div className="flex items-center justify-end space-x-2 p-3 border-t">
+                          {/* Action Buttons - Fixed at bottom */}
+                          <div className="sticky bottom-0 bg-white border-t p-3 flex items-center justify-end space-x-2">
                             <Button
                               type="button"
                               variant="outline"
@@ -306,7 +306,7 @@ export function ScheduleSessionDialog() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 max-h-[80vh] overflow-y-auto" align="start">
                         <div className="flex flex-col">
                           {/* Time Selection */}
                           <div className="p-3 border-b">
@@ -381,8 +381,8 @@ export function ScheduleSessionDialog() {
                             />
                           </div>
                           
-                          {/* Action Buttons */}
-                          <div className="flex items-center justify-end space-x-2 p-3 border-t">
+                          {/* Action Buttons - Fixed at bottom */}
+                          <div className="sticky bottom-0 bg-white border-t p-3 flex items-center justify-end space-x-2">
                             <Button
                               type="button"
                               variant="outline"
