@@ -28,7 +28,7 @@ export default function MealPlansPage() {
   const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   
   const getMealsByDay = (day: number) => {
-    if (!mealItems?.items) return [];
+    if (!mealItems?.items || !Array.isArray(mealItems.items)) return [];
     return mealItems.items.filter(item => item.dayOfWeek === day);
   };
   
