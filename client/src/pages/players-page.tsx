@@ -158,13 +158,13 @@ export default function PlayersPage() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Player added');
+      toast({ title: 'Player added', description: 'New player has been successfully added.' });
       queryClient.invalidateQueries({ queryKey: ["players"] });
       setShowAddPlayerDialog(false);
       form.reset();
     },
     onError: (error: Error) => {
-      toast.error('Failed to create player', { description: error.message });
+      toast({ title: 'Failed to create player', description: error.message || 'An unknown error occurred.' });
     }
   });
   
