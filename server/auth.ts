@@ -201,23 +201,11 @@ export async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Session settings
-  const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "cricket-academy-secret",
-    resave: false,
-    saveUninitialized: false,
-    store: storage.sessionStore,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    },
-  };
-  
   // Create the JWT authentication middleware
   const authMiddleware = createAuthMiddleware(multiTenantStorage);
 
-  app.set("trust proxy", 1);
-  app.use(session(sessionSettings));
+  // Note: Session middleware is now handled by buildSessionMiddleware() in index.ts
+  // We only need to set up passport here
   app.use(passport.initialize());
   app.use(passport.session());
 
