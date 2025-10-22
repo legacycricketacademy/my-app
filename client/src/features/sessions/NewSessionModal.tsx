@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { nowLocalISO, localMinutesToUtcIso } from '@/lib/datetime';
 import { http } from '@/lib/http';
-import { notify } from '@/shared/toast';
+import { toast } from '@/shared/toast';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';

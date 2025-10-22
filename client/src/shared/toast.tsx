@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef } from "react";
 
-type Toast = { title?: string; description?: string };
+export type Toast = { title?: string; description?: string };
 type Ctx = { toast: (t: Toast)=>void };
 
 const ToastCtx = createContext<Ctx>({ toast: () => {} });
@@ -11,6 +11,10 @@ export function notify(t: Toast) {
   queue.push(t);
   // no-op rendering here; provider will flush
 }
+
+// Compat alias for legacy imports: some files use `import { toast } from '@/shared/toast'`
+// We intentionally make it provider-agnostic by delegating to the queued notifier.
+export function toast(t: Toast) { notify(t); }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const api = useMemo<Ctx>(() => ({
