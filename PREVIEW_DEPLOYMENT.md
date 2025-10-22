@@ -288,6 +288,45 @@ Before merging to `main` and deploying to production:
 
 ---
 
+## Quick Commands
+
+### Local Development
+```bash
+npm run dev           # Start dev server
+npm run dev:server    # Start backend only
+npm run dev:client    # Start frontend only
+```
+
+### Database Setup
+```bash
+npm run db:push       # Apply Drizzle schema (use instead of db:migrate)
+npm run db:seed       # Create test users
+```
+
+### Testing
+```bash
+# Run all E2E tests (desktop)
+npm run test:e2e
+
+# Run with preview URL
+BASE_URL=https://your-preview.onrender.com npm run test:e2e
+
+# Run specific test file
+npx playwright test tests/auth.login.spec.ts
+
+# Run mobile tests
+npx playwright test --project="Mobile Safari"
+npx playwright test --project="iPad"
+
+# Run with UI (headed mode)
+npx playwright test --headed
+
+# View HTML report
+npx playwright show-report
+```
+
+---
+
 ## Contact & Support
 
 **Branch**: `ai/emergent-fixes`  
