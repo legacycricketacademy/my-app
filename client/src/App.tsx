@@ -207,7 +207,7 @@ function AppRoutes() {
 
       {/* Auth routes */}
       <Route path="/login" element={<Login />} />
-      {flags.featureGoLive && <Route path="/register" element={<Register />} />}
+      <Route path="/register" element={<Register />} />
 
       {/* Catch-all route */}
       <Route path="*" element={<NotFound />} />

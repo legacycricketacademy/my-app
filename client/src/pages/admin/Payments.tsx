@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Modal from "@/components/Modal";
 
 type Payment = {
   id: number|string;
@@ -52,8 +53,8 @@ export default function Payments() {
         onClick={()=>setShowNew(true)}
       >Record Payment</button>
 
-      {showNew && (
-        <form onSubmit={createPayment} data-testid="modal-new-payment" className="space-y-4 border p-4 rounded bg-gray-50 mb-6">
+      <Modal open={showNew} onClose={()=>setShowNew(false)} title="Record Payment" testId="modal-new-payment">
+        <form onSubmit={createPayment} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Kid Name</label>
             <input
@@ -106,7 +107,7 @@ export default function Payments() {
             <button data-testid="btn-cancel-payment" className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" type="button" onClick={()=>setShowNew(false)}>Cancel</button>
           </div>
         </form>
-      )}
+      </Modal>
 
       <h2 className="text-xl font-semibold mt-6 mb-2" data-testid="heading-pending">Pending Payments</h2>
       <ul data-testid="list-pending" className="space-y-2 mb-6">
