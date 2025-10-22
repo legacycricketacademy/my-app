@@ -66,19 +66,7 @@ const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN || undefined; // e.g., c
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "sid";
 const SESSION_SECRET = process.env.SESSION_SECRET || "change-me";
 
-app.use(session({
-  name: COOKIE_NAME,
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure: true,                 // Render is HTTPS
-    sameSite: "none",             // allow cross-site (SPA + API on same domain still OK)
-    domain: COOKIE_DOMAIN,        // exact domain without protocol
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-  },
-}));
+app.use(buildSessionMiddleware());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
