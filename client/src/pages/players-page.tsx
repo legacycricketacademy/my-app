@@ -32,7 +32,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { http } from "@/lib/http";
 import { queryClient } from "../lib/queryClient";
-import { toast } from '@/shared/toast';
+import { useToast, notify } from '@/shared/toast';
 import { 
   Search, 
   UserPlus, 
@@ -78,6 +78,7 @@ export default function PlayersPage() {
   const [sendingEmailId, setSendingEmailId] = useState<number | null>(null);
   const [playerToDelete, setPlayerToDelete] = useState<any>(null);
   const { toast } = useToast();
+  const safeToast = (t: any) => { try { toast(t); } catch { notify(t); } };
   
   // Check for add=true query parameter and open dialog
   useEffect(() => {

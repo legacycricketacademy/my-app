@@ -33,6 +33,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }
   }, [api]);
 
+  // Expose real toast to the global polyfill so late calls use provider
+  useEffect(() => {
+    try { (window as any).__legacyToast = api.toast; } catch {}
+  }, [api]);
+
   return <ToastCtx.Provider value={api}>{children}</ToastCtx.Provider>;
 }
 
