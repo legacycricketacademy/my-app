@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/auth/session";
 import { useToast } from "@/hooks/use-toast";
+import { isPendingLike } from "@/shared/pending";
 
 export default function AuthPageDev() {
   const navigate = useNavigate();
@@ -81,9 +82,9 @@ export default function AuthPageDev() {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={loginMutation.isPending}
+                  disabled={isPendingLike(loginMutation)}
                 >
-                  {loginMutation.isPending ? "Signing in..." : "Sign In"}
+                  {isPendingLike(loginMutation) ? "Signing in..." : "Sign In"}
                 </Button>
           </form>
           

@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
+import { isPendingLike } from "@/shared/pending";
 
 export default function ImportDataPage() {
   const { user } = useAuth();
@@ -384,9 +385,9 @@ export default function ImportDataPage() {
             </Button>
             <Button 
               onClick={handleImport} 
-              disabled={importMutation.isPending || validationErrors.length > 0}
+              disabled={isPendingLike(importMutation) || validationErrors.length > 0}
             >
-              {importMutation.isPending ? (
+              {isPendingLike(importMutation) ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                   Importing...

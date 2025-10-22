@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { isPendingLike } from '@/shared/pending';
 import {
   Dialog,
   DialogContent,
@@ -124,7 +125,7 @@ export function NewPaymentDialog({ trigger }: NewPaymentDialogProps) {
                   className="pl-7"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  disabled={createPaymentMutation.isPending}
+                  disabled={isPendingLike(createPaymentMutation)}
                   required
                 />
               </div>
@@ -136,7 +137,7 @@ export function NewPaymentDialog({ trigger }: NewPaymentDialogProps) {
                 placeholder="Add any additional notes..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                disabled={createPaymentMutation.isPending}
+                disabled={isPendingLike(createPaymentMutation)}
                 rows={3}
               />
             </div>
@@ -151,12 +152,12 @@ export function NewPaymentDialog({ trigger }: NewPaymentDialogProps) {
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              disabled={createPaymentMutation.isPending}
+              disabled={isPendingLike(createPaymentMutation)}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createPaymentMutation.isPending}>
-              {createPaymentMutation.isPending ? (
+            <Button type="submit" disabled={isPendingLike(createPaymentMutation)}>
+              {isPendingLike(createPaymentMutation) ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating...

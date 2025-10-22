@@ -329,7 +329,7 @@ export default function MakePaymentPage() {
               </div>
             ) : null}
             
-            {createPaymentIntent.isPending ? (
+            {isPendingLike(createPaymentIntent) ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span className="ml-2">Setting up payment...</span>

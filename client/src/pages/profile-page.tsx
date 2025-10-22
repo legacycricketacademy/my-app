@@ -13,6 +13,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { User } from "@shared/schema";
 import { useState } from "react";
+import { isPendingLike } from "@/shared/pending";
 
 // Schema for test email form
 const testEmailSchema = z.object({
@@ -255,10 +256,10 @@ export default function ProfilePage() {
                     </Button>
                     <Button 
                       type="submit" 
-                      disabled={updateProfileMutation.isPending}
+                      disabled={isPendingLike(updateProfileMutation)}
                       className="bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary"
                     >
-                      {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                      {isPendingLike(updateProfileMutation) ? "Saving..." : "Save Changes"}
                     </Button>
                   </div>
                 </form>
@@ -294,10 +295,10 @@ export default function ProfilePage() {
                             size="sm"
                             variant="outline"
                             onClick={() => sendVerificationEmailMutation.mutate()}
-                            disabled={sendVerificationEmailMutation.isPending}
+                            disabled={isPendingLike(sendVerificationEmailMutation)}
                             className="text-xs h-7 border-primary/20 hover:bg-primary/5 text-primary"
                           >
-                            {sendVerificationEmailMutation.isPending ? "Sending..." : "Send Verification Email"}
+                            {isPendingLike(sendVerificationEmailMutation) ? "Sending..." : "Send Verification Email"}
                           </Button>
                         ) : verificationLink ? (
                           <div className="flex flex-col gap-2">
@@ -390,10 +391,10 @@ export default function ProfilePage() {
                               </Button>
                               <Button
                                 type="submit"
-                                disabled={sendTestEmailMutation.isPending}
+                                disabled={isPendingLike(sendTestEmailMutation)}
                                 className="bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary"
                               >
-                                {sendTestEmailMutation.isPending ? "Sending..." : "Send Test Email"}
+                                {isPendingLike(sendTestEmailMutation) ? "Sending..." : "Send Test Email"}
                               </Button>
                             </div>
                           </form>

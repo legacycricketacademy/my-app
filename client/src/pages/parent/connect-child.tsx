@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { isPendingLike } from "@/shared/pending";
 import { Search, UserRound, AlertCircle, CheckCircle2, Loader2, PlusCircle, Calendar, X } from "lucide-react";
 import { 
   Table,
@@ -367,7 +368,7 @@ export default function ConnectChildPage() {
                   className="h-[85vh] sm:max-w-[550px] overflow-y-auto w-[94vw] md:w-auto"
                   onInteractOutside={(e) => {
                     // Prevent closing if a form is being submitted
-                    if (addChildMutation.isPending) {
+                    if (isPendingLike(addChildMutation)) {
                       e.preventDefault();
                     }
                   }}
@@ -554,10 +555,10 @@ export default function ConnectChildPage() {
                         </Button>
                         <Button 
                           type="submit"
-                          disabled={addChildMutation.isPending}
+                          disabled={isPendingLike(addChildMutation)}
                           className="mt-2"
                         >
-                          {addChildMutation.isPending ? (
+                          {isPendingLike(addChildMutation) ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                               Submitting...
@@ -639,9 +640,9 @@ export default function ConnectChildPage() {
                             variant="secondary" 
                             size="sm"
                             onClick={() => handleRequestConnection(player.id)}
-                            disabled={createRequestMutation.isPending}
+                            disabled={isPendingLike(createRequestMutation)}
                           >
-                            {createRequestMutation.isPending && createRequestMutation.variables === player.id ? (
+                            {isPendingLike(createRequestMutation) && createRequestMutation.variables === player.id ? (
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             ) : (
                               "Request Connection"

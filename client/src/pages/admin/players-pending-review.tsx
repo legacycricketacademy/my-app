@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { isPendingLike } from "@/shared/pending";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -249,9 +250,9 @@ export default function PlayersPendingReviewPage() {
                   variant="destructive" 
                   size="sm"
                   onClick={() => openRejectDialog(player)}
-                  disabled={rejectMutation.isPending}
+                  disabled={isPendingLike(rejectMutation)}
                 >
-                  {rejectMutation.isPending && selectedPlayer?.id === player.id ? (
+                  {isPendingLike(rejectMutation) && selectedPlayer?.id === player.id ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <XCircle className="h-4 w-4 mr-2" />
@@ -262,9 +263,9 @@ export default function PlayersPendingReviewPage() {
                   variant="default" 
                   size="sm"
                   onClick={() => handleApprove(player)}
-                  disabled={approveMutation.isPending}
+                  disabled={isPendingLike(approveMutation)}
                 >
-                  {approveMutation.isPending && selectedPlayer?.id === player.id ? (
+                  {isPendingLike(approveMutation) && selectedPlayer?.id === player.id ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <CheckCircle className="h-4 w-4 mr-2" />
@@ -298,16 +299,16 @@ export default function PlayersPendingReviewPage() {
             <Button
               variant="outline"
               onClick={() => setIsRejectDialogOpen(false)}
-              disabled={rejectMutation.isPending}
+              disabled={isPendingLike(rejectMutation)}
             >
               Cancel
             </Button>
             <Button
               variant="destructive" 
               onClick={handleReject}
-              disabled={rejectMutation.isPending}
+              disabled={isPendingLike(rejectMutation)}
             >
-              {rejectMutation.isPending ? (
+              {isPendingLike(rejectMutation) ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Rejecting...

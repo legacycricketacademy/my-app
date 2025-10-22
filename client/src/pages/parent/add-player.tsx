@@ -14,6 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 import { CustomDatePicker } from "@/components/ui/custom-date-picker";
+import { isPendingLike } from "@/shared/pending";
 
 // Player form schema
 const playerSchema = z.object({
@@ -377,10 +378,10 @@ export default function AddPlayerPage() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={addPlayerMutation.isPending}
+                    disabled={isPendingLike(addPlayerMutation)}
                     className="bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary"
                   >
-                    {addPlayerMutation.isPending ? (
+                    {isPendingLike(addPlayerMutation) ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Saving...

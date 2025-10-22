@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { isPendingLike } from "@/shared/pending";
 import { MainLayout } from "@/layout/main-layout";
 import { Loader2, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -240,9 +241,9 @@ export default function CoachesPendingApprovalPage() {
                         size="sm"
                         className="text-green-600 bg-green-50 hover:bg-green-100 border-green-200"
                         onClick={() => approveMutation.mutate(coach.id)}
-                        disabled={approveMutation.isPending}
+                        disabled={isPendingLike(approveMutation)}
                       >
-                        {approveMutation.isPending ? (
+                        {isPendingLike(approveMutation) ? (
                           <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                         ) : (
                           <CheckCircle className="h-4 w-4 mr-1" />
@@ -254,9 +255,9 @@ export default function CoachesPendingApprovalPage() {
                         size="sm"
                         className="text-red-600 bg-red-50 hover:bg-red-100 border-red-200"
                         onClick={() => rejectMutation.mutate(coach.id)}
-                        disabled={rejectMutation.isPending}
+                        disabled={isPendingLike(rejectMutation)}
                       >
-                        {rejectMutation.isPending ? (
+                        {isPendingLike(rejectMutation) ? (
                           <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                         ) : (
                           <XCircle className="h-4 w-4 mr-1" />

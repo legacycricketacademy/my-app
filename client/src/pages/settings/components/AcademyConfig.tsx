@@ -7,6 +7,7 @@ import { SettingsCard } from './SettingsCard';
 import { toast } from '@/shared/toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { isPendingLike } from '@/shared/pending';
 
 export default function AcademyConfig() {
   const { data, isLoading } = useSettingsGet<AcademyValues>('academy');
@@ -30,7 +31,7 @@ export default function AcademyConfig() {
   });
 
   return (
-    <SettingsCard title="Academy Configuration" onSave={onSubmit} onCancel={()=>form.reset()} saving={save.isPending}>
+    <SettingsCard title="Academy Configuration" onSave={onSubmit} onCancel={()=>form.reset()} saving={isPendingLike(save)}>
       <div className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="name">Academy name</Label>

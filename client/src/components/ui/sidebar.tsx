@@ -1,6 +1,7 @@
 import { useAuth } from "@/auth/session";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useLocation, Link } from "react-router-dom";
+import { isPendingLike } from "@/shared/pending";
 import { 
   LayoutDashboard, 
   Users, 
@@ -146,10 +147,10 @@ export function Sidebar() {
           variant="ghost" 
           className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 px-2"
           onClick={handleLogout}
-          disabled={logoutMutation.isPending}
+          disabled={isPendingLike(logoutMutation)}
         >
           <LogOut className="h-5 w-5 mr-2" />
-          <span>{logoutMutation.isPending ? "Signing Out..." : "Sign Out"}</span>
+          <span>{isPendingLike(logoutMutation) ? "Signing Out..." : "Sign Out"}</span>
         </Button>
         
         {/* Add the emergency button separately */}

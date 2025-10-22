@@ -5,6 +5,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { isPendingLike } from "@/shared/pending";
 import {
   Card,
   CardContent,
@@ -264,7 +265,7 @@ export default function SettingsPage() {
                     variant="ghost"
                     className="justify-start p-3 rounded-none text-red-500 hover:text-red-600 hover:bg-red-50"
                     onClick={() => logoutMutation.mutate()}
-                    disabled={logoutMutation.isPending}
+                    disabled={isPendingLike(logoutMutation)}
                   >
                     <LogOut className="h-5 w-5 mr-2" />
                     Sign Out

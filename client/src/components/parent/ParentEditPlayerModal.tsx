@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/shared/toast';
+import { isPendingLike } from '@/shared/pending';
 import {
   Dialog,
   DialogContent,
@@ -123,7 +124,7 @@ export function ParentEditPlayerModal({ open, onClose, initialValues }: ParentEd
                 id="playerName"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                disabled={updateProfileMutation.isPending}
+                disabled={isPendingLike(updateProfileMutation)}
                 placeholder="Enter player name"
               />
             </div>
@@ -135,7 +136,7 @@ export function ParentEditPlayerModal({ open, onClose, initialValues }: ParentEd
                 type="tel"
                 value={emergencyContact}
                 onChange={(e) => setEmergencyContact(e.target.value)}
-                disabled={updateProfileMutation.isPending}
+                disabled={isPendingLike(updateProfileMutation)}
                 placeholder="Enter emergency contact number"
               />
             </div>
@@ -146,7 +147,7 @@ export function ParentEditPlayerModal({ open, onClose, initialValues }: ParentEd
                 id="medicalInfo"
                 value={medicalInfo}
                 onChange={(e) => setMedicalInfo(e.target.value)}
-                disabled={updateProfileMutation.isPending}
+                disabled={isPendingLike(updateProfileMutation)}
                 placeholder="Enter any medical conditions or allergies"
                 rows={4}
               />
@@ -164,16 +165,16 @@ export function ParentEditPlayerModal({ open, onClose, initialValues }: ParentEd
               type="button"
               variant="outline"
               onClick={onClose}
-              disabled={updateProfileMutation.isPending}
+              disabled={isPendingLike(updateProfileMutation)}
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={updateProfileMutation.isPending}
+              disabled={isPendingLike(updateProfileMutation)}
               data-testid="parent-edit-profile-save"
             >
-              {updateProfileMutation.isPending ? (
+              {isPendingLike(updateProfileMutation) ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...

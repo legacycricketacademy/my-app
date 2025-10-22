@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCreateSession } from '../../../api/sessions';
+import { isPendingLike } from '@/shared/pending';
 
 type Props = { open: boolean; onClose: () => void; };
 
@@ -72,8 +73,8 @@ export default function NewSessionModal({ open, onClose }: Props) {
 
         <div className="flex justify-end gap-3 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-md border">Cancel</button>
-          <button disabled={create.isPending} className="px-4 py-2 rounded-md bg-blue-600 text-white">
-            {create.isPending ? 'Scheduling…' : 'Schedule Session'}
+          <button disabled={isPendingLike(create)} className="px-4 py-2 rounded-md bg-blue-600 text-white">
+            {isPendingLike(create) ? 'Scheduling…' : 'Schedule Session'}
           </button>
         </div>
       </form>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/shared/toast';
+import { isPendingLike } from '@/shared/pending';
 import {
   Dialog,
   DialogContent,
@@ -130,7 +131,7 @@ export function ConnectChildDialog({ trigger }: ConnectChildDialogProps) {
                 placeholder="child@example.com"
                 value={childEmail}
                 onChange={(e) => setChildEmail(e.target.value)}
-                disabled={connectChildMutation.isPending}
+                disabled={isPendingLike(connectChildMutation)}
                 required
               />
               <p className="text-xs text-gray-500">
@@ -144,7 +145,7 @@ export function ConnectChildDialog({ trigger }: ConnectChildDialogProps) {
                 placeholder="Add a message with your request..."
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                disabled={connectChildMutation.isPending}
+                disabled={isPendingLike(connectChildMutation)}
                 rows={3}
               />
             </div>
@@ -159,12 +160,12 @@ export function ConnectChildDialog({ trigger }: ConnectChildDialogProps) {
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              disabled={connectChildMutation.isPending}
+              disabled={isPendingLike(connectChildMutation)}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={connectChildMutation.isPending}>
-              {connectChildMutation.isPending ? (
+            <Button type="submit" disabled={isPendingLike(connectChildMutation)}>
+              {isPendingLike(connectChildMutation) ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Sending...

@@ -5,6 +5,7 @@ import { useSettingsGet, useSettingsSave } from '@/api/settings';
 import { NotificationsSchema, type NotificationsValues } from '../schemas';
 import { SettingsCard } from './SettingsCard';
 import { toast } from '@/shared/toast';
+import { isPendingLike } from '@/shared/pending';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
@@ -30,7 +31,7 @@ export default function NotificationsSettings() {
   });
 
   return (
-    <SettingsCard title="Notifications" onSave={onSubmit} onCancel={()=>form.reset()} saving={save.isPending}>
+    <SettingsCard title="Notifications" onSave={onSubmit} onCancel={()=>form.reset()} saving={isPendingLike(save)}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Label htmlFor="email">Email notifications</Label>

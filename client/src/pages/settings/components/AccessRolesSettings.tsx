@@ -5,6 +5,7 @@ import { useSettingsGet, useSettingsSave } from '@/api/settings';
 import { AccessSchema, type AccessValues } from '../schemas';
 import { SettingsCard } from './SettingsCard';
 import { toast } from '@/shared/toast';
+import { isPendingLike } from '@/shared/pending';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
@@ -30,7 +31,7 @@ export default function AccessRolesSettings() {
   });
 
   return (
-    <SettingsCard title="Access & Roles" onSave={onSubmit} onCancel={()=>form.reset()} saving={save.isPending}>
+    <SettingsCard title="Access & Roles" onSave={onSubmit} onCancel={()=>form.reset()} saving={isPendingLike(save)}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>

@@ -5,6 +5,7 @@ import { useSettingsGet, useSettingsSave } from '@/api/settings';
 import { DataSchema, type DataValues } from '../schemas';
 import { SettingsCard } from './SettingsCard';
 import { toast } from '@/shared/toast';
+import { isPendingLike } from '@/shared/pending';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,7 @@ export default function DataManagement() {
   };
 
   return (
-    <SettingsCard title="Data Management" onSave={onSubmit} onCancel={()=>form.reset()} saving={save.isPending}>
+    <SettingsCard title="Data Management" onSave={onSubmit} onCancel={()=>form.reset()} saving={isPendingLike(save)}>
       <div className="space-y-6">
         <div>
           <Label className="text-base font-semibold">Export data</Label>

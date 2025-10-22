@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 import { Button } from "@/components/ui/button";
+import { isPendingLike } from "@/shared/pending";
 
 export function ProtectedRoute({
   path,
@@ -62,9 +63,9 @@ export function ProtectedRoute({
           <Button 
             onClick={() => logoutMutation.mutate()}
             className="mt-6"
-            disabled={logoutMutation.isPending}
+            disabled={isPendingLike(logoutMutation)}
           >
-            {logoutMutation.isPending ? "Logging out..." : "Logout"}
+            {isPendingLike(logoutMutation) ? "Logging out..." : "Logout"}
           </Button>
         </div>
       </Route>

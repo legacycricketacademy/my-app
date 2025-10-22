@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { isPendingLike } from "@/shared/pending";
 import { PlusCircle, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -153,9 +154,9 @@ export default function ConnectChildSimplePage() {
                     </Button>
                     <Button 
                       type="submit"
-                      disabled={addChildMutation.isPending}
+                      disabled={isPendingLike(addChildMutation)}
                     >
-                      {addChildMutation.isPending ? (
+                      {isPendingLike(addChildMutation) ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           Submitting...

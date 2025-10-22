@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { format } from "date-fns";
 import { useToast } from "@/shared/toast";
+import { isPendingLike } from "@/shared/pending";
 
 import {
   Form,
@@ -574,9 +575,9 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
           </Button>
           <Button 
             type="submit"
-            disabled={createSessionMutation.isPending}
+            disabled={isPendingLike(createSessionMutation)}
           >
-            {createSessionMutation.isPending ? "Scheduling..." : "Schedule Session"}
+            {isPendingLike(createSessionMutation) ? "Scheduling..." : "Schedule Session"}
           </Button>
         </div>
       </form>

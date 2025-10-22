@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { isPendingLike } from "@/shared/pending";
 import { 
   Search, 
   UserCheck, 
@@ -331,9 +332,9 @@ export default function ManageParentConnectionsPage() {
                 <Button
                   variant="destructive"
                   onClick={handleRejectRequest}
-                  disabled={updateRequestMutation.isPending}
+                  disabled={isPendingLike(updateRequestMutation)}
                 >
-                  {updateRequestMutation.isPending ? (
+                  {isPendingLike(updateRequestMutation) ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <UserX className="h-4 w-4 mr-2" />
@@ -342,9 +343,9 @@ export default function ManageParentConnectionsPage() {
                 </Button>
                 <Button
                   onClick={handleApproveRequest}
-                  disabled={updateRequestMutation.isPending}
+                  disabled={isPendingLike(updateRequestMutation)}
                 >
-                  {updateRequestMutation.isPending ? (
+                  {isPendingLike(updateRequestMutation) ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <UserCheck className="h-4 w-4 mr-2" />

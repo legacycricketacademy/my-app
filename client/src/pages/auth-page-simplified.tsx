@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { isPendingLike } from "@/shared/pending";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -42,11 +43,11 @@ export default function AuthPageSimplified() {
   useEffect(() => {
     // Only redirect if we have a definite user object
     // and all loading states are complete
-    if (user && !isLoading && !loginMutation.isPending && !registerMutation.isPending) {
+    if (user && !isLoading && !isPendingLike(loginMutation) && !isPendingLike(registerMutation)) {
       console.log("Auth Page - Redirecting to homepage with user:", user);
       navigate("/");
     }
-  }, [user, isLoading, loginMutation.isPending, registerMutation.isPending, navigate]);
+  }, [user, isLoading, isPendingLike(loginMutation), isPendingLike(registerMutation), navigate]);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -186,9 +187,9 @@ export default function AuthPageSimplified() {
                     <Button 
                       type="submit" 
                       className="w-full mt-4" 
-                      disabled={loginMutation.isPending}
+                      disabled={isPendingLike(loginMutation)}
                     >
-                      {loginMutation.isPending ? (
+                      {isPendingLike(loginMutation) ? (
                         <span className="flex items-center justify-center">
                           <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -349,9 +350,9 @@ export default function AuthPageSimplified() {
                     <Button 
                       type="submit" 
                       className="w-full mt-4" 
-                      disabled={registerMutation.isPending}
+                      disabled={isPendingLike(registerMutation)}
                     >
-                      {registerMutation.isPending ? (
+                      {isPendingLike(registerMutation) ? (
                         <span className="flex items-center justify-center">
                           <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ParentLayout } from '@/layout/parent-layout';
 import { useToast } from '@/hooks/use-toast';
+import { isPendingLike } from '@/shared/pending';
 import { sessionDurations, feeAmounts, SessionDuration } from '@shared/schema';
 import { 
   Loader2, 
@@ -552,9 +553,9 @@ function ManualPaymentForm({
                 <Button 
                   type="submit" 
                   className="w-full"
-                  disabled={manualPaymentMutation.isPending}
+                  disabled={isPendingLike(manualPaymentMutation)}
                 >
-                  {manualPaymentMutation.isPending ? (
+                  {isPendingLike(manualPaymentMutation) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Recording Payment...
@@ -982,7 +983,7 @@ export default function MakePaymentPage() {
                     </TabsList>
                     
                     <TabsContent value="stripe" className="pt-4">
-                      {createPaymentIntent.isPending ? (
+                      {isPendingLike(createPaymentIntent) ? (
                         <div className="flex justify-center py-10">
                           <Loader2 className="h-8 w-8 animate-spin text-primary" />
                           <span className="ml-2">Setting up payment...</span>

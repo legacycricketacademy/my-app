@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCreateAnnouncement } from '../../../api/announcements-simple';
+import { isPendingLike } from '@/shared/pending';
 
 export default function CreateAnnouncementModal({ open, onClose }: { open:boolean; onClose:()=>void }) {
   const create = useCreateAnnouncement();
@@ -45,8 +46,8 @@ export default function CreateAnnouncementModal({ open, onClose }: { open:boolea
 
         <div className="flex justify-end gap-3 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-md border">Cancel</button>
-          <button disabled={create.isPending} className="px-4 py-2 rounded-md bg-blue-600 text-white">
-            {create.isPending ? 'Creating…' : 'Create'}
+          <button disabled={isPendingLike(create)} className="px-4 py-2 rounded-md bg-blue-600 text-white">
+            {isPendingLike(create) ? 'Creating…' : 'Create'}
           </button>
         </div>
       </form>

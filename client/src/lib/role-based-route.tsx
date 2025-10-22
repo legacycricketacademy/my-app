@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { Redirect, Route, RouteComponentProps } from "wouter";
 import { UserRole } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import { isPendingLike } from "@/shared/pending";
 
 type RoleBasedRouteProps = {
   path: string;
@@ -87,9 +88,9 @@ export function RoleBasedRoute({
               <Button
                 onClick={() => logoutMutation.mutate()}
                 className="mt-6"
-                disabled={logoutMutation.isPending}
+                disabled={isPendingLike(logoutMutation)}
               >
-                {logoutMutation.isPending ? "Logging out..." : "Logout"}
+                {isPendingLike(logoutMutation) ? "Logging out..." : "Logout"}
               </Button>
             </div>
           );
