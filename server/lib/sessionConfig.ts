@@ -18,6 +18,8 @@ if (isProd) {
 
 export function buildSessionMiddleware(): RequestHandler {
   const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN || undefined;
+  // Remove leading dot if present to ensure exact domain matching
+  const normalizedDomain = COOKIE_DOMAIN?.startsWith('.') ? COOKIE_DOMAIN.slice(1) : COOKIE_DOMAIN;
   
   const common = {
     name: SESSION_NAME,
@@ -28,7 +30,7 @@ export function buildSessionMiddleware(): RequestHandler {
       httpOnly: true,
       sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',  // 'none' for cross-site cookies on Render
       secure: isProd, // true on Render (https), false locally
-      domain: COOKIE_DOMAIN, // exact domain: cricket-academy-app.onrender.com
+      domain: normalizedDomain, // exact domain: cricket-academy-app.onrender.com
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
