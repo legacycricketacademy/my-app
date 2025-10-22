@@ -1,173 +1,112 @@
-/**
- * Session-based Auth Provider
- * Simple authentication using server sessions
- */
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
-import { http } from '@/lib/http';
+type User = { id: string; email?: string; role: "admin"|"coach"|"parent"|"player" };
+type Ctx = {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  refresh: () => Promise<void>;
+};
 
-// Auth context type
-interface AuthContextType {
-  user: { id: number; role: string; email?: string; emailVerified?: boolean } | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  loginMutation: any;
-  logoutMutation: any;
-}
-
-// Create context with default values
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  isLoading: true,
-  isAuthenticated: false,
-  loginMutation: {},
-  logoutMutation: {}
+const AuthCtx = createContext<Ctx>({
+  user: null, loading: true,
+  async login(){}, async logout(){}, async refresh(){}
 });
 
-// Auth Provider component
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
-  // Fetch current session
-  const {
-    data: sessionData,
-    error,
-    isLoading,
-  } = useQuery({
-    queryKey: ['/api/session'],
-    queryFn: async () => {
-      try {
-        const res = await http<any>('/api/session');
-        if (!res.ok) {
-          if (res.status === 401) {
-            return { authenticated: false, user: null };
-          }
-          throw new Error(res.message || 'Failed to fetch session data');
+const USE_FIREBASE = (import.meta as any).env?.VITE_USE_FIREBASE === "true";
+
+async function whoami(): Promise<User | null> {
+  try {
+    const r = await fetch("/api/_whoami", { credentials: "include" });
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data?.user ?? null;
+  } catch { return null; }
+}
+
+async function serverLogin(email: string, password: string) {
+  const r = await fetch("/api/dev/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, password })
+  });
+  if (!r.ok) throw new Error("Login failed");
+}
+
+async function serverLogout() {
+  await fetch("/api/logout", { method: "POST", credentials: "include" }).catch(()=>{});
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    const u = await whoami();
+    setUser(u);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (USE_FIREBASE) {
+      // Lazy-load only if you actually enable Firebase
+      import("firebase/app").then(async (fb) => {
+        const { getApps, initializeApp } = fb as any;
+        const apps = getApps?.() ?? [];
+        if (!apps.length) {
+          const cfg = (import.meta as any).env?.VITE_FIREBASE_CONFIG ? JSON.parse((import.meta as any).env.VITE_FIREBASE_CONFIG) : null;
+          if (cfg) initializeApp(cfg);
         }
-        return res.data;
-      } catch (error) {
-        console.error('Error fetching session data:', error);
-        return { authenticated: false, user: null };
-      }
-    },
-    retry: 1,
-    staleTime: 30000, // Cache results for 30 seconds
-  });
-  
-  // Extract user and authentication state
-  const user = sessionData?.authenticated ? sessionData.user : null;
-  const isAuthenticated = !!user;
-  
-  // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
-      // Use dev login endpoint (now always available for e2e testing)
-      const loginRes = await http<any>('/api/dev/login', {
-        method: 'POST',
-        body: JSON.stringify(credentials),
+        const { getAuth, onAuthStateChanged } = await import("firebase/auth");
+        const auth = getAuth();
+        onAuthStateChanged(auth, async (fbUser) => {
+          if (!fbUser) { setUser(null); setLoading(false); return; }
+          // Optionally map firebase user → server user via /api/_whoami
+          const u = await whoami();
+          setUser(u ?? { id: fbUser.uid, email: fbUser.email ?? undefined, role: "parent" });
+          setLoading(false);
+        });
+      }).catch(async () => {
+        // If Firebase fails, fall back to server session
+        const u = await whoami();
+        setUser(u);
+        setLoading(false);
       });
-
-      if (!loginRes.ok) {
-        throw new Error(loginRes.message || 'Login failed');
-      }
-
-      if (!loginRes.data.ok || !loginRes.data.user) {
-        throw new Error('Login response invalid');
-      }
-
-      // Verify session after login
-      const sessionRes = await http<any>('/api/session');
-
-      if (!sessionRes.ok) {
-        throw new Error('Session verification failed');
-      }
-
-      if (!sessionRes.data.authenticated || !sessionRes.data.user) {
-        throw new Error('Login succeeded but session missing; check cookies');
-      }
-
-      return sessionRes.data;
-    },
-    onSuccess: (response) => {
-      // Update session data in cache
-      queryClient.setQueryData(['/api/session'], response);
-      
-      // Show success toast
-      toast({
-        title: "Login successful",
-        description: "Welcome back!"
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Login failed",
-        description: error.message || "An error occurred during login",
-        variant: "destructive"
-      });
+    } else {
+      // Server-session mode
+      refresh();
     }
-  });
-  
-  // Logout mutation
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      const res = await http<any>('/api/auth/logout', {
-        method: 'POST',
-      });
+  }, [refresh]);
 
-      if (!res.ok) {
-        throw new Error(res.message || 'Logout failed');
-      }
-
-      return res.data;
-    },
-    onSuccess: () => {
-      // Clear session data from cache
-      queryClient.setQueryData(['/api/session'], { authenticated: false, user: null });
-      
-      // Clear all queries
-      queryClient.clear();
-      
-      // Show success toast
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out."
-      });
-      
-      // Hard navigate to auth page
-      window.location.href = '/auth';
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Logout failed",
-        description: error.message || "An error occurred during logout",
-        variant: "destructive"
-      });
+  const login = useCallback(async (email: string, password: string) => {
+    if (USE_FIREBASE) {
+      const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth");
+      const auth = getAuth();
+      await signInWithEmailAndPassword(auth, email, password);
+      const u = await whoami();
+      setUser(u);
+    } else {
+      await serverLogin(email, password);
+      const u = await whoami();
+      setUser(u);
     }
-  });
+  }, []);
 
-  const value: AuthContextType = {
-    user,
-    isLoading,
-    isAuthenticated,
-    loginMutation,
-    logoutMutation
-  };
+  const logout = useCallback(async () => {
+    if (USE_FIREBASE) {
+      const { getAuth, signOut } = await import("firebase/auth");
+      await signOut(getAuth()).catch(()=>{});
+    }
+    await serverLogout();
+    setUser(null);
+  }, []);
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = useMemo(() => ({ user, loading, login, logout, refresh }), [user, loading, login, logout, refresh]);
+
+  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 
-// Hook to use auth context
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+export function useAuth(){ return useContext(AuthCtx); }
