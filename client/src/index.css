@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Toast & Modal Stability Pack - CSS safety net */
+.radix-popover-content, .popover-content {
+  max-height: 80vh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  z-index: 100; /* above sidebars/cards */
+}
+
 @layer base {
   :root {
     --background: 210 20% 98%;
