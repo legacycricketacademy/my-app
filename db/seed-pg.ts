@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { db } from "./index.js";
 import * as schema from "@shared/schema.js";
 import { hashSync, genSaltSync } from "bcrypt";

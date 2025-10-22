@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, formatDistance } from "date-fns";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { fetchJson } from "@/lib/api";
 
 interface NotificationItem {
   id: number;
@@ -35,9 +36,7 @@ export function NotificationDropdown() {
     queryKey: ["/api/parent/announcements"],
     queryFn: async () => {
       try {
-        const response = await fetch("/api/parent/announcements");
-        if (!response.ok) return [];
-        return response.json();
+        return await fetchJson("/api/parent/announcements");
       } catch (error) {
         console.error("Failed to fetch announcements:", error);
         return [];
@@ -50,9 +49,7 @@ export function NotificationDropdown() {
     queryKey: ["/api/parent/payments/pending"],
     queryFn: async () => {
       try {
-        const response = await fetch("/api/parent/payments/pending");
-        if (!response.ok) return [];
-        return response.json();
+        return await fetchJson("/api/parent/payments/pending");
       } catch (error) {
         console.error("Failed to fetch pending payments:", error);
         return [];

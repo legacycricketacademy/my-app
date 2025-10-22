@@ -16,6 +16,7 @@ import { format, formatDistance } from "date-fns";
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { fetchJson } from "@/lib/api";
 
 interface NotificationItem {
   id: number;
@@ -36,9 +37,7 @@ export function AdminNotificationDropdown() {
     queryKey: ["/api/payments/pending"],
     queryFn: async () => {
       try {
-        const response = await fetch("/api/payments/pending");
-        if (!response.ok) return [];
-        return response.json();
+        return await fetchJson("/api/payments/pending");
       } catch (error) {
         console.error("Failed to fetch pending payments:", error);
         return [];
@@ -51,9 +50,7 @@ export function AdminNotificationDropdown() {
     queryKey: ["/api/connection-requests"],
     queryFn: async () => {
       try {
-        const response = await fetch("/api/connection-requests?status=pending");
-        if (!response.ok) return [];
-        return response.json();
+        return await fetchJson("/api/connection-requests?status=pending");
       } catch (error) {
         console.error("Failed to fetch connection requests:", error);
         return [];
@@ -66,9 +63,7 @@ export function AdminNotificationDropdown() {
     queryKey: ["/api/announcements/recent"],
     queryFn: async () => {
       try {
-        const response = await fetch("/api/announcements/recent");
-        if (!response.ok) return [];
-        return response.json();
+        return await fetchJson("/api/announcements/recent");
       } catch (error) {
         console.error("Failed to fetch announcements:", error);
         return [];

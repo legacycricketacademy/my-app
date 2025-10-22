@@ -52,9 +52,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // ---------- CORS ----------
-const ORIGIN = process.env.ORIGIN || process.env.CLIENT_URL || "http://localhost:5173";
+const CORS_ORIGIN = process.env.CORS_ORIGIN || process.env.ORIGIN || process.env.CLIENT_URL || "http://localhost:5173";
 app.use(cors({
-  origin: ORIGIN,          // MUST match exact origin (no trailing slash)
+  origin: CORS_ORIGIN,     // MUST match exact origin (no trailing slash)
   credentials: true,       // allow cookies/sessions
 }));
 
@@ -102,7 +102,7 @@ safeLog('SESSION middleware mounted', {
 console.log('SESSION middleware mounted', {
   secure: true,
   sameSite: 'none',
-  origin: ORIGIN,
+  origin: CORS_ORIGIN,
   domain: COOKIE_DOMAIN
 });
 

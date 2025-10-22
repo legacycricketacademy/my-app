@@ -17,87 +17,34 @@ export function registerDevLogin(app: Express, pool: Pool) {
     if (!ENABLE) return res.status(404).json({ error: "Not found" });
 
     try {
-      const { email } = req.body as { email?: string };
+      const { email, password } = req.body as { email?: string; password?: string };
       if (!email) return res.status(400).json({ error: "email required" });
 
-      const role = email === "admin@test.com" ? "admin" : "parent";
-      const username = email.split("@")[0];
-
-      // Ensure tables exist (no-op if already there)
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-          username text UNIQUE,
-          email text UNIQUE NOT NULL,
-          password_hash text,
-          role text NOT NULL DEFAULT 'parent',
-          created_at timestamptz DEFAULT now()
-        )
-      `);
-      
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS "session" (
-          "sid" varchar NOT NULL,
-          "sess" json NOT NULL,
-          "expire" timestamp(6) NOT NULL,
-          CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
-        )
-      `);
-      
-      await pool.query(`
-        CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")
-      `);
-      
-      // Drop old training_sessions table if it has wrong columns
-      try {
-        const tableCheck = await pool.query(`
-          SELECT column_name FROM information_schema.columns 
-          WHERE table_name = 'training_sessions' AND column_name = 'start_time'
-        `);
-        if (tableCheck.rows.length > 0) {
-          console.log('[DEV LOGIN] Dropping old training_sessions table with wrong column names');
-          await pool.query(`DROP TABLE IF EXISTS training_sessions CASCADE`);
-        }
-      } catch (e) {
-        // Table doesn't exist, that's fine
-      }
-      
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS training_sessions (
-          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-          title text NOT NULL,
-          age_group text NOT NULL,
-          location text NOT NULL,
-          start_utc timestamptz NOT NULL,
-          end_utc timestamptz NOT NULL,
-          max_attendees integer DEFAULT 20,
-          notes text,
-          created_at timestamptz DEFAULT now(),
-          updated_at timestamptz DEFAULT now(),
-          created_by uuid REFERENCES users(id)
-        )
-      `);
-
-      // Upsert user
+      // Query the existing users table (from Drizzle schema)
       const { rows } = await pool.query(
-        `INSERT INTO users (username, email, role)
-         VALUES ($1,$2,$3)
-         ON CONFLICT (email) DO UPDATE SET role=EXCLUDED.role
-         RETURNING id, email, role`,
-        [username, email, role]
+        `SELECT id, username, email, role, full_name FROM users WHERE email = $1 LIMIT 1`,
+        [email]
       );
+
+      if (rows.length === 0) {
+        console.log(`❌ Dev login failed: user not found for ${email}`);
+        return res.status(401).json({ error: "User not found" });
+      }
+
       const user = rows[0];
+      console.log(`[DEV LOGIN] Found user:`, { id: user.id, email: user.email, role: user.role });
 
       // Set session
       req.session.userId = user.id;
       req.session.user = user; // Add this line to match _whoami expectation
       (req.session as any).role = user.role;
+      
       await new Promise<void>((resolve, reject) =>
         req.session.save(err => (err ? reject(err) : resolve()))
       );
 
-      console.log(`✅ Dev login successful: ${email} (${role})`);
-      return res.json({ ok: true, user });
+      console.log(`✅ Dev login successful: ${email} (${user.role})`);
+      return res.json({ ok: true, user: { id: user.id, email: user.email, role: user.role, fullName: user.full_name } });
     } catch (e: any) {
       console.error("[DEV LOGIN ERROR]", e?.stack || e);
       return res.status(500).json({ error: "dev login failed", details: String(e?.message || e) });
