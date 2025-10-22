@@ -1,0 +1,97 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - link "🏏 Legacy Cricket" [ref=e6] [cursor=pointer]:
+        - /url: /dashboard/parent
+        - generic [ref=e7]:
+          - generic [ref=e8]: 🏏
+          - generic [ref=e9]: Legacy Cricket
+      - navigation [ref=e10]:
+        - link "Dashboard" [ref=e11] [cursor=pointer]:
+          - /url: /dashboard/parent
+          - generic [ref=e12]:
+            - img [ref=e13]
+            - generic [ref=e16]: Dashboard
+        - link "Schedule" [ref=e17] [cursor=pointer]:
+          - /url: /parent/schedule
+          - generic [ref=e18]:
+            - img [ref=e19]
+            - generic [ref=e21]: Schedule
+        - link "Announcements" [ref=e22] [cursor=pointer]:
+          - /url: /parent/announcements
+          - generic [ref=e23]:
+            - img [ref=e24]
+            - generic [ref=e27]: Announcements
+        - link "Connect Child" [ref=e28] [cursor=pointer]:
+          - /url: /parent/connect-child
+          - generic [ref=e29]:
+            - img [ref=e30]
+            - generic [ref=e35]: Connect Child
+        - link "Payments" [ref=e36] [cursor=pointer]:
+          - /url: /parent/payments
+          - generic [ref=e37]:
+            - img [ref=e38]
+            - generic [ref=e40]: Payments
+        - link "My Profile" [ref=e41] [cursor=pointer]:
+          - /url: /parent/profile
+          - generic [ref=e42]:
+            - img [ref=e43]
+            - generic [ref=e46]: My Profile
+      - generic [ref=e47]:
+        - link "U Parent Parent Portal" [ref=e49] [cursor=pointer]:
+          - /url: /parent/profile
+          - generic [ref=e51]: U
+          - generic [ref=e52]:
+            - paragraph [ref=e53]: Parent
+            - paragraph [ref=e54]: Parent Portal
+        - button "Sign Out" [ref=e55] [cursor=pointer]:
+          - img
+          - text: Sign Out
+    - generic [ref=e56]:
+      - banner [ref=e57]:
+        - heading "Parent Portal" [level=1] [ref=e58]
+      - main [ref=e59]:
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - heading "Welcome, Parent" [level=1] [ref=e64]
+              - paragraph [ref=e65]: Manage your child's cricket activities and progress
+            - button "View full calendar" [ref=e66] [cursor=pointer]:
+              - img
+              - text: View Full Calendar
+          - generic [ref=e67]:
+            - tablist [ref=e68]:
+              - tab "Schedule" [selected] [ref=e69] [cursor=pointer]:
+                - img
+                - generic [ref=e71]: Schedule
+              - tab "Player Profile" [ref=e72] [cursor=pointer]:
+                - img
+                - generic [ref=e75]: Player Profile
+              - tab "Fitness & Meals" [ref=e76] [cursor=pointer]:
+                - img
+                - generic [ref=e78]: Fitness & Meals
+              - tab "Locations" [ref=e79] [cursor=pointer]:
+                - img
+                - generic [ref=e82]: Locations
+              - tab "Payments" [ref=e83] [cursor=pointer]:
+                - img
+                - generic [ref=e85]: Payments
+            - tabpanel "Schedule" [ref=e86]:
+              - generic [ref=e87]:
+                - generic [ref=e88]:
+                  - heading "Upcoming Sessions" [level=3] [ref=e89]:
+                    - img
+                    - text: Upcoming Sessions
+                  - paragraph [ref=e91]: View and manage your child's upcoming cricket sessions
+                - generic [ref=e93]:
+                  - generic [ref=e94]: No upcoming sessions found
+                  - button "View Past Sessions" [ref=e95] [cursor=pointer]
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - region "Notifications (F8)":
+    - list
+```
