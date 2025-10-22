@@ -32,7 +32,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { http } from "@/lib/http";
 import { queryClient } from "../lib/queryClient";
-import { useToast, notify } from "@/shared/toast";
+import { toast } from '@/shared/toast';
 import { 
   Search, 
   UserPlus, 
