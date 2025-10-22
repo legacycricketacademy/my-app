@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { nowLocalISO, localMinutesToUtcIso } from '@/lib/datetime';
 import { http } from '@/lib/http';
-import { toast } from '@/shared/toast';
+import { notify } from '@/shared/toast';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
@@ -88,10 +88,10 @@ export function NewSessionModal({ open, onOpenChange }: NewSessionModalProps) {
     });
 
     if (!res.ok) {
-      return toast.error('Could not schedule session', { description: res.message ?? res.error });
+      return notify({ title: 'Could not schedule session', description: res.message ?? res.error });
     }
 
-    toast.success('Session scheduled');
+    notify({ title: 'Session scheduled' });
     queryClient.invalidateQueries({ queryKey: ['sessions'] });
     form.reset();
     onOpenChange(false);
