@@ -27,7 +27,7 @@ jobs:
         run: npm ci
       
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
       
       - name: Build application
         run: npm run build
@@ -78,7 +78,7 @@ jobs:
         run: npm ci
       
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
       
       - name: Wait for Render deployment
         run: npx wait-on https://legacy-cricket-app.onrender.com/healthz --timeout 180000 --interval 5000 || echo "Health check timed out, continuing anyway..."

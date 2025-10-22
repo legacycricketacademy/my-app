@@ -41,6 +41,23 @@ export default defineConfig({
         storageState: 'playwright/.auth/admin.json',
       },
     },
+    // Mobile devices
+    {
+      name: 'Mobile Safari',
+      dependencies: ['setup'],
+      use: {
+        ...devices['iPhone SE'],
+        storageState: 'playwright/.auth/admin.json',
+      },
+    },
+    {
+      name: 'iPad',
+      dependencies: ['setup'],
+      use: {
+        ...devices['iPad (gen 7)'],
+        storageState: 'playwright/.auth/admin.json',
+      },
+    },
   ],
 
   webServer: RUN_LOCAL_WEB ? {
