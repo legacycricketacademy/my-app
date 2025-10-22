@@ -982,6 +982,10 @@ app.post('/api/connection-requests', createAuthMiddleware(), async (req: Request
   }
 });
 
+// Authentication/Registration routes (public)
+import authRegistrationRouter from './routes/auth-registration.js';
+app.use('/api/auth', authRegistrationRouter);
+
 // Settings API routes (uses file-based store)
 import settingsRouter from './routes/settings.js';
 if (process.env.SETTINGS_API_ENABLED !== 'false') {

@@ -40,6 +40,7 @@ import AdminFitness from "@/pages/admin/Fitness";
 import ParentFitness from "@/pages/parent/Fitness";
 import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
+import RegisterNew from "@/pages/auth/RegisterNew";
 import ParentAvailability from "@/pages/parent/Availability";
 import { flags } from "@/utils/featureFlags";
 
@@ -207,7 +208,7 @@ function AppRoutes() {
 
       {/* Auth routes */}
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/register" element={<RegisterNew />} />
 
       {/* Catch-all route */}
       <Route path="*" element={<NotFound />} />
