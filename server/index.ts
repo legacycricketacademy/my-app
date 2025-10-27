@@ -52,7 +52,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // ---------- CORS ----------
-const ORIGIN = process.env.ORIGIN || process.env.CLIENT_URL || "http://localhost:5173";
+const CORS_ORIGIN = process.env.CORS_ORIGIN || process.env.ORIGIN || "http://localhost:5173";
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || CORS_ORIGIN;
+
 // Allow multiple origins for development (Vite may use different ports)
 const allowedOrigins = [
   "http://localhost:5173",
@@ -71,8 +73,8 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // For production, use the configured ORIGIN
-    if (origin === ORIGIN) {
+    // For production, use the configured CORS_ORIGIN
+    if (origin === CORS_ORIGIN) {
       return callback(null, true);
     }
     
@@ -465,6 +467,120 @@ app.post("/api/dev/login", async (req, res) => {
     res.status(500).json({
       success: false,
       message: `Login failed: ${errorMessage}`
+    });
+  }
+});
+
+// Standard auth login endpoint (non-dev)
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body as { email: string; password: string };
+    
+    console.log('🔐 POST /api/auth/login', { email });
+    
+    if (!req.session) {
+      console.error('SESSION NOT AVAILABLE in /api/auth/login');
+      return res.status(500).json({
+        success: false,
+        message: "Session middleware not configured"
+      });
+    }
+
+    // Development accounts for testing
+    const devAccounts = {
+      "admin@test.com": { password: "password", role: "admin", id: 1, email: "admin@test.com" },
+      "parent@test.com": { password: "password", role: "parent", id: 2, email: "parent@test.com" }
+    };
+
+    const account = devAccounts[email as keyof typeof devAccounts];
+
+    if (!account || account.password !== password) {
+      console.log('🔐 Login failed - invalid credentials', { email });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials"
+      });
+    }
+
+    // Set session data
+    req.session.userId = account.id;
+    req.session.user = {
+      id: account.id,
+      email: account.email,
+      role: account.role
+    };
+    req.session.role = account.role || 'parent';
+    
+    console.log('🔐 Login successful, setting session', { userId: account.id, role: account.role });
+
+    // Save session
+    await new Promise<void>((resolve, reject) => {
+      req.session.save(err => {
+        if (err) {
+          console.error('Session save error:', err);
+          reject(err);
+        } else {
+          console.log('🔐 Session saved');
+          resolve();
+        }
+      });
+    });
+
+    return res.status(200).json({ 
+      success: true,
+      message: "Login successful"
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error("Login error:", errorMessage, error);
+    res.status(500).json({
+      success: false,
+      message: `Login failed: ${errorMessage}`
+    });
+  }
+});
+
+// Session info endpoint
+app.get("/api/session/me", async (req, res) => {
+  try {
+    console.log('🔍 GET /api/session/me');
+    
+    if (!req.session?.userId) {
+      console.log('🔍 Not authenticated');
+      return res.status(401).json({
+        success: false,
+        authenticated: false,
+        user: null
+      });
+    }
+
+    // Development accounts for testing
+    const devAccounts: Record<string, any> = {
+      "1": { id: 1, email: "admin@test.com", role: "admin" },
+      "2": { id: 2, email: "parent@test.com", role: "parent" }
+    };
+
+    const user = devAccounts[String(req.session.userId)];
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    console.log('🔍 User authenticated', { userId: user.id, role: user.role });
+    
+    return res.status(200).json({
+      success: true,
+      authenticated: true,
+      user
+    });
+  } catch (error) {
+    console.error("Session me error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
     });
   }
 });

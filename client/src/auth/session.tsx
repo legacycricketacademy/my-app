@@ -36,20 +36,37 @@ async function whoami(): Promise<User | null> {
 
 async function serverLogin(email: string, password: string) {
   console.log("🔐 Attempting server login for:", email);
-  const r = await fetch("/api/dev/login", {
+  
+  // Step 1: POST /api/auth/login
+  const loginRes = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify({ email, password })
   });
-  console.log("🔐 Login response status:", r.status);
-  if (!r.ok) {
-    const text = await r.text();
+  console.log("🔐 Login response status:", loginRes.status);
+  if (!loginRes.ok) {
+    const text = await loginRes.text();
     console.error("🔐 Login failed:", text);
     throw new Error("Login failed: " + text);
   }
-  const data = await r.json();
-  console.log("🔐 Login success:", data);
+  const loginData = await loginRes.json();
+  console.log("🔐 Login success:", loginData);
+  
+  // Step 2: GET /api/session/me to verify session
+  const meRes = await fetch("/api/session/me", {
+    method: "GET",
+    credentials: "include"
+  });
+  console.log("🔐 Session me response status:", meRes.status);
+  if (!meRes.ok) {
+    console.error("🔐 Session verification failed");
+    throw new Error("Session verification failed");
+  }
+  const meData = await meRes.json();
+  console.log("🔐 Session verified:", meData);
+  
+  return meData.user;
 }
 
 async function serverLogout() {
@@ -106,9 +123,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const u = await whoami();
       setUser(u);
     } else {
-      await serverLogin(email, password);
-      const u = await whoami();
-      setUser(u);
+      const user = await serverLogin(email, password);
+      setUser(user);
     }
   }, []);
 

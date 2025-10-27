@@ -17,7 +17,12 @@ export async function loginAs(page: Page, email: string, password: string) {
   // Submit form
   await page.click('button[type="submit"]');
   
-  // Wait for redirect to dashboard
+  // Wait for /api/session/me to return a user (this proves authentication succeeded)
+  await page.waitForResponse(async response => {
+    return response.url().includes('/api/session/me') && response.status() === 200;
+  }, { timeout: 15000 });
+  
+  // Now wait for redirect to dashboard
   await page.waitForURL(/\/(dashboard|parent)/, { timeout: 15000 });
 }
 
@@ -80,7 +85,7 @@ export async function expectUnauthenticated(page: Page) {
  */
 export const ADMIN_CREDENTIALS = {
   email: 'admin@test.com',
-  password: 'Test1234!'
+  password: 'password'
 };
 
 /**
@@ -88,5 +93,5 @@ export const ADMIN_CREDENTIALS = {
  */
 export const PARENT_CREDENTIALS = {
   email: 'parent@test.com',
-  password: 'Test1234!'
+  password: 'password'
 };

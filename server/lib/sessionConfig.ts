@@ -21,6 +21,7 @@ async function loadPgSessionStore() {
 }
 
 export async function buildSessionMiddleware(): Promise<RequestHandler> {
+  // Only set domain if explicitly provided in env
   const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN || undefined;
   // Remove leading dot if present to ensure exact domain matching
   const normalizedDomain = COOKIE_DOMAIN?.startsWith('.') ? COOKIE_DOMAIN.slice(1) : COOKIE_DOMAIN;
@@ -34,7 +35,7 @@ export async function buildSessionMiddleware(): Promise<RequestHandler> {
       httpOnly: true,
       sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',  // 'none' for cross-site cookies on Render
       secure: isProd, // true on Render (https), false locally
-      domain: normalizedDomain, // exact domain: cricket-academy-app.onrender.com
+      ...(normalizedDomain && { domain: normalizedDomain }), // Only set if env provided
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
