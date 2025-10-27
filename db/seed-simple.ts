@@ -4,6 +4,20 @@ async function seed() {
   try {
     console.log("Starting simple database seeding...");
     
+    // Create users table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT,
+        role TEXT NOT NULL DEFAULT 'parent',
+        full_name TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log("✅ Users table created/verified");
+    
     // Just ensure admin user exists with simple schema
     const result = await pool.query(`
       INSERT INTO users (username, email, role, full_name)
