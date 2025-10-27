@@ -98,7 +98,7 @@ export default function AuthPageDev() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleDevAccountClick('parent@test.com', 'Test1234!')}
+                    onClick={() => handleDevAccountClick('parent@test.com', 'password')}
                   >
                     Use
                   </Button>
@@ -108,7 +108,7 @@ export default function AuthPageDev() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleDevAccountClick('admin@test.com', 'Test1234!')}
+                    onClick={() => handleDevAccountClick('admin@test.com', 'password')}
                   >
                     Use
                   </Button>

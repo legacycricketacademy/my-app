@@ -7,11 +7,13 @@ type Ctx = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  loginMutation: any; // For compatibility with AuthPageDev
 };
 
 const AuthCtx = createContext<Ctx>({
   user: null, loading: true,
-  async login(){}, async logout(){}, async refresh(){}
+  async login(){}, async logout(){}, async refresh(){},
+  loginMutation: { mutateAsync: async () => {}, isPending: false, isLoading: false, isSuccess: false, isError: false }
 });
 
 const USE_FIREBASE = (import.meta as any).env?.VITE_USE_FIREBASE === "true";
@@ -137,7 +139,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ user, loading, login, logout, refresh }), [user, loading, login, logout, refresh]);
+  // Create a loginMutation shim for compatibility with AuthPageDev
+  const loginMutation = useMemo(() => ({
+    mutateAsync: async (data: { email: string; password: string }) => {
+      await login(data.email, data.password);
+    },
+    isPending: loading,
+    isLoading: loading,
+    isSuccess: !!user,
+    isError: false
+  }), [login, loading, user]);
+
+  const value = useMemo(() => ({ user, loading, login, logout, refresh, loginMutation }), [user, loading, login, logout, refresh, loginMutation]);
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
