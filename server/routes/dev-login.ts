@@ -93,14 +93,33 @@ export function registerDevLogin(app: Express, pool: Pool) {
         }
       }
 
-      // Upsert user
-      const { rows } = await pool.query(
-        `INSERT INTO users (username, email, role, full_name)
-         VALUES ($1,$2,$3,$4)
-         ON CONFLICT (email) DO UPDATE SET role=EXCLUDED.role, full_name=EXCLUDED.full_name
-         RETURNING id, email, role`,
-        [username, email, role, username] // Use username as full_name for dev
-      );
+      // Upsert user - try new schema first, fallback to old schema
+      let rows;
+      try {
+        // Try with full_name column (new schema)
+        const result = await pool.query(
+          `INSERT INTO users (username, email, role, full_name)
+           VALUES ($1,$2,$3,$4)
+           ON CONFLICT (email) DO UPDATE SET role=EXCLUDED.role, full_name=EXCLUDED.full_name
+           RETURNING id, email, role`,
+          [username, email, role, username] // Use username as full_name for dev
+        );
+        rows = result.rows;
+      } catch (e: any) {
+        // Fallback to old schema without full_name
+        if (e.message?.includes('full_name')) {
+          const result = await pool.query(
+            `INSERT INTO users (username, email, role)
+             VALUES ($1,$2,$3)
+             ON CONFLICT (email) DO UPDATE SET role=EXCLUDED.role
+             RETURNING id, email, role`,
+            [username, email, role]
+          );
+          rows = result.rows;
+        } else {
+          throw e;
+        }
+      }
       const user = rows[0];
 
       // Set session
