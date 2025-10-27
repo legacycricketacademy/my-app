@@ -62,6 +62,7 @@ export function registerDevLogin(app: Express, pool: Pool) {
         // Table doesn't exist, that's fine
       }
       
+      // Create training_sessions table without foreign key first
       await pool.query(`
         CREATE TABLE IF NOT EXISTS training_sessions (
           id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -74,17 +75,31 @@ export function registerDevLogin(app: Express, pool: Pool) {
           notes text,
           created_at timestamptz DEFAULT now(),
           updated_at timestamptz DEFAULT now(),
-          created_by uuid REFERENCES users(id)
+          created_by uuid
         )
       `);
+      
+      // Add foreign key constraint if it doesn't exist
+      try {
+        await pool.query(`
+          ALTER TABLE training_sessions 
+          ADD CONSTRAINT training_sessions_created_by_fkey 
+          FOREIGN KEY (created_by) REFERENCES users(id)
+        `);
+      } catch (e: any) {
+        // Constraint might already exist, that's fine
+        if (!e.message?.includes('already exists')) {
+          console.log('[DEV LOGIN] Foreign key constraint already exists or error:', e.message);
+        }
+      }
 
       // Upsert user
       const { rows } = await pool.query(
-        `INSERT INTO users (username, email, role)
-         VALUES ($1,$2,$3)
-         ON CONFLICT (email) DO UPDATE SET role=EXCLUDED.role
+        `INSERT INTO users (username, email, role, full_name)
+         VALUES ($1,$2,$3,$4)
+         ON CONFLICT (email) DO UPDATE SET role=EXCLUDED.role, full_name=EXCLUDED.full_name
          RETURNING id, email, role`,
-        [username, email, role]
+        [username, email, role, username] // Use username as full_name for dev
       );
       const user = rows[0];
 

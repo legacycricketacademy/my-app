@@ -4,8 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from '@/shared/toast';
-import { ToastProvider } from "@/shared/toast";
-import { AuthProvider, useAuth } from "@/auth/session";
+import { useAuth } from "@/auth/session";
 import { RequireAuth, RedirectIfAuthed } from "@/auth/guards";
 import { ThemeProvider } from "@/providers/theme-provider";
 import {
@@ -219,22 +218,18 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ThemeProvider
-            defaultTheme="system"
-            storageKey="cricket-academy-theme"
-          >
-            <ToastProvider>
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
-              <Toaster />
-              <SonnerToaster />
-              <OfflineDetector />
-              <OnlineStatusIndicator />
-            </ToastProvider>
-          </ThemeProvider>
-        </AuthProvider>
+        <ThemeProvider
+          defaultTheme="system"
+          storageKey="cricket-academy-theme"
+        >
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+          <Toaster />
+          <SonnerToaster />
+          <OfflineDetector />
+          <OnlineStatusIndicator />
+        </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

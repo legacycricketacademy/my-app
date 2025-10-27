@@ -954,56 +954,6 @@ export function setupAuth(app: Express) {
       });
     }
   });
-
-  app.get("/api/user", authMiddleware, async (req, res) => {
-    // Import response utilities for standardized responses
-    const { createSuccessResponse, createUnauthorizedResponse, createErrorResponse } = await import('./utils/api-response');
-    
-    // authMiddleware has already verified the user is authenticated
-    // via passport session or JWT token, and set req.user
-    try {
-      // For JWT tokens, we need to get the complete user object from the database
-      if (req.user && !req.isAuthenticated()) {
-        // User is authenticated via JWT but not passport session
-        const userId = req.user.id;
-        
-        // Get full user data from storage
-        const user = await multiTenantStorage.getUser(userId);
-        if (!user) {
-          return res.status(401).json(createUnauthorizedResponse(
-            "User not found or session expired"
-          ));
-        }
-        
-        // Don't send password back to client
-        const { password, ...userWithoutPassword } = user as any;
-        return res.status(200).json(createSuccessResponse(
-          { user: userWithoutPassword },
-          "User data retrieved successfully"
-        ));
-      } else if (req.user) {
-        // User is authenticated via passport session
-        // Don't send password back to client
-        const { password, ...userWithoutPassword } = req.user as any;
-        return res.status(200).json(createSuccessResponse(
-          { user: userWithoutPassword },
-          "User data retrieved successfully"
-        ));
-      } else {
-        // No authenticated user found
-        return res.status(401).json(createUnauthorizedResponse(
-          "Not authenticated"
-        ));
-      }
-    } catch (error) {
-      console.error("Error in /api/user endpoint:", error);
-      return res.status(500).json(createErrorResponse(
-        "Failed to retrieve user data",
-        "user_retrieval_error",
-        500
-      ));
-    }
-  });
   
   // Middleware for protecting routes by role - using our standardized RBAC middleware
   app.use("/api/admin", authMiddleware, requireAdmin);

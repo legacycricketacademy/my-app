@@ -53,8 +53,31 @@ const app = express();
 
 // ---------- CORS ----------
 const ORIGIN = process.env.ORIGIN || process.env.CLIENT_URL || "http://localhost:5173";
+// Allow multiple origins for development (Vite may use different ports)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174", 
+  "http://localhost:5175",
+  "http://localhost:5176",
+  "http://localhost:5177"
+];
 app.use(cors({
-  origin: ORIGIN,          // MUST match exact origin (no trailing slash)
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // For production, use the configured ORIGIN
+    if (origin === ORIGIN) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,       // allow cookies/sessions
 }));
 
