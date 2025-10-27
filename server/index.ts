@@ -132,7 +132,7 @@ safeLog('SESSION middleware mounted', {
 console.log('SESSION middleware mounted', {
   secure: true,
   sameSite: 'none',
-  origin: ORIGIN,
+  origin: CORS_ORIGIN,
   domain: COOKIE_DOMAIN
 });
 
