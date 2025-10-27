@@ -20,6 +20,7 @@
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push --force --config=./drizzle.config.ts",
     "db:seed": "tsx db/seed-pg.ts",
+    "db:seed:simple": "tsx db/seed-simple.ts",
     "dev:client": "vite",
     "dev:server": "tsx server/index.ts",
     "pretest:e2e": "npm run build",
