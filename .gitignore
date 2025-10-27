@@ -80,3 +80,7 @@ agenthub/agents/youtube/db
 android-sdk/ legacy-cricket-academy/.git/objects/pack/pack-6d029d975162e2098f442a900ba1aec4cff5ca2f.pack
 legacy-cricket-academy/.git/objects/pack/pack-6d029d975162e2098f442a900ba1aec4cff5ca2f.pack
 legacy-cricket-academy/.git/objects/pack/pack-c21b8081af2b18590fc9da893c97b0273eb6c020.pack
+-e 
+# Environment files
+*.env
+*.env.*
