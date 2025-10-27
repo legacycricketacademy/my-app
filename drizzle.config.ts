@@ -7,8 +7,8 @@ if (!process.env.DATABASE_URL) {
 
 // Add SSL mode to DATABASE_URL if in production
 const dbUrl = process.env.DATABASE_URL;
-const urlWithSsl = process.env.NODE_ENV === 'production' && !dbUrl.includes('sslmode=')
-  ? `${dbUrl}${dbUrl.includes('?') ? '&' : '?'}sslmode=require`
+const urlWithSsl = process.env.NODE_ENV === 'production' && !dbUrl.includes('ssl=')
+  ? `${dbUrl}${dbUrl.includes('?') ? '&' : '?'}ssl=true`
   : dbUrl;
 
 export default {
