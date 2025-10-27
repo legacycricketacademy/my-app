@@ -18,6 +18,9 @@ export default function Login(){
             setSubmitting(true);
             await login(email, password);
             nav("/dashboard", { replace: true });
+          } catch (err) {
+            console.error("Login error:", err);
+            alert("Login failed: " + (err instanceof Error ? err.message : "Unknown error"));
           } finally {
             setSubmitting(false);
           }

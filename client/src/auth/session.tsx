@@ -18,21 +18,38 @@ const USE_FIREBASE = (import.meta as any).env?.VITE_USE_FIREBASE === "true";
 
 async function whoami(): Promise<User | null> {
   try {
+    console.log("🔍 Checking /api/_whoami");
     const r = await fetch("/api/_whoami", { credentials: "include" });
-    if (!r.ok) return null;
+    console.log("🔍 Whoami response status:", r.status);
+    if (!r.ok) {
+      console.log("🔍 Whoami failed, user not authenticated");
+      return null;
+    }
     const data = await r.json();
+    console.log("🔍 Whoami response:", data);
     return data?.user ?? null;
-  } catch { return null; }
+  } catch (err) {
+    console.error("🔍 Whoami error:", err);
+    return null;
+  }
 }
 
 async function serverLogin(email: string, password: string) {
+  console.log("🔐 Attempting server login for:", email);
   const r = await fetch("/api/dev/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify({ email, password })
   });
-  if (!r.ok) throw new Error("Login failed");
+  console.log("🔐 Login response status:", r.status);
+  if (!r.ok) {
+    const text = await r.text();
+    console.error("🔐 Login failed:", text);
+    throw new Error("Login failed: " + text);
+  }
+  const data = await r.json();
+  console.log("🔐 Login success:", data);
 }
 
 async function serverLogout() {
