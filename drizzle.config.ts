@@ -5,12 +5,18 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set');
 }
 
+// Add SSL mode to DATABASE_URL if in production
+const dbUrl = process.env.DATABASE_URL;
+const urlWithSsl = process.env.NODE_ENV === 'production' && !dbUrl.includes('sslmode=')
+  ? `${dbUrl}${dbUrl.includes('?') ? '&' : '?'}sslmode=require`
+  : dbUrl;
+
 export default {
   schema: ['./shared/schema.ts'],
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: { 
-    url: process.env.DATABASE_URL!,
+    url: urlWithSsl,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
   },
   verbose: true,
