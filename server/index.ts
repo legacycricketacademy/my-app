@@ -89,7 +89,12 @@ const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN || undefined; // e.g., c
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "sid";
 const SESSION_SECRET = process.env.SESSION_SECRET || "change-me";
 
-app.use(buildSessionMiddleware());
+// Build session middleware synchronously (will use memory store for now, PG loads lazily in production)
+const sessionMiddleware = buildSessionMiddleware();
+app.use(async (req, res, next) => {
+  const middleware = await sessionMiddleware;
+  middleware(req, res, next);
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

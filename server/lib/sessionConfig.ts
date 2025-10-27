@@ -2,21 +2,25 @@ import session from 'express-session';
 import type { RequestHandler } from 'express';
 import { COOKIE_SECRET, SESSION_NAME, isProd } from './env.js';
 
-// PG store setup for production
+// Lazily load PG session store
 let PgSessionStore: any = null;
-if (isProd) {
+async function loadPgSessionStore() {
+  if (PgSessionStore) return PgSessionStore;
+  if (!isProd) return null;
+  
   try {
-    // Synchronous require for production (CommonJS interop)
-    const connectPgSimple = require('connect-pg-simple');
-    PgSessionStore = connectPgSimple(session);
+    const connectPgSimple = await import('connect-pg-simple');
+    PgSessionStore = (connectPgSimple.default || connectPgSimple)(session);
     console.log('✅ PostgreSQL session store loaded (production)');
+    return PgSessionStore;
   } catch (e) {
     console.error('❌ Failed to load connect-pg-simple:', e);
     console.warn('⚠️ Falling back to memory session store');
+    return null;
   }
 }
 
-export function buildSessionMiddleware(): RequestHandler {
+export async function buildSessionMiddleware(): Promise<RequestHandler> {
   const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN || undefined;
   // Remove leading dot if present to ensure exact domain matching
   const normalizedDomain = COOKIE_DOMAIN?.startsWith('.') ? COOKIE_DOMAIN.slice(1) : COOKIE_DOMAIN;
@@ -37,11 +41,12 @@ export function buildSessionMiddleware(): RequestHandler {
   };
 
   // In production, use PG store if available; otherwise fall back to memory
-  if (isProd && PgSessionStore && process.env.DATABASE_URL) {
+  const store = await loadPgSessionStore();
+  if (isProd && store && process.env.DATABASE_URL) {
     console.log('✅ Using PostgreSQL session store (production)');
     return session({
       ...common,
-      store: new PgSessionStore({
+      store: new store({
         conString: process.env.DATABASE_URL,
         createTableIfMissing: true,
         ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
