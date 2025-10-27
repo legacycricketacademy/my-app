@@ -1272,4 +1272,4 @@ app.use((req, res, next) => {
     console.log('sessions: using connect-pg-simple with table "session" (auto-create enabled)');
     console.log('[BOOT] env=%s stripe=%s', process.env.NODE_ENV ?? 'unknown', !!process.env.STRIPE_SECRET_KEY ? 'ready' : 'missing');
   });
-})();
+})();// Trigger deployment
