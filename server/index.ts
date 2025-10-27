@@ -98,12 +98,18 @@ safeLog('SESSION middleware mounted', {
   path: '/'
 });
 
-// Session configuration logging
-console.log('SESSION middleware mounted', {
-  secure: true,
-  sameSite: 'none',
-  origin: CORS_ORIGIN,
-  domain: COOKIE_DOMAIN
+// Log CORS and session configuration on startup
+console.log('🔧 Auth Configuration:', {
+  NODE_ENV: process.env.NODE_ENV,
+  CORS_ORIGIN: CORS_ORIGIN,
+  COOKIE_DOMAIN: COOKIE_DOMAIN || '(not set - browser default)',
+  trustProxy: 1,
+  sessionCookie: {
+    name: COOKIE_NAME,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    httpOnly: true,
+  },
 });
 
 // Mount dev login route EARLY (before auth guards)
@@ -981,6 +987,10 @@ app.post('/api/connection-requests', createAuthMiddleware(), async (req: Request
     });
   }
 });
+
+// Diagnostic routes (dev/preview only)
+import diagnosticsRouter from './routes/diagnostics.js';
+app.use('/api/diag', diagnosticsRouter);
 
 // Authentication/Registration routes (public)
 import authRegistrationRouter from './routes/auth-registration.js';

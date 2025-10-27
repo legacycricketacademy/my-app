@@ -17,7 +17,10 @@ if (isProd) {
 }
 
 export function buildSessionMiddleware(): RequestHandler {
-  const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN || undefined;
+  // Cookie domain: omit for preview to let browser use host default
+  // Only set if explicitly provided and non-empty
+  const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN?.trim();
+  const cookieDomainConfig = COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {};
   
   const common = {
     name: SESSION_NAME,
@@ -28,11 +31,21 @@ export function buildSessionMiddleware(): RequestHandler {
       httpOnly: true,
       sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',  // 'none' for cross-site cookies on Render
       secure: isProd, // true on Render (https), false locally
-      domain: COOKIE_DOMAIN, // exact domain: cricket-academy-app.onrender.com
+      ...cookieDomainConfig, // Only include domain if set
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
   };
+
+  // Log session configuration on startup
+  console.log('🔧 Session Cookie Config:', {
+    name: SESSION_NAME,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    domain: COOKIE_DOMAIN || '(browser default - recommended for preview)',
+    httpOnly: true,
+    maxAge: '7 days',
+  });
 
   // In production, use PG store if available; otherwise fall back to memory
   if (isProd && PgSessionStore && process.env.DATABASE_URL) {
