@@ -17,9 +17,11 @@ export default function Login(){
           try {
             setSubmitting(true);
             await login(email, password);
+            console.log("✅ Login successful, redirecting to /dashboard");
             nav("/dashboard", { replace: true });
+            console.log("✅ Navigate called");
           } catch (err) {
-            console.error("Login error:", err);
+            console.error("❌ Login error:", err);
             alert("Login failed: " + (err instanceof Error ? err.message : "Unknown error"));
           } finally {
             setSubmitting(false);
