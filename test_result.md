@@ -179,11 +179,11 @@ frontend:
 
   - task: "Schedule Page"
     implemented: true
-    working: false
+    working: true
     file: "tests/e2e/schedule.smoke.spec.ts"
     stuck_count: 2
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
@@ -191,6 +191,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ SAME ISSUE: /dashboard/schedule shows login page instead of schedule content. Tests use storage state correctly but frontend doesn't recognize session. This is a systematic frontend session handling issue affecting all dashboard routes."
+        - working: true
+          agent: "testing"
+          comment: "✅ SCHEDULE PAGE WORKING: Auth guards fix resolved the systematic session issue. /dashboard/schedule now accessible and displays schedule content properly. No more login page redirects for authenticated users. Schedule functionality is accessible."
 
   - task: "Team Management Page"
     implemented: true
