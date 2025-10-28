@@ -181,13 +181,16 @@ frontend:
     implemented: true
     working: false
     file: "tests/mobile.smoke.spec.ts"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ Team page tests fail due to authentication redirect. Mobile responsiveness cannot be tested when pages don't load due to session issues."
+        - working: false
+          agent: "testing"
+          comment: "❌ SAME PATTERN: Team page shows login form instead of team content. Mobile tests fail because no dashboard content loads. This confirms the systematic frontend session issue affects all protected routes."
 
   - task: "Payments Page"
     implemented: true
