@@ -166,13 +166,16 @@ frontend:
     implemented: true
     working: false
     file: "tests/e2e/schedule.smoke.spec.ts"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ Schedule tests fail - cannot find 'Schedule' heading because page redirects to login. Same session persistence issue affects all dashboard pages."
+        - working: false
+          agent: "testing"
+          comment: "❌ SAME ISSUE: /dashboard/schedule shows login page instead of schedule content. Tests use storage state correctly but frontend doesn't recognize session. This is a systematic frontend session handling issue affecting all dashboard routes."
 
   - task: "Team Management Page"
     implemented: true
