@@ -136,13 +136,16 @@ frontend:
     implemented: true
     working: false
     file: "tests/e2e/nav.spec.ts"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ Navigation tests fail due to authentication issues. Tests use incorrect password (Test1234! vs password) and don't properly use storage state. All dashboard routes redirect to login page."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL ISSUE: While auth setup works, dashboard pages show login forms instead of authenticated content. Session works for API calls (/api/session returns authenticated: true) but frontend routing doesn't recognize session. Tests expect /dashboard but admin users redirect to /admin. Frontend-backend session integration broken."
 
   - task: "Announcements Page"
     implemented: true
