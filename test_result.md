@@ -151,13 +151,16 @@ frontend:
     implemented: true
     working: false
     file: "tests/announcements.e2e.spec.ts"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ All announcements tests fail - cannot find 'Announcements' heading because page redirects to login instead of showing dashboard content. Session authentication not working."
+        - working: false
+          agent: "testing"
+          comment: "❌ ROUTE ISSUE: /dashboard/announcements shows login page instead of announcements content. /admin/announcements returns 404. Session API works but frontend pages don't recognize authentication. Need to investigate frontend session handling and routing."
 
   - task: "Schedule Page"
     implemented: true
