@@ -253,18 +253,13 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Frontend Session Handling Investigation"
-    - "Dashboard Navigation"
-    - "Announcements Page"
-    - "Schedule Page"
-  stuck_tasks:
-    - "Dashboard Navigation"
-    - "Announcements Page"
-    - "Schedule Page"
-    - "Team Management Page"
-    - "Payments Page"
-  test_all: false
-  test_priority: "stuck_first"
+    - "CRUD Operations Testing"
+    - "Advanced Features Testing"
+    - "Mobile Responsiveness Testing"
+    - "Performance Testing"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
 
 agent_communication:
     - agent: "testing"
