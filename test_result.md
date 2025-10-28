@@ -196,13 +196,16 @@ frontend:
     implemented: true
     working: false
     file: "tests/mobile.smoke.spec.ts"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ Payments page tests fail - cannot find payment-related elements because page redirects to login instead of showing dashboard."
+        - working: false
+          agent: "testing"
+          comment: "❌ CONFIRMED: Payments page shows login form, cannot find data-testid='heading-payments'. Same frontend session issue. All dashboard routes affected by session handling problem."
 
   - task: "Mobile Responsiveness"
     implemented: true
