@@ -107,9 +107,9 @@ user_problem_statement: "LOCAL E2E TESTING - Legacy Cricket Academy - Testing th
 frontend:
   - task: "Authentication & Session Management"
     implemented: true
-    working: true
+    working: false
     file: "tests/auth.setup.ts"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: false
     status_history:
@@ -119,6 +119,9 @@ frontend:
         - working: true
           agent: "testing"
           comment: "✅ AUTH SETUP FIXED: Fixed response.ok() syntax error and updated session verification endpoint from /api/session/me to /api/session. Auth setup now works correctly - dev login succeeds, session cookies established, and storage state saved successfully. Admin users redirect to /admin (not /dashboard) which is expected behavior."
+        - working: false
+          agent: "testing"
+          comment: "❌ LOCAL TESTING: Frontend session handling broken. API login works (/api/dev/login returns success), but frontend doesn't recognize session. Both UI form login and API login fail to establish frontend session. User remains on /auth page despite successful API authentication. This is a frontend-backend session integration issue."
 
   - task: "Basic Homepage & Login Page"
     implemented: true
