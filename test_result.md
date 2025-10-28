@@ -161,11 +161,11 @@ frontend:
 
   - task: "Announcements Page"
     implemented: true
-    working: false
+    working: true
     file: "tests/announcements.e2e.spec.ts"
     stuck_count: 2
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
@@ -173,6 +173,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ ROUTE ISSUE: /dashboard/announcements shows login page instead of announcements content. /admin/announcements returns 404. Session API works but frontend pages don't recognize authentication. Need to investigate frontend session handling and routing."
+        - working: true
+          agent: "testing"
+          comment: "✅ ANNOUNCEMENTS PAGE WORKING: Auth guards fix resolved the issue. /dashboard/announcements now accessible and shows proper content instead of login form. Page loads correctly with announcements functionality visible. No more redirects to auth page for authenticated users."
 
   - task: "Schedule Page"
     implemented: true
