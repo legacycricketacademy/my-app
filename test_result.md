@@ -226,12 +226,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Authentication & Session Management"
+    - "Frontend Session Handling Investigation"
     - "Dashboard Navigation"
     - "Announcements Page"
     - "Schedule Page"
   stuck_tasks:
-    - "Authentication & Session Management"
     - "Dashboard Navigation"
     - "Announcements Page"
     - "Schedule Page"
