@@ -215,11 +215,11 @@ frontend:
 
   - task: "Payments Page"
     implemented: true
-    working: false
+    working: true
     file: "tests/mobile.smoke.spec.ts"
     stuck_count: 2
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
@@ -227,6 +227,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ CONFIRMED: Payments page shows login form, cannot find data-testid='heading-payments'. Same frontend session issue. All dashboard routes affected by session handling problem."
+        - working: true
+          agent: "testing"
+          comment: "✅ PAYMENTS PAGE WORKING: Auth guards fix resolved the session handling problem. Payments page now accessible through dashboard navigation. No more login form redirects for authenticated users. Payment functionality is available."
 
   - task: "Mobile Responsiveness"
     implemented: true
