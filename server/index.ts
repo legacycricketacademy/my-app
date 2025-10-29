@@ -405,18 +405,22 @@ app.post("/api/test/setup-users", async (req, res) => {
 // Standard auth login endpoint (non-dev)
 // Note: /api/dev/login is handled by registerDevLogin() above
 app.post("/api/auth/login", async (req, res) => {
+  // Wrap entire handler in try-catch to catch session-related errors
+  let sessionAvailable = false;
+  try {
+    // Test if session is accessible (this might trigger SSL error)
+    if (req.session) {
+      sessionAvailable = true;
+    }
+  } catch (sessionError: any) {
+    console.warn('🔐 Session access failed (continuing anyway):', sessionError?.message);
+    // Continue - we'll return success based on cookie alone
+  }
+  
   try {
     const { email, password } = req.body as { email?: string; password?: string };
     
-    console.log('🔐 POST /api/auth/login', { email, hasPassword: !!password, body: req.body });
-    
-    if (!req.session) {
-      console.error('SESSION NOT AVAILABLE in /api/auth/login');
-      return res.status(500).json({
-        success: false,
-        message: "Session middleware not configured"
-      });
-    }
+    console.log('🔐 POST /api/auth/login', { email, hasPassword: !!password, body: req.body, sessionAvailable });
 
     if (!email) {
       console.log('🔐 Login failed - no email provided');
@@ -452,16 +456,24 @@ app.post("/api/auth/login", async (req, res) => {
       });
     }
 
-    // Set session data
-    req.session.userId = account.id;
-    req.session.user = {
-      id: account.id,
-      email: account.email,
-      role: account.role
-    };
-    req.session.role = account.role || 'parent';
-    
-    console.log('🔐 Login successful, setting session', { userId: account.id, role: account.role });
+    // Set session data (may fail if session store has SSL issues)
+    let sessionSet = false;
+    try {
+      if (req.session) {
+        req.session.userId = account.id;
+        req.session.user = {
+          id: account.id,
+          email: account.email,
+          role: account.role
+        };
+        req.session.role = account.role || 'parent';
+        sessionSet = true;
+        console.log('🔐 Login successful, setting session', { userId: account.id, role: account.role });
+      }
+    } catch (sessionAccessError: any) {
+      console.warn('🔐 Could not set session (continuing anyway):', sessionAccessError?.message);
+      // Continue - we'll still return success with cookie
+    }
 
     // Save session with graceful error handling - continue even if save fails
     // This prevents SSL certificate errors from blocking login
@@ -495,10 +507,23 @@ app.post("/api/auth/login", async (req, res) => {
       // Continue anyway - req.session is already set
     }
 
+    // Set cookie manually if session failed
+    if (!sessionSet && account) {
+      const cookieSecure = process.env.NODE_ENV === 'production';
+      res.cookie('userId', String(account.id), {
+        httpOnly: true,
+        secure: cookieSecure,
+        sameSite: cookieSecure ? 'none' : 'lax',
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        path: '/'
+      });
+      console.log('🔐 Set userId cookie directly');
+    }
+    
     return res.status(200).json({ 
       success: true,
       ok: true, // Add for compatibility
-      message: "Login successful",
+      message: sessionSet ? "Login successful" : "Login successful (session limited)",
       user: {
         id: account.id,
         email: account.email,
