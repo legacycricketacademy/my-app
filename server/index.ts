@@ -398,81 +398,8 @@ app.post("/api/test/setup-users", async (req, res) => {
   }
 });
 
-// Dev login bypass endpoint (for testing without Firebase)
-app.post("/api/dev/login", async (req, res) => {
-  // Always allow dev login for now (for e2e testing)
-  // TODO: Add proper environment variable check later
-  
-  try {
-    const { email, password } = req.body as { email: string; password: string };
-    
-    safeLog('AUTH login start', { email });
-    
-    // Check if session is available
-    if (!req.session) {
-      console.error('SESSION NOT AVAILABLE in dev login');
-      return res.status(500).json({
-        success: false,
-        message: "Session middleware not configured"
-      });
-    }
-    safeLog('AUTH session available', { hasSession: !!req.session });
-
-    // Development accounts for testing
-    const devAccounts = {
-      "admin@test.com": { password: "password", role: "admin", id: 1 },
-      "parent@test.com": { password: "password", role: "parent", id: 2 }
-    };
-
-    const account = devAccounts[email as keyof typeof devAccounts];
-
-    if (!account || account.password !== password) {
-      safeLog('AUTH login failed', { email, reason: 'invalid credentials' });
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials"
-      });
-    }
-
-    // Set session data (no regenerate in dev to avoid issues)
-    req.session.userId = account.id;
-    req.session.role = account.role || 'parent';
-    safeLog('AUTH session set', { userId: account.id, role: account.role });
-
-    // Save session explicitly and wait for completion
-    await new Promise<void>((resolve, reject) => {
-      req.session.save(err => {
-        if (err) {
-          console.error('Session save error:', err);
-          reject(err);
-        } else {
-          safeLog('AUTH session save ok');
-          resolve();
-        }
-      });
-    });
-
-    // Return backward-compatible payload
-    const payload = {
-      ok: true,
-      user: {
-        id: account.id,
-        role: account.role || 'parent'
-      }
-    };
-    return res.status(200).json(payload);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error("Dev login error:", errorMessage, error);
-    safeLog('AUTH error', { error: errorMessage, stack: error instanceof Error ? error.stack : undefined });
-    res.status(500).json({
-      success: false,
-      message: `Login failed: ${errorMessage}`
-    });
-  }
-});
-
 // Standard auth login endpoint (non-dev)
+// Note: /api/dev/login is handled by registerDevLogin() above
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body as { email: string; password: string };
