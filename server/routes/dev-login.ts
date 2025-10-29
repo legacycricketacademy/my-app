@@ -58,23 +58,37 @@ export function registerDevLogin(app: Express, pool: Pool) {
       };
       (req.session as any).role = user.role;
       
-      // Save session with better error handling
+      // Save session with better error handling - continue even if save fails
+      // Session data is already set on req.session, so cookie will be sent
+      let sessionSaved = false;
       try {
-        await new Promise<void>((resolve, reject) =>
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            console.warn('[DEV LOGIN] Session save timeout - continuing anyway');
+            resolve();
+          }, 5000); // 5 second timeout
+          
           req.session.save(err => {
+            clearTimeout(timeout);
             if (err) {
-              console.error('[DEV LOGIN] Session save error:', err.message, err.stack);
-              // Don't reject - just log. Session might still work
+              console.error('[DEV LOGIN] Session save error (continuing anyway):', err.message);
+              // Don't fail login just because session save failed
+              // The session cookie will still be sent by Express
               resolve();
             } else {
+              sessionSaved = true;
               resolve();
             }
-          })
-        );
-        console.log('[DEV LOGIN] Session saved successfully');
+          });
+        });
+        if (sessionSaved) {
+          console.log('[DEV LOGIN] Session saved successfully');
+        } else {
+          console.log('[DEV LOGIN] Session save had issues but continuing');
+        }
       } catch (sessionErr: any) {
-        console.error('[DEV LOGIN] Session save exception:', sessionErr?.message);
-        // Continue anyway - session might still be set
+        console.error('[DEV LOGIN] Session save exception (continuing):', sessionErr?.message);
+        // Continue anyway - req.session is already set
       }
 
       console.log(`✅ Dev login successful: ${email} (${role})`);

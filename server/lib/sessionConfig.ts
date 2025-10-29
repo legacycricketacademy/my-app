@@ -42,19 +42,29 @@ export async function buildSessionMiddleware(): Promise<RequestHandler> {
     },
   };
 
-  // In production, use PG store if available; otherwise fall back to memory
+  // In production, try PG store but fall back to memory if it fails
   const store = await loadPgSessionStore();
   if (isProd && store && process.env.DATABASE_URL) {
-    console.log('✅ Using PostgreSQL session store (production)');
-    // Use pool instance instead of connection string to include SSL configuration
-    return session({
-      ...common,
-      store: new store({
-        pool: pool, // Use pool with SSL config instead of conString
-        createTableIfMissing: true,
-        ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
-      }),
-    });
+    try {
+      // Test if we can actually connect to the database
+      const testClient = await pool.connect();
+      await testClient.query('SELECT 1');
+      testClient.release();
+      
+      console.log('✅ Using PostgreSQL session store (production)');
+      // Use pool instance instead of connection string to include SSL configuration
+      return session({
+        ...common,
+        store: new store({
+          pool: pool, // Use pool with SSL config instead of conString
+          createTableIfMissing: true,
+          ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
+        }),
+      });
+    } catch (dbError: any) {
+      console.error('❌ PostgreSQL connection failed, falling back to memory store:', dbError.message);
+      console.warn('⚠️ Sessions will not persist across server restarts');
+    }
   }
 
   console.log('✅ Using memory session store (development or PG not available)');
