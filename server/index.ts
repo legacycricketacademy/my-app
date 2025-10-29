@@ -406,15 +406,23 @@ app.post("/api/test/setup-users", async (req, res) => {
 // Note: /api/dev/login is handled by registerDevLogin() above
 app.post("/api/auth/login", async (req, res) => {
   try {
-    const { email, password } = req.body as { email: string; password: string };
+    const { email, password } = req.body as { email?: string; password?: string };
     
-    console.log('🔐 POST /api/auth/login', { email });
+    console.log('🔐 POST /api/auth/login', { email, hasPassword: !!password, body: req.body });
     
     if (!req.session) {
       console.error('SESSION NOT AVAILABLE in /api/auth/login');
       return res.status(500).json({
         success: false,
         message: "Session middleware not configured"
+      });
+    }
+
+    if (!email) {
+      console.log('🔐 Login failed - no email provided');
+      return res.status(400).json({
+        success: false,
+        message: "Email is required"
       });
     }
 
@@ -426,8 +434,18 @@ app.post("/api/auth/login", async (req, res) => {
 
     const account = devAccounts[email as keyof typeof devAccounts];
 
-    if (!account || account.password !== password) {
-      console.log('🔐 Login failed - invalid credentials', { email });
+    // If password is provided, validate it. If not, allow login for dev accounts (passwordless for testing)
+    if (!account) {
+      console.log('🔐 Login failed - account not found', { email });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials"
+      });
+    }
+
+    // If password is provided, check it. Otherwise allow passwordless login for dev accounts
+    if (password !== undefined && account.password !== password) {
+      console.log('🔐 Login failed - password mismatch', { email, provided: !!password });
       return res.status(401).json({
         success: false,
         message: "Invalid credentials"
@@ -460,7 +478,13 @@ app.post("/api/auth/login", async (req, res) => {
 
     return res.status(200).json({ 
       success: true,
-      message: "Login successful"
+      ok: true, // Add for compatibility
+      message: "Login successful",
+      user: {
+        id: account.id,
+        email: account.email,
+        role: account.role
+      }
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
