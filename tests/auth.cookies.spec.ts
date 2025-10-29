@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test("dev login sets cookie and authenticated page loads", async ({ page, request }) => {
   // 1) Hit login UI and perform dev login through form
-  await page.goto("/login");
+  await page.goto("/auth");
   await page.getByTestId("input-email").fill("admin@test.com");
   await page.getByTestId("input-password").fill("password");
   await page.getByTestId("btn-login").click();

@@ -10,7 +10,7 @@ test.describe('Sessions E2E', () => {
     // Login as admin
     await page.goto(`${BASE}/auth`);
     await page.getByPlaceholder('Enter your email').fill(process.env.ADMIN_EMAIL || 'admin@test.com');
-    await page.getByPlaceholder('Enter your password').fill(process.env.ADMIN_PASSWORD || 'Test1234!');
+    await page.getByPlaceholder('Enter your password').fill(process.env.ADMIN_PASSWORD || 'password');
     await page.getByRole('button', { name: /sign in/i }).click();
     
     // Wait for dashboard to load

@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test("Login shows Register CTA and /register works", async ({ page, request }) => {
   await request.post("/api/_mailbox/clear").catch(()=>{});
-  await page.goto("/login");
+  await page.goto("/auth");
   await expect(page.getByTestId("link-register")).toBeVisible();
   await page.getByTestId("link-register").click();
   await expect(page.getByTestId("heading-register")).toBeVisible();

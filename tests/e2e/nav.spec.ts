@@ -7,7 +7,7 @@ test.describe('Dashboard Navigation', () => {
     // Login using test auth
     await page.goto(`${BASE}/auth`);
     await page.fill('input[name="email"]', 'admin@test.com');
-    await page.fill('input[name="password"]', 'Test1234!');
+      await page.fill('input[name="password"]', 'password');
     await page.click('button[type="submit"]');
     
     // Wait for redirect to dashboard

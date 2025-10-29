@@ -2,7 +2,7 @@ import { Page, expect } from "@playwright/test";
 
 /** login with the seeded admin user */
 export async function loginAsAdmin(page: Page) {
-  await page.goto("/login");
+  await page.goto("/auth");
   await page.getByTestId("input-email").fill("admin@test.com");
   await page.getByTestId("input-password").fill("password");
   await page.getByTestId("btn-login").click();

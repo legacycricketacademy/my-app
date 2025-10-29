@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Comprehensive Form Validation Tests", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
+    await page.goto("/auth");
     await page.getByTestId("input-email").fill("admin@test.com");
     await page.getByTestId("input-password").fill("password");
     await page.getByTestId("btn-login").click();
@@ -13,7 +13,7 @@ test.describe("Comprehensive Form Validation Tests", () => {
     test.use({ storageState: { cookies: [], origins: [] } }); // No auth
 
     test("should require email and password", async ({ page }) => {
-      await page.goto("/login");
+      await page.goto("/auth");
       
       const loginBtn = page.getByTestId("btn-login");
       await loginBtn.click();
@@ -30,7 +30,7 @@ test.describe("Comprehensive Form Validation Tests", () => {
     });
 
     test("should validate email format", async ({ page }) => {
-      await page.goto("/login");
+      await page.goto("/auth");
       
       await page.getByTestId("input-email").fill("invalid-email");
       await page.getByTestId("input-password").fill("password");
@@ -228,7 +228,7 @@ test.describe("Comprehensive Form Validation Tests", () => {
 
 test.describe("Error Handling & Edge Cases", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
+    await page.goto("/auth");
     await page.getByTestId("input-email").fill("admin@test.com");
     await page.getByTestId("input-password").fill("password");
     await page.getByTestId("btn-login").click();

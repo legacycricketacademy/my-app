@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("DateTime field is accessible and accepts input", async ({ page }) => {
-  await page.goto("/login");
+  await page.goto("/auth");
   await page.getByTestId("input-email").fill("admin@test.com");
   await page.getByTestId("input-password").fill("password");
   await page.getByTestId("btn-login").click();

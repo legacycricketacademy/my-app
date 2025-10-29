@@ -22,7 +22,7 @@ test('debug: login and check schedule button', async ({ page }) => {
   const signInButton = page.getByRole('button', { name: /sign in/i });
   
   await emailInput.fill('admin@test.com');
-  await passwordInput.fill('Test1234!');
+  await passwordInput.fill('password');
   await page.screenshot({ path: 'test-results/02-filled-form.png', fullPage: true });
   
   console.log('Step 3: Clicking sign in');

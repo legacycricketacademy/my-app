@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test';
 test.skip('shows banner and can attempt resend', async ({ page }) => {
   const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
   const email = process.env.PARENT_EMAIL_UNVERIFIED ?? 'unverified@test.com';
-  const password = process.env.PARENT_PASSWORD ?? 'Test1234!';
+  const password = process.env.PARENT_PASSWORD ?? 'password';
   
   await page.goto(`${BASE}/auth`);
   await page.getByPlaceholder(/email/i).fill(email);

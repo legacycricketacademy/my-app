@@ -48,7 +48,7 @@ test.describe('Authentication Flow', () => {
     
     // Fill in admin credentials
     await page.fill('input[name="email"]', 'admin@test.com');
-    await page.fill('input[name="password"]', 'Test1234!');
+    await page.fill('input[name="password"]', 'password');
     
     // Click sign in button and wait for navigation
     await Promise.all([

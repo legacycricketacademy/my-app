@@ -6,7 +6,7 @@ test("Homepage loads without errors", async ({ page }) => {
 });
 
 test("Login page loads", async ({ page }) => {
-  await page.goto("/login");
+  await page.goto("/auth");
   await expect(page.getByTestId("input-email")).toBeVisible();
   await expect(page.getByTestId("input-password")).toBeVisible();
   await expect(page.getByTestId("btn-login")).toBeVisible();

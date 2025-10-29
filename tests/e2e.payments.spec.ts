@@ -9,7 +9,7 @@ test('record payment flow', async ({ page }) => {
   // Login
   await page.goto(`${BASE}/auth`);
   await page.getByPlaceholder(/email/i).fill(process.env.ADMIN_EMAIL || 'admin@test.com');
-  await page.getByPlaceholder(/password/i).fill(process.env.ADMIN_PASSWORD || 'Test1234!');
+  await page.getByPlaceholder(/password/i).fill(process.env.ADMIN_PASSWORD || 'password');
   await page.getByRole('button', { name: /sign in/i }).click();
 
   // Wait for dashboard

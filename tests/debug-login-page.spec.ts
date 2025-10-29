@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("Debug login page content", async ({ page }) => {
-  await page.goto("/login");
+  await page.goto("/auth");
   
   // Wait for page to load
   await page.waitForLoadState("networkidle");

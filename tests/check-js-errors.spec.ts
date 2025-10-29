@@ -23,7 +23,7 @@ test("Check for JavaScript errors on login page", async ({ page }) => {
     errors.push(`Unhandled Rejection: ${error}`);
   });
   
-  await page.goto("/login");
+  await page.goto("/auth");
   
   // Wait for React to attempt to mount
   await page.waitForTimeout(3000);

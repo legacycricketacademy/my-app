@@ -23,7 +23,7 @@ test('bootstrap auth and save storage state', async ({ page }) => {
       console.log(`🔄 Login attempt ${attempt}/${maxRetries}...`);
       // Use /api/auth/login instead of /api/dev/login to avoid SSL database errors
       response = await page.request.post('/api/auth/login', {
-        data: { email, password: 'password' }, // Use password for /api/auth/login
+        data: { email, password }, // Use password variable
         headers: { 'Content-Type': 'application/json' },
         timeout: 60000 // 60 seconds for Render cold start
       });

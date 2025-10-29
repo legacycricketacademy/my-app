@@ -23,7 +23,7 @@ test("Debug login button click", async ({ page }) => {
     }
   });
   
-  await page.goto("/login");
+  await page.goto("/auth");
   await page.waitForLoadState("networkidle");
   
   // Fill in the form
