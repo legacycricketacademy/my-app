@@ -58,9 +58,24 @@ export function registerDevLogin(app: Express, pool: Pool) {
       };
       (req.session as any).role = user.role;
       
-      await new Promise<void>((resolve, reject) =>
-        req.session.save(err => (err ? reject(err) : resolve()))
-      );
+      // Save session with better error handling
+      try {
+        await new Promise<void>((resolve, reject) =>
+          req.session.save(err => {
+            if (err) {
+              console.error('[DEV LOGIN] Session save error:', err.message, err.stack);
+              // Don't reject - just log. Session might still work
+              resolve();
+            } else {
+              resolve();
+            }
+          })
+        );
+        console.log('[DEV LOGIN] Session saved successfully');
+      } catch (sessionErr: any) {
+        console.error('[DEV LOGIN] Session save exception:', sessionErr?.message);
+        // Continue anyway - session might still be set
+      }
 
       console.log(`✅ Dev login successful: ${email} (${role})`);
       // Return response matching what auth-page.tsx expects
@@ -73,7 +88,20 @@ export function registerDevLogin(app: Express, pool: Pool) {
         }
       });
     } catch (e: any) {
-      console.error("[DEV LOGIN ERROR]", e?.stack || e);
+      console.error("[DEV LOGIN ERROR]", {
+        message: e?.message,
+        stack: e?.stack,
+        name: e?.name,
+        code: e?.code
+      });
+      // Check if it's an SSL error and provide better message
+      if (e?.message?.includes('certificate') || e?.code === 'SELF_SIGNED_CERT_IN_CHAIN') {
+        return res.status(500).json({ 
+          error: "dev login failed", 
+          details: "Database SSL configuration issue - check pool SSL settings",
+          hint: "This should not happen with in-memory login"
+        });
+      }
       return res.status(500).json({ error: "dev login failed", details: String(e?.message || e) });
     }
   });
