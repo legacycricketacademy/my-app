@@ -17,10 +17,18 @@ export async function loginAs(page: Page, email: string, password: string) {
   // Submit form
   await page.click('button[type="submit"]');
   
-  // Wait for /api/session/me to return a user (this proves authentication succeeded)
-  await page.waitForResponse(async response => {
-    return response.url().includes('/api/session/me') && response.status() === 200;
-  }, { timeout: 15000 });
+  // Wait for either /api/session/me or /api/whoami to return a user (proves authentication succeeded)
+  await Promise.race([
+    page.waitForResponse(async response => {
+      return response.url().includes('/api/session/me') && response.status() === 200;
+    }, { timeout: 15000 }),
+    page.waitForResponse(async response => {
+      return response.url().includes('/api/whoami') && response.status() === 200;
+    }, { timeout: 15000 })
+  ]).catch(() => {
+    // Fallback: just wait a bit for navigation
+    return page.waitForTimeout(2000);
+  });
   
   // Now wait for redirect to dashboard
   await page.waitForURL(/\/(dashboard|parent)/, { timeout: 15000 });

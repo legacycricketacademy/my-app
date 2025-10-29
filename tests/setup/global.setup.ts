@@ -11,21 +11,21 @@ export default async function globalSetup(config: FullConfig) {
   });
 
   try {
-    // 2) Hit dev login (server-session), important: include credentials
-    console.log("📍 Attempting dev login...");
-    const login = await ctx.post("/api/dev/login", {
+    // 2) Hit auth login (server-session), important: include credentials
+    console.log("📍 Attempting auth login...");
+    const login = await ctx.post("/api/auth/login", {
       data: { email: "admin@test.com", password: "password" }
     });
     
     if (!login.ok()) {
-      console.warn(`⚠️ Dev login failed: ${login.status()} ${login.statusText()}`);
+      console.warn(`⚠️ Auth login failed: ${login.status()} ${login.statusText()}`);
       console.warn("⚠️ Skipping authentication setup - tests will run without auth");
       await ctx.storageState({ path: "tests/.state/admin.json" });
       await ctx.dispose();
       return;
     }
     
-    console.log("✅ Dev login successful");
+    console.log("✅ Auth login successful");
 
     // 3) whoami must show a user
     console.log("📍 Checking whoami...");
