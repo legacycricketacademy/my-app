@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "LOCAL E2E TESTING - Legacy Cricket Academy - Testing the Legacy Cricket Academy application running locally at http://localhost:3002 with PostgreSQL database"
+user_problem_statement: "COMPREHENSIVE E2E TESTING WITH LIVE PREVIEW - Legacy Cricket Academy - Testing the fully functional Legacy Cricket Academy application running at http://localhost:3000 with complete authentication, dashboard, and CRUD operations"
 
 frontend:
   - task: "Authentication & Session Management"
