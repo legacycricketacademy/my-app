@@ -42,24 +42,25 @@ export async function buildSessionMiddleware(): Promise<RequestHandler> {
     },
   };
 
-  // In production, use PG store if available; otherwise fall back to memory
-  const store = await loadPgSessionStore();
-  if (isProd && store && process.env.DATABASE_URL) {
-    console.log('✅ Using PostgreSQL session store (production)');
-    // Use pool instance instead of connection string to include SSL configuration
-    return session({
-      ...common,
-      store: new store({
-        pool: pool, // Use pool with SSL config instead of conString
-        createTableIfMissing: true,
-        ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
-      }),
-    });
-  }
-
-  console.log('✅ Using memory session store (development or PG not available)');
+  // FORCE MEMORY STORE to avoid SSL certificate errors
+  // TODO: Fix PostgreSQL SSL configuration properly later
+  console.log('🔧 Using memory session store (FORCED - to avoid SSL errors)');
   return session({
     ...common,
   });
+  
+  // Disabled PG store for now to fix SSL issues
+  // const store = await loadPgSessionStore();
+  // if (isProd && store && process.env.DATABASE_URL && false) { // disabled
+  //   console.log('✅ Using PostgreSQL session store (production)');
+  //   return session({
+  //     ...common,
+  //     store: new store({
+  //       pool: pool, // Use pool with SSL config instead of conString
+  //       createTableIfMissing: true,
+  //       ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
+  //     }),
+  //   });
+  // }
 }
 

@@ -197,8 +197,14 @@ const SESSION_SECRET = process.env.SESSION_SECRET || "change-me";
 // Build session middleware synchronously (will use memory store for now, PG loads lazily in production)
 const sessionMiddleware = buildSessionMiddleware();
 app.use(async (req, res, next) => {
-  const middleware = await sessionMiddleware;
-  middleware(req, res, next);
+  try {
+    const middleware = await sessionMiddleware;
+    middleware(req, res, next);
+  } catch (sessionInitError: any) {
+    console.error('❌ Session middleware initialization failed:', sessionInitError?.message);
+    // Continue without session if initialization fails
+    next();
+  }
 });
 
 // Robust boot logging
