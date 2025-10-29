@@ -52,7 +52,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // ---------- CORS ----------
-const CORS_ORIGIN = process.env.CORS_ORIGIN || process.env.ORIGIN || "http://localhost:5173";
+// Use globalThis.ORIGIN if set (by start script), otherwise fall back to env vars
+const CORS_ORIGIN = (globalThis as any).ORIGIN || process.env.CORS_ORIGIN || process.env.ORIGIN || "http://localhost:5173";
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || CORS_ORIGIN;
 
 // Allow multiple origins for development (Vite may use different ports)
@@ -132,7 +133,7 @@ safeLog('SESSION middleware mounted', {
 console.log('SESSION middleware mounted', {
   secure: true,
   sameSite: 'none',
-  origin: ORIGIN,
+  origin: CORS_ORIGIN,
   domain: COOKIE_DOMAIN
 });
 
