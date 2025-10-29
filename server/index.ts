@@ -200,10 +200,14 @@ app.get("/healthz", async (_req, res) => {
 // Whoami endpoint (requires authentication)
 app.get("/api/whoami", createAuthMiddleware(), (req, res) => {
   if (req.user) {
-    res.json({ 
-      id: req.user.id, 
-      role: req.user.role 
-    });
+    // Return user data in format expected by auth-page.tsx
+    const user = {
+      id: req.user.id,
+      role: req.user.role,
+      email: (req.session as any)?.user?.email || null,
+      fullName: (req.session as any)?.user?.fullName || null
+    };
+    res.json(user);
   } else {
     res.status(401).json({ 
       success: false, 

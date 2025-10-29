@@ -22,7 +22,8 @@ export function registerDevLogin(app: Express, pool: Pool) {
     if (!ENABLE) return res.status(404).json({ error: "Not found" });
 
     try {
-      const { email } = req.body as { email?: string };
+      // Accept both { email } and { email, password } formats
+      const { email, password } = req.body as { email?: string; password?: string };
       if (!email) return res.status(400).json({ error: "email required" });
 
       const role = email === "admin@test.com" ? "admin" : "parent";
