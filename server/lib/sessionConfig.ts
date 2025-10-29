@@ -42,11 +42,18 @@ export async function buildSessionMiddleware(): Promise<RequestHandler> {
     },
   };
 
-  // TEMPORARILY FORCE MEMORY STORE to avoid SSL certificate errors
-  // TODO: Fix PostgreSQL SSL configuration properly
-  const forceMemoryStore = process.env.FORCE_MEMORY_SESSION_STORE === 'true' || true; // Default to true for now
+  // FORCE MEMORY STORE to avoid SSL certificate errors
+  // PostgreSQL SSL configuration needs to be fixed properly later
+  const forceMemoryStore = process.env.FORCE_MEMORY_SESSION_STORE !== 'false'; // Default to true unless explicitly disabled
   
-  if (!forceMemoryStore) {
+  if (forceMemoryStore) {
+    console.log('🔧 Using memory session store (FORCED - SSL issues)');
+    return session({
+      ...common,
+    });
+  }
+  
+  if (false) { // Disable PG store for now
     // In production, try PG store but fall back to memory if it fails
     const store = await loadPgSessionStore();
     if (isProd && store && process.env.DATABASE_URL) {
