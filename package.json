@@ -11,7 +11,7 @@
     "build:client": "vite build",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "build": "npm run build:client && npm run build:server",
-    "start": "NODE_ENV=production node dist/index.js",
+    "start": "NODE_ENV=production node -e \"globalThis.ORIGIN = process.env.ORIGIN || process.env.CORS_ORIGIN || process.env.APP_URL; if(!process.env.BASE_URL) process.env.BASE_URL = globalThis.ORIGIN; import('./dist/index.js')\"",
     "start:dist": "node dist/index.js",
     "check": "tsc",
     "typecheck": "tsc --noEmit",
