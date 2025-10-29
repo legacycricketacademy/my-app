@@ -24,6 +24,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { MailService } from "@sendgrid/mail";
 import { sendAppEmail } from "./email.js";
 import { isDebugAuth, isDebugHeaders, safeLog, safeLogHeaders } from "./debug.js";
+import { existsSync } from "fs";
 
 // ---- Global crash guards ----
 process.on('unhandledRejection', (reason, promise) => {
@@ -65,7 +66,7 @@ app.use((req, res, next) => {
 // ---------- Static Files FIRST (before CORS) ----------
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.resolve(__dirname, "..", "dist", "public");
-  if (require('fs').existsSync(clientDist)) {
+  if (existsSync(clientDist)) {
     app.use(express.static(clientDist, { 
       immutable: true, 
       maxAge: "365d", 
