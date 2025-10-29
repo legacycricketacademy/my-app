@@ -117,14 +117,13 @@ app.use('/api', cors({
   credentials: true,       // allow cookies/sessions
 }));
 
-// Body parsing (needed for login handler)
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Create isolated router for login (NO SESSION MIDDLEWARE)
+const loginRouter = express.Router();
+loginRouter.use(express.json());
+loginRouter.use(express.urlencoded({ extended: false }));
 
-// Register /api/auth/login BEFORE session middleware to handle dev accounts
-// This prevents session middleware from trying to access PostgreSQL on login
-const devLoginHandler = async (req: any, res: any) => {
-  console.log('🔐 [LOGIN START] POST /api/auth/login (early handler, NO SESSION)');
+loginRouter.post("/login", async (req: any, res: any) => {
+  console.log('🔐 [LOGIN START] POST /api/auth/login (ISOLATED, NO SESSION)');
   
   let email: string | undefined;
   let password: string | undefined;
@@ -179,11 +178,12 @@ const devLoginHandler = async (req: any, res: any) => {
     });
   }
   
-  // Not a dev account - call next() to let it fall through to session-based handler
-  console.log('🔐 [LOGIN] Not dev account, passing to session handler');
+  console.log('🔐 [LOGIN] Not dev account');
   return res.status(401).json({ success: false, message: "Invalid credentials" });
-};
-app.post("/api/auth/login", devLoginHandler);
+});
+
+// Mount login router BEFORE session middleware
+app.use("/api/auth", loginRouter);
 
 // Stripe webhook route (needs raw body, must be before express.json())
 import stripeRouter from './stripe.js';
