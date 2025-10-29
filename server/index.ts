@@ -546,16 +546,9 @@ app.post("/api/auth/login", async (req, res) => {
         path: '/'
       });
       
-      // Try to set session if available (but don't fail if it doesn't work)
-      try {
-        if (req.session) {
-          req.session.userId = account.id;
-          req.session.user = { id: account.id, email: account.email, role: account.role };
-          (req.session as any).role = account.role;
-        }
-      } catch (sessionError: any) {
-        console.warn('Could not set session (cookies will work):', sessionError?.message);
-      }
+      // Skip session entirely for dev accounts to avoid SSL errors
+      // Cookies are sufficient for authentication
+      console.log('🔐 Dev login: skipping session, using cookies only');
       
       return res.status(200).json({
         success: true,
