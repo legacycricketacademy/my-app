@@ -21,8 +21,9 @@ test('bootstrap auth and save storage state', async ({ page }) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`🔄 Login attempt ${attempt}/${maxRetries}...`);
-      response = await page.request.post('/api/dev/login', {
-        data: { email },
+      // Use /api/auth/login instead of /api/dev/login to avoid SSL database errors
+      response = await page.request.post('/api/auth/login', {
+        data: { email, password: 'password' }, // Use password for /api/auth/login
         headers: { 'Content-Type': 'application/json' },
         timeout: 60000 // 60 seconds for Render cold start
       });
@@ -57,8 +58,8 @@ test('bootstrap auth and save storage state', async ({ page }) => {
   const loginResult = await response.json();
   console.log('✅ Dev login successful:', loginResult);
   
-  // Verify we're authenticated by checking /api/user
-  const userResponse = await page.request.get('/api/user', { timeout: 30000 });
+  // Verify we're authenticated by checking /api/whoami
+  const userResponse = await page.request.get('/api/whoami', { timeout: 30000 });
   if (!userResponse.ok()) {
     throw new Error(`User verification failed: ${userResponse.status()}`);
   }
