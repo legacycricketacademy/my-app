@@ -117,29 +117,14 @@ app.use('/api', cors({
   credentials: true,       // allow cookies/sessions
 }));
 
-// ---------- Session ----------
-const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN || undefined; // e.g., cricket-academy-app.onrender.com
-const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "sid";
-const SESSION_SECRET = process.env.SESSION_SECRET || "change-me";
-
-// Build session middleware synchronously (will use memory store for now, PG loads lazily in production)
-const sessionMiddleware = buildSessionMiddleware();
-app.use(async (req, res, next) => {
-  const middleware = await sessionMiddleware;
-  middleware(req, res, next);
-});
-
+// Body parsing (needed for login handler)
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Stripe webhook route (needs raw body, must be before express.json())
-import stripeRouter from './stripe.js';
-app.use('/api/stripe', stripeRouter);
-
-// Register /api/auth/login EARLY (before session middleware) to handle dev accounts
+// Register /api/auth/login BEFORE session middleware to handle dev accounts
 // This prevents session middleware from trying to access PostgreSQL on login
 const devLoginHandler = async (req: any, res: any) => {
-  console.log('🔐 [LOGIN START] POST /api/auth/login (early handler)');
+  console.log('🔐 [LOGIN START] POST /api/auth/login (early handler, NO SESSION)');
   
   let email: string | undefined;
   let password: string | undefined;
@@ -151,6 +136,7 @@ const devLoginHandler = async (req: any, res: any) => {
     console.log('🔐 [LOGIN] Extracted credentials:', { email: email ? `${email.substring(0, 3)}***` : 'missing', hasPassword: !!password });
   } catch (e: any) {
     console.warn('🔐 [LOGIN] Could not parse body:', e?.message);
+    return res.status(400).json({ success: false, message: "Invalid request body" });
   }
   
   const devAccounts = {
@@ -164,6 +150,7 @@ const devLoginHandler = async (req: any, res: any) => {
     const account = devAccounts[email as keyof typeof devAccounts];
     
     if (password !== undefined && account.password !== password) {
+      console.log('🔐 [LOGIN] Password mismatch');
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
     
@@ -183,7 +170,7 @@ const devLoginHandler = async (req: any, res: any) => {
       path: '/'
     });
     
-    console.log('🔐 [LOGIN] Dev login SUCCESS - returning early');
+    console.log('🔐 [LOGIN] ✅ Dev login SUCCESS - cookies set, NO SESSION ACCESS');
     return res.status(200).json({
       success: true,
       ok: true,
@@ -192,10 +179,27 @@ const devLoginHandler = async (req: any, res: any) => {
     });
   }
   
-  // Not a dev account - let it fall through to normal handler
-  console.log('🔐 [LOGIN] Not dev account, will use session handler');
+  // Not a dev account - call next() to let it fall through to session-based handler
+  console.log('🔐 [LOGIN] Not dev account, passing to session handler');
+  return res.status(401).json({ success: false, message: "Invalid credentials" });
 };
 app.post("/api/auth/login", devLoginHandler);
+
+// Stripe webhook route (needs raw body, must be before express.json())
+import stripeRouter from './stripe.js';
+app.use('/api/stripe', stripeRouter);
+
+// ---------- Session ----------
+const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN || undefined; // e.g., cricket-academy-app.onrender.com
+const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "sid";
+const SESSION_SECRET = process.env.SESSION_SECRET || "change-me";
+
+// Build session middleware synchronously (will use memory store for now, PG loads lazily in production)
+const sessionMiddleware = buildSessionMiddleware();
+app.use(async (req, res, next) => {
+  const middleware = await sessionMiddleware;
+  middleware(req, res, next);
+});
 
 // Robust boot logging
 console.log('Environment check:', {
