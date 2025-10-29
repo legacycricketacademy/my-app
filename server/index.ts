@@ -136,6 +136,67 @@ app.use(express.urlencoded({ extended: false }));
 import stripeRouter from './stripe.js';
 app.use('/api/stripe', stripeRouter);
 
+// Register /api/auth/login EARLY (before session middleware) to handle dev accounts
+// This prevents session middleware from trying to access PostgreSQL on login
+const devLoginHandler = async (req: any, res: any) => {
+  console.log('🔐 [LOGIN START] POST /api/auth/login (early handler)');
+  
+  let email: string | undefined;
+  let password: string | undefined;
+  
+  try {
+    const body = req.body as any;
+    email = body?.email;
+    password = body?.password;
+    console.log('🔐 [LOGIN] Extracted credentials:', { email: email ? `${email.substring(0, 3)}***` : 'missing', hasPassword: !!password });
+  } catch (e: any) {
+    console.warn('🔐 [LOGIN] Could not parse body:', e?.message);
+  }
+  
+  const devAccounts = {
+    "admin@test.com": { id: 1, email: "admin@test.com", role: "admin", password: "password" },
+    "parent@test.com": { id: 2, email: "parent@test.com", role: "parent", password: "password" },
+    "coach@test.com": { id: 3, email: "coach@test.com", role: "coach", password: "password" }
+  };
+  
+  if (email && devAccounts[email as keyof typeof devAccounts]) {
+    console.log('🔐 [LOGIN] Dev account detected:', email);
+    const account = devAccounts[email as keyof typeof devAccounts];
+    
+    if (password !== undefined && account.password !== password) {
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+    
+    const cookieSecure = process.env.NODE_ENV === 'production';
+    res.cookie('userId', String(account.id), {
+      httpOnly: true,
+      secure: cookieSecure,
+      sameSite: cookieSecure ? 'none' : 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      path: '/'
+    });
+    res.cookie('userRole', account.role, {
+      httpOnly: true,
+      secure: cookieSecure,
+      sameSite: cookieSecure ? 'none' : 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      path: '/'
+    });
+    
+    console.log('🔐 [LOGIN] Dev login SUCCESS - returning early');
+    return res.status(200).json({
+      success: true,
+      ok: true,
+      message: "Login successful",
+      user: { id: account.id, email: account.email, role: account.role }
+    });
+  }
+  
+  // Not a dev account - let it fall through to normal handler
+  console.log('🔐 [LOGIN] Not dev account, will use session handler');
+};
+app.post("/api/auth/login", devLoginHandler);
+
 // Robust boot logging
 console.log('Environment check:', {
   NODE_ENV: process.env.NODE_ENV,
@@ -502,69 +563,10 @@ app.post("/api/dev/login", async (req, res) => {
   }
 });
 
-// Standard auth login endpoint (non-dev)
-// IMPORTANT: Place this route BEFORE session middleware if possible, or handle dev accounts completely without session
+// Standard auth login endpoint (for non-dev accounts, after session middleware)
+// Dev accounts are handled by early handler above
 app.post("/api/auth/login", async (req, res) => {
-  console.log('🔐 [LOGIN START] POST /api/auth/login');
-  
-  // Extract email FIRST before any session operations (to handle errors gracefully)
-  let email: string | undefined;
-  let password: string | undefined;
-  
-  try {
-    const body = req.body as any;
-    email = body?.email;
-    password = body?.password;
-    console.log('🔐 [LOGIN] Extracted credentials:', { email: email ? `${email.substring(0, 3)}***` : 'missing', hasPassword: !!password });
-  } catch (e: any) {
-    console.warn('🔐 [LOGIN] Could not parse body:', e?.message);
-  }
-  
-  // For dev accounts, use simplified handler that avoids ALL session operations
-  const devAccounts = {
-    "admin@test.com": { id: 1, email: "admin@test.com", role: "admin", password: "password" },
-    "parent@test.com": { id: 2, email: "parent@test.com", role: "parent", password: "password" },
-    "coach@test.com": { id: 3, email: "coach@test.com", role: "coach", password: "password" }
-  };
-  
-  if (email && devAccounts[email as keyof typeof devAccounts]) {
-    console.log('🔐 [LOGIN] Dev account detected:', email);
-    const account = devAccounts[email as keyof typeof devAccounts];
-    
-    // Validate password if provided
-    if (password !== undefined && account.password !== password) {
-      console.log('🔐 [LOGIN] Password mismatch for dev account');
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
-    }
-    
-    // Set cookies directly (bypass session store completely)
-    console.log('🔐 [LOGIN] Setting cookies for dev account...');
-    const cookieSecure = process.env.NODE_ENV === 'production';
-    res.cookie('userId', String(account.id), {
-      httpOnly: true,
-      secure: cookieSecure,
-      sameSite: cookieSecure ? 'none' : 'lax',
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-      path: '/'
-    });
-    res.cookie('userRole', account.role, {
-      httpOnly: true,
-      secure: cookieSecure,
-      sameSite: cookieSecure ? 'none' : 'lax',
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-      path: '/'
-    });
-    
-    console.log('🔐 [LOGIN] Dev login SUCCESS - cookies set, skipping session');
-    return res.status(200).json({
-      success: true,
-      ok: true,
-      message: "Login successful",
-      user: { id: account.id, email: account.email, role: account.role }
-    });
-  }
-  
-  console.log('🔐 [LOGIN] Not a dev account, using session-based handler');
+  console.log('🔐 [LOGIN] Session-based handler (non-dev account)');
   
   // For non-dev accounts, use full session-based handler
   try {
