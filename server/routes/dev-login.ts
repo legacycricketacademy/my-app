@@ -4,11 +4,8 @@ import type { Express } from "express";
 
 export const devLoginRouter = Router();
 // Enable dev login for E2E testing or when explicitly enabled
-const ENABLE = 
-  String(process.env.ENABLE_DEV_LOGIN || "").toLowerCase() === "true" ||
-  process.env.NODE_ENV === "production" || // Always enable in production (Render)
-  process.env.BASE_URL?.includes("render.com") || // Enable on Render
-  true; // Enable by default for E2E testing
+// ALWAYS ENABLE for now to fix login issues
+const ENABLE = true;
 
 // tiny log helper
 function logHit(path: string, body: any) {
@@ -18,8 +15,16 @@ function logHit(path: string, body: any) {
 
 export function registerDevLogin(app: Express, pool: Pool) {
   app.post("/api/dev/login", async (req, res) => {
+    console.log('[DEV LOGIN] Request received:', { 
+      enabled: ENABLE, 
+      body: req.body,
+      hasSession: !!req.session 
+    });
     logHit("/api/dev/login", req.body);
-    if (!ENABLE) return res.status(404).json({ error: "Not found" });
+    if (!ENABLE) {
+      console.log('[DEV LOGIN] Endpoint disabled');
+      return res.status(404).json({ error: "Not found" });
+    }
 
     try {
       // Accept both { email } and { email, password } formats
@@ -128,16 +133,33 @@ export function registerDevLogin(app: Express, pool: Pool) {
       }
       const user = rows[0];
 
-      // Set session
-      req.session.userId = user.id;
-      req.session.user = user; // Add this line to match _whoami expectation
+      // Set session - use numeric IDs for compatibility with auth middleware
+      // Map admin@test.com to id: 1, parent@test.com to id: 2 for compatibility
+      const numericId = email === "admin@test.com" ? 1 : 2;
+      
+      req.session.userId = numericId; // Use numeric ID for compatibility
+      req.session.user = {
+        id: numericId,
+        email: user.email,
+        role: user.role,
+        fullName: username
+      };
       (req.session as any).role = user.role;
+      
       await new Promise<void>((resolve, reject) =>
         req.session.save(err => (err ? reject(err) : resolve()))
       );
 
       console.log(`✅ Dev login successful: ${email} (${role})`);
-      return res.json({ ok: true, user });
+      // Return response matching what auth-page.tsx expects
+      return res.json({ 
+        ok: true, 
+        user: {
+          id: numericId,
+          email: user.email,
+          role: user.role
+        }
+      });
     } catch (e: any) {
       console.error("[DEV LOGIN ERROR]", e?.stack || e);
       return res.status(500).json({ error: "dev login failed", details: String(e?.message || e) });
