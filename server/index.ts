@@ -51,9 +51,34 @@ const __dirname = path.dirname(__filename);
 // ---- Express app ----
 const app = express();
 
-// ---------- CORS ----------
+// Required on Render/Heroku to set Secure cookies correctly behind proxy
+app.set("trust proxy", 1);
+
+// Request logging middleware - print each request origin
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    console.log(`[REQUEST] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  }
+  next();
+});
+
+// ---------- Static Files FIRST (before CORS) ----------
+if (process.env.NODE_ENV === 'production') {
+  const clientDist = path.resolve(__dirname, "..", "dist", "public");
+  if (require('fs').existsSync(clientDist)) {
+    app.use(express.static(clientDist, { 
+      immutable: true, 
+      maxAge: "365d", 
+      etag: true 
+    }));
+    console.log('✅ Static files serving enabled:', clientDist);
+  }
+}
+
+// ---------- CORS (only for /api routes) ----------
 // Use globalThis.ORIGIN if set (by start script), otherwise fall back to env vars
 const CORS_ORIGIN = (globalThis as any).ORIGIN || process.env.CORS_ORIGIN || process.env.ORIGIN || "http://localhost:5173";
+const CORS_ALLOW_ALL = process.env.CORS_ALLOW_ALL === 'true';
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || CORS_ORIGIN;
 
 // Allow multiple origins for development (Vite may use different ports)
@@ -64,10 +89,17 @@ const allowedOrigins = [
   "http://localhost:5176",
   "http://localhost:5177"
 ];
-app.use(cors({
+
+// CORS middleware - only apply to /api routes
+app.use('/api', cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
+    
+    // Temporary switch: allow all origins if CORS_ALLOW_ALL=true
+    if (CORS_ALLOW_ALL) {
+      return callback(null, true);
+    }
     
     // Check if origin is in allowed list
     if (allowedOrigins.includes(origin)) {
@@ -75,7 +107,7 @@ app.use(cors({
     }
     
     // For production, use the configured CORS_ORIGIN
-    if (origin === CORS_ORIGIN) {
+    if (origin === CORS_ORIGIN || origin === process.env.ORIGIN || origin === process.env.CORS_ORIGIN || origin === process.env.APP_URL) {
       return callback(null, true);
     }
     
@@ -83,9 +115,6 @@ app.use(cors({
   },
   credentials: true,       // allow cookies/sessions
 }));
-
-// Required on Render/Heroku to set Secure cookies correctly behind proxy
-app.set("trust proxy", 1);
 
 // ---------- Session ----------
 const COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN || undefined; // e.g., cricket-academy-app.onrender.com
@@ -1245,8 +1274,27 @@ app.use((req, res, next) => {
   setupRedirects(app);
   const server = await registerRoutes(app);
 
-  // Static routes for React Router *after* API routes
-  setupStaticRoutes(app);
+  // SPA fallback with Cache-Control: no-store for HTML (after all routes)
+  if (process.env.NODE_ENV === 'production') {
+    const publicDir = path.resolve(__dirname, "..", "dist", "public");
+    app.get("*", (req, res) => {
+      // Only serve index.html for non-API routes and non-file requests
+      if (!req.path.startsWith('/api') && !req.path.includes('.')) {
+        res.set('Cache-Control', 'no-store');
+        res.sendFile(path.join(publicDir, "index.html"), (err) => {
+          if (err) {
+            console.error('SPA fallback error:', err);
+            res.status(404).json({ error: 'Not found' });
+          }
+        });
+      } else {
+        res.status(404).json({ error: 'Not found' });
+      }
+    });
+  } else {
+    // Static routes for React Router *after* API routes (dev mode)
+    setupStaticRoutes(app);
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

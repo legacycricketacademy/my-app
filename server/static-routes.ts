@@ -10,12 +10,25 @@ export function setupStaticRoutes(app: express.Express): void {
   // In development, skip static file serving - let Vite handle everything
   // Only set up static routes for production builds
   if (process.env.NODE_ENV === 'production') {
-    // Serve static files from dist/public directory
+    // Serve static files from dist/public directory with aggressive caching
     const publicDir = path.resolve(__dirname, "..", "dist", "public");
-    app.use(express.static(publicDir));
+    app.use(express.static(publicDir, {
+      immutable: true,
+      maxAge: "365d",
+      etag: true
+    }));
     
     // Catch-all route to handle client-side routes (SPA routing)
     // This must be after API routes to avoid interfering with them
-    app.get("*", (_, res) => res.sendFile(path.join(publicDir, "index.html")));
+    // HTML files should NOT be cached (no-store)
+    app.get("*", (req, res) => {
+      // Only serve index.html for non-API routes and non-file requests
+      if (!req.path.startsWith('/api') && !req.path.includes('.')) {
+        res.set('Cache-Control', 'no-store');
+        res.sendFile(path.join(publicDir, "index.html"));
+      } else {
+        res.status(404).json({ error: 'Not found' });
+      }
+    });
   }
 }

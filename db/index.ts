@@ -9,9 +9,11 @@ const poolConfig: any = {
   connectionString: DATABASE_URL,
 };
 
-// Only add SSL config in production
+// Add SSL config in production
 if (NODE_ENV === 'production') {
   poolConfig.ssl = { rejectUnauthorized: false };
+} else {
+  poolConfig.ssl = false;
 }
 
 export const pool = new Pool(poolConfig);

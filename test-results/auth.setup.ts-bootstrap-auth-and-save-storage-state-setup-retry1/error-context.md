@@ -11,13 +11,11 @@
         - text: Email
         - textbox "Email" [ref=e11]:
           - /placeholder: Enter your email
-          - text: admin@test.com
       - generic [ref=e12]:
         - text: Password
         - textbox "Password" [ref=e13]:
           - /placeholder: Enter your password
-          - text: password
-      - button "Sign In" [active] [ref=e14] [cursor=pointer]
+      - button "Sign In" [ref=e14] [cursor=pointer]
   - region "Notifications (F8)":
     - list
   - region "Notifications (F8)":
