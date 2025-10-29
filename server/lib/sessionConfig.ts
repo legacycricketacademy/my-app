@@ -1,6 +1,7 @@
 import session from 'express-session';
 import type { RequestHandler } from 'express';
 import { COOKIE_SECRET, SESSION_NAME, isProd } from './env.js';
+import { pool } from '../../db/index.js';
 
 // Lazily load PG session store
 let PgSessionStore: any = null;
@@ -45,10 +46,11 @@ export async function buildSessionMiddleware(): Promise<RequestHandler> {
   const store = await loadPgSessionStore();
   if (isProd && store && process.env.DATABASE_URL) {
     console.log('✅ Using PostgreSQL session store (production)');
+    // Use pool instance instead of connection string to include SSL configuration
     return session({
       ...common,
       store: new store({
-        conString: process.env.DATABASE_URL,
+        pool: pool, // Use pool with SSL config instead of conString
         createTableIfMissing: true,
         ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
       }),
