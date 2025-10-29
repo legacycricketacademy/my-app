@@ -42,29 +42,37 @@ export async function buildSessionMiddleware(): Promise<RequestHandler> {
     },
   };
 
-  // In production, try PG store but fall back to memory if it fails
-  const store = await loadPgSessionStore();
-  if (isProd && store && process.env.DATABASE_URL) {
-    // Skip connection test to avoid SSL errors during startup
-    // Let connect-pg-simple handle errors gracefully
-    try {
-      console.log('✅ Attempting PostgreSQL session store (production)');
-      // Use pool instance instead of connection string to include SSL configuration
-      const pgStore = new store({
-        pool: pool, // Use pool with SSL config instead of conString
-        createTableIfMissing: true,
-        ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
-      });
-      
-      // Return session with PG store - if it fails at runtime, Express will handle it
-      return session({
-        ...common,
-        store: pgStore,
-      });
-    } catch (dbError: any) {
-      console.error('❌ Failed to initialize PostgreSQL session store, using memory:', dbError.message);
-      console.warn('⚠️ Sessions will not persist across server restarts');
+  // TEMPORARILY FORCE MEMORY STORE to avoid SSL certificate errors
+  // TODO: Fix PostgreSQL SSL configuration properly
+  const forceMemoryStore = process.env.FORCE_MEMORY_SESSION_STORE === 'true' || true; // Default to true for now
+  
+  if (!forceMemoryStore) {
+    // In production, try PG store but fall back to memory if it fails
+    const store = await loadPgSessionStore();
+    if (isProd && store && process.env.DATABASE_URL) {
+      // Skip connection test to avoid SSL errors during startup
+      // Let connect-pg-simple handle errors gracefully
+      try {
+        console.log('✅ Attempting PostgreSQL session store (production)');
+        // Use pool instance instead of connection string to include SSL configuration
+        const pgStore = new store({
+          pool: pool, // Use pool with SSL config instead of conString
+          createTableIfMissing: true,
+          ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
+        });
+        
+        // Return session with PG store - if it fails at runtime, Express will handle it
+        return session({
+          ...common,
+          store: pgStore,
+        });
+      } catch (dbError: any) {
+        console.error('❌ Failed to initialize PostgreSQL session store, using memory:', dbError.message);
+        console.warn('⚠️ Sessions will not persist across server restarts');
+      }
     }
+  } else {
+    console.log('🔧 Using memory session store (FORCED - SSL issues)');
   }
 
   console.log('✅ Using memory session store (development or PG not available)');
