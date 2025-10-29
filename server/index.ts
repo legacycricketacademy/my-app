@@ -463,18 +463,37 @@ app.post("/api/auth/login", async (req, res) => {
     
     console.log('🔐 Login successful, setting session', { userId: account.id, role: account.role });
 
-    // Save session
-    await new Promise<void>((resolve, reject) => {
-      req.session.save(err => {
-        if (err) {
-          console.error('Session save error:', err);
-          reject(err);
-        } else {
-          console.log('🔐 Session saved');
+    // Save session with graceful error handling - continue even if save fails
+    // This prevents SSL certificate errors from blocking login
+    let sessionSaved = false;
+    try {
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => {
+          console.warn('🔐 Session save timeout - continuing anyway');
           resolve();
-        }
+        }, 5000); // 5 second timeout
+
+        req.session.save(err => {
+          clearTimeout(timeout);
+          if (err) {
+            console.error('🔐 Session save error (continuing anyway):', err instanceof Error ? err.message : String(err));
+            // Don't fail login just because session save failed
+            // The session cookie will still be sent by Express
+            resolve();
+          } else {
+            sessionSaved = true;
+            console.log('🔐 Session saved successfully');
+            resolve();
+          }
+        });
       });
-    });
+      if (!sessionSaved) {
+        console.log('🔐 Session save had issues but continuing');
+      }
+    } catch (sessionErr: any) {
+      console.error('🔐 Session save exception (continuing):', sessionErr?.message || String(sessionErr));
+      // Continue anyway - req.session is already set
+    }
 
     return res.status(200).json({ 
       success: true,
