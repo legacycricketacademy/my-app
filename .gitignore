@@ -112,3 +112,7 @@ legacy-cricket-academy/.git/objects/pack/pack-c21b8081af2b18590fc9da893c97b0273e
 # Environment files
 *.env
 *.env.*
+-e 
+# Environment files
+*.env
+*.env.*
