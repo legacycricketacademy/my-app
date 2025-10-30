@@ -3,15 +3,19 @@ import bcrypt from "bcryptjs";
 
 async function upsertUser(email: string, role: string, name: string) {
   const hash = await bcrypt.hash("password", 10);
-  await pool.query(`
-    INSERT INTO users (email, password_hash, role, full_name, is_active, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, true, now(), now())
-    ON CONFLICT (email) DO UPDATE 
-      SET password_hash = EXCLUDED.password_hash,
-          role = EXCLUDED.role,
-          is_active = true,
-          updated_at = now();
-  `, [email.toLowerCase(), hash, role, name]);
+  const normalizedEmail = email.toLowerCase();
+  const fullName = name || normalizedEmail.split("@")[0];
+  await pool.query(
+    `
+      INSERT INTO users (email, password_hash, role, full_name)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (email) DO UPDATE
+        SET password_hash = EXCLUDED.password_hash,
+            role = EXCLUDED.role,
+            full_name = COALESCE(EXCLUDED.full_name, users.full_name);
+    `,
+    [normalizedEmail, hash, role, fullName]
+  );
   console.log(`✅ Upserted user: ${email} (${role})`);
 }
 
