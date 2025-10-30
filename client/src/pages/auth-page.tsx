@@ -28,12 +28,15 @@ export default function AuthPage() {
     try {
       console.log('Starting login process...');
       
-      // Step 1: Call login endpoint
-      const loginResponse = await fetch('/api/dev/login', {
+      // Step 1: Call login endpoint (production-compatible)
+      const loginResponse = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-        credentials: 'include'
+        credentials: 'include',
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
       });
 
       console.log('Login response status:', loginResponse.status);
@@ -45,9 +48,8 @@ export default function AuthPage() {
 
       const loginData = await loginResponse.json();
       console.log('Login data:', loginData);
-      
-      if (!loginData.ok || !loginData.user) {
-        throw new Error('Login response invalid');
+      if (!loginData.success) {
+        throw new Error(loginData.message || 'Invalid credentials');
       }
 
       // Step 2: Verify session by calling whoami
@@ -169,8 +171,8 @@ export default function AuthPage() {
             <div className="mt-6 p-4 bg-gray-50 rounded-md">
               <h3 className="text-sm font-medium text-gray-900 mb-2">Development Accounts</h3>
               <div className="text-xs text-gray-600 space-y-1">
-                <div><strong>Parent:</strong> parent@test.com / Test1234!</div>
-                <div><strong>Admin:</strong> admin@test.com / Test1234!</div>
+                <div><strong>Parent:</strong> parent@test.com / password</div>
+                <div><strong>Admin:</strong> admin@test.com / password</div>
               </div>
               
               <div className="mt-3 pt-3 border-t border-gray-200">
