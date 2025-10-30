@@ -1,5 +1,54 @@
 # Legacy Cricket Academy
 
+A modern web platform for managing cricket coaching, player development, and parent engagement.
+
+---
+
+## 🚀 Features
+
+- **Player Management** — Track player profiles, age groups, and progress.
+- **Scheduling** — Create and manage coaching sessions with calendar integration.
+- **Payments** — Stripe and manual payment support.
+- **Parent Portal** — Parents can view schedules, announcements, and payments.
+- **Admin Dashboard** — Manage all academy operations in one place.
+- **Email Notifications** — Integrated with SendGrid.
+- **Responsive Design** — Mobile-first UI using Tailwind CSS + Shadcn UI.
+
+---
+
+## 🧩 Tech Stack
+
+| Layer | Technology |
+|--------|-------------|
+| Frontend | React + TypeScript + Vite |
+| Backend | Express.js (Node.js 20) |
+| ORM | Drizzle ORM (PostgreSQL) |
+| Database | PostgreSQL 16+ |
+| Auth | Secure cookie/session-based (SameSite=None, Secure) |
+| Deployment | Render |
+| CI/CD | GitHub Actions + Playwright |
+| Email | SendGrid |
+| Payments | Stripe |
+
+---
+
+## ⚙️ Local Setup
+
+### 1. Prerequisites
+- Node.js **v20+**
+- PostgreSQL **v16+**
+- Stripe account (optional, for payments)
+
+### 2. Clone and Install
+```bash
+git clone https://github.com/legacycricketacademy/my-app.git
+cd my-app
+npm install
+```
+
+<<<<<<< HEAD
+# Legacy Cricket Academy
+
 Comprehensive cricket academy management system for player development, coaching workflows, and family engagement.
 
 ## Features
@@ -333,3 +382,6 @@ npm run db:push
 npm run db:seed
 ```
 
+=======
+# Here are your Instructions
+>>>>>>> origin/conflict_301025_0703
