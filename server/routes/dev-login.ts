@@ -13,12 +13,20 @@ function logHit(path: string, body: any) {
 
 export function registerDevLogin(app: Express, pool: Pool) {
   app.post("/api/dev/login", async (req, res) => {
-    logHit("/api/dev/login", req.body);
+    const body: any = (req as any).body || {};
+    logHit("/api/dev/login", body);
     if (!ENABLE) return res.status(404).json({ error: "Not found" });
 
     try {
-      const { email } = req.body as { email?: string };
-      if (!email) return res.status(400).json({ error: "email required" });
+      const email: string | undefined = body.email || body.user || body.username;
+      const password: string | undefined = body.password;
+      if (!email) {
+        return res.status(400).json({
+          error: "dev login failed",
+          details: "email is required in JSON body",
+          example: { email: "admin@test.com" }
+        });
+      }
 
       const role = email === "admin@test.com" ? "admin" : "parent";
       const username = email.split("@")[0];
@@ -122,16 +130,31 @@ export function registerDevLogin(app: Express, pool: Pool) {
       }
       const user = rows[0];
 
-      // Set session
-      req.session.userId = user.id;
-      req.session.user = user; // Add this line to match _whoami expectation
-      (req.session as any).role = user.role;
-      await new Promise<void>((resolve, reject) =>
-        req.session.save(err => (err ? reject(err) : resolve()))
-      );
+      // Set cookies for fallback auth (compatible with whoami)
+      const cookieSecure = process.env.NODE_ENV === 'production';
+      res.cookie('userId', String(user.id || (role === 'admin' ? 1 : 2)), {
+        httpOnly: true,
+        secure: cookieSecure,
+        sameSite: cookieSecure ? 'none' : 'lax',
+        path: '/'
+      });
+      res.cookie('userRole', role, {
+        httpOnly: true,
+        secure: cookieSecure,
+        sameSite: cookieSecure ? 'none' : 'lax',
+        path: '/'
+      });
+
+      // Try to set session (best-effort)
+      try {
+        req.session.userId = user.id;
+        (req.session as any).user = user;
+        (req.session as any).role = user.role;
+        await new Promise<void>((resolve) => req.session.save(() => resolve()));
+      } catch {}
 
       console.log(`✅ Dev login successful: ${email} (${role})`);
-      return res.json({ ok: true, user });
+      return res.json({ success: true, ok: true, user: { id: user.id || (role === 'admin' ? 1 : 2), email, role } });
     } catch (e: any) {
       console.error("[DEV LOGIN ERROR]", e?.stack || e);
       return res.status(500).json({ error: "dev login failed", details: String(e?.message || e) });

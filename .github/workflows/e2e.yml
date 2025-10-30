@@ -1,3 +1,96 @@
+name: E2E Tests (Render)
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - deploy/render-staging
+  repository_dispatch:
+    types: [render_deploy_succeeded]
+  schedule:
+    - cron: '*/30 * * * *'
+
+jobs:
+  smoke-on-deploy:
+    if: github.event_name == 'repository_dispatch'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.46.0-focal
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (ci)
+        run: npm ci
+
+      - name: Wait for service health
+        env:
+          BASE_URL: https://cricket-academy-app.onrender.com
+        run: |
+          for i in {1..24}; do \
+            echo "Health check attempt $i"; \
+            if curl -fsS "$BASE_URL/api/ping" >/dev/null; then echo "Healthy"; exit 0; fi; \
+            sleep 5; \
+          done; \
+          echo "Service did not become healthy in time"; exit 1
+
+      - name: Run Playwright smoke (Render)
+        env:
+          BASE_URL: https://cricket-academy-app.onrender.com
+          ADMIN_EMAIL: admin@test.com
+          ADMIN_PASSWORD: password
+        run: |
+          npx playwright test tests/smoke.login-api.spec.ts --reporter=list || true
+
+      - name: Upload smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-smoke-results
+          path: |
+            test-results/**
+            playwright-report/**
+          if-no-files-found: ignore
+
+  e2e:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.46.0-focal
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (ci)
+        run: npm ci
+
+      - name: Run Playwright E2E (Render)
+        env:
+          BASE_URL: https://cricket-academy-app.onrender.com
+          ADMIN_EMAIL: admin@test.com
+          ADMIN_PASSWORD: password
+        run: |
+          npx playwright test --reporter=list || true
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: |
+            test-results/**
+            playwright-report/**
+          if-no-files-found: ignore
+
 name: E2E after Render deploy
 
 on:

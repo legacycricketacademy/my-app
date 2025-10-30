@@ -1,0 +1,7 @@
+{
+  "name": "Run Render E2E tests",
+  "prompt": "Check if the latest Render deploy for https://cricket-academy-app.onrender.com is healthy, and if it is, run Playwright E2E against it with:\nBASE_URL=https://cricket-academy-app.onrender.com\nADMIN_EMAIL=admin@test.com\nADMIN_PASSWORD=password\nCommand: npx playwright test --reporter=list\nSummarize failures.",
+  "schedule": "BEGIN:VEVENT\nRRULE:FREQ=MINUTELY;INTERVAL=15\nEND:VEVENT"
+}
+
+

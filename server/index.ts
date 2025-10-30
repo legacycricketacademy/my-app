@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 import passport from "passport";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -54,6 +55,10 @@ const app = express();
 
 // Required on Render/Heroku to set Secure cookies correctly behind proxy
 app.set("trust proxy", 1);
+
+// ---------- Body parsers FIRST ----------
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware - print each request origin
 app.use((req, res, next) => {
@@ -116,6 +121,9 @@ app.use('/api', cors({
   },
   credentials: true,       // allow cookies/sessions
 }));
+
+// ---------- Cookies (must be before whoami) ----------
+app.use(cookieParser());
 
 // Create isolated router for login (NO SESSION MIDDLEWARE)
 const loginRouter = express.Router();
@@ -345,19 +353,28 @@ app.get("/healthz", async (_req, res) => {
   }
 });
 
-// Whoami endpoint (requires authentication)
-app.get("/api/whoami", createAuthMiddleware(), (req, res) => {
-  if (req.user) {
-    res.json({ 
-      id: req.user.id, 
-      role: req.user.role 
-    });
-  } else {
-    res.status(401).json({ 
-      success: false, 
-      message: "Not authenticated" 
+// Whoami endpoint - compatible with session or cookie fallback
+app.get("/api/whoami", (req, res) => {
+  const sessUser = (req.session as any)?.user;
+  if (sessUser) {
+    return res.json({ success: true, ok: true, user: sessUser });
+  }
+
+  const userId = (req as any).cookies?.userId;
+  const userRole = (req as any).cookies?.userRole;
+  if (userId) {
+    return res.json({
+      success: true,
+      ok: true,
+      user: { id: Number(userId), role: userRole || 'parent' }
     });
   }
+
+  return res.status(401).json({
+    success: false,
+    message: 'Unauthorized - No valid session or token provided',
+    errorCode: 'unauthorized'
+  });
 });
 
 // Database setup endpoint (for Render e2e testing)
