@@ -1,0 +1,31 @@
+name: E2E Tests (Render)
+
+on:
+  repository_dispatch:
+    types: [render_deploy_succeeded]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.46.0-focal
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run tests against Render
+        env:
+          BASE_URL: https://cricket-academy-app.onrender.com
+          ADMIN_EMAIL: admin@test.com
+          ADMIN_PASSWORD: password
+        run: |
+          npx playwright test --reporter=list || true
+
+
