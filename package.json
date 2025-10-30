@@ -131,7 +131,8 @@
     "wouter": "^3.7.0",
     "ws": "^8.18.0",
     "zod": "^3.25.76",
-    "zod-validation-error": "^3.4.0"
+    "zod-validation-error": "^3.4.0",
+    "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
