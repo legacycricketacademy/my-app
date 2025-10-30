@@ -26,78 +26,40 @@ export default function AuthPage() {
     setIsLoading(true);
 
     try {
-      console.log('Starting login process...');
-      
-      // Step 1: Call login endpoint (production-compatible)
-      const loginResponse = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+        body: JSON.stringify({ email: formData.email.trim(), password: formData.password }),
       });
 
-      console.log('Login response status:', loginResponse.status);
-
-      if (!loginResponse.ok) {
-        const errorData = await loginResponse.json();
-        throw new Error(errorData.message || 'Login failed');
+      const data = await res.json().catch(() => ({} as any));
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || 'Login failed');
       }
 
-      const loginData = await loginResponse.json();
-      console.log('Login data:', loginData);
-      if (!loginData.success) {
-        throw new Error(loginData.message || 'Invalid credentials');
-      }
-
-      // Step 2: Verify session by calling whoami
-      console.log('Verifying session...');
-      const whoamiResponse = await fetch('/api/whoami', {
-        credentials: 'include'
-      });
-
-      console.log('Whoami response status:', whoamiResponse.status);
-
-      if (!whoamiResponse.ok) {
-        throw new Error('Session verification failed');
-      }
-
-      const whoamiData = await whoamiResponse.json();
-      console.log('Whoami data:', whoamiData);
-      
-      if (!whoamiData.id || !whoamiData.role) {
-        throw new Error('Session verification returned invalid user data');
-      }
-
-      console.log('Login successful, navigating to dashboard...');
-      toast({
-        title: "Welcome back!",
-        description: `You have been successfully signed in as ${whoamiData.role}.`,
-      });
-      
-      // Try React Router navigation first, fallback to hard navigation
+      // ✅ Login succeeded — navigate immediately
       try {
-        navigate('/dashboard');
-        // If navigate doesn't work, use hard navigation as fallback
-        setTimeout(() => {
-          if (window.location.pathname === '/auth') {
-            console.log('React Router navigation failed, using hard navigation...');
-            window.location.href = '/dashboard';
-          }
-        }, 1000);
-      } catch (navError) {
-        console.error('Navigation error:', navError);
+        navigate('/dashboard', { replace: true });
+      } catch {
         window.location.href = '/dashboard';
       }
-    } catch (error: any) {
+
+      // 🔁 Fire-and-forget session check, but don't block UI if it 401s
+      fetch('/api/session/me', { credentials: 'include' })
+        .then(async (r) => {
+          if (!r.ok) {
+            const t = await r.text();
+            console.warn('session/me failed after login (ignored):', r.status, t);
+          }
+        })
+        .catch((err) => console.warn('session/me error (ignored):', err));
+    } catch (err: any) {
       toast({
-        title: "Sign in failed",
-        description: error.message || "Please check your credentials and try again.",
-        variant: "destructive",
+        title: 'Sign in failed',
+        description: err?.message || 'Please check your credentials and try again.',
+        variant: 'destructive',
       });
-    } finally {
       setIsLoading(false);
     }
   };
