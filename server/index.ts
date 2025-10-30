@@ -61,6 +61,43 @@ app.set("trust proxy", 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ---- GitHub dispatch helper (optional) ----
+async function notifyGithubOnBoot(): Promise<void> {
+  const owner = process.env.GH_OWNER;
+  const repo = process.env.GH_REPO;
+  const pat = process.env.GH_PAT;
+  if (!owner || !repo || !pat) {
+    console.log('[gh-dispatch] skipped - missing GH_OWNER/GH_REPO/GH_PAT');
+    return;
+  }
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': `token ${pat}`,
+      },
+      body: JSON.stringify({
+        event_type: 'render_deploy_succeeded',
+        client_payload: {
+          render_url: process.env.BASE_URL ?? process.env.RENDER_EXTERNAL_URL ?? '',
+          branch: process.env.RENDER_GIT_BRANCH ?? 'deploy/render-staging',
+          commit: process.env.RENDER_GIT_COMMIT ?? '',
+          deployed_at: new Date().toISOString(),
+        },
+      }),
+    });
+    if (res.status === 204 || res.ok) {
+      console.log('[gh-dispatch] sent repository_dispatch to GitHub');
+    } else {
+      const text = await res.text();
+      console.error('[gh-dispatch] failed:', res.status, text);
+    }
+  } catch (err) {
+    console.error('[gh-dispatch] error:', err);
+  }
+}
+
 // Request logging middleware - print each request origin
 app.use((req, res, next) => {
   if (req.path.startsWith('/api')) {
@@ -1392,42 +1429,7 @@ app.use((req, res, next) => {
     console.log('sessions: using connect-pg-simple with table "session" (auto-create enabled)');
     console.log('[BOOT] env=%s stripe=%s', process.env.NODE_ENV ?? 'unknown', !!process.env.STRIPE_SECRET_KEY ? 'ready' : 'missing');
 
-    // 🔔 Notify GitHub Actions that Render deploy succeeded (optional)
-    const owner = process.env.GH_OWNER;
-    const repo = process.env.GH_REPO;
-    const pat = process.env.GH_PAT;
-    if (owner && repo && pat) {
-      (async () => {
-        try {
-          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/vnd.github+json',
-              'Authorization': `Bearer ${pat}`,
-              'X-GitHub-Api-Version': '2022-11-28',
-            },
-            body: JSON.stringify({
-              event_type: 'render_deploy_succeeded',
-              client_payload: {
-                render_service: 'cricket-academy-app.onrender.com',
-                branch: process.env.RENDER_GIT_BRANCH || 'deploy/render-staging',
-                commit: process.env.RENDER_GIT_COMMIT || '',
-              },
-            }),
-          });
-
-          if (!res.ok) {
-            const text = await res.text();
-            console.error('[github] dispatch failed', res.status, text);
-          } else {
-            console.log('[github] repository_dispatch sent ✅');
-          }
-        } catch (err) {
-          console.error('[github] dispatch error', err);
-        }
-      })();
-    } else {
-      console.log('[github] GH_OWNER/GH_REPO/GH_PAT not set, skipping dispatch');
-    }
+    // Notify GitHub on boot (optional)
+    notifyGithubOnBoot();
   });
 })();
