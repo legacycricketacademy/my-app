@@ -1,75 +1,56 @@
-import { test } from '@playwright/test';
+import { test as setup, expect, request } from '@playwright/test';
 
-const email = process.env.E2E_EMAIL || 'admin@test.com';
-const password = process.env.E2E_PASSWORD || 'password'; // Use seeded password from db/seed-pg.ts
+const BASE_URL =
+  process.env.BASE_URL || 'https://cricket-academy-app.onrender.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@test.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'password';
 
-test('bootstrap auth and save storage state', async ({ page }) => {
-  console.log('🔵 Starting auth setup with:', email);
-  
-  // Use standard auth login API (works in production and locally)
-  console.log('📍 Using /api/auth/login API');
-  
-  // Navigate to auth page first to establish session (increased timeout for Render cold start)
-  await page.goto('/auth', { waitUntil: 'load', timeout: 60000 });
-  console.log('✅ On auth page');
-  
-  // Use auth login API directly with retry logic for Render cold starts
-  let response;
-  let lastError;
-  const maxRetries = 3;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`🔄 Login attempt ${attempt}/${maxRetries}...`);
-      response = await page.request.post('/api/auth/login', {
-        data: { email, password },
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 60000 // 60 seconds for Render cold start
-      });
-      
-      if (response.ok()) {
-        break; // Success!
-      }
-      
-      const errorText = await response.text();
-      lastError = `Status ${response.status()}: ${errorText}`;
-      console.log(`⚠️ Attempt ${attempt} failed: ${lastError}`);
-      
-      if (attempt < maxRetries) {
-        console.log('⏳ Waiting 10 seconds before retry...');
-        await page.waitForTimeout(10000);
-      }
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : String(error);
-      console.log(`⚠️ Attempt ${attempt} threw error: ${lastError}`);
-      
-      if (attempt < maxRetries) {
-        console.log('⏳ Waiting 10 seconds before retry...');
-        await page.waitForTimeout(10000);
-      }
-    }
+setup('bootstrap auth and save storage state', async ({ page, context }) => {
+  console.log('🔵 Auth setup starting…');
+  console.log('➡️ BASE_URL =', BASE_URL);
+  console.log('➡️ ADMIN_EMAIL =', ADMIN_EMAIL);
+
+  // 1) call API directly (most reliable in CI)
+  const api = await request.newContext({
+    baseURL: BASE_URL,
+    extraHTTPHeaders: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const resp = await api.post('/api/auth/login', {
+    data: {
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
+    },
+  });
+
+  const status = resp.status();
+  const body = await resp.json().catch(() => ({} as any));
+  console.log('🔎 login status =', status);
+  console.log('🔎 login body   =', body);
+
+  if (status !== 200 || !body?.success) {
+    throw new Error(
+      `❌ Login failed in CI.\nStatus: ${status}\nBody: ${JSON.stringify(
+        body,
+        null,
+        2
+      )}\nCheck: POST ${BASE_URL}/api/auth/login`
+    );
   }
-  
-  if (!response || !response.ok()) {
-    throw new Error(`Auth login failed after ${maxRetries} attempts. Last error: ${lastError}`);
-  }
-  
-  const loginResult = await response.json();
-  console.log('✅ Auth login successful:', loginResult);
-  
-  // Verify we're authenticated by checking /api/whoami
-  const userResponse = await page.request.get('/api/whoami', { timeout: 30000 });
-  if (!userResponse.ok()) {
-    throw new Error(`User verification failed: ${userResponse.status()}`);
-  }
-  
-  const userData = await userResponse.json();
-  console.log('✅ User verified:', userData);
-  
-  // Wait a moment for session to be fully established
-  await page.waitForTimeout(1000);
-  
-  // Save the storage state for other tests
-  await page.context().storageState({ path: 'playwright/.auth/admin.json' });
-  console.log('✅ Storage state saved');
+
+  // 2) attach cookies to browser context
+  const cookies = await api.storageState();
+  await context.addCookies(cookies.cookies ?? []);
+
+  // 3) verify with /api/whoami
+  const who = await api.get('/api/whoami');
+  const whoJson = await who.json().catch(() => ({} as any));
+  console.log('🟢 whoami =', whoJson);
+
+  // 4) also do UI nav once so downstream tests have storage
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
+  await page.context().storageState({ path: 'storageState.json' });
+  console.log('✅ storageState.json written');
 });
