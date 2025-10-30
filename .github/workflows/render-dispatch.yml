@@ -1,0 +1,16 @@
+name: Render Deploy Dispatch Receiver
+
+on:
+  repository_dispatch:
+    types: [render_deploy_succeeded]
+
+jobs:
+  acknowledge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acknowledge dispatch
+        run: |
+          echo "Received repository_dispatch: render_deploy_succeeded"
+          echo "SHA: $GITHUB_SHA | REF: $GITHUB_REF | EVENT: $GITHUB_EVENT_NAME"
+
+

@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
+import fetch from "node-fetch";
 import cookieParser from "cookie-parser";
 import passport from "passport";
 import path from "path";
@@ -1390,5 +1391,43 @@ app.use((req, res, next) => {
     console.log(`[express] listening on ${port}`);
     console.log('sessions: using connect-pg-simple with table "session" (auto-create enabled)');
     console.log('[BOOT] env=%s stripe=%s', process.env.NODE_ENV ?? 'unknown', !!process.env.STRIPE_SECRET_KEY ? 'ready' : 'missing');
+
+    // 🔔 Notify GitHub Actions that Render deploy succeeded (optional)
+    const owner = process.env.GH_OWNER;
+    const repo = process.env.GH_REPO;
+    const pat = process.env.GH_PAT;
+    if (owner && repo && pat) {
+      (async () => {
+        try {
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/vnd.github+json',
+              'Authorization': `Bearer ${pat}`,
+              'X-GitHub-Api-Version': '2022-11-28',
+            },
+            body: JSON.stringify({
+              event_type: 'render_deploy_succeeded',
+              client_payload: {
+                render_service: 'cricket-academy-app.onrender.com',
+                branch: process.env.RENDER_GIT_BRANCH || 'deploy/render-staging',
+                commit: process.env.RENDER_GIT_COMMIT || '',
+              },
+            }),
+          });
+
+          if (!res.ok) {
+            const text = await res.text();
+            console.error('[github] dispatch failed', res.status, text);
+          } else {
+            console.log('[github] repository_dispatch sent ✅');
+          }
+        } catch (err) {
+          console.error('[github] dispatch error', err);
+        }
+      })();
+    } else {
+      console.log('[github] GH_OWNER/GH_REPO/GH_PAT not set, skipping dispatch');
+    }
   });
 })();
