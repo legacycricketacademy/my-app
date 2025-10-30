@@ -1,13 +1,13 @@
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  schema: './shared/schema.ts',  // adjust if schema path differs
-  out: './drizzle',
-  driver: 'pg',
+  dialect: "postgresql",
+  schema: "./server/db/schema.ts",  // adjust if our schema is elsewhere
+  out: "./drizzle",
   dbCredentials: {
     connectionString: process.env.DATABASE_URL!,
-    ssl: process.env.NODE_ENV === 'production'
+    ssl: process.env.NODE_ENV === "production"
       ? { rejectUnauthorized: false }
-      : undefined
-  }
+      : false,
+  },
 });
