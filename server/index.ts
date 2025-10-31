@@ -782,27 +782,103 @@ app.get("/cookie-check", (req, res) => {
 });
 
 // User info endpoint for frontend auth state (works with both session and JWT)
-app.get("/api/user", createAuthMiddleware(), async (req, res) => {
+// Includes cookie-based fallback to prevent post-login redirect timing issues
+app.get("/api/user", async (req, res) => {
   try {
-    // Check if user is authenticated (either via session or JWT)
-    if (req.user) {
-      const user = {
-        id: req.user.id,
-        email: req.user.role === "admin" ? "admin@test.com" : "parent@test.com",
-        role: req.user.role,
-        fullName: req.user.role === "admin" ? "admin" : "parent"
+    // First check if session already exists (via auth middleware or previous sync)
+    if (req.session?.userId) {
+      const devAccounts: Record<string, { id: number; email: string; role: string }> = {
+        "1": { id: 1, email: "admin@test.com", role: "admin" },
+        "2": { id: 2, email: "parent@test.com", role: "parent" },
+        "3": { id: 3, email: "coach@test.com", role: "coach" }
+      };
+      const account = devAccounts[String(req.session.userId)] || {
+        id: req.session.userId,
+        email: req.session.userId === 1 ? 'admin@test.com' : req.session.userId === 2 ? 'parent@test.com' : 'coach@test.com',
+        role: req.session.role || 'parent'
       };
       
       return res.json({
         success: true,
-        data: { user }
+        data: {
+          user: {
+            id: account.id,
+            email: account.email,
+            role: account.role,
+            fullName: account.role === "admin" ? "admin" : account.role === "parent" ? "parent" : "coach"
+          }
+        }
       });
     }
     
-    // Not authenticated
-    return res.status(401).json({
-      success: false,
-      message: "Not authenticated"
+    // Fallback: create session from cookies if present (fixes timing issue after login)
+    const userIdCookie = (req as any).cookies?.userId;
+    const userRoleCookie = (req as any).cookies?.userRole;
+    
+    if (userIdCookie && req.session) {
+      const devAccounts: Record<string, { id: number; email: string; role: string }> = {
+        "1": { id: 1, email: "admin@test.com", role: "admin" },
+        "2": { id: 2, email: "parent@test.com", role: "parent" },
+        "3": { id: 3, email: "coach@test.com", role: "coach" }
+      };
+      const account = devAccounts[String(userIdCookie)] || {
+        id: Number(userIdCookie),
+        email: '',
+        role: userRoleCookie || 'parent'
+      };
+      
+      // Create session from cookies
+      (req.session as any).userId = account.id;
+      (req.session as any).role = account.role;
+      (req.session as any).user = account;
+      
+      // Save session (non-blocking - return response while saving)
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error in /api/user fallback:', err);
+        } else {
+          console.log('✅ Session created from cookies in /api/user:', { userId: account.id, role: account.role });
+        }
+      });
+      
+      return res.json({
+        success: true,
+        data: {
+          user: {
+            id: account.id,
+            email: account.email,
+            role: account.role,
+            fullName: account.role === "admin" ? "admin" : account.role === "parent" ? "parent" : "coach"
+          }
+        }
+      });
+    }
+    
+    // Try auth middleware fallback (JWT tokens)
+    const authMw = createAuthMiddleware();
+    return new Promise<void>((resolve) => {
+      authMw(req as any, res as any, () => {
+        if (req.user) {
+          const user = {
+            id: req.user.id,
+            email: req.user.role === "admin" ? "admin@test.com" : "parent@test.com",
+            role: req.user.role,
+            fullName: req.user.role === "admin" ? "admin" : "parent"
+          };
+          
+          res.json({
+            success: true,
+            data: { user }
+          });
+        } else {
+          // Not authenticated
+          res.status(401).json({
+            success: false,
+            message: "Not authenticated"
+          });
+        }
+        resolve();
+      });
     });
   } catch (error) {
     console.error("User info error:", error);
