@@ -16,6 +16,7 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -24,6 +25,7 @@ export default function AuthPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -33,9 +35,30 @@ export default function AuthPage() {
         body: JSON.stringify({ email: formData.email.trim(), password: formData.password }),
       });
 
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({} as any));
+        const errorMessage = data?.message || 'Login failed. Please check credentials.';
+        setError(errorMessage);
+        toast({
+          title: 'Sign in failed',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const data = await res.json().catch(() => ({} as any));
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.message || 'Login failed');
+      if (!data?.success) {
+        const errorMessage = data?.message || 'Login failed. Please check credentials.';
+        setError(errorMessage);
+        toast({
+          title: 'Sign in failed',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
       }
 
       // ✅ Login succeeded — navigate immediately
@@ -55,9 +78,12 @@ export default function AuthPage() {
         })
         .catch((err) => console.warn('session/me error (ignored):', err));
     } catch (err: any) {
+      console.error('Login error:', err);
+      const errorMessage = err?.message || 'Network error. Please try again later.';
+      setError(errorMessage);
       toast({
         title: 'Sign in failed',
-        description: err?.message || 'Please check your credentials and try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
       setIsLoading(false);
@@ -113,6 +139,12 @@ export default function AuthPage() {
                   placeholder="Enter your password"
                 />
               </div>
+              
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-600 text-sm">{error}</p>
+                </div>
+              )}
               
               <Button 
                 type="submit" 
