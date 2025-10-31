@@ -340,6 +340,44 @@ setupAuth(app);
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Middleware to sync session after login (runs AFTER session middleware, BEFORE auth middleware)
+// This ensures sessions are created from cookies before auth checks
+app.use((req, res, next) => {
+  // If we have userId/userRole cookies but no session, create session immediately
+  const userIdCookie = (req as any).cookies?.userId;
+  const userRoleCookie = (req as any).cookies?.userRole;
+  
+  if (userIdCookie && !req.session?.userId && req.session) {
+    const devAccounts: Record<string, { id: number; email: string; role: string }> = {
+      "1": { id: 1, email: "admin@test.com", role: "admin" },
+      "2": { id: 2, email: "parent@test.com", role: "parent" },
+      "3": { id: 3, email: "coach@test.com", role: "coach" }
+    };
+    const account = devAccounts[String(userIdCookie)] || { 
+      id: Number(userIdCookie), 
+      email: '', 
+      role: userRoleCookie || 'parent' 
+    };
+    
+    (req.session as any).userId = account.id;
+    (req.session as any).role = account.role;
+    (req.session as any).user = account;
+    
+    // Save session synchronously (block until saved)
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error after cookie sync:', err);
+      } else {
+        console.log('✅ Session synced from cookies:', { userId: account.id, role: account.role });
+      }
+      next(); // Continue after session is saved
+    });
+    return; // Don't call next() twice
+  }
+  
+  next();
+});
+
 // ---- Types: academy context on Request ----
 declare global {
   namespace Express {
