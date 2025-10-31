@@ -62,6 +62,7 @@ export default function AuthPage() {
       }
 
       // ✅ Login succeeded — navigate immediately
+      setIsLoading(false); // Clear loading state before navigation
       try {
         navigate('/dashboard', { replace: true });
       } catch {
