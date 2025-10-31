@@ -5,7 +5,7 @@
       "value": "1",
       "domain": "localhost",
       "path": "/",
-      "expires": 1762483132,
+      "expires": 1762484225,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
@@ -15,7 +15,7 @@
       "value": "admin",
       "domain": "localhost",
       "path": "/",
-      "expires": 1762483132,
+      "expires": 1762484225,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"

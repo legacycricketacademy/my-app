@@ -50,62 +50,24 @@ test.describe('Login Only - E2E Test (Mobile & Desktop)', () => {
       await page.screenshot({ path: 'test-results/login-desktop-success.png', fullPage: true });
       expect(currentUrl).toContain('/dashboard');
     } else if (hasError) {
-      console.log('⚠️ [DESKTOP] Login failed with error message');
+      console.log('❌ [DESKTOP] Login failed with error message');
       const errorText = await page.locator('text=/error|failed|invalid/i').first().textContent();
       console.log('Error message:', errorText);
-      
-      // Try dev login endpoint as fallback
-      console.log('🔧 [DESKTOP] Attempting dev login fallback...');
-      await page.evaluate(async (email, password) => {
-        const res = await fetch('/api/dev/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ email, password }),
-        });
-        return res.ok;
-      }, ADMIN_EMAIL, ADMIN_PASSWORD);
-      
-      await page.reload({ waitUntil: 'networkidle' });
-      await page.waitForTimeout(2000);
-      
-      const newUrl = page.url();
-      if (newUrl.includes('/dashboard')) {
-        console.log('✅ [DESKTOP] Dev login fallback successful');
-        await page.screenshot({ path: 'test-results/login-desktop-success-fallback.png', fullPage: true });
-        expect(newUrl).toContain('/dashboard');
-      } else {
-        console.log('❌ [DESKTOP] Both login methods failed');
-        await page.screenshot({ path: 'test-results/login-desktop-both-failed.png', fullPage: true });
-        throw new Error('Login failed - main endpoint returned error and dev login did not work');
-      }
+      await page.screenshot({ path: 'test-results/login-desktop-failed.png', fullPage: true });
+      throw new Error(`Login failed: ${errorText || 'Unknown error'}`);
     } else {
-      // Still on login page but no error - might be loading or cookies weren't set
-      console.log('⏳ [DESKTOP] Still on login page, checking cookies...');
-      const cookies = await page.context().cookies();
-      const hasAuthCookies = cookies.some(c => c.name === 'userId' || c.name === 'userRole');
-      
-      if (hasAuthCookies) {
-        console.log('✅ [DESKTOP] Auth cookies found, navigating to dashboard...');
-        await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle', timeout: 10000 });
-        await page.waitForTimeout(2000);
-        
-        const finalUrl = page.url();
-        console.log('📍 [DESKTOP] Final URL after dashboard navigation:', finalUrl);
-        await page.screenshot({ path: 'test-results/login-desktop-success-cookies.png', fullPage: true });
-        
-        // Accept either /dashboard or redirect back to /auth (if auth guard redirects)
-        if (!finalUrl.includes('/dashboard') && finalUrl.includes('/auth')) {
-          console.log('⚠️ [DESKTOP] Redirected back to /auth - cookies may not be working with routing');
-          // Still consider this a partial success - cookies were set
-          expect(hasAuthCookies).toBe(true);
-        } else {
-          expect(finalUrl).toContain('/dashboard');
-        }
+      // Still on login page - wait a bit more for navigation
+      console.log('⏳ [DESKTOP] Still on login page, waiting for navigation...');
+      await page.waitForTimeout(2000);
+      const finalUrl = page.url();
+      if (finalUrl.includes('/dashboard')) {
+        console.log('✅ [DESKTOP] Navigated to dashboard after delay');
+        await page.screenshot({ path: 'test-results/login-desktop-success.png', fullPage: true });
+        expect(finalUrl).toContain('/dashboard');
       } else {
-        console.log('❌ [DESKTOP] No auth cookies found');
-        await page.screenshot({ path: 'test-results/login-desktop-no-cookies.png', fullPage: true });
-        throw new Error('Login failed - no auth cookies set');
+        console.log('❌ [DESKTOP] Still on login page after wait');
+        await page.screenshot({ path: 'test-results/login-desktop-no-navigation.png', fullPage: true });
+        throw new Error('Login failed - no navigation to dashboard');
       }
     }
   });
@@ -155,71 +117,33 @@ test.describe('Login Only - E2E Test (Mobile & Desktop)', () => {
       await page.screenshot({ path: 'test-results/login-mobile-success.png', fullPage: true });
       expect(currentUrl).toContain('/dashboard');
     } else if (hasError) {
-      console.log('⚠️ [MOBILE] Login failed with error message');
+      console.log('❌ [MOBILE] Login failed with error message');
       const errorText = await page.locator('text=/error|failed|invalid/i').first().textContent();
       console.log('Error message:', errorText);
-      
-      // Try dev login endpoint as fallback
-      console.log('🔧 [MOBILE] Attempting dev login fallback...');
-      await page.evaluate(async (email, password) => {
-        const res = await fetch('/api/dev/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ email, password }),
-        });
-        return res.ok;
-      }, ADMIN_EMAIL, ADMIN_PASSWORD);
-      
-      await page.reload({ waitUntil: 'networkidle' });
-      await page.waitForTimeout(2000);
-      
-      const newUrl = page.url();
-      if (newUrl.includes('/dashboard')) {
-        console.log('✅ [MOBILE] Dev login fallback successful');
-        await page.screenshot({ path: 'test-results/login-mobile-success-fallback.png', fullPage: true });
-        expect(newUrl).toContain('/dashboard');
-      } else {
-        console.log('❌ [MOBILE] Both login methods failed');
-        await page.screenshot({ path: 'test-results/login-mobile-both-failed.png', fullPage: true });
-        throw new Error('Login failed - main endpoint returned error and dev login did not work');
-      }
+      await page.screenshot({ path: 'test-results/login-mobile-failed.png', fullPage: true });
+      throw new Error(`Login failed: ${errorText || 'Unknown error'}`);
     } else {
-      // Still on login page but no error - might be loading or cookies weren't set
-      console.log('⏳ [MOBILE] Still on login page, checking cookies...');
-      const cookies = await page.context().cookies();
-      const hasAuthCookies = cookies.some(c => c.name === 'userId' || c.name === 'userRole');
-      
-      if (hasAuthCookies) {
-        console.log('✅ [MOBILE] Auth cookies found, navigating to dashboard...');
-        await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle', timeout: 10000 });
-        await page.waitForTimeout(2000);
-        
-        const finalUrl = page.url();
-        console.log('📍 [MOBILE] Final URL after dashboard navigation:', finalUrl);
-        await page.screenshot({ path: 'test-results/login-mobile-success-cookies.png', fullPage: true });
-        
-        // Accept either /dashboard or redirect back to /auth (if auth guard redirects)
-        if (!finalUrl.includes('/dashboard') && finalUrl.includes('/auth')) {
-          console.log('⚠️ [MOBILE] Redirected back to /auth - cookies may not be working with routing');
-          // Still consider this a partial success - cookies were set
-          expect(hasAuthCookies).toBe(true);
-        } else {
-          expect(finalUrl).toContain('/dashboard');
-        }
+      // Still on login page - wait a bit more for navigation
+      console.log('⏳ [MOBILE] Still on login page, waiting for navigation...');
+      await page.waitForTimeout(2000);
+      const finalUrl = page.url();
+      if (finalUrl.includes('/dashboard')) {
+        console.log('✅ [MOBILE] Navigated to dashboard after delay');
+        await page.screenshot({ path: 'test-results/login-mobile-success.png', fullPage: true });
+        expect(finalUrl).toContain('/dashboard');
       } else {
-        console.log('❌ [MOBILE] No auth cookies found');
-        await page.screenshot({ path: 'test-results/login-mobile-no-cookies.png', fullPage: true });
-        throw new Error('Login failed - no auth cookies set');
+        console.log('❌ [MOBILE] Still on login page after wait');
+        await page.screenshot({ path: 'test-results/login-mobile-no-navigation.png', fullPage: true });
+        throw new Error('Login failed - no navigation to dashboard');
       }
     }
   });
 
-  // API test for dev login endpoint
-  test('should verify dev login endpoint works via API', async ({ request }) => {
-    console.log('🧪 [API] Testing dev login endpoint directly');
+  // API test for auth login endpoint
+  test('should verify auth login endpoint works via API', async ({ request }) => {
+    console.log('🧪 [API] Testing /api/auth/login endpoint directly');
     
-    const response = await request.post(`${BASE_URL}/api/dev/login`, {
+    const response = await request.post(`${BASE_URL}/api/auth/login`, {
       data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
       headers: { 'Content-Type': 'application/json' },
     });
@@ -229,11 +153,7 @@ test.describe('Login Only - E2E Test (Mobile & Desktop)', () => {
     expect(body.success).toBe(true);
     expect(body.user.email).toBe(ADMIN_EMAIL);
     
-    // Verify cookies are set in response headers
-    const setCookieHeaders = response.headers()['set-cookie'];
-    expect(setCookieHeaders).toBeDefined();
-    
-    console.log('✅ [API] Dev login endpoint works');
+    console.log('✅ [API] Auth login endpoint works');
   });
 });
 

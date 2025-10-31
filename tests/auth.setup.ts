@@ -18,47 +18,29 @@ setup('bootstrap auth and save storage state', async ({ page, context }) => {
     },
   });
 
-  // Try /api/auth/login first
-  let resp = await api.post('/api/auth/login', {
+  const resp = await api.post('/api/auth/login', {
     data: {
       email: ADMIN_EMAIL,
       password: ADMIN_PASSWORD,
     },
   });
 
-  let status = resp.status();
-  let body = await resp.json().catch(() => ({} as any));
+  const status = resp.status();
+  const body = await resp.json().catch(() => ({} as any));
   console.log('🔎 [AUTH SETUP] /api/auth/login - status:', status);
   console.log('🔎 [AUTH SETUP] /api/auth/login - body:', JSON.stringify(body, null, 2));
 
-  // If main login fails, try /api/dev/login as fallback
   if (status !== 200 || !body?.success) {
-    console.log('⚠️ [AUTH SETUP] Main login failed, trying /api/dev/login...');
-    resp = await api.post('/api/dev/login', {
-      data: {
-        email: ADMIN_EMAIL,
-        password: ADMIN_PASSWORD,
-      },
-    });
-
-    status = resp.status();
-    body = await resp.json().catch(() => ({} as any));
-    console.log('🔎 [AUTH SETUP] /api/dev/login - status:', status);
-    console.log('🔎 [AUTH SETUP] /api/dev/login - body:', JSON.stringify(body, null, 2));
-
-    if (status !== 200 || !body?.success) {
-      throw new Error(
-        `❌ Both login endpoints failed.\nMain: ${status}\nDev: ${status}\nLast body: ${JSON.stringify(
-          body,
-          null,
-          2
-        )}`
-      );
-    }
-    console.log('✅ [AUTH SETUP] Dev login succeeded');
-  } else {
-    console.log('✅ [AUTH SETUP] Main login succeeded');
+    throw new Error(
+      `❌ Login failed.\nStatus: ${status}\nBody: ${JSON.stringify(
+        body,
+        null,
+        2
+      )}`
+    );
   }
+  
+  console.log('✅ [AUTH SETUP] Login succeeded');
 
   // 2) attach cookies to browser context
   const cookies = await api.storageState();
@@ -70,7 +52,7 @@ setup('bootstrap auth and save storage state', async ({ page, context }) => {
   console.log('🟢 whoami =', whoJson);
 
   // 4) also do UI nav once so downstream tests have storage
-  await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE_URL}/auth`, { waitUntil: 'networkidle' });
   await page.context().storageState({ path: 'storageState.json' });
   console.log('✅ storageState.json written');
 });

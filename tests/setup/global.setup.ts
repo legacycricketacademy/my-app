@@ -11,9 +11,9 @@ export default async function globalSetup(config: FullConfig) {
   });
 
   try {
-    // 2) Hit dev login (server-session), important: include credentials
-    console.log("📍 Attempting dev login...");
-    const login = await ctx.post("/api/dev/login", {
+    // 2) Hit auth login endpoint
+    console.log("📍 Attempting auth login...");
+    const login = await ctx.post("/api/auth/login", {
       data: { email: "admin@test.com", password: "password" }
     });
     

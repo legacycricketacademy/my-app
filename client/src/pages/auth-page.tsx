@@ -38,47 +38,6 @@ export default function AuthPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({} as any));
         const errorMessage = data?.message || 'Login failed. Please check credentials.';
-        
-        // ⚠️ TEMPORARY: Try dev login endpoint for test accounts if main login fails (401)
-        const isTestAccount = ['admin@test.com', 'parent@test.com', 'coach@test.com'].includes(formData.email.trim());
-        if (isTestAccount && res.status === 401) {
-          console.log('🔧 [LOGIN] Main endpoint returned 401, retrying with /api/dev/login');
-          try {
-            const devRes = await fetch('/api/dev/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({ email: formData.email.trim(), password: formData.password }),
-            });
-            
-            if (devRes.ok) {
-              const devData = await devRes.json().catch(() => ({} as any));
-              if (devData?.success) {
-                console.log('✅ [LOGIN] Dev login successful, navigating to dashboard');
-                // Navigate immediately on success
-                try {
-                  navigate('/dashboard', { replace: true });
-                } catch {
-                  window.location.href = '/dashboard';
-                }
-                
-                // Fire-and-forget session check, ignore 401s
-                fetch('/api/session/me', { credentials: 'include' })
-                  .then(async (r) => {
-                    if (!r.ok) {
-                      const t = await r.text();
-                      console.warn('[LOGIN] session/me failed after dev login (ignored):', r.status, t);
-                    }
-                  })
-                  .catch((err) => console.warn('[LOGIN] session/me error (ignored):', err));
-                return;
-              }
-            }
-          } catch (devErr) {
-            console.warn('[LOGIN] Dev login also failed:', devErr);
-          }
-        }
-        
         setError(errorMessage);
         toast({
           title: 'Sign in failed',

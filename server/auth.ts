@@ -177,27 +177,6 @@ export function createAuthMiddleware(storage: typeof multiTenantStorage = multiT
       }
     }
     
-    // Path 4: Check userId/userRole cookies (for dev login bypass and cookie-based auth)
-    const userId = (req as any).cookies?.userId;
-    const userRole = (req as any).cookies?.userRole;
-    if (userId) {
-      // Map dev account IDs to email
-      const devAccounts: Record<string, { id: number; email: string; role: string }> = {
-        "1": { id: 1, email: "admin@test.com", role: "admin" },
-        "2": { id: 2, email: "parent@test.com", role: "parent" },
-        "3": { id: 3, email: "coach@test.com", role: "coach" }
-      };
-      
-      req.user = {
-        id: Number(userId),
-        role: userRole || devAccounts[String(userId)]?.role || 'parent',
-        email: devAccounts[String(userId)]?.email
-      };
-      
-      safeLog('AUTH GUARD OK', { via: 'cookie', userId: req.user.id, role: req.user.role });
-      return next();
-    }
-    
     // No valid authentication found
     console.log('AUTH GUARD: No valid authentication found');
     return res.status(401).json(createUnauthorizedResponse(
