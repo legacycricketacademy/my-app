@@ -11,10 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function AuthPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -61,13 +63,32 @@ export default function AuthPage() {
         return;
       }
 
-      // ✅ Login succeeded — navigate immediately
+      // ✅ Login succeeded — update query cache and navigate
       setIsLoading(false); // Clear loading state before navigation
-      try {
-        navigate('/dashboard', { replace: true });
-      } catch {
-        window.location.href = '/dashboard';
+      
+      // CRITICAL: Set query data directly from login response to update auth state immediately
+      // This prevents route guards from redirecting back to /auth
+      if (data.user || data.data?.user) {
+        const user = data.data?.user || data.user;
+        queryClient.setQueryData(['/api/user'], {
+          success: true,
+          data: { user },
+          message: data.message || 'Login successful'
+        });
       }
+      
+      // Also invalidate to trigger refetch (in case we missed any edge cases)
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      
+      // Small delay to ensure query state update propagates before navigation
+      // This gives React Query time to update and route guards to see the new auth state
+      setTimeout(() => {
+        try {
+          navigate('/dashboard', { replace: true });
+        } catch {
+          window.location.href = '/dashboard';
+        }
+      }, 150);
 
       // 🔁 Fire-and-forget session check, but don't block UI if it 401s
       fetch('/api/session/me', { credentials: 'include' })
@@ -75,6 +96,9 @@ export default function AuthPage() {
           if (!r.ok) {
             const t = await r.text();
             console.warn('session/me failed after login (ignored):', r.status, t);
+          } else {
+            // If session check succeeds, invalidate again to ensure state is fresh
+            queryClient.invalidateQueries({ queryKey: ['/api/user'] });
           }
         })
         .catch((err) => console.warn('session/me error (ignored):', err));
