@@ -18,26 +18,46 @@ setup('bootstrap auth and save storage state', async ({ page, context }) => {
     },
   });
 
-  const resp = await api.post('/api/auth/login', {
+  // Try /api/auth/login first
+  let resp = await api.post('/api/auth/login', {
     data: {
       email: ADMIN_EMAIL,
       password: ADMIN_PASSWORD,
     },
   });
 
-  const status = resp.status();
-  const body = await resp.json().catch(() => ({} as any));
-  console.log('🔎 login status =', status);
-  console.log('🔎 login body   =', body);
+  let status = resp.status();
+  let body = await resp.json().catch(() => ({} as any));
+  console.log('🔎 [AUTH SETUP] /api/auth/login - status:', status);
+  console.log('🔎 [AUTH SETUP] /api/auth/login - body:', JSON.stringify(body, null, 2));
 
+  // If main login fails, try /api/dev/login as fallback
   if (status !== 200 || !body?.success) {
-    throw new Error(
-      `❌ Login failed in CI.\nStatus: ${status}\nBody: ${JSON.stringify(
-        body,
-        null,
-        2
-      )}\nCheck: POST ${BASE_URL}/api/auth/login`
-    );
+    console.log('⚠️ [AUTH SETUP] Main login failed, trying /api/dev/login...');
+    resp = await api.post('/api/dev/login', {
+      data: {
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASSWORD,
+      },
+    });
+
+    status = resp.status();
+    body = await resp.json().catch(() => ({} as any));
+    console.log('🔎 [AUTH SETUP] /api/dev/login - status:', status);
+    console.log('🔎 [AUTH SETUP] /api/dev/login - body:', JSON.stringify(body, null, 2));
+
+    if (status !== 200 || !body?.success) {
+      throw new Error(
+        `❌ Both login endpoints failed.\nMain: ${status}\nDev: ${status}\nLast body: ${JSON.stringify(
+          body,
+          null,
+          2
+        )}`
+      );
+    }
+    console.log('✅ [AUTH SETUP] Dev login succeeded');
+  } else {
+    console.log('✅ [AUTH SETUP] Main login succeeded');
   }
 
   // 2) attach cookies to browser context

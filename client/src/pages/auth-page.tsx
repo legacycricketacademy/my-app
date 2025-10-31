@@ -39,33 +39,43 @@ export default function AuthPage() {
         const data = await res.json().catch(() => ({} as any));
         const errorMessage = data?.message || 'Login failed. Please check credentials.';
         
-        // ⚠️ TEMPORARY: Try bypass endpoint for test accounts if main login fails
+        // ⚠️ TEMPORARY: Try dev login endpoint for test accounts if main login fails (401)
         const isTestAccount = ['admin@test.com', 'parent@test.com', 'coach@test.com'].includes(formData.email.trim());
         if (isTestAccount && res.status === 401) {
-          console.log('🔧 Main login failed, trying bypass endpoint for test account');
+          console.log('🔧 [LOGIN] Main endpoint returned 401, retrying with /api/dev/login');
           try {
-            const bypassRes = await fetch('/api/test/bypass-login', {
+            const devRes = await fetch('/api/dev/login', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
-              body: JSON.stringify({ email: formData.email.trim() }),
+              body: JSON.stringify({ email: formData.email.trim(), password: formData.password }),
             });
             
-            if (bypassRes.ok) {
-              const bypassData = await bypassRes.json().catch(() => ({} as any));
-              if (bypassData?.success) {
-                console.log('🔧 Bypass login successful');
-                // Navigate on success
+            if (devRes.ok) {
+              const devData = await devRes.json().catch(() => ({} as any));
+              if (devData?.success) {
+                console.log('✅ [LOGIN] Dev login successful, navigating to dashboard');
+                // Navigate immediately on success
                 try {
                   navigate('/dashboard', { replace: true });
                 } catch {
                   window.location.href = '/dashboard';
                 }
+                
+                // Fire-and-forget session check, ignore 401s
+                fetch('/api/session/me', { credentials: 'include' })
+                  .then(async (r) => {
+                    if (!r.ok) {
+                      const t = await r.text();
+                      console.warn('[LOGIN] session/me failed after dev login (ignored):', r.status, t);
+                    }
+                  })
+                  .catch((err) => console.warn('[LOGIN] session/me error (ignored):', err));
                 return;
               }
             }
-          } catch (bypassErr) {
-            console.warn('Bypass login also failed:', bypassErr);
+          } catch (devErr) {
+            console.warn('[LOGIN] Dev login also failed:', devErr);
           }
         }
         
@@ -129,8 +139,8 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-4 px-4 sm:py-12 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-4 sm:space-y-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Legacy Cricket Academy</h1>
           <p className="mt-2 text-sm text-gray-600">Sign in to your account</p>

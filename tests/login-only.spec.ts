@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const BASE_URL = process.env.BASE_URL || process.env.PUBLIC_BASE_URL || 'https://cricket-academy-app.onrender.com';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@test.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'password';
 
