@@ -635,36 +635,74 @@ app.get("/api/session/me", async (req, res) => {
   try {
     console.log('🔍 GET /api/session/me');
     
-    if (!req.session?.userId) {
-      console.log('🔍 Not authenticated');
-      return res.status(401).json({
-        success: false,
-        authenticated: false,
-        user: null
+    // First check if session already exists
+    if (req.session?.userId) {
+      const devAccounts: Record<string, any> = {
+        "1": { id: 1, email: "admin@test.com", role: "admin" },
+        "2": { id: 2, email: "parent@test.com", role: "parent" },
+        "3": { id: 3, email: "coach@test.com", role: "coach" }
+      };
+
+      const user = devAccounts[String(req.session.userId)] || {
+        id: req.session.userId,
+        email: req.session.userId === 1 ? 'admin@test.com' : req.session.userId === 2 ? 'parent@test.com' : 'coach@test.com',
+        role: req.session.role || 'parent'
+      };
+      
+      console.log('🔍 User authenticated', { userId: user.id, role: user.role });
+      
+      return res.status(200).json({
+        success: true,
+        authenticated: true,
+        user
       });
     }
 
-    // Development accounts for testing
-    const devAccounts: Record<string, any> = {
-      "1": { id: 1, email: "admin@test.com", role: "admin" },
-      "2": { id: 2, email: "parent@test.com", role: "parent" }
-    };
-
-    const user = devAccounts[String(req.session.userId)];
+    // Fallback: create session from cookies if present (fixes timing issue after login)
+    const userIdCookie = (req as any).cookies?.userId;
+    const userRoleCookie = (req as any).cookies?.userRole;
     
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
+    if (userIdCookie && req.session) {
+      const devAccounts: Record<string, any> = {
+        "1": { id: 1, email: "admin@test.com", role: "admin" },
+        "2": { id: 2, email: "parent@test.com", role: "parent" },
+        "3": { id: 3, email: "coach@test.com", role: "coach" }
+      };
+      const account = devAccounts[String(userIdCookie)] || {
+        id: Number(userIdCookie),
+        email: '',
+        role: userRoleCookie || 'parent'
+      };
+      
+      // Create session from cookies
+      (req.session as any).userId = account.id;
+      (req.session as any).role = account.role;
+      (req.session as any).user = account;
+      
+      // Save session (non-blocking - return response while saving)
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error in /api/session/me fallback:', err);
+        } else {
+          console.log('✅ Session created from cookies in /api/session/me:', { userId: account.id, role: account.role });
+        }
+      });
+      
+      console.log('🔍 User authenticated via cookies', { userId: account.id, role: account.role });
+      
+      return res.status(200).json({
+        success: true,
+        authenticated: true,
+        user: account
       });
     }
 
-    console.log('🔍 User authenticated', { userId: user.id, role: user.role });
-    
-    return res.status(200).json({
-      success: true,
-      authenticated: true,
-      user
+    // No session or cookies
+    console.log('🔍 Not authenticated');
+    return res.status(401).json({
+      success: false,
+      authenticated: false,
+      user: null
     });
   } catch (error) {
     console.error("Session me error:", error);
