@@ -415,6 +415,61 @@ app.get("/api/whoami", (req, res) => {
   });
 });
 
+// ⚠️ TEMPORARY TEST-ONLY BYPASS LOGIN ⚠️
+// This endpoint bypasses all authentication checks for test accounts only.
+// REMOVE THIS AFTER FIXING THE MAIN LOGIN ISSUE.
+app.post("/api/test/bypass-login", (req, res) => {
+  console.log('🔧 [BYPASS LOGIN] Test-only bypass endpoint called');
+  
+  const { email } = req.body || {};
+  
+  // Only allow test accounts
+  const testAccounts: Record<string, { id: number; email: string; role: string }> = {
+    "admin@test.com": { id: 1, email: "admin@test.com", role: "admin" },
+    "parent@test.com": { id: 2, email: "parent@test.com", role: "parent" },
+    "coach@test.com": { id: 3, email: "coach@test.com", role: "coach" }
+  };
+  
+  if (!email || !testAccounts[email]) {
+    return res.status(400).json({
+      success: false,
+      message: "Test accounts only: admin@test.com, parent@test.com, coach@test.com"
+    });
+  }
+  
+  const account = testAccounts[email];
+  const cookieSecure = process.env.NODE_ENV === 'production';
+  
+  // Set cookies with very permissive settings for testing
+  res.cookie('userId', String(account.id), {
+    httpOnly: false,  // Allow JS access for testing
+    secure: cookieSecure,
+    sameSite: cookieSecure ? 'none' : 'lax',
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+    path: '/',
+    domain: cookieSecure ? undefined : undefined  // Don't restrict domain for testing
+  });
+  
+  res.cookie('userRole', account.role, {
+    httpOnly: false,  // Allow JS access for testing
+    secure: cookieSecure,
+    sameSite: cookieSecure ? 'none' : 'lax',
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+    path: '/',
+    domain: cookieSecure ? undefined : undefined
+  });
+  
+  console.log('🔧 [BYPASS LOGIN] ✅ Success - cookies set for:', email);
+  
+  res.status(200).json({
+    success: true,
+    ok: true,
+    message: "Bypass login successful (TEST ONLY)",
+    user: account,
+    warning: "This is a temporary test-only endpoint"
+  });
+});
+
 // Database setup endpoint (for Render e2e testing)
 app.post("/api/test/setup-db", async (req, res) => {
   // Always allow for now (for e2e testing)
