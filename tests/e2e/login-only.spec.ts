@@ -28,10 +28,14 @@ test.describe('Login Only - E2E Test (Mobile & Desktop)', () => {
     
     // Submit form
     const submitButton = page.locator('button[type="submit"]').first();
+    
+    // Wait for navigation to dashboard (with timeout)
+    const navigationPromise = page.waitForURL((url) => url.toString().includes('/dashboard'), { timeout: 15000 }).catch(() => null);
+    
     await submitButton.click();
     
-    // Wait for navigation or error
-    await page.waitForTimeout(3000);
+    // Wait for navigation or timeout
+    await navigationPromise;
     
     // Check if we're on dashboard (success) or still on auth page (failure)
     const currentUrl = page.url();
@@ -95,10 +99,14 @@ test.describe('Login Only - E2E Test (Mobile & Desktop)', () => {
     
     // Submit form
     const submitButton = page.locator('button[type="submit"]').first();
+    
+    // Wait for navigation to dashboard (with timeout)
+    const navigationPromise = page.waitForURL((url) => url.toString().includes('/dashboard'), { timeout: 15000 }).catch(() => null);
+    
     await submitButton.click();
     
-    // Wait for navigation or error
-    await page.waitForTimeout(3000);
+    // Wait for navigation or timeout
+    await navigationPromise;
     
     // Check if we're on dashboard (success) or still on auth page (failure)
     const currentUrl = page.url();
