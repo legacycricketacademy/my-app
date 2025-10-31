@@ -1,0 +1,85 @@
+# E2E Tests on Render Production (with Email Summary)
+# This workflow runs comprehensive Playwright E2E tests against the Render production deployment
+# for both mobile and desktop viewports, then sends a summary email.
+
+name: E2E Tests on Render (with Email Summary)
+
+# Trigger conditions:
+# - workflow_dispatch: Manual trigger from GitHub Actions UI
+# - push to deploy/render-staging: Automatic on code changes
+# - repository_dispatch: Automatic when Render sends deploy_succeeded event
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - deploy/render-staging
+  repository_dispatch:
+    types: [render_deploy_succeeded]
+
+jobs:
+  e2e:
+    name: E2E Tests (Mobile + Desktop)
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Node.js 20 (required for Playwright and project dependencies)
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'  # Cache npm packages for faster builds
+
+      # Step 3: Install project dependencies (including nodemailer for email notifications)
+      - name: Install dependencies
+        run: npm ci
+        # npm ci installs exact versions from package-lock.json, ensuring consistency
+
+      # Step 4: Install Playwright browsers with system dependencies
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        # --with-deps installs required system libraries (e.g., libnss3, libatk-bridge2.0-0)
+        # Required for headless browser execution in CI environment
+
+      # Step 5: Run E2E tests using the helper script
+      # The script handles health checks, test execution, and summary generation
+      - name: Run E2E tests (Mobile + Desktop)
+        env:
+          # Production Render deployment URL
+          BASE_URL: https://cricket-academy-app.onrender.com
+          # Test credentials for authentication
+          ADMIN_EMAIL: admin@test.com
+          ADMIN_PASSWORD: password
+        run: |
+          chmod +x .github/scripts/run-e2e.sh
+          bash .github/scripts/run-e2e.sh
+        # The script runs tests against both mobile (Pixel 5) and desktop (Chrome) viewports
+        # using playwright.multi.config.ts configuration
+
+      # Step 6: Send email summary with test results
+      # Uses Gmail SMTP via nodemailer to send summary to configured email address
+      - name: Send email summary
+        env:
+          # Gmail credentials from repository secrets
+          # Required: Set GMAIL_USER and GMAIL_PASS in GitHub Secrets
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+        run: |
+          node .github/scripts/send-mail.js
+        # The email script gracefully handles missing credentials by printing to console
+        # Email sent to: dude.dudetap001@gmail.com
+
+      # Step 7: Upload test artifacts for debugging and review
+      - name: Upload test artifacts
+        if: always()  # Upload even if tests fail
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-results
+          path: |
+            test-results/**          # Screenshots, videos, traces from failed tests
+            playwright-report/**     # HTML test report
+            e2e-failures.txt         # Text summary of failures
+          if-no-files-found: ignore  # Don't fail if no artifacts exist

@@ -113,6 +113,7 @@
     "keycloak-js": "^26.2.0",
     "lucide-react": "^0.453.0",
     "node-fetch": "^3.3.2",
+    "nodemailer": "^6.9.16",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "pg": "^8.16.3",
