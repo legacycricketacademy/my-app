@@ -7,4 +7,6 @@ vite.config.ts.*
 .env
 *.log
 .data-settings.json
-
+test-results/
+*.png
+storageState.json
