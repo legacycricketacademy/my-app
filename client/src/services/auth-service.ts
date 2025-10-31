@@ -174,13 +174,9 @@ export async function loginWithFirebaseDirect(data: LoginData): Promise<AuthResp
   }
 }
 
-// --- AUTH SERVICE FALLBACK (backend login) ---
-// Toggle via VITE_ENABLE_DEV_LOGIN=true on Render when you want test users.
-const useDevLogin =
-  (import.meta.env.PROD && import.meta.env.VITE_ENABLE_DEV_LOGIN === "true") ||
-  (!import.meta.env.PROD); // local dev defaults to true
-
-const BACKEND_LOGIN_PATH = useDevLogin ? "/api/dev/login" : "/api/auth/login";
+// --- AUTH SERVICE (backend login) ---
+// Always use standard /api/auth/login endpoint (dev login removed)
+const BACKEND_LOGIN_PATH = "/api/auth/login";
 console.info("[Auth] Using backend login path:", BACKEND_LOGIN_PATH);
 
 /**
