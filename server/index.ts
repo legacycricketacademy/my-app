@@ -401,10 +401,18 @@ app.get("/api/whoami", (req, res) => {
   const userId = (req as any).cookies?.userId;
   const userRole = (req as any).cookies?.userRole;
   if (userId) {
+    // Try to get email from dev accounts
+    const devAccounts: Record<string, { id: number; email: string; role: string }> = {
+      "1": { id: 1, email: "admin@test.com", role: "admin" },
+      "2": { id: 2, email: "parent@test.com", role: "parent" },
+      "3": { id: 3, email: "coach@test.com", role: "coach" }
+    };
+    const account = devAccounts[String(userId)] || { id: Number(userId), email: '', role: userRole || 'parent' };
+    
     return res.json({
       success: true,
       ok: true,
-      user: { id: Number(userId), role: userRole || 'parent' }
+      user: { id: Number(userId), email: account.email, role: account.role }
     });
   }
 
