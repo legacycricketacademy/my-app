@@ -61,7 +61,9 @@ jobs:
 
       # Step 6: Send email summary with test results
       # Uses Gmail SMTP via nodemailer to send summary to configured email address
+      # Runs whether tests pass or fail (if: always)
       - name: Send email summary
+        if: always()  # Send email even if tests fail
         env:
           # Gmail credentials from repository secrets
           # Required: Set GMAIL_USER and GMAIL_PASS in GitHub Secrets
