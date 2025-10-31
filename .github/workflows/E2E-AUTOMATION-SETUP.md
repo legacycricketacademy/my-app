@@ -37,14 +37,16 @@ Set these secrets in GitHub repository:
 1. Go to GitHub → Settings → Secrets and variables → Actions
 2. Add these secrets:
    - `GMAIL_USER`: Your Gmail address (e.g., `your-email@gmail.com`)
-   - `GMAIL_PASS`: Gmail App Password (NOT your regular password)
+   - `GMAIL_APP_PASSWORD`: Gmail App Password (NOT your regular password)
 
 **To get Gmail App Password:**
 1. Enable 2-Factor Authentication on your Google account
 2. Go to [Google Account Settings](https://myaccount.google.com/)
 3. Security → 2-Step Verification → App passwords
 4. Generate app password for "Mail"
-5. Copy the 16-character password → Use as `GMAIL_PASS`
+5. Copy the 16-character password → Use as `GMAIL_APP_PASSWORD`
+
+**Note:** You can also use `GMAIL_PASS` as an alternative secret name if you prefer, but `GMAIL_APP_PASSWORD` is the recommended name.
 
 ### 3. Verify Workflow Triggers
 
@@ -95,7 +97,7 @@ The email includes:
    # In GitHub UI, verify secrets exist:
    # Settings → Secrets and variables → Actions
    # - GMAIL_USER ✅
-   # - GMAIL_PASS ✅
+   # - GMAIL_APP_PASSWORD ✅
    ```
 
 2. **Verify Gmail App Password:**

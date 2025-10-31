@@ -68,8 +68,9 @@ echo ""
 
 # Run tests using multi-config (mobile + desktop) and capture output
 # The config file includes both Desktop Chrome and Mobile Chrome (Pixel 5) projects
+# Generate both list reporter (console) and JSON reporter (for email parsing)
 TEST_START_TIME=$(date +%s)
-if npx playwright test --config=playwright.multi.config.ts --reporter=list 2>&1 | tee test-output.log; then
+if npx playwright test --config=playwright.multi.config.ts --reporter=list --reporter=json --reporter-json-output=e2e-report.json 2>&1 | tee test-output.log; then
   TEST_END_TIME=$(date +%s)
   TEST_DURATION=$((TEST_END_TIME - TEST_START_TIME))
   

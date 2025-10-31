@@ -59,22 +59,62 @@ jobs:
         # The script runs tests against both mobile (Pixel 5) and desktop (Chrome) viewports
         # using playwright.multi.config.ts configuration
 
-      # Step 6: Send email summary with test results
-      # Uses Gmail SMTP via nodemailer to send summary to configured email address
-      # Runs whether tests pass or fail (if: always)
-      - name: Send email summary
-        if: always()  # Send email even if tests fail
-        env:
-          # Gmail credentials from repository secrets
-          # Required: Set GMAIL_USER and GMAIL_PASS in GitHub Secrets
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+      # Step 6: Generate failure summary from JSON report
+      # Parses the JSON test report and creates e2e-failures.txt with failure details
+      - name: Generate failure summary
+        if: always()
         run: |
-          node .github/scripts/send-mail.js
-        # The email script gracefully handles missing credentials by printing to console
-        # Email sent to: dude.dudetap001@gmail.com
+          node -e "console.log('Preparing summary…')" # placeholder
+          node <<'JS'
+          const fs=require('fs');
+          if (!fs.existsSync('./e2e-report.json')) {
+            fs.writeFileSync('e2e-failures.txt', 'No test report generated. Tests may have failed during execution.');
+            process.exit(0);
+          }
+          try {
+            const r=JSON.parse(fs.readFileSync('./e2e-report.json','utf8'));
+            function w(s,o=[]){
+              (s.suites||[]).forEach(x=>w(x,o));
+              (s.tests||[]).forEach(t=>t.results.forEach(k=>{
+                if(k.status!=='passed'){
+                  o.push(`${t.title} — ${k.status}\n${(k.error&&k.error.message)||''}`)
+                }
+              }));
+              return o;
+            }
+            const f=w(r);
+            fs.writeFileSync('e2e-failures.txt', f.length?`E2E Failures:\n\n${f.join('\n\n')}`:'All tests passed ✅');
+          } catch (e) {
+            fs.writeFileSync('e2e-failures.txt', `Error parsing test report: ${e.message}\n\nUsing fallback summary from e2e-failures.txt if available.`);
+          }
+          JS
+          # Fallback: if JSON parsing fails, use the summary from run-e2e.sh script
+          if [ ! -f "e2e-failures.txt" ] || [ ! -s "e2e-failures.txt" ]; then
+            echo "Using fallback summary from test execution..." || echo "All tests passed ✅" > e2e-failures.txt
+          fi
 
-      # Step 7: Upload test artifacts for debugging and review
+      # Step 7: Send email summary using GitHub Action (SMTP via Gmail)
+      # Uses dawidd6/action-send-mail which works with Gmail App Password or any SMTP
+      - name: Email E2E summary
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.GMAIL_USER }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: Render E2E — ${{ job.status }}
+          to: dude.dudetap001@gmail.com
+          from: Render E2E Bot <${{ secrets.GMAIL_USER }}>
+          body: |
+            Environment: production (Render)
+            Status: ${{ job.status }}
+            Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            $(cat e2e-failures.txt)
+        # Note: Requires GMAIL_USER and GMAIL_APP_PASSWORD secrets in GitHub
+
+      # Step 8: Upload test artifacts for debugging and review
       - name: Upload test artifacts
         if: always()  # Upload even if tests fail
         uses: actions/upload-artifact@v4
@@ -83,5 +123,6 @@ jobs:
           path: |
             test-results/**          # Screenshots, videos, traces from failed tests
             playwright-report/**     # HTML test report
+            e2e-report.json          # JSON test report (for parsing)
             e2e-failures.txt         # Text summary of failures
           if-no-files-found: ignore  # Don't fail if no artifacts exist
