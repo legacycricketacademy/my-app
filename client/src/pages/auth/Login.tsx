@@ -38,9 +38,22 @@ export default function Login(){
           {submitting ? "Signing in…" : "Login"}
         </button>
       </form>
-      <div className="mt-4 text-center">
-        <span>Don't have an account? </span>
-        <a href="/register" className="link" data-testid="link-register">Register</a>
+      <div className="mt-6 text-center space-y-3">
+        <div className="text-sm text-gray-600">
+          <span>Don't have an account? </span>
+          <a href="/register" className="link text-blue-600 hover:text-blue-800 font-medium" data-testid="link-register">
+            Register here
+          </a>
+        </div>
+        <div className="pt-3 border-t border-gray-200">
+          <a 
+            href="/register" 
+            className="inline-block w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
+            data-testid="btn-new-parent-register"
+          >
+            New parent? Register
+          </a>
+        </div>
       </div>
     </div>
   );
