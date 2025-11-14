@@ -520,15 +520,23 @@ app.post("/api/auth/login", async (req, res) => {
           console.error('Session save error:', err);
           reject(err);
         } else {
-          console.log('🔐 Session saved');
+          console.log('🔐 Session saved successfully');
           resolve();
         }
       });
     });
 
+    // Return user data in response
     return res.status(200).json({ 
       success: true,
-      message: "Login successful"
+      message: "Login successful",
+      data: {
+        user: {
+          id: account.id,
+          email: account.email,
+          role: account.role
+        }
+      }
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -692,24 +700,32 @@ app.get("/cookie-check", (req, res) => {
 });
 
 // User info endpoint for frontend auth state (works with both session and JWT)
-app.get("/api/user", createAuthMiddleware(), async (req, res) => {
+app.get("/api/user", async (req, res) => {
   try {
-    // Check if user is authenticated (either via session or JWT)
-    if (req.user) {
+    console.log('🔍 GET /api/user - checking authentication');
+    
+    // Check session first
+    if (req.session?.userId) {
+      const userId = req.session.userId;
+      const role = req.session.role || 'parent';
+      
       const user = {
-        id: req.user.id,
-        email: req.user.role === "admin" ? "admin@test.com" : "parent@test.com",
-        role: req.user.role,
-        fullName: req.user.role === "admin" ? "admin" : "parent"
+        id: userId,
+        email: role === "admin" ? "admin@test.com" : "parent@test.com",
+        role: role,
+        fullName: role === "admin" ? "Admin User" : "Parent User"
       };
+      
+      console.log('🔍 User authenticated via session', { userId, role });
       
       return res.json({
         success: true,
-        data: { user }
+        data: user
       });
     }
     
     // Not authenticated
+    console.log('🔍 User not authenticated');
     return res.status(401).json({
       success: false,
       message: "Not authenticated"
