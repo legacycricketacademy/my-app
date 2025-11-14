@@ -5,9 +5,9 @@
  * Run with: node test-login.js
  */
 
-const http = require('http');
+import http from 'http';
 
-const API_BASE = 'http://localhost:3002';
+const API_BASE = 'http://localhost:3000';
 
 function makeRequest(method, path, data = null, cookies = '') {
   return new Promise((resolve, reject) => {
