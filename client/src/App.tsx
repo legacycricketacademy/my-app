@@ -60,6 +60,8 @@ import FullCalendarPage from "@/pages/parent/FullCalendarPage";
 import PaymentTransactionsPage from "@/pages/parent/PaymentTransactionsPage";
 import EmailMailbox from "@/pages/dev/EmailMailbox";
 import { DevEmailButton } from "@/components/dev/DevEmailButton";
+import KidsList from "@/pages/parent/KidsList";
+import KidDashboard from "@/pages/parent/KidDashboard";
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -156,6 +158,8 @@ function AppRoutes() {
         }
       >
         <Route index element={<EnhancedParentDashboard />} />
+        <Route path="kids" element={<KidsList />} />
+        <Route path="kids/:kidId" element={<KidDashboard />} />
         <Route path="schedule" element={<ParentSchedulePage />} />
         <Route path="schedule/full" element={<FullCalendarPage />} />
         <Route path="announcements" element={<ParentAnnouncementsPage />} />
