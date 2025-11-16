@@ -32,10 +32,33 @@ router.post("/", async (req,res)=>{
   const approveLink = `${base}/api/registration/${id}/approve?token=${adminToken}`;
   const denyLink = `${base}/api/registration/${id}/deny?token=${adminToken}`;
 
+  // Welcome email to parent
+  const welcomeText = `Welcome to Legacy Cricket Academy, ${parentName}!
+
+Thank you for registering${childName ? ` ${childName}` : ''} with us${ageGroup ? ` for the ${ageGroup} age group` : ''}.
+
+We're excited to have you join our cricket family. You'll receive a verification email shortly to confirm your account.
+
+Best regards,
+Legacy Cricket Academy Team`;
+
+  const welcomeHtml = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #4f46e5;">Welcome to Legacy Cricket Academy!</h2>
+      <p>Hi ${parentName},</p>
+      <p>Thank you for registering${childName ? ` <strong>${childName}</strong>` : ''} with us${ageGroup ? ` for the <strong>${ageGroup}</strong> age group` : ''}.</p>
+      <p>We're excited to have you join our cricket family. You'll receive a verification email shortly to confirm your account.</p>
+      <p>Best regards,<br/>Legacy Cricket Academy Team</p>
+    </div>
+  `;
+
+  await sendEmail(email, "Welcome to Legacy Cricket Academy", welcomeText, welcomeHtml, "registration_welcome");
+
   // Parent verify email
   await sendEmail(email, "Legacy: Verify your email",
     `Hi ${parentName}, please verify your email: ${verifyLink}`,
-    `<p>Hi ${parentName},</p><p>Please verify your email:</p><p><a href="${verifyLink}">Verify Email</a></p>`);
+    `<p>Hi ${parentName},</p><p>Please verify your email:</p><p><a href="${verifyLink}">Verify Email</a></p>`,
+    "email_verification");
 
   // Admin alert
   const adminEmail = process.env.ADMIN_EMAIL || process.env.FROM_EMAIL || "";
@@ -44,10 +67,11 @@ router.post("/", async (req,res)=>{
   if (adminEmail) {
     await sendEmail(adminEmail, `Legacy: New ${role} registration`,
       `${summary}\nApprove: ${approveLink}\nDeny: ${denyLink}`,
-      `<h3>${summary.replace(/\n/g,"<br/>")}</h3><p><a href="${approveLink}">Approve</a> | <a href="${denyLink}">Deny</a></p>`);
+      `<h3>${summary.replace(/\n/g,"<br/>")}</h3><p><a href="${approveLink}">Approve</a> | <a href="${denyLink}">Deny</a></p>`,
+      "admin_notification");
   }
   if (coachList.length) {
-    await sendEmail(coachList, "Legacy: New registration submitted", summary);
+    await sendEmail(coachList, "Legacy: New registration submitted", summary, undefined, "coach_notification");
   }
 
   res.status(201).json({ ok:true, id });
