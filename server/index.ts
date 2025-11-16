@@ -58,6 +58,7 @@ const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || CORS_ORIGIN;
 // Allow multiple origins for development (Vite may use different ports)
 const allowedOrigins = [
   "http://localhost:3000",  // Main dev server
+  "http://127.0.0.1:3000",  // IPv4 localhost for Playwright
   "http://localhost:5173",
   "http://localhost:5174", 
   "http://localhost:5175",
