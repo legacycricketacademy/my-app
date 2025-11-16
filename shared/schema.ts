@@ -137,6 +137,17 @@ export const sessionAttendances = pgTable("session_attendances", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Session Availability - parent responses for upcoming sessions
+export const sessionAvailability = pgTable("session_availability", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").references(() => sessions.id).notNull(),
+  playerId: integer("player_id").references(() => players.id).notNull(),
+  status: text("status", { enum: ["yes", "no", "maybe"] }).notNull().default("maybe"),
+  respondedAt: timestamp("responded_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Fitness Records
 export const fitnessRecords = pgTable("fitness_records", {
   id: serial("id").primaryKey(),
@@ -333,6 +344,11 @@ export const sessionAttendancesRelations = relations(sessionAttendances, ({ one 
   academy: one(academies, { fields: [sessionAttendances.academyId], references: [academies.id] }),
 }));
 
+export const sessionAvailabilityRelations = relations(sessionAvailability, ({ one }) => ({
+  session: one(sessions, { fields: [sessionAvailability.sessionId], references: [sessions.id] }),
+  player: one(players, { fields: [sessionAvailability.playerId], references: [players.id] }),
+}));
+
 export const fitnessRecordsRelations = relations(fitnessRecords, ({ one }) => ({
   player: one(players, { fields: [fitnessRecords.playerId], references: [players.id] }),
   academy: one(academies, { fields: [fitnessRecords.academyId], references: [academies.id] }),
@@ -420,9 +436,11 @@ export const insertPaymentSchema = createInsertSchema(payments);
 export const insertConnectionRequestSchema = createInsertSchema(connectionRequests);
 export const insertUserSessionSchema = createInsertSchema(userSessions);
 export const insertUserAuditLogSchema = createInsertSchema(userAuditLogs);
+export const insertSessionAvailabilitySchema = createInsertSchema(sessionAvailability);
 
 // Create select schemas
 export const userSchema = createSelectSchema(users);
+export const sessionAvailabilitySchema = createSelectSchema(sessionAvailability);
 export const playerSchema = createSelectSchema(players);
 export const sessionSchema = createSelectSchema(sessions);
 export const fitnessRecordSchema = createSelectSchema(fitnessRecords);
@@ -467,3 +485,6 @@ export type UserSession = z.infer<typeof userSessionSchema>;
 
 export type InsertUserAuditLog = z.infer<typeof insertUserAuditLogSchema>;
 export type UserAuditLog = z.infer<typeof userAuditLogSchema>;
+
+export type InsertSessionAvailability = z.infer<typeof insertSessionAvailabilitySchema>;
+export type SessionAvailability = z.infer<typeof sessionAvailabilitySchema>;

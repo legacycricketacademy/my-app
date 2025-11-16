@@ -78,6 +78,7 @@ export default function KidsList() {
           {kids.map((kid) => (
             <Card
               key={kid.id}
+              data-testid="kid-card"
               className="hover:shadow-lg transition-shadow cursor-pointer"
               onClick={() => navigate(`/parent/kids/${kid.id}`)}
             >

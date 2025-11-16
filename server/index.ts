@@ -9,6 +9,8 @@ import { buildSessionMiddleware } from "./lib/sessionConfig.js";
 import { isProd } from "./lib/env.js";
 import { registerDevLogin } from "./routes/dev-login.js";
 import { registerDevEmailSandbox } from "./routes/dev-email-sandbox.js";
+import { registerKidDashboardRoutes } from "./routes/kid-dashboard.js";
+import parentAvailabilityRoutes from "./routes/parent-availability.js";
 
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
@@ -148,6 +150,12 @@ console.log('DEV LOGIN route registered at /api/dev/login (enabled:', process.en
 
 // Mount dev email sandbox routes
 registerDevEmailSandbox(app);
+
+// Mount kid dashboard routes (requires auth)
+registerKidDashboardRoutes(app);
+
+// Mount parent availability routes (requires auth)
+app.use("/api/parent", parentAvailabilityRoutes);
 
 // Setup authentication
 setupAuth(app);

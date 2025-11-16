@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import {
   User,
   Calendar,
@@ -52,6 +53,7 @@ interface KidDashboardData {
     startTime: string;
     endTime: string;
     coachName: string | null;
+    availabilityStatus: "yes" | "no" | "maybe" | null;
   }>;
   recentNotes: Array<{
     id: number;
@@ -65,6 +67,8 @@ interface KidDashboardData {
 export default function KidDashboard() {
   const { kidId } = useParams<{ kidId: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: [`/api/parent/kids/${kidId}/dashboard`],
@@ -73,6 +77,29 @@ export default function KidDashboard() {
   });
 
   const dashboardData: KidDashboardData | null = data?.data || null;
+
+  const updateAvailabilityMutation = useMutation({
+    mutationFn: async ({ sessionId, status }: { sessionId: number; status: "yes" | "no" | "maybe" }) => {
+      return api.post(`/parent/sessions/${sessionId}/availability`, { 
+        status,
+        playerId: parseInt(kidId!)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/parent/kids/${kidId}/dashboard`] });
+      toast({
+        title: "Availability updated",
+        description: "Your response has been saved.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update availability",
+        variant: "destructive",
+      });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -113,11 +140,12 @@ export default function KidDashboard() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/parent/kids")}>
-          <ArrowLeft className="h-5 w-5" />
+      <div className="space-y-4">
+        <Button variant="outline" onClick={() => navigate("/parent/kids")}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to My Kids
         </Button>
-        <div className="flex-1">
+        <div>
           <h1 className="text-3xl font-bold tracking-tight">{kid.fullName}</h1>
           <p className="text-muted-foreground">
             Age {kid.age} • {kid.ageGroup} • {kid.location}
@@ -287,31 +315,106 @@ export default function KidDashboard() {
             </p>
           ) : (
             <div className="space-y-4">
-              {upcomingSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="space-y-1">
-                    <div className="font-medium">{session.title}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {format(new Date(session.startTime), "MMM dd, yyyy • h:mm a")}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      {session.location}
-                    </div>
-                    {session.coachName && (
-                      <div className="text-sm text-muted-foreground">
-                        Coach: {session.coachName}
+              {upcomingSessions.map((session) => {
+                const status = session.availabilityStatus || "pending";
+                return (
+                  <div
+                    key={session.id}
+                    className="flex flex-col gap-3 p-4 border rounded-lg"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                      <div className="space-y-1 flex-1">
+                        <div className="font-medium">{session.title}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {format(new Date(session.startTime), "MMM dd, yyyy • h:mm a")}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-3 w-3" />
+                          {session.location}
+                        </div>
+                        {session.coachName && (
+                          <div className="text-sm text-muted-foreground">
+                            Coach: {session.coachName}
+                          </div>
+                        )}
                       </div>
-                    )}
+                      <Badge variant="outline">
+                        {session.sessionType}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2 border-t">
+                      <div className="flex items-center gap-2">
+                        {!status && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Not Answered
+                          </Badge>
+                        )}
+                        {status === "yes" && (
+                          <Badge variant="default" className="text-xs bg-green-600">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Coming
+                          </Badge>
+                        )}
+                        {status === "no" && (
+                          <Badge variant="destructive" className="text-xs">
+                            <XCircle className="h-3 w-3 mr-1" />
+                            Can't Attend
+                          </Badge>
+                        )}
+                        {status === "maybe" && (
+                          <Badge variant="outline" className="text-xs">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Not Sure
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex gap-2 sm:ml-auto flex-wrap">
+                        <Button
+                          size="sm"
+                          variant={status === "yes" ? "default" : "outline"}
+                          onClick={() => updateAvailabilityMutation.mutate({ 
+                            sessionId: session.id, 
+                            status: "yes" 
+                          })}
+                          disabled={updateAvailabilityMutation.isPending}
+                          className="text-xs"
+                        >
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Coming
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={status === "no" ? "destructive" : "outline"}
+                          onClick={() => updateAvailabilityMutation.mutate({ 
+                            sessionId: session.id, 
+                            status: "no" 
+                          })}
+                          disabled={updateAvailabilityMutation.isPending}
+                          className="text-xs"
+                        >
+                          <XCircle className="h-3 w-3 mr-1" />
+                          Can't Attend
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={status === "maybe" ? "secondary" : "outline"}
+                          onClick={() => updateAvailabilityMutation.mutate({ 
+                            sessionId: session.id, 
+                            status: "maybe" 
+                          })}
+                          disabled={updateAvailabilityMutation.isPending}
+                          className="text-xs"
+                        >
+                          <Clock className="h-3 w-3 mr-1" />
+                          Not Sure
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <Badge variant="outline" className="mt-2 sm:mt-0">
-                    {session.sessionType}
-                  </Badge>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
