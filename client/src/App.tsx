@@ -58,6 +58,8 @@ import ParentSettingsPage from "@/pages/parent/SettingsPage";
 import ConnectChildPage from "@/pages/parent/connect-child-page";
 import FullCalendarPage from "@/pages/parent/FullCalendarPage";
 import PaymentTransactionsPage from "@/pages/parent/PaymentTransactionsPage";
+import EmailMailbox from "@/pages/dev/EmailMailbox";
+import { DevEmailButton } from "@/components/dev/DevEmailButton";
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -203,6 +205,9 @@ function AppRoutes() {
       
       {/* Debug routes - accessible without login */}
       <Route path="/register-debug" element={<RegisterDebug />} />
+      
+      {/* Dev-only routes */}
+      <Route path="/dev/emails" element={<EmailMailbox />} />
 
       {/* Auth routes */}
       <Route path="/login" element={<Login />} />
@@ -224,6 +229,7 @@ function App() {
         >
           <BrowserRouter>
             <AppRoutes />
+            <DevEmailButton />
           </BrowserRouter>
           <Toaster />
           <SonnerToaster />
