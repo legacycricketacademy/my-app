@@ -1,7 +1,7 @@
 import { Router, type Express } from "express";
-import { db } from "@db";
-import { players, sessions, sessionAttendances, fitnessRecords, users, sessionAvailability } from "@/shared/schema";
-import { battingMetrics, bowlingMetrics, fieldingMetrics, disciplineMetrics, coachNotes } from "../../db/kid-metrics-schema";
+import { db } from "../../db/index.js";
+import { players, sessions, sessionAttendances, fitnessRecords, users, sessionAvailability } from "../../shared/schema.js";
+import { battingMetrics, bowlingMetrics, fieldingMetrics, disciplineMetrics, coachNotes } from "../../db/kid-metrics-schema.js";
 import { eq, and, desc, gte, sql } from "drizzle-orm";
 
 export const kidDashboardRouter = Router();
@@ -31,7 +31,7 @@ export function registerKidDashboardRoutes(app: Express) {
         return res.status(403).json({ success: false, message: "Access denied. Parents only." });
       }
 
-      const parentId = req.user.id;
+      const parentId = typeof req.user.id === 'string' ? parseInt(req.user.id) : req.user.id;
 
       // Get all kids for this parent
       const kids = await db
@@ -80,7 +80,7 @@ export function registerKidDashboardRoutes(app: Express) {
         return res.status(403).json({ success: false, message: "Access denied. Parents only." });
       }
 
-      const parentId = req.user.id;
+      const parentId = typeof req.user.id === 'string' ? parseInt(req.user.id) : req.user.id;
       const kidId = parseInt(req.params.kidId);
 
       if (isNaN(kidId)) {
@@ -266,7 +266,7 @@ export function registerKidDashboardRoutes(app: Express) {
         return res.status(403).json({ success: false, message: "Access denied. Parents only." });
       }
 
-      const parentId = req.user.id;
+      const parentId = typeof req.user.id === 'string' ? parseInt(req.user.id) : req.user.id;
       const kidId = parseInt(req.params.kidId);
       const sessionId = parseInt(req.params.sessionId);
       const { status } = req.body;
