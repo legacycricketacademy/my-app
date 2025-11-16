@@ -57,6 +57,8 @@ const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || CORS_ORIGIN;
 
 // Allow multiple origins for development (Vite may use different ports)
 const allowedOrigins = [
+  "http://localhost:3000",  // Main dev server
+  "http://127.0.0.1:3000",  // IPv4 localhost for Playwright
   "http://localhost:5173",
   "http://localhost:5174", 
   "http://localhost:5175",
@@ -70,14 +72,17 @@ app.use(cors({
     
     // Check if origin is in allowed list
     if (allowedOrigins.includes(origin)) {
+      console.log(`✅ CORS: Allowing origin: ${origin}`);
       return callback(null, true);
     }
     
     // For production, use the configured CORS_ORIGIN
     if (origin === CORS_ORIGIN) {
+      console.log(`✅ CORS: Allowing configured origin: ${origin}`);
       return callback(null, true);
     }
     
+    console.error(`❌ CORS: Rejecting origin: ${origin}`);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,       // allow cookies/sessions
@@ -476,10 +481,24 @@ app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body as { email: string; password: string };
     
-    console.log('🔐 POST /api/auth/login', { email });
+    console.log('🔐 POST /api/auth/login', { 
+      email, 
+      hasPassword: !!password,
+      origin: req.headers.origin,
+      hasSession: !!req.session 
+    });
+    
+    // Validate input
+    if (!email || !password) {
+      console.log('🔐 Login failed - missing email or password');
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required"
+      });
+    }
     
     if (!req.session) {
-      console.error('SESSION NOT AVAILABLE in /api/auth/login');
+      console.error('🔐 SESSION NOT AVAILABLE in /api/auth/login');
       return res.status(500).json({
         success: false,
         message: "Session middleware not configured"
@@ -494,11 +513,19 @@ app.post("/api/auth/login", async (req, res) => {
 
     const account = devAccounts[email as keyof typeof devAccounts];
 
-    if (!account || account.password !== password) {
-      console.log('🔐 Login failed - invalid credentials', { email });
+    if (!account) {
+      console.log('🔐 Login failed - account not found', { email });
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials"
+        message: "Invalid email or password"
+      });
+    }
+
+    if (account.password !== password) {
+      console.log('🔐 Login failed - incorrect password', { email });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password"
       });
     }
 
@@ -511,28 +538,44 @@ app.post("/api/auth/login", async (req, res) => {
     };
     req.session.role = account.role || 'parent';
     
-    console.log('🔐 Login successful, setting session', { userId: account.id, role: account.role });
+    console.log('🔐 Login successful, setting session', { 
+      userId: account.id, 
+      role: account.role,
+      sessionId: req.sessionID 
+    });
 
     // Save session
     await new Promise<void>((resolve, reject) => {
       req.session.save(err => {
         if (err) {
-          console.error('Session save error:', err);
+          console.error('🔐 Session save error:', err);
           reject(err);
         } else {
-          console.log('🔐 Session saved');
+          console.log('🔐 Session saved successfully');
           resolve();
         }
       });
     });
 
+    console.log('🔐 Sending success response');
+
+    // Return user data in response
     return res.status(200).json({ 
       success: true,
-      message: "Login successful"
+      message: "Login successful",
+      data: {
+        user: {
+          id: account.id,
+          email: account.email,
+          role: account.role
+        }
+      }
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error("Login error:", errorMessage, error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("🔐 Login error:", errorMessage);
+    console.error("🔐 Stack trace:", errorStack);
     res.status(500).json({
       success: false,
       message: `Login failed: ${errorMessage}`
@@ -692,24 +735,32 @@ app.get("/cookie-check", (req, res) => {
 });
 
 // User info endpoint for frontend auth state (works with both session and JWT)
-app.get("/api/user", createAuthMiddleware(), async (req, res) => {
+app.get("/api/user", async (req, res) => {
   try {
-    // Check if user is authenticated (either via session or JWT)
-    if (req.user) {
+    console.log('🔍 GET /api/user - checking authentication');
+    
+    // Check session first
+    if (req.session?.userId) {
+      const userId = req.session.userId;
+      const role = req.session.role || 'parent';
+      
       const user = {
-        id: req.user.id,
-        email: req.user.role === "admin" ? "admin@test.com" : "parent@test.com",
-        role: req.user.role,
-        fullName: req.user.role === "admin" ? "admin" : "parent"
+        id: userId,
+        email: role === "admin" ? "admin@test.com" : "parent@test.com",
+        role: role,
+        fullName: role === "admin" ? "Admin User" : "Parent User"
       };
+      
+      console.log('🔍 User authenticated via session', { userId, role });
       
       return res.json({
         success: true,
-        data: { user }
+        data: user
       });
     }
     
     // Not authenticated
+    console.log('🔍 User not authenticated');
     return res.status(401).json({
       success: false,
       message: "Not authenticated"

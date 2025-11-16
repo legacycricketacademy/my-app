@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as os from 'os';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3000';
 const RUN_LOCAL_WEB = process.env.RUN_LOCAL_WEB === '1';
 const CI = !!process.env.CI;
 

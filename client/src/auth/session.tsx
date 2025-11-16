@@ -4,6 +4,8 @@ type User = { id: string; email?: string; role: "admin"|"coach"|"parent"|"player
 type Ctx = {
   user: User | null;
   loading: boolean;
+  isLoading: boolean; // Alias for loading
+  isAuthenticated: boolean; // Computed from user
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -11,8 +13,13 @@ type Ctx = {
 };
 
 const AuthCtx = createContext<Ctx>({
-  user: null, loading: true,
-  async login(){}, async logout(){}, async refresh(){},
+  user: null, 
+  loading: true,
+  isLoading: true,
+  isAuthenticated: false,
+  async login(){}, 
+  async logout(){}, 
+  async refresh(){},
   loginMutation: { mutateAsync: async () => {}, isPending: false, isLoading: false, isSuccess: false, isError: false }
 });
 
@@ -150,7 +157,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isError: false
   }), [login, loading, user]);
 
-  const value = useMemo(() => ({ user, loading, login, logout, refresh, loginMutation }), [user, loading, login, logout, refresh, loginMutation]);
+  const value = useMemo(() => ({ 
+    user, 
+    loading, 
+    isLoading: loading, // Alias for compatibility
+    isAuthenticated: !!user, // User is authenticated if user object exists
+    login, 
+    logout, 
+    refresh, 
+    loginMutation 
+  }), [user, loading, login, logout, refresh, loginMutation]);
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }

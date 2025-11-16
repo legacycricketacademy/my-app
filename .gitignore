@@ -8,3 +8,14 @@ vite.config.ts.*
 *.log
 .data-settings.json
 
+# Test artifacts
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Debug files
+*.debug.png
+register-form.html
+register-page.html
+test-register-*.js
+
