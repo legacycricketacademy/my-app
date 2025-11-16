@@ -1,7 +1,20 @@
 import { Router, type Express } from "express";
 import { db } from "../../db/index.js";
-import { players, sessions, sessionAttendances, fitnessRecords, users, sessionAvailability } from "../../shared/schema.js";
-import { battingMetrics, bowlingMetrics, fieldingMetrics, disciplineMetrics, coachNotes } from "../../db/kid-metrics-schema.js";
+import {
+  players,
+  sessions,
+  sessionAttendances,
+  fitnessRecords,
+  users,
+  sessionAvailability,
+} from "../../shared/schema.js";
+import {
+  battingMetrics,
+  bowlingMetrics,
+  fieldingMetrics,
+  disciplineMetrics,
+  coachNotes,
+} from "../../db/kid-metrics-schema.js";
 import { eq, and, desc, gte, sql } from "drizzle-orm";
 
 export const kidDashboardRouter = Router();
@@ -12,7 +25,10 @@ function calculateAge(dateOfBirth: Date): number {
   const birthDate = new Date(dateOfBirth);
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
     age--;
   }
   return age;
@@ -23,15 +39,20 @@ export function registerKidDashboardRoutes(app: Express) {
   app.get("/api/parent/kids", async (req, res) => {
     try {
       if (!req.user) {
-        return res.status(401).json({ success: false, message: "Not authenticated" });
+        return res
+          .status(401)
+          .json({ success: false, message: "Not authenticated" });
       }
 
       // Only parents can access this endpoint
       if (req.user.role !== "parent") {
-        return res.status(403).json({ success: false, message: "Access denied. Parents only." });
+        return res
+          .status(403)
+          .json({ success: false, message: "Access denied. Parents only." });
       }
 
-      const parentId = typeof req.user.id === 'string' ? parseInt(req.user.id) : req.user.id;
+      const parentId =
+        typeof req.user.id === "string" ? parseInt(req.user.id) : req.user.id;
 
       // Get all kids for this parent
       const kids = await db
@@ -48,7 +69,7 @@ export function registerKidDashboardRoutes(app: Express) {
         .where(eq(players.parentId, parentId));
 
       // Add calculated age to each kid
-      const kidsWithAge = kids.map(kid => ({
+      const kidsWithAge = kids.map((kid) => ({
         ...kid,
         age: calculateAge(new Date(kid.dateOfBirth)),
         fullName: `${kid.firstName} ${kid.lastName}`,
@@ -72,19 +93,26 @@ export function registerKidDashboardRoutes(app: Express) {
   app.get("/api/parent/kids/:kidId/dashboard", async (req, res) => {
     try {
       if (!req.user) {
-        return res.status(401).json({ success: false, message: "Not authenticated" });
+        return res
+          .status(401)
+          .json({ success: false, message: "Not authenticated" });
       }
 
       // Only parents can access this endpoint
       if (req.user.role !== "parent") {
-        return res.status(403).json({ success: false, message: "Access denied. Parents only." });
+        return res
+          .status(403)
+          .json({ success: false, message: "Access denied. Parents only." });
       }
 
-      const parentId = typeof req.user.id === 'string' ? parseInt(req.user.id) : req.user.id;
+      const parentId =
+        typeof req.user.id === "string" ? parseInt(req.user.id) : req.user.id;
       const kidId = parseInt(req.params.kidId);
 
       if (isNaN(kidId)) {
-        return res.status(400).json({ success: false, message: "Invalid kid ID" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid kid ID" });
       }
 
       // Verify this kid belongs to this parent
@@ -95,7 +123,9 @@ export function registerKidDashboardRoutes(app: Express) {
         .limit(1);
 
       if (kid.length === 0) {
-        return res.status(404).json({ success: false, message: "Kid not found or access denied" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Kid not found or access denied" });
       }
 
       const kidData = kid[0];
@@ -149,7 +179,7 @@ export function registerKidDashboardRoutes(app: Express) {
         .where(eq(sessionAttendances.playerId, kidId));
 
       const totalSessions = attendanceData.length;
-      const attendedSessions = attendanceData.filter(a => a.attended).length;
+      const attendedSessions = attendanceData.filter((a) => a.attended).length;
       const missedSessions = totalSessions - attendedSessions;
 
       // Get last session date
@@ -185,14 +215,14 @@ export function registerKidDashboardRoutes(app: Express) {
           sessionAvailability,
           and(
             eq(sessionAvailability.sessionId, sessions.id),
-            eq(sessionAvailability.playerId, kidId)
-          )
+            eq(sessionAvailability.playerId, kidId),
+          ),
         )
         .where(
           and(
             eq(sessions.ageGroup, kidData.ageGroup),
-            gte(sessions.startTime, new Date())
-          )
+            gte(sessions.startTime, new Date()),
+          ),
         )
         .orderBy(sessions.startTime)
         .limit(10);
@@ -255,108 +285,125 @@ export function registerKidDashboardRoutes(app: Express) {
   });
 
   // POST /api/parent/kids/:kidId/sessions/:sessionId/availability - Update session availability
-  app.post("/api/parent/kids/:kidId/sessions/:sessionId/availability", async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ success: false, message: "Not authenticated" });
-      }
+  app.post(
+    "/api/parent/kids/:kidId/sessions/:sessionId/availability",
+    async (req, res) => {
+      try {
+        if (!req.user) {
+          return res
+            .status(401)
+            .json({ success: false, message: "Not authenticated" });
+        }
 
-      // Only parents can access this endpoint
-      if (req.user.role !== "parent") {
-        return res.status(403).json({ success: false, message: "Access denied. Parents only." });
-      }
+        // Only parents can access this endpoint
+        if (req.user.role !== "parent") {
+          return res
+            .status(403)
+            .json({ success: false, message: "Access denied. Parents only." });
+        }
 
-      const parentId = typeof req.user.id === 'string' ? parseInt(req.user.id) : req.user.id;
-      const kidId = parseInt(req.params.kidId);
-      const sessionId = parseInt(req.params.sessionId);
-      const { status } = req.body;
+        const parentId =
+          typeof req.user.id === "string" ? parseInt(req.user.id) : req.user.id;
+        const kidId = parseInt(req.params.kidId);
+        const sessionId = parseInt(req.params.sessionId);
+        const { status } = req.body;
 
-      if (isNaN(kidId) || isNaN(sessionId)) {
-        return res.status(400).json({ success: false, message: "Invalid kid ID or session ID" });
-      }
+        if (isNaN(kidId) || isNaN(sessionId)) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid kid ID or session ID" });
+        }
 
-      if (!status || !["yes", "no", "maybe"].includes(status)) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Invalid status. Must be 'yes', 'no', or 'maybe'" 
-        });
-      }
+        if (!status || !["yes", "no", "maybe"].includes(status)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid status. Must be 'yes', 'no', or 'maybe'",
+          });
+        }
 
-      // Verify this kid belongs to this parent
-      const kid = await db
-        .select()
-        .from(players)
-        .where(and(eq(players.id, kidId), eq(players.parentId, parentId)))
-        .limit(1);
+        // Verify this kid belongs to this parent
+        const kid = await db
+          .select()
+          .from(players)
+          .where(and(eq(players.id, kidId), eq(players.parentId, parentId)))
+          .limit(1);
 
-      if (kid.length === 0) {
-        return res.status(404).json({ success: false, message: "Kid not found or access denied" });
-      }
+        if (kid.length === 0) {
+          return res
+            .status(404)
+            .json({
+              success: false,
+              message: "Kid not found or access denied",
+            });
+        }
 
-      // Verify the session exists and matches the kid's age group
-      const session = await db
-        .select()
-        .from(sessions)
-        .where(eq(sessions.id, sessionId))
-        .limit(1);
+        // Verify the session exists and matches the kid's age group
+        const session = await db
+          .select()
+          .from(sessions)
+          .where(eq(sessions.id, sessionId))
+          .limit(1);
 
-      if (session.length === 0) {
-        return res.status(404).json({ success: false, message: "Session not found" });
-      }
+        if (session.length === 0) {
+          return res
+            .status(404)
+            .json({ success: false, message: "Session not found" });
+        }
 
-      if (session[0].ageGroup !== kid[0].ageGroup) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Session does not match kid's age group" 
-        });
-      }
+        if (session[0].ageGroup !== kid[0].ageGroup) {
+          return res.status(400).json({
+            success: false,
+            message: "Session does not match kid's age group",
+          });
+        }
 
-      // Check if availability record exists
-      const existing = await db
-        .select()
-        .from(sessionAvailability)
-        .where(
-          and(
-            eq(sessionAvailability.sessionId, sessionId),
-            eq(sessionAvailability.playerId, kidId)
+        // Check if availability record exists
+        const existing = await db
+          .select()
+          .from(sessionAvailability)
+          .where(
+            and(
+              eq(sessionAvailability.sessionId, sessionId),
+              eq(sessionAvailability.playerId, kidId),
+            ),
           )
-        )
-        .limit(1);
+          .limit(1);
 
-      if (existing.length > 0) {
-        // Update existing record
-        await db
-          .update(sessionAvailability)
-          .set({
+        if (existing.length > 0) {
+          // Update existing record
+          await db
+            .update(sessionAvailability)
+            .set({
+              status,
+              respondedAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(sessionAvailability.id, existing[0].id));
+        } else {
+          // Create new record
+          await db.insert(sessionAvailability).values({
+            sessionId,
+            playerId: kidId,
             status,
             respondedAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .where(eq(sessionAvailability.id, existing[0].id));
-      } else {
-        // Create new record
-        await db.insert(sessionAvailability).values({
-          sessionId,
-          playerId: kidId,
-          status,
-          respondedAt: new Date(),
+          });
+        }
+
+        return res.json({
+          success: true,
+          message: "Availability updated successfully",
+          data: { status },
+        });
+      } catch (error: any) {
+        console.error("Error updating availability:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to update availability",
+          error: error.message,
         });
       }
-
-      return res.json({
-        success: true,
-        message: "Availability updated successfully",
-        data: { status },
-      });
-    } catch (error: any) {
-      console.error("Error updating availability:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to update availability",
-        error: error.message,
-      });
-    }
-  });
+    },
+  );
 
   console.log("Kid dashboard routes registered");
 }

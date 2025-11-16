@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import passport from "passport";
 import path from "path";
@@ -27,23 +27,33 @@ import { users } from "../shared/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 import { MailService } from "@sendgrid/mail";
 import { sendAppEmail } from "./email.js";
-import { isDebugAuth, isDebugHeaders, safeLog, safeLogHeaders } from "./debug.js";
+import {
+  isDebugAuth,
+  isDebugHeaders,
+  safeLog,
+  safeLogHeaders,
+} from "./debug.js";
 
 // ---- Global crash guards ----
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('[crash-guard] Unhandled Rejection at:', promise, 'reason:', reason);
+process.on("unhandledRejection", (reason, promise) => {
+  console.error(
+    "[crash-guard] Unhandled Rejection at:",
+    promise,
+    "reason:",
+    reason,
+  );
   // In production, log but don't exit - keep the process alive
   if (!isProd) {
-    console.error('[crash-guard] Exiting in dev mode');
+    console.error("[crash-guard] Exiting in dev mode");
     process.exit(1);
   }
 });
 
-process.on('uncaughtException', (error) => {
-  console.error('[crash-guard] Uncaught Exception:', error);
+process.on("uncaughtException", (error) => {
+  console.error("[crash-guard] Uncaught Exception:", error);
   // In production, log but don't exit unless it's a fatal startup error
   if (!isProd) {
-    console.error('[crash-guard] Exiting in dev mode');
+    console.error("[crash-guard] Exiting in dev mode");
     process.exit(1);
   }
 });
@@ -56,41 +66,44 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // ---------- CORS ----------
-const CORS_ORIGIN = process.env.CORS_ORIGIN || process.env.ORIGIN || "http://localhost:5173";
+const CORS_ORIGIN =
+  process.env.CORS_ORIGIN || process.env.ORIGIN || "http://localhost:5173";
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || CORS_ORIGIN;
 
 // Allow multiple origins for development (Vite may use different ports)
 const allowedOrigins = [
-  "http://localhost:3000",  // Main dev server
-  "http://127.0.0.1:3000",  // IPv4 localhost for Playwright
+  "http://localhost:3000", // Main dev server
+  "http://127.0.0.1:3000", // IPv4 localhost for Playwright
   "http://localhost:5173",
-  "http://localhost:5174", 
+  "http://localhost:5174",
   "http://localhost:5175",
   "http://localhost:5176",
-  "http://localhost:5177"
+  "http://localhost:5177",
 ];
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Check if origin is in allowed list
-    if (allowedOrigins.includes(origin)) {
-      console.log(`✅ CORS: Allowing origin: ${origin}`);
-      return callback(null, true);
-    }
-    
-    // For production, use the configured CORS_ORIGIN
-    if (origin === CORS_ORIGIN) {
-      console.log(`✅ CORS: Allowing configured origin: ${origin}`);
-      return callback(null, true);
-    }
-    
-    console.error(`❌ CORS: Rejecting origin: ${origin}`);
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,       // allow cookies/sessions
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        console.log(`✅ CORS: Allowing origin: ${origin}`);
+        return callback(null, true);
+      }
+
+      // For production, use the configured CORS_ORIGIN
+      if (origin === CORS_ORIGIN) {
+        console.log(`✅ CORS: Allowing configured origin: ${origin}`);
+        return callback(null, true);
+      }
+
+      console.error(`❌ CORS: Rejecting origin: ${origin}`);
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true, // allow cookies/sessions
+  }),
+);
 
 // Required on Render/Heroku to set Secure cookies correctly behind proxy
 app.set("trust proxy", 1);
@@ -111,43 +124,50 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Stripe webhook route (needs raw body, must be before express.json())
-import stripeRouter from './stripe.js';
-app.use('/api/stripe', stripeRouter);
+import stripeRouter from "./stripe.js";
+app.use("/api/stripe", stripeRouter);
 
 // Robust boot logging
-console.log('Environment check:', {
+console.log("Environment check:", {
   NODE_ENV: process.env.NODE_ENV,
-  expressEnv: app.get('env'),
-  isDevelopment: app.get('env') !== 'production'
+  expressEnv: app.get("env"),
+  isDevelopment: app.get("env") !== "production",
 });
 
 // Production validation
-if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.startsWith('sqlite:')) {
-  console.error('ERROR: SQLite database detected in production environment');
-  console.error('Production must use PostgreSQL database');
+if (
+  process.env.NODE_ENV === "production" &&
+  process.env.DATABASE_URL?.startsWith("sqlite:")
+) {
+  console.error("ERROR: SQLite database detected in production environment");
+  console.error("Production must use PostgreSQL database");
   process.exit(1);
 }
 
 // Session middleware diagnostics
-safeLog('SESSION middleware mounted', {
+safeLog("SESSION middleware mounted", {
   cookieName: COOKIE_NAME,
   secure: true,
-  sameSite: 'none',
+  sameSite: "none",
   domain: COOKIE_DOMAIN,
-  path: '/'
+  path: "/",
 });
 
 // Session configuration logging
-console.log('SESSION middleware mounted', {
+console.log("SESSION middleware mounted", {
   secure: true,
-  sameSite: 'none',
+  sameSite: "none",
   origin: CORS_ORIGIN,
-  domain: COOKIE_DOMAIN
+  domain: COOKIE_DOMAIN,
 });
 
 // Mount dev login route EARLY (before auth guards)
 registerDevLogin(app, pool);
-console.log('DEV LOGIN route registered at /api/dev/login (enabled:', process.env.ENABLE_DEV_LOGIN === 'true', ')');
+console.log(
+  "DEV LOGIN route registered at /api/dev/login (enabled:",
+  process.env.ENABLE_DEV_LOGIN === "true",
+  ")",
+);
 
 // Mount dev email sandbox routes
 registerDevEmailSandbox(app);
@@ -197,8 +217,7 @@ app.get("/api/healthz", async (_req, res) => {
   try {
     const h = await dbHealth();
     res.json({ ok: true, db: h.ok, timestamp: new Date().toISOString() });
-  }
-  catch {
+  } catch {
     res.status(500).json({ ok: false, timestamp: new Date().toISOString() });
   }
 });
@@ -206,24 +225,26 @@ app.get("/api/healthz", async (_req, res) => {
 // Simple health check endpoint
 app.get("/healthz", async (_req, res) => {
   try {
-    const r = await pool.query('select 1 as ok');
-    return r.rows?.[0]?.ok === 1 ? res.status(200).send('ok') : res.status(500).send('db not ok');
+    const r = await pool.query("select 1 as ok");
+    return r.rows?.[0]?.ok === 1
+      ? res.status(200).send("ok")
+      : res.status(500).send("db not ok");
   } catch (e) {
-    return res.status(500).send('db error: ' + (e as Error).message);
+    return res.status(500).send("db error: " + (e as Error).message);
   }
 });
 
 // Whoami endpoint (requires authentication)
 app.get("/api/whoami", createAuthMiddleware(), (req, res) => {
   if (req.user) {
-    res.json({ 
-      id: req.user.id, 
-      role: req.user.role 
+    res.json({
+      id: req.user.id,
+      role: req.user.role,
     });
   } else {
-    res.status(401).json({ 
-      success: false, 
-      message: "Not authenticated" 
+    res.status(401).json({
+      success: false,
+      message: "Not authenticated",
     });
   }
 });
@@ -233,9 +254,9 @@ app.post("/api/test/setup-db", async (req, res) => {
   // Always allow for now (for e2e testing)
   try {
     // Import database
-    const { db } = await import('../db/index.js');
-    
-    console.log('🔧 Setting up database tables...');
+    const { db } = await import("../db/index.js");
+
+    console.log("🔧 Setting up database tables...");
 
     // Create core tables using raw SQL
     await db.execute(`
@@ -283,20 +304,19 @@ app.post("/api/test/setup-db", async (req, res) => {
       ON CONFLICT (email) DO NOTHING;
     `);
 
-    console.log('✅ Database tables created successfully');
+    console.log("✅ Database tables created successfully");
 
-    return res.json({ 
-      ok: true, 
+    return res.json({
+      ok: true,
       message: "Database setup completed",
-      tables: ["users", "user_audit_logs", "session"]
+      tables: ["users", "user_audit_logs", "session"],
     });
-
   } catch (error) {
     console.error("Error setting up database:", error);
-    return res.status(500).json({ 
-      ok: false, 
-      error: "setup_failed", 
-      message: error instanceof Error ? error.message : "Unknown error" 
+    return res.status(500).json({
+      ok: false,
+      error: "setup_failed",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -304,57 +324,63 @@ app.post("/api/test/setup-db", async (req, res) => {
 // Test user creation endpoint (for Render e2e testing)
 app.post("/api/test/setup-users", async (req, res) => {
   // Only allow in production if E2E_TESTING is enabled
-  const allowSetup = !isProd || process.env.E2E_TESTING === 'true';
+  const allowSetup = !isProd || process.env.E2E_TESTING === "true";
 
   if (!allowSetup) {
-    console.warn('⚠️ Test user setup attempted in production - rejected');
-    return res.status(404).json({ error: 'Not found' });
+    console.warn("⚠️ Test user setup attempted in production - rejected");
+    return res.status(404).json({ error: "Not found" });
   }
 
   try {
     // Import database and schema
-    const { db } = await import('../db/index.js');
-    const schema = await import('@shared/schema.js');
-    const { hashSync, genSaltSync } = await import('bcrypt');
-    const { eq } = await import('drizzle-orm');
+    const { db } = await import("../db/index.js");
+    const schema = await import("@shared/schema.js");
+    const { hashSync, genSaltSync } = await import("bcrypt");
+    const { eq } = await import("drizzle-orm");
 
-    console.log('🔧 Setting up test users...');
+    console.log("🔧 Setting up test users...");
 
     // Create default academy if it doesn't exist
     let defaultAcademy;
     const academyExists = await db.query.academies.findFirst({
-      where: eq(schema.academies.name, "Legacy Cricket Academy")
+      where: eq(schema.academies.name, "Legacy Cricket Academy"),
     });
 
     if (!academyExists) {
-      const [academy] = await db.insert(schema.academies).values({
-        name: "Legacy Cricket Academy",
-        slug: "legacy-cricket-academy",
-        description: "The main cricket academy for player development",
-        address: "123 Cricket Lane, Sports City",
-        phone: "+1234567890",
-        email: "info@legacycricket.com",
-        logoUrl: "/assets/logo.png",
-        primaryColor: "#1e40af",
-        secondaryColor: "#60a5fa",
-        stripeAccountId: null,
-        subscriptionTier: "pro",
-        maxPlayers: 200,
-        maxCoaches: 10,
-        status: "active",
-      }).returning();
+      const [academy] = await db
+        .insert(schema.academies)
+        .values({
+          name: "Legacy Cricket Academy",
+          slug: "legacy-cricket-academy",
+          description: "The main cricket academy for player development",
+          address: "123 Cricket Lane, Sports City",
+          phone: "+1234567890",
+          email: "info@legacycricket.com",
+          logoUrl: "/assets/logo.png",
+          primaryColor: "#1e40af",
+          secondaryColor: "#60a5fa",
+          stripeAccountId: null,
+          subscriptionTier: "pro",
+          maxPlayers: 200,
+          maxCoaches: 10,
+          status: "active",
+        })
+        .returning();
       defaultAcademy = academy;
       console.log("✅ Default academy created with ID:", academy.id);
     } else {
       defaultAcademy = academyExists;
-      console.log("✅ Default academy already exists with ID:", academyExists.id);
+      console.log(
+        "✅ Default academy already exists with ID:",
+        academyExists.id,
+      );
     }
 
     const academyId = defaultAcademy.id;
 
     // Create admin user
     const adminExists = await db.query.users.findFirst({
-      where: eq(schema.users.username, "admin")
+      where: eq(schema.users.username, "admin"),
     });
 
     if (!adminExists) {
@@ -377,7 +403,7 @@ app.post("/api/test/setup-users", async (req, res) => {
 
     // Create parent user
     const parentExists = await db.query.users.findFirst({
-      where: eq(schema.users.username, "parent")
+      where: eq(schema.users.username, "parent"),
     });
 
     if (!parentExists) {
@@ -398,18 +424,17 @@ app.post("/api/test/setup-users", async (req, res) => {
       console.log("✅ Parent user already exists");
     }
 
-    return res.json({ 
-      ok: true, 
+    return res.json({
+      ok: true,
       message: "Test users setup completed",
-      users: ["admin", "parent"]
+      users: ["admin", "parent"],
     });
-
   } catch (error) {
     console.error("Error setting up test users:", error);
-    return res.status(500).json({ 
-      ok: false, 
-      error: "setup_failed", 
-      message: error instanceof Error ? error.message : "Unknown error" 
+    return res.status(500).json({
+      ok: false,
+      error: "setup_failed",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -418,51 +443,51 @@ app.post("/api/test/setup-users", async (req, res) => {
 app.post("/api/dev/login", async (req, res) => {
   // Always allow dev login for now (for e2e testing)
   // TODO: Add proper environment variable check later
-  
+
   try {
     const { email, password } = req.body as { email: string; password: string };
-    
-    safeLog('AUTH login start', { email });
-    
+
+    safeLog("AUTH login start", { email });
+
     // Check if session is available
     if (!req.session) {
-      console.error('SESSION NOT AVAILABLE in dev login');
+      console.error("SESSION NOT AVAILABLE in dev login");
       return res.status(500).json({
         success: false,
-        message: "Session middleware not configured"
+        message: "Session middleware not configured",
       });
     }
-    safeLog('AUTH session available', { hasSession: !!req.session });
+    safeLog("AUTH session available", { hasSession: !!req.session });
 
     // Development accounts for testing
     const devAccounts = {
       "admin@test.com": { password: "password", role: "admin", id: 1 },
-      "parent@test.com": { password: "password", role: "parent", id: 2 }
+      "parent@test.com": { password: "password", role: "parent", id: 2 },
     };
 
     const account = devAccounts[email as keyof typeof devAccounts];
 
     if (!account || account.password !== password) {
-      safeLog('AUTH login failed', { email, reason: 'invalid credentials' });
+      safeLog("AUTH login failed", { email, reason: "invalid credentials" });
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials"
+        message: "Invalid credentials",
       });
     }
 
     // Set session data (no regenerate in dev to avoid issues)
     req.session.userId = account.id;
-    req.session.role = account.role || 'parent';
-    safeLog('AUTH session set', { userId: account.id, role: account.role });
+    req.session.role = account.role || "parent";
+    safeLog("AUTH session set", { userId: account.id, role: account.role });
 
     // Save session explicitly and wait for completion
     await new Promise<void>((resolve, reject) => {
-      req.session.save(err => {
+      req.session.save((err) => {
         if (err) {
-          console.error('Session save error:', err);
+          console.error("Session save error:", err);
           reject(err);
         } else {
-          safeLog('AUTH session save ok');
+          safeLog("AUTH session save ok");
           resolve();
         }
       });
@@ -473,78 +498,94 @@ app.post("/api/dev/login", async (req, res) => {
       ok: true,
       user: {
         id: account.id,
-        role: account.role || 'parent'
-      }
+        role: account.role || "parent",
+      },
     };
     return res.status(200).json(payload);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     console.error("Dev login error:", errorMessage, error);
-    safeLog('AUTH error', { error: errorMessage, stack: error instanceof Error ? error.stack : undefined });
+    safeLog("AUTH error", {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       success: false,
-      message: `Login failed: ${errorMessage}`
+      message: `Login failed: ${errorMessage}`,
     });
   }
 });
 
 // Standard auth login endpoint (non-dev)
 app.post("/api/auth/login", async (req, res) => {
-  console.log('🔐 POST /api/auth/login - START', {
+  console.log("🔐 POST /api/auth/login - START", {
     hasBody: !!req.body,
     bodyKeys: req.body ? Object.keys(req.body) : [],
-    contentType: req.headers['content-type'],
+    contentType: req.headers["content-type"],
     origin: req.headers.origin,
-    hasSession: !!req.session
+    hasSession: !!req.session,
   });
 
   try {
     const { email, password } = req.body as { email: string; password: string };
-    
-    console.log('🔐 POST /api/auth/login - PARSED', { 
-      email, 
+
+    console.log("🔐 POST /api/auth/login - PARSED", {
+      email,
       hasPassword: !!password,
-      passwordLength: password?.length
+      passwordLength: password?.length,
     });
-    
+
     // Validate input
     if (!email || !password) {
-      console.log('🔐 Login failed - missing email or password');
+      console.log("🔐 Login failed - missing email or password");
       return res.status(400).json({
         success: false,
-        message: "Email and password are required"
+        message: "Email and password are required",
       });
     }
-    
+
     if (!req.session) {
-      console.error('🔐 SESSION NOT AVAILABLE in /api/auth/login');
+      console.error("🔐 SESSION NOT AVAILABLE in /api/auth/login");
       return res.status(500).json({
         success: false,
-        message: "Session middleware not configured"
+        message: "Session middleware not configured",
       });
     }
 
     // Development accounts for testing
     const devAccounts = {
-      "admin@test.com": { password: "password", role: "admin", id: 1, email: "admin@test.com", fullName: "Admin User" },
-      "parent@test.com": { password: "password", role: "parent", id: 2, email: "parent@test.com", fullName: "Test Parent" }
+      "admin@test.com": {
+        password: "password",
+        role: "admin",
+        id: 1,
+        email: "admin@test.com",
+        fullName: "Admin User",
+      },
+      "parent@test.com": {
+        password: "password",
+        role: "parent",
+        id: 2,
+        email: "parent@test.com",
+        fullName: "Test Parent",
+      },
     };
 
     const account = devAccounts[email as keyof typeof devAccounts];
 
     if (!account) {
-      console.log('🔐 Login failed - account not found', { email });
+      console.log("🔐 Login failed - account not found", { email });
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password"
+        message: "Invalid email or password",
       });
     }
 
     if (account.password !== password) {
-      console.log('🔐 Login failed - incorrect password', { email });
+      console.log("🔐 Login failed - incorrect password", { email });
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password"
+        message: "Invalid email or password",
       });
     }
 
@@ -553,51 +594,52 @@ app.post("/api/auth/login", async (req, res) => {
     req.session.user = {
       id: account.id,
       email: account.email,
-      role: account.role
-    };
-    req.session.role = account.role || 'parent';
-    
-    console.log('🔐 Login successful, setting session', { 
-      userId: account.id, 
       role: account.role,
-      sessionId: req.sessionID 
+    };
+    req.session.role = account.role || "parent";
+
+    console.log("🔐 Login successful, setting session", {
+      userId: account.id,
+      role: account.role,
+      sessionId: req.sessionID,
     });
 
     // Save session
     await new Promise<void>((resolve, reject) => {
-      req.session.save(err => {
+      req.session.save((err) => {
         if (err) {
-          console.error('🔐 Session save error:', err);
+          console.error("🔐 Session save error:", err);
           reject(err);
         } else {
-          console.log('🔐 Session saved successfully');
+          console.log("🔐 Session saved successfully");
           resolve();
         }
       });
     });
 
-    console.log('🔐 Sending success response');
+    console.log("🔐 Sending success response");
 
     // Return user data in response
-    return res.status(200).json({ 
+    return res.status(200).json({
       success: true,
       message: "Login successful",
       data: {
         user: {
           id: account.id,
           email: account.email,
-          role: account.role
-        }
-      }
+          role: account.role,
+        },
+      },
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     const errorStack = error instanceof Error ? error.stack : undefined;
     console.error("🔐 Login error:", errorMessage);
     console.error("🔐 Stack trace:", errorStack);
     return res.status(500).json({
       success: false,
-      message: `Login failed: ${errorMessage}`
+      message: `Login failed: ${errorMessage}`,
     });
   }
 });
@@ -605,44 +647,44 @@ app.post("/api/auth/login", async (req, res) => {
 // Session info endpoint
 app.get("/api/session/me", async (req, res) => {
   try {
-    console.log('🔍 GET /api/session/me');
-    
+    console.log("🔍 GET /api/session/me");
+
     if (!req.session?.userId) {
-      console.log('🔍 Not authenticated');
+      console.log("🔍 Not authenticated");
       return res.status(401).json({
         success: false,
         authenticated: false,
-        user: null
+        user: null,
       });
     }
 
     // Development accounts for testing
     const devAccounts: Record<string, any> = {
       "1": { id: 1, email: "admin@test.com", role: "admin" },
-      "2": { id: 2, email: "parent@test.com", role: "parent" }
+      "2": { id: 2, email: "parent@test.com", role: "parent" },
     };
 
     const user = devAccounts[String(req.session.userId)];
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "User not found",
       });
     }
 
-    console.log('🔍 User authenticated', { userId: user.id, role: user.role });
-    
+    console.log("🔍 User authenticated", { userId: user.id, role: user.role });
+
     return res.status(200).json({
       success: true,
       authenticated: true,
-      user
+      user,
     });
   } catch (error) {
     console.error("Session me error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error"
+      message: "Server error",
     });
   }
 });
@@ -651,21 +693,23 @@ app.get("/api/session/me", async (req, res) => {
 app.post("/api/auth/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      console.error('LOGOUT error:', err);
-      return res.status(500).json({ ok: false, error: 'Failed to destroy session' });
+      console.error("LOGOUT error:", err);
+      return res
+        .status(500)
+        .json({ ok: false, error: "Failed to destroy session" });
     }
-    
-    console.log('LOGOUT destroyed');
-    
+
+    console.log("LOGOUT destroyed");
+
     // Clear the cookie with same flags as login
-    res.clearCookie('connect.sid', {
-      path: '/',
+    res.clearCookie("connect.sid", {
+      path: "/",
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      domain: COOKIE_DOMAIN
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      domain: COOKIE_DOMAIN,
     });
-    
+
     return res.status(200).json({ ok: true });
   });
 });
@@ -685,110 +729,112 @@ app.get("/api/_whoami", (req, res) => {
 
 app.get("/api/_debug/headers", (req, res) => {
   if (!isDebugHeaders) {
-    return res.json({ ok: false, error: 'disabled' });
+    return res.json({ ok: false, error: "disabled" });
   }
-  
+
   res.json({
     host: req.headers.host,
     origin: req.headers.origin,
     cookie: req.headers.cookie,
-    'user-agent': req.headers['user-agent']
+    "user-agent": req.headers["user-agent"],
   });
 });
 
 app.get("/api/_debug/cookie", (req, res) => {
   // Set a short-lived debug cookie with same flags as session
-  res.cookie('debugCookie', 'ok', {
-    path: '/',
+  res.cookie("debugCookie", "ok", {
+    path: "/",
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     domain: COOKIE_DOMAIN,
-    maxAge: 5 * 60 * 1000 // 5 minutes
+    maxAge: 5 * 60 * 1000, // 5 minutes
   });
-  
-  safeLog('DEBUG COOKIE', {
+
+  safeLog("DEBUG COOKIE", {
     incomingCookie: req.headers.cookie || null,
-    sessionUser: req.session?.userId || null
+    sessionUser: req.session?.userId || null,
   });
-  
-  res.json({ set: true, note: 'check response Set-Cookie header' });
+
+  res.json({ set: true, note: "check response Set-Cookie header" });
 });
 
 app.get("/api/_debug/session", (req, res) => {
   res.json({
     hasSession: !!req.session?.userId,
     userId: req.session?.userId ?? null,
-    role: req.session?.role ?? null
+    role: req.session?.role ?? null,
   });
 });
 
 // Session verification endpoint
 app.get("/api/session", (req, res) => {
-  res.json({ 
-    authenticated: !!req.session?.userId, 
-    user: req.session?.userId ? { 
-      id: req.session.userId, 
-      role: req.session.role || 'parent' 
-    } : null 
+  res.json({
+    authenticated: !!req.session?.userId,
+    user: req.session?.userId
+      ? {
+          id: req.session.userId,
+          role: req.session.role || "parent",
+        }
+      : null,
   });
 });
 
 // Cookie check endpoint for debugging
 app.get("/cookie-check", (req, res) => {
   // Set a test cookie
-  res.cookie('test-cookie', 'test-value', {
+  res.cookie("test-cookie", "test-value", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   });
-  
+
   res.json({
     receivedCookies: req.headers.cookie,
     sessionId: req.sessionID,
     sessionData: {
       userId: req.session.userId,
-      userRole: req.session.userRole
-    }
+      userRole: req.session.userRole,
+    },
   });
 });
 
 // User info endpoint for frontend auth state (works with both session and JWT)
 app.get("/api/user", async (req, res) => {
   try {
-    console.log('🔍 GET /api/user - checking authentication');
-    
+    console.log("🔍 GET /api/user - checking authentication");
+
     // Check session first
     if (req.session?.userId) {
       const userId = req.session.userId;
-      const role = req.session.role || 'parent';
-      
+      const role = req.session.role || "parent";
+
       const user = {
         id: userId,
         email: role === "admin" ? "admin@test.com" : "parent@test.com",
         role: role,
-        fullName: role === "admin" ? "Admin User" : "Parent User"
+        fullName: role === "admin" ? "Admin User" : "Parent User",
       };
-      
-      console.log('🔍 User authenticated via session', { userId, role });
-      
+
+      console.log("🔍 User authenticated via session", { userId, role });
+
       return res.json({
         success: true,
-        data: user
+        data: user,
       });
     }
-    
+
     // Not authenticated
-    console.log('🔍 User not authenticated');
+    console.log("🔍 User not authenticated");
     return res.status(401).json({
       success: false,
-      message: "Not authenticated"
+      message: "Not authenticated",
     });
   } catch (error) {
     console.error("User info error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error"
+      message: "Server error",
     });
   }
 });
@@ -800,12 +846,14 @@ if (process.env.SENDGRID_API_KEY) {
 }
 
 // Email configuration logging
-console.log(`email: bypass=${process.env.BYPASS_EMAIL_SENDING} key=${process.env.SENDGRID_API_KEY ? 'present' : 'missing'} from=${process.env.DEFAULT_FROM_EMAIL || 'madhukar.kcc@gmail.com'}`);
+console.log(
+  `email: bypass=${process.env.BYPASS_EMAIL_SENDING} key=${process.env.SENDGRID_API_KEY ? "present" : "missing"} from=${process.env.DEFAULT_FROM_EMAIL || "madhukar.kcc@gmail.com"}`,
+);
 
 async function sendVerificationEmail(
   email: string,
   parentName: string,
-  verificationToken: string
+  verificationToken: string,
 ) {
   if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
     console.log("SendGrid not configured, skipping email send");
@@ -814,13 +862,8 @@ async function sendVerificationEmail(
 
   const defaultPort = 3002;
   const port = process.env.PORT || String(defaultPort);
-  const host =
-    process.env.NODE_ENV === "production"
-      ? "https"
-      : "http";
-  const base =
-    process.env.REPLIT_URL ||
-    `localhost:${port}`;
+  const host = process.env.NODE_ENV === "production" ? "https" : "http";
+  const base = process.env.REPLIT_URL || `localhost:${port}`;
 
   const verificationUrl = `${host}://${base}/verify-email?token=${verificationToken}`;
 
@@ -856,18 +899,24 @@ async function sendVerificationEmail(
 }
 
 // ---- Test Email Endpoint ----
-app.get('/api/dev/send-test-email', async (req, res) => {
-  if (process.env.EMAIL_TEST_ENABLED !== 'true') {
-    return res.status(403).json({ ok: false, error: 'disabled' });
+app.get("/api/dev/send-test-email", async (req, res) => {
+  if (process.env.EMAIL_TEST_ENABLED !== "true") {
+    return res.status(403).json({ ok: false, error: "disabled" });
   }
-  
-  const to = String(req.query.to || process.env.DEFAULT_FROM_EMAIL || 'madhukar.kcc@gmail.com');
-  
+
+  const to = String(
+    req.query.to || process.env.DEFAULT_FROM_EMAIL || "madhukar.kcc@gmail.com",
+  );
+
   try {
-    const result = await sendAppEmail(to, 'Legacy Cricket Academy Test Email', 'Legacy Cricket Academy test email from Render.');
+    const result = await sendAppEmail(
+      to,
+      "Legacy Cricket Academy Test Email",
+      "Legacy Cricket Academy test email from Render.",
+    );
     return res.json({ ok: true, to });
   } catch (err) {
-    console.error('test email failed', err);
+    console.error("test email failed", err);
     return res.status(500).json({ ok: false, error: (err as Error).message });
   }
 });
@@ -903,10 +952,15 @@ app.post("/api/coaches/:id/approve", async (req, res) => {
   try {
     const coachId = Number(req.params.id);
     console.log(`Coach ${coachId} approved by admin`);
-    return res.json({ success: true, message: `Coach ${coachId} approved successfully` });
+    return res.json({
+      success: true,
+      message: `Coach ${coachId} approved successfully`,
+    });
   } catch (error) {
     console.error("Error approving coach:", error);
-    return res.status(500).json({ success: false, message: "Failed to approve coach." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to approve coach." });
   }
 });
 
@@ -914,29 +968,62 @@ app.post("/api/coaches/:id/reject", async (req, res) => {
   try {
     const coachId = Number(req.params.id);
     console.log(`Coach ${coachId} rejected by admin`);
-    return res.json({ success: true, message: `Coach ${coachId} rejected successfully` });
+    return res.json({
+      success: true,
+      message: `Coach ${coachId} rejected successfully`,
+    });
   } catch (error) {
     console.error("Error rejecting coach:", error);
-    return res.status(500).json({ success: false, message: "Failed to reject coach." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to reject coach." });
   }
 });
 
 // ---- Auth-protected examples (left as-is) ----
 app.get("/api/dashboard/schedule", async (req, res) => {
-  if (!req.isAuthenticated || !req.isAuthenticated() || req.user?.role !== "parent") {
+  if (
+    !req.isAuthenticated ||
+    !req.isAuthenticated() ||
+    req.user?.role !== "parent"
+  ) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   const schedule = [
-    { day: "Monday", time: "4:00 PM - 6:00 PM", activity: "Cricket Training", location: "Ground A" },
-    { day: "Wednesday", time: "5:00 PM - 6:30 PM", activity: "Fitness Session", location: "Gym" },
-    { day: "Friday", time: "4:30 PM - 6:30 PM", activity: "Match Practice", location: "Ground B" },
-    { day: "Saturday", time: "9:00 AM - 11:00 AM", activity: "Team Meeting", location: "Clubhouse" },
+    {
+      day: "Monday",
+      time: "4:00 PM - 6:00 PM",
+      activity: "Cricket Training",
+      location: "Ground A",
+    },
+    {
+      day: "Wednesday",
+      time: "5:00 PM - 6:30 PM",
+      activity: "Fitness Session",
+      location: "Gym",
+    },
+    {
+      day: "Friday",
+      time: "4:30 PM - 6:30 PM",
+      activity: "Match Practice",
+      location: "Ground B",
+    },
+    {
+      day: "Saturday",
+      time: "9:00 AM - 11:00 AM",
+      activity: "Team Meeting",
+      location: "Clubhouse",
+    },
   ];
   res.json(schedule);
 });
 
 app.get("/api/dashboard/stats", async (req, res) => {
-  if (!req.isAuthenticated || !req.isAuthenticated() || req.user?.role !== "parent") {
+  if (
+    !req.isAuthenticated ||
+    !req.isAuthenticated() ||
+    req.user?.role !== "parent"
+  ) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   const stats = {
@@ -953,15 +1040,36 @@ app.get("/api/dashboard/stats", async (req, res) => {
 });
 
 app.get("/api/dashboard/payments", async (req, res) => {
-  if (!req.isAuthenticated || !req.isAuthenticated() || req.user?.role !== "parent") {
+  if (
+    !req.isAuthenticated ||
+    !req.isAuthenticated() ||
+    req.user?.role !== "parent"
+  ) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   const payments = {
-    current: { period: "December 2024", status: "paid", description: "Monthly Training Fee", amount: "175" },
+    current: {
+      period: "December 2024",
+      status: "paid",
+      description: "Monthly Training Fee",
+      amount: "175",
+    },
     history: [
-      { date: "November 2024", description: "Monthly Training Fee", amount: "175" },
-      { date: "October 2024", description: "Monthly Training Fee", amount: "175" },
-      { date: "September 2024", description: "Equipment Purchase", amount: "95" },
+      {
+        date: "November 2024",
+        description: "Monthly Training Fee",
+        amount: "175",
+      },
+      {
+        date: "October 2024",
+        description: "Monthly Training Fee",
+        amount: "175",
+      },
+      {
+        date: "September 2024",
+        description: "Equipment Purchase",
+        amount: "95",
+      },
     ],
   };
   res.json(payments);
@@ -970,53 +1078,70 @@ app.get("/api/dashboard/payments", async (req, res) => {
 // Player creation route aliases (fix "Add New Player" 404)
 const createPlayerHandler = async (req: Request, res: Response) => {
   try {
-    console.log('POST /api/players', { userId: req.user?.id, role: req.user?.role });
-    
+    console.log("POST /api/players", {
+      userId: req.user?.id,
+      role: req.user?.role,
+    });
+
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { firstName, lastName, dateOfBirth, ageGroup, playerType, emergencyContact, medicalInformation } = req.body;
+    const {
+      firstName,
+      lastName,
+      dateOfBirth,
+      ageGroup,
+      playerType,
+      emergencyContact,
+      medicalInformation,
+    } = req.body;
 
-    console.log('CREATE PLAYER REQUEST', { firstName, lastName, dateOfBirth, ageGroup, userId: req.user.id });
+    console.log("CREATE PLAYER REQUEST", {
+      firstName,
+      lastName,
+      dateOfBirth,
+      ageGroup,
+      userId: req.user.id,
+    });
 
     // Validate required fields
     if (!firstName || !lastName) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         ok: false,
-        success: false, 
-        error: 'bad_request',
-        message: 'First and last name required' 
+        success: false,
+        error: "bad_request",
+        message: "First and last name required",
       });
     }
-    
+
     if (!dateOfBirth) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         ok: false,
-        success: false, 
-        error: 'bad_request',
-        message: 'Date of birth required' 
+        success: false,
+        error: "bad_request",
+        message: "Date of birth required",
       });
     }
-    
+
     // Validate date of birth
     const dob = new Date(dateOfBirth);
     if (isNaN(dob.getTime())) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         ok: false,
-        success: false, 
-        error: 'bad_request',
-        message: 'Invalid date of birth' 
+        success: false,
+        error: "bad_request",
+        message: "Invalid date of birth",
       });
     }
-    
+
     const now = new Date();
     if (dob.getTime() > now.getTime()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         ok: false,
-        success: false, 
-        error: 'bad_request',
-        message: 'Date of birth cannot be in the future' 
+        success: false,
+        error: "bad_request",
+        message: "Date of birth cannot be in the future",
       });
     }
 
@@ -1026,12 +1151,14 @@ const createPlayerHandler = async (req: Request, res: Response) => {
       const dob = new Date(dateOfBirth);
       const today = new Date();
       let age = today.getFullYear() - dob.getFullYear();
-      
-      if (today.getMonth() < dob.getMonth() || 
-          (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) {
+
+      if (
+        today.getMonth() < dob.getMonth() ||
+        (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
+      ) {
         age--;
       }
-      
+
       calculatedAgeGroup = age < 8 ? "5-8 years" : "8+ years";
     }
 
@@ -1045,191 +1172,264 @@ const createPlayerHandler = async (req: Request, res: Response) => {
       medicalInformation: medicalInformation || null,
       parentId: req.user.id,
       academyId: 1, // Default academy
-      pendingCoachReview: req.user.role === 'parent' // Parents need coach review
+      pendingCoachReview: req.user.role === "parent", // Parents need coach review
     };
 
-    console.log('CREATE PLAYER: Calling storage.createPlayer', { parentId: playerData.parentId });
+    console.log("CREATE PLAYER: Calling storage.createPlayer", {
+      parentId: playerData.parentId,
+    });
     const newPlayer = await storage.createPlayer(playerData);
-    console.log('CREATE PLAYER SUCCESS', { playerId: newPlayer.id });
+    console.log("CREATE PLAYER SUCCESS", { playerId: newPlayer.id });
     return res.status(201).json({ ok: true, success: true, player: newPlayer });
   } catch (error) {
-    console.error('CREATE PLAYER ERROR', { 
-      msg: error instanceof Error ? error.message : 'unknown',
+    console.error("CREATE PLAYER ERROR", {
+      msg: error instanceof Error ? error.message : "unknown",
       stack: error instanceof Error ? error.stack : undefined,
-      userId: req.user?.id
+      userId: req.user?.id,
     });
-    return res.status(500).json({ 
+    return res.status(500).json({
       ok: false,
       success: false,
-      error: 'create_failed',
-      message: error instanceof Error ? error.message : 'Internal server error' 
+      error: "create_failed",
+      message: error instanceof Error ? error.message : "Internal server error",
     });
   }
 };
 
 // Add route aliases for player creation
-app.post('/api/players', createAuthMiddleware(), createPlayerHandler);
-app.post('/api/admin/players', createAuthMiddleware(), createPlayerHandler);
-app.post('/api/coach/players', createAuthMiddleware(), createPlayerHandler);
+app.post("/api/players", createAuthMiddleware(), createPlayerHandler);
+app.post("/api/admin/players", createAuthMiddleware(), createPlayerHandler);
+app.post("/api/coach/players", createAuthMiddleware(), createPlayerHandler);
 
 // Session/Schedule routes are now handled by sessionsRouter below
 
 // Fitness tracking endpoint
-app.get('/api/fitness/summary', createAuthMiddleware(), async (req: Request, res: Response) => {
-  try {
-    console.log('GET /api/fitness/summary', { userId: req.user?.id, role: req.user?.role });
-    // Placeholder: return empty array
-    return res.status(200).json({ ok: true, items: [], count: 0 });
-  } catch (error) {
-    console.error('GET FITNESS ERROR', { msg: error instanceof Error ? error.message : 'unknown' });
-    return res.status(500).json({ ok: false, error: 'fetch_failed', message: 'Failed to fetch fitness data' });
-  }
-});
+app.get(
+  "/api/fitness/summary",
+  createAuthMiddleware(),
+  async (req: Request, res: Response) => {
+    try {
+      console.log("GET /api/fitness/summary", {
+        userId: req.user?.id,
+        role: req.user?.role,
+      });
+      // Placeholder: return empty array
+      return res.status(200).json({ ok: true, items: [], count: 0 });
+    } catch (error) {
+      console.error("GET FITNESS ERROR", {
+        msg: error instanceof Error ? error.message : "unknown",
+      });
+      return res
+        .status(500)
+        .json({
+          ok: false,
+          error: "fetch_failed",
+          message: "Failed to fetch fitness data",
+        });
+    }
+  },
+);
 
 // Meal plans endpoint
-app.get('/api/meal-plans', createAuthMiddleware(), async (req: Request, res: Response) => {
-  try {
-    console.log('GET /api/meal-plans', { userId: req.user?.id, role: req.user?.role });
-    // Placeholder: return empty array
-    return res.status(200).json({ ok: true, items: [], count: 0 });
-  } catch (error) {
-    console.error('GET MEAL PLANS ERROR', { msg: error instanceof Error ? error.message : 'unknown' });
-    return res.status(500).json({ ok: false, error: 'fetch_failed', message: 'Failed to fetch meal plans' });
-  }
-});
+app.get(
+  "/api/meal-plans",
+  createAuthMiddleware(),
+  async (req: Request, res: Response) => {
+    try {
+      console.log("GET /api/meal-plans", {
+        userId: req.user?.id,
+        role: req.user?.role,
+      });
+      // Placeholder: return empty array
+      return res.status(200).json({ ok: true, items: [], count: 0 });
+    } catch (error) {
+      console.error("GET MEAL PLANS ERROR", {
+        msg: error instanceof Error ? error.message : "unknown",
+      });
+      return res
+        .status(500)
+        .json({
+          ok: false,
+          error: "fetch_failed",
+          message: "Failed to fetch meal plans",
+        });
+    }
+  },
+);
 
 // Payments endpoint
-app.get('/api/payments', createAuthMiddleware(), async (req: Request, res: Response) => {
-  try {
-    console.log('GET /api/payments', { userId: req.user?.id, role: req.user?.role, scope: req.query.scope });
-    // Placeholder: return empty array
-    return res.status(200).json({ ok: true, items: [], count: 0 });
-  } catch (error) {
-    console.error('GET PAYMENTS ERROR', { msg: error instanceof Error ? error.message : 'unknown' });
-    return res.status(500).json({ ok: false, error: 'fetch_failed', message: 'Failed to fetch payments' });
-  }
-});
+app.get(
+  "/api/payments",
+  createAuthMiddleware(),
+  async (req: Request, res: Response) => {
+    try {
+      console.log("GET /api/payments", {
+        userId: req.user?.id,
+        role: req.user?.role,
+        scope: req.query.scope,
+      });
+      // Placeholder: return empty array
+      return res.status(200).json({ ok: true, items: [], count: 0 });
+    } catch (error) {
+      console.error("GET PAYMENTS ERROR", {
+        msg: error instanceof Error ? error.message : "unknown",
+      });
+      return res
+        .status(500)
+        .json({
+          ok: false,
+          error: "fetch_failed",
+          message: "Failed to fetch payments",
+        });
+    }
+  },
+);
 
 // Parent Portal API Routes - Placeholder implementations
-app.put('/api/parent/profile', createAuthMiddleware(), async (req: Request, res: Response) => {
-  try {
-    const { playerId, playerName, emergencyContact, medicalInformation } = req.body;
-    
-    console.log('Parent profile update:', { parentId: req.user?.id, playerId, playerName });
-    
-    // Placeholder response - actual implementation would update player in DB
-    return res.status(200).json({
-      ok: true,
-      success: true,
-      message: 'Profile updated successfully',
-      data: {
+app.put(
+  "/api/parent/profile",
+  createAuthMiddleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const { playerId, playerName, emergencyContact, medicalInformation } =
+        req.body;
+
+      console.log("Parent profile update:", {
+        parentId: req.user?.id,
         playerId,
         playerName,
-        emergencyContact,
-        medicalInformation
+      });
+
+      // Placeholder response - actual implementation would update player in DB
+      return res.status(200).json({
+        ok: true,
+        success: true,
+        message: "Profile updated successfully",
+        data: {
+          playerId,
+          playerName,
+          emergencyContact,
+          medicalInformation,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating parent profile:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update profile",
+      });
+    }
+  },
+);
+
+app.post(
+  "/api/parents/connect-child",
+  createAuthMiddleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const { childEmail, note } = req.body;
+
+      if (!childEmail) {
+        return res.status(400).json({
+          success: false,
+          message: "Child email is required",
+        });
       }
-    });
-  } catch (error) {
-    console.error('Error updating parent profile:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to update profile'
-    });
-  }
-});
 
-app.post('/api/parents/connect-child', createAuthMiddleware(), async (req: Request, res: Response) => {
-  try {
-    const { childEmail, note } = req.body;
-    
-    if (!childEmail) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Child email is required' 
+      console.log("Connect child request:", {
+        parentId: req.user?.id,
+        childEmail,
+        note,
+      });
+
+      // Placeholder response - actual implementation would create connection request in DB
+      return res.status(201).json({
+        ok: true,
+        success: true,
+        childEmail,
+        message: "Connection request sent successfully",
+      });
+    } catch (error) {
+      console.error("Error in connect-child:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send connection request",
       });
     }
+  },
+);
 
-    console.log('Connect child request:', { parentId: req.user?.id, childEmail, note });
-    
-    // Placeholder response - actual implementation would create connection request in DB
-    return res.status(201).json({
-      ok: true,
-      success: true,
-      childEmail,
-      message: 'Connection request sent successfully'
-    });
-  } catch (error) {
-    console.error('Error in connect-child:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to send connection request'
-    });
-  }
-});
+app.post(
+  "/api/connection-requests",
+  createAuthMiddleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const { childEmail, note } = req.body;
 
-app.post('/api/connection-requests', createAuthMiddleware(), async (req: Request, res: Response) => {
-  try {
-    const { childEmail, note } = req.body;
-    
-    if (!childEmail) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Child email is required' 
+      if (!childEmail) {
+        return res.status(400).json({
+          success: false,
+          message: "Child email is required",
+        });
+      }
+
+      console.log("Connection request:", {
+        parentId: req.user?.id,
+        childEmail,
+        note,
+      });
+
+      // Placeholder response - actual implementation would create connection request in DB
+      return res.status(201).json({
+        ok: true,
+        success: true,
+        childEmail,
+        message: "Connection request created successfully",
+      });
+    } catch (error) {
+      console.error("Error creating connection request:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to create connection request",
       });
     }
-
-    console.log('Connection request:', { parentId: req.user?.id, childEmail, note });
-    
-    // Placeholder response - actual implementation would create connection request in DB
-    return res.status(201).json({
-      ok: true,
-      success: true,
-      childEmail,
-      message: 'Connection request created successfully'
-    });
-  } catch (error) {
-    console.error('Error creating connection request:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to create connection request'
-    });
-  }
-});
+  },
+);
 
 // Settings API routes (uses file-based store)
-import settingsRouter from './routes/settings.js';
-if (process.env.SETTINGS_API_ENABLED !== 'false') {
-  app.use('/api/settings', settingsRouter);
+import settingsRouter from "./routes/settings.js";
+if (process.env.SETTINGS_API_ENABLED !== "false") {
+  app.use("/api/settings", settingsRouter);
 }
 
 // Sessions API routes
-import sessionsRouter from './routes/sessions.js';
-app.use('/api/sessions', sessionsRouter);
+import sessionsRouter from "./routes/sessions.js";
+app.use("/api/sessions", sessionsRouter);
 // Note: /api/coach/sessions is handled by coachSessionRoutes (mounted earlier)
-app.use('/api/admin/sessions', sessionsRouter);
+app.use("/api/admin/sessions", sessionsRouter);
 
 // Payments API routes
-import paymentsRouter from './routes/payments.js';
-app.use('/api/payments', paymentsRouter);
+import paymentsRouter from "./routes/payments.js";
+app.use("/api/payments", paymentsRouter);
 
 // Announcements API routes
-import announcementsRouter from './routes/announcements.js';
-app.use('/api/announcements', createAuthMiddleware(), announcementsRouter);
+import announcementsRouter from "./routes/announcements.js";
+app.use("/api/announcements", createAuthMiddleware(), announcementsRouter);
 
 // Keycloak admin operations (email verification)
-import { keycloakRoutes } from './routes/keycloak.js';
-app.use('/api/keycloak', keycloakRoutes(createAuthMiddleware));
+import { keycloakRoutes } from "./routes/keycloak.js";
+app.use("/api/keycloak", keycloakRoutes(createAuthMiddleware));
 
 // Fitness API routes (in-memory fallback)
-import fitnessRouter from './routes/fitness.js';
-app.use('/api/fitness', createAuthMiddleware(), fitnessRouter);
+import fitnessRouter from "./routes/fitness.js";
+app.use("/api/fitness", createAuthMiddleware(), fitnessRouter);
 
 // Players API routes
-import playersRouter from './routes/players.js';
-app.use('/api/players', playersRouter);
+import playersRouter from "./routes/players.js";
+app.use("/api/players", playersRouter);
 
 // TEMP diagnostics endpoint
-app.use('/api/_debug/echo', (req, res) => {
+app.use("/api/_debug/echo", (req, res) => {
   res.json({
     ok: true,
     method: req.method,
@@ -1238,7 +1438,7 @@ app.use('/api/_debug/echo', (req, res) => {
     cookies: Object.keys(req.cookies ?? {}),
     headers: {
       origin: req.headers.origin,
-      cookie: req.headers.cookie ? '[present]' : '[none]',
+      cookie: req.headers.cookie ? "[present]" : "[none]",
     },
     env: {
       NODE_ENV: process.env.NODE_ENV,
@@ -1249,12 +1449,12 @@ app.use('/api/_debug/echo', (req, res) => {
 });
 
 // Dashboard alias routes (safe endpoints to prevent 404s)
-import aliasRoutes from './routes/aliases.js';
-app.use('/api', aliasRoutes);
+import aliasRoutes from "./routes/aliases.js";
+app.use("/api", aliasRoutes);
 
 // API 404 logging middleware
-app.use('/api', (req, res, next) => {
-  console.warn('API 404', req.method, req.originalUrl);
+app.use("/api", (req, res, next) => {
+  console.warn("API 404", req.method, req.originalUrl);
   next();
 });
 app.use(async (req, _res, next) => {
@@ -1268,7 +1468,8 @@ app.use(async (req, _res, next) => {
       req.academyId = academyId;
       multiTenantStorage.setAcademyContext(academyId);
     } else {
-      const academy = await multiTenantStorage.getAcademyBySlug(academyIdentifier);
+      const academy =
+        await multiTenantStorage.getAcademyBySlug(academyIdentifier);
       if (academy) {
         req.academyId = academy.id;
         req.academySlug = academyIdentifier;
@@ -1337,10 +1538,15 @@ app.use((req, res, next) => {
   // Port configuration for Render
   const port = Number(process.env.PORT) || 3000;
 
-  server.listen(port, '0.0.0.0', () => {
+  server.listen(port, "0.0.0.0", () => {
     console.log(`[express] listening on ${port}`);
-    console.log('sessions: using connect-pg-simple with table "session" (auto-create enabled)');
-    console.log('[BOOT] env=%s stripe=%s', process.env.NODE_ENV ?? 'unknown', !!process.env.STRIPE_SECRET_KEY ? 'ready' : 'missing');
+    console.log(
+      'sessions: using connect-pg-simple with table "session" (auto-create enabled)',
+    );
+    console.log(
+      "[BOOT] env=%s stripe=%s",
+      process.env.NODE_ENV ?? "unknown",
+      !!process.env.STRIPE_SECRET_KEY ? "ready" : "missing",
+    );
   });
-})();// Trigger deployment
-
+})(); // Trigger deployment
