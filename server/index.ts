@@ -8,6 +8,7 @@ import session from "express-session";
 import { buildSessionMiddleware } from "./lib/sessionConfig.js";
 import { isProd } from "./lib/env.js";
 import { registerDevLogin } from "./routes/dev-login.js";
+import { registerDevEmailSandbox } from "./routes/dev-email-sandbox.js";
 
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
@@ -144,6 +145,9 @@ console.log('SESSION middleware mounted', {
 // Mount dev login route EARLY (before auth guards)
 registerDevLogin(app, pool);
 console.log('DEV LOGIN route registered at /api/dev/login (enabled:', process.env.ENABLE_DEV_LOGIN === 'true', ')');
+
+// Mount dev email sandbox routes
+registerDevEmailSandbox(app);
 
 // Setup authentication
 setupAuth(app);

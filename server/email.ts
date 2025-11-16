@@ -21,7 +21,8 @@ console.log('SendGrid Configuration Check:', {
   senderEmail: ACADEMY_EMAIL,
   defaultFromEmail: 'madhukar.kcc@gmail.com',
   environment: process.env.NODE_ENV,
-  bypassEmailSending: process.env.BYPASS_EMAIL_SENDING
+  bypassEmailSending: process.env.BYPASS_EMAIL_SENDING,
+  emailSandbox: process.env.EMAIL_SANDBOX
 });
 
 interface SendEmailParams {
@@ -29,12 +30,53 @@ interface SendEmailParams {
   subject: string;
   text: string;
   html: string;
+  type?: string; // e.g., 'registration_welcome', 'admin_notification', etc.
+}
+
+// Email Sandbox Store (in-memory)
+export interface SandboxEmail {
+  timestamp: Date;
+  to: string;
+  subject: string;
+  body: string;
+  html: string;
+  type: string;
+}
+
+const emailSandboxStore: SandboxEmail[] = [];
+
+// Sandbox email functions
+export function getSandboxEmails(): SandboxEmail[] {
+  return [...emailSandboxStore].reverse(); // Most recent first
+}
+
+export function clearSandboxEmails(): void {
+  emailSandboxStore.length = 0;
+}
+
+function captureSandboxEmail(params: SendEmailParams): void {
+  const email: SandboxEmail = {
+    timestamp: new Date(),
+    to: params.to,
+    subject: params.subject,
+    body: params.text,
+    html: params.html,
+    type: params.type || 'unknown'
+  };
+  emailSandboxStore.push(email);
+  console.log(`📧 EMAIL SANDBOX: Captured email (type: ${email.type}) to ${email.to}`);
 }
 
 // Use this flag to bypass email sending for testing
 const DEV_MODE_NO_EMAIL = process.env.NODE_ENV === 'development' && process.env.BYPASS_EMAIL_SENDING === 'true';
+const EMAIL_SANDBOX_ENABLED = process.env.EMAIL_SANDBOX === 'true';
 
 export async function sendEmail(params: SendEmailParams): Promise<boolean> {
+  // If EMAIL_SANDBOX is enabled, capture email instead of sending
+  if (EMAIL_SANDBOX_ENABLED) {
+    captureSandboxEmail(params);
+    return true;
+  }
   // In development, log email but don't send if bypass flag is set
   if (DEV_MODE_NO_EMAIL) {
     console.log('DEV MODE: Email would have been sent:');

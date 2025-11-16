@@ -17,12 +17,33 @@ router.post("/", async (req, res) => {
   const adminEmail = process.env.ADMIN_EMAIL || process.env.FROM_EMAIL || "";
   const coachList = (process.env.COACH_EMAILS || "").split(",").map(s=>s.trim()).filter(Boolean);
 
-  // 1) Parent confirmation
+  // 1) Welcome email to parent
   if (email) {
+    const welcomeText = `Welcome to Legacy Cricket Academy, ${parentName || 'Parent'}!
+
+Thank you for registering${childName ? ` ${childName}` : ''} with us${ageGroup ? ` for the ${ageGroup} age group` : ''}.
+
+We're excited to have you join our cricket family. We'll contact you shortly with next steps.
+
+Best regards,
+Legacy Cricket Academy Team`;
+
+    const welcomeHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4f46e5;">Welcome to Legacy Cricket Academy!</h2>
+        <p>Hi ${parentName || 'Parent'},</p>
+        <p>Thank you for registering${childName ? ` <strong>${childName}</strong>` : ''} with us${ageGroup ? ` for the <strong>${ageGroup}</strong> age group` : ''}.</p>
+        <p>We're excited to have you join our cricket family. We'll contact you shortly with next steps.</p>
+        <p>Best regards,<br/>Legacy Cricket Academy Team</p>
+      </div>
+    `;
+
     await sendEmail(
       email,
-      "Legacy: Registration Received",
-      `Hi ${parentName || 'Parent'},\n\nWe received your registration for ${childName}. We'll contact you shortly.\n\n- Legacy Cricket Academy`
+      "Welcome to Legacy Cricket Academy",
+      welcomeText,
+      welcomeHtml,
+      "registration_welcome"
     );
   }
 
@@ -31,7 +52,9 @@ router.post("/", async (req, res) => {
     await sendEmail(
       adminEmail,
       "Legacy: New Registration",
-      `New registration received:\n\nParent: ${parentName} (${email})\nChild: ${childName} (${ageGroup})\nPhone: ${phone}\nNotes: ${notes || '-'}`
+      `New registration received:\n\nParent: ${parentName} (${email})\nChild: ${childName} (${ageGroup})\nPhone: ${phone}\nNotes: ${notes || '-'}`,
+      undefined,
+      "admin_notification"
     );
   }
 
@@ -40,7 +63,9 @@ router.post("/", async (req, res) => {
     await sendEmail(
       coachList,
       "Legacy: New Registration",
-      `New registration:\n\nChild: ${childName} (${ageGroup})\nParent: ${parentName}\nCheck dashboard for details.`
+      `New registration:\n\nChild: ${childName} (${ageGroup})\nParent: ${parentName}\nCheck dashboard for details.`,
+      undefined,
+      "coach_notification"
     );
   }
 
