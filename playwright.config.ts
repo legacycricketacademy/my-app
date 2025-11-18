@@ -16,6 +16,7 @@ export default defineConfig({
   // globalSetup: "./global-setup.ts", // Disabled - using setup project instead
   use: {
     baseURL: BASE_URL,
+    headless: false, // Run in headed mode for better debugging visibility
     trace: 'on-first-retry', // Only trace on retries to save disk space
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

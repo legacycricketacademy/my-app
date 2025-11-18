@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { format } from "date-fns";
-import { useToast } from "@/shared/toast";
+import { useToast } from "@/hooks/use-toast";
 import { isPendingLike } from "@/shared/pending";
 
 import {
@@ -43,10 +43,13 @@ const sessionFormSchema = z.object({
   description: z.string().optional(),
   startTime: z.date({ required_error: "Please select a start date & time" }),
   endTime: z.date({ required_error: "Please select an end date & time" }),
-  location: z.string().min(1, "Location is required"),
+  location: z.enum(["Strongsville", "Solon"], { 
+    required_error: "Please select a location",
+    invalid_type_error: "Location must be either Strongsville or Solon"
+  }),
   ageGroup: z.string().min(1, "Age group is required"),
   sessionType: z.string().min(1, "Session type is required"),
-  maxAttendees: z.coerce.number().int().min(1, "Maximum attendees is required")
+  maxPlayers: z.coerce.number().int().min(1, "Maximum players is required").optional()
 }).refine(data => data.endTime > data.startTime, {
   message: "End time must be after start time",
   path: ["endTime"]
@@ -66,10 +69,9 @@ export function ScheduleSessionDialog() {
   const defaultValues: Partial<SessionFormValues> = {
     title: "",
     description: "",
-    location: "",
     ageGroup: "",
     sessionType: "",
-    maxAttendees: 20,
+    maxPlayers: undefined,
   };
 
   const form = useForm<SessionFormValues>({
@@ -79,13 +81,24 @@ export function ScheduleSessionDialog() {
 
   const createSessionMutation = useMutation({
     mutationFn: async (data: SessionFormValues) => {
-      // Format the dates to ISO strings for the API
+      // Format the dates to match backend expectations
+      // Backend expects: { date: "YYYY-MM-DD", startTime: "HH:MM", endTime: "HH:MM", location, ageGroup, etc. }
+      const startDate = data.startTime;
+      const endDate = data.endTime;
+      
       const formattedData = {
-        ...data,
-        startTime: data.startTime.toISOString(),
-        endTime: data.endTime.toISOString(),
+        title: data.title,
+        description: data.description || undefined,
+        date: format(startDate, "yyyy-MM-dd"),
+        startTime: format(startDate, "HH:mm"),
+        endTime: format(endDate, "HH:mm"),
+        location: data.location,
+        ageGroup: data.ageGroup,
+        sessionType: data.sessionType,
+        maxPlayers: data.maxPlayers,
       };
-      return await api.post("/sessions", formattedData);
+      
+      return await api.post("/api/coach/sessions", formattedData);
     },
     onSuccess: () => {
       // Reset form and close dialog
@@ -93,19 +106,27 @@ export function ScheduleSessionDialog() {
       setOpen(false);
       
       // Invalidate related queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/coach/sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sessions/upcoming"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sessions/today"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sessions/all"] });
       
       toast({
-        title: "Session Scheduled",
-        description: "The training session has been successfully scheduled.",
+        title: "Success",
+        description: "Session created successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      // Extract error message from response
+      let errorMessage = "An error occurred. Please try again.";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Failed to Schedule Session",
-        description: error.message || "An error occurred. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -143,14 +164,50 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
 }) {
   const [startPopoverOpen, setStartPopoverOpen] = useState(false);
   const [endPopoverOpen, setEndPopoverOpen] = useState(false);
-  const [isCustomLocation, setIsCustomLocation] = useState(false);
-  const [customLocation, setCustomLocation] = useState("");
+  
+  // Temporary state for date/time selection (not applied until user clicks OK)
+  const [tempStartDate, setTempStartDate] = useState<Date | undefined>(undefined);
+  const [tempStartHours, setTempStartHours] = useState<number>(9);
+  const [tempStartMinutes, setTempStartMinutes] = useState<number>(0);
+  
+  const [tempEndDate, setTempEndDate] = useState<Date | undefined>(undefined);
+  const [tempEndHours, setTempEndHours] = useState<number>(10);
+  const [tempEndMinutes, setTempEndMinutes] = useState<number>(0);
 
   // Helper function to create date with time
   const createDateWithTime = (date: Date, hours: number, minutes: number) => {
     const newDate = new Date(date);
     newDate.setHours(hours, minutes, 0, 0);
     return newDate;
+  };
+  
+  // Initialize temp state when popover opens
+  const handleStartPopoverOpen = (open: boolean, currentValue: Date | undefined) => {
+    if (open && currentValue) {
+      setTempStartDate(currentValue);
+      setTempStartHours(currentValue.getHours());
+      setTempStartMinutes(currentValue.getMinutes());
+    } else if (open && !currentValue) {
+      const now = new Date();
+      setTempStartDate(now);
+      setTempStartHours(9);
+      setTempStartMinutes(0);
+    }
+    setStartPopoverOpen(open);
+  };
+  
+  const handleEndPopoverOpen = (open: boolean, currentValue: Date | undefined) => {
+    if (open && currentValue) {
+      setTempEndDate(currentValue);
+      setTempEndHours(currentValue.getHours());
+      setTempEndMinutes(currentValue.getMinutes());
+    } else if (open && !currentValue) {
+      const now = new Date();
+      setTempEndDate(now);
+      setTempEndHours(10);
+      setTempEndMinutes(0);
+    }
+    setEndPopoverOpen(open);
   };
 
   return (
@@ -177,7 +234,7 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Start Date & Time</FormLabel>
-                <Popover open={startPopoverOpen} onOpenChange={setStartPopoverOpen}>
+                <Popover open={startPopoverOpen} onOpenChange={(open) => handleStartPopoverOpen(open, field.value)}>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
@@ -196,91 +253,103 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 max-h-[80vh] overflow-y-auto" align="start">
-                    <div className="flex flex-col">
-                      {/* Time Selection */}
-                      <div className="p-3 border-b">
-                        <div className="text-sm font-medium mb-2">Select Time:</div>
-                        <div className="flex items-center gap-2">
-                          <select 
-                            className="flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            value={field.value ? field.value.getHours() : new Date().getHours()}
-                            onChange={(e) => {
-                              const hours = parseInt(e.target.value);
-                              const currentDate = field.value || new Date();
-                              const newDate = createDateWithTime(currentDate, hours, currentDate.getMinutes());
-                              field.onChange(newDate);
-                            }}
-                          >
-                            {Array.from({ length: 24 }, (_, i) => (
-                              <option key={i} value={i}>
-                                {i.toString().padStart(2, '0')}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="text-lg font-medium">:</span>
-                          <select 
-                            className="flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            value={field.value ? field.value.getMinutes() : new Date().getMinutes()}
-                            onChange={(e) => {
-                              const minutes = parseInt(e.target.value);
-                              const currentDate = field.value || new Date();
-                              const newDate = createDateWithTime(currentDate, currentDate.getHours(), minutes);
-                              field.onChange(newDate);
-                            }}
-                          >
-                            {Array.from({ length: 60 }, (_, i) => (
-                              <option key={i} value={i}>
-                                {i.toString().padStart(2, '0')}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        {field.value && (
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Current: {format(field.value, "h:mm a")}
+                  <PopoverContent 
+                    align="start"
+                    side="bottom"
+                    sideOffset={8}
+                    className="w-[360px] p-0 z-[10000]"
+                  >
+                    <div className="flex max-h-[60vh] flex-col bg-white text-slate-900">
+                      {/* Scrollable content */}
+                      <div className="flex-1 overflow-y-auto px-4 pt-3 pb-3 space-y-3">
+                        {/* Time Selection */}
+                        <div>
+                          <div className="text-sm font-semibold mb-2 text-gray-700">Select Time</div>
+                          <div className="flex items-center gap-2">
+                            <select 
+                              data-testid="start-time-hours"
+                              className="flex h-10 w-20 rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                              value={tempStartHours}
+                              onChange={(e) => setTempStartHours(parseInt(e.target.value))}
+                            >
+                              {Array.from({ length: 24 }, (_, i) => (
+                                <option key={i} value={i}>
+                                  {i.toString().padStart(2, '0')}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="text-lg font-medium text-gray-600">:</span>
+                            <select 
+                              data-testid="start-time-minutes"
+                              className="flex h-10 w-20 rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                              value={tempStartMinutes}
+                              onChange={(e) => setTempStartMinutes(parseInt(e.target.value))}
+                            >
+                              {Array.from({ length: 60 }, (_, i) => (
+                                <option key={i} value={i}>
+                                  {i.toString().padStart(2, '0')}
+                                </option>
+                              ))}
+                            </select>
                           </div>
-                        )}
-                      </div>
-                      
-                      {/* Calendar */}
-                      <div className="p-3">
+                          {tempStartDate && (
+                            <div className="text-xs text-gray-500 mt-2">
+                              Preview: {format(createDateWithTime(tempStartDate, tempStartHours, tempStartMinutes), "PPP 'at' h:mm a")}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Calendar */}
+                        <div className="text-sm font-semibold mb-2 text-gray-700">Select Date</div>
                         <Calendar
                           mode="single"
-                          selected={field.value}
+                          selected={tempStartDate}
                           onSelect={(date) => {
                             if (date) {
-                              const currentTime = field.value || new Date();
-                              const newDate = createDateWithTime(
-                                date, 
-                                currentTime.getHours(), 
-                                currentTime.getMinutes()
-                              );
-                              field.onChange(newDate);
+                              setTempStartDate(date);
                             }
                           }}
                           initialFocus
-                          className="rounded-md border"
+                          className="rounded-md border bg-white text-slate-900"
                         />
                       </div>
                       
-                      {/* Action Buttons - Fixed at bottom */}
-                      <div className="sticky bottom-0 bg-white border-t p-3 flex items-center justify-end space-x-2">
+                      {/* NON-scrolling footer */}
+                      <div className="border-t px-4 py-3 flex items-center justify-between gap-2 bg-white">
                         <Button
                           type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setStartPopoverOpen(false)}
+                          variant="ghost"
+                          onClick={() => {
+                            field.onChange(undefined);
+                            form.setValue('startTime', undefined, { shouldValidate: true, shouldDirty: true });
+                            setStartPopoverOpen(false);
+                          }}
                         >
-                          Cancel
+                          Clear
                         </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => setStartPopoverOpen(false)}
-                        >
-                          OK
-                        </Button>
+                        <div className="ml-auto flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setStartPopoverOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            className="bg-blue-600 text-white hover:bg-blue-700"
+                            onClick={() => {
+                              if (tempStartDate) {
+                                const newDate = createDateWithTime(tempStartDate, tempStartHours, tempStartMinutes);
+                                field.onChange(newDate);
+                                form.setValue('startTime', newDate, { shouldValidate: true, shouldDirty: true });
+                              }
+                              setStartPopoverOpen(false);
+                            }}
+                          >
+                            Apply
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </PopoverContent>
@@ -296,7 +365,7 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>End Date & Time</FormLabel>
-                <Popover open={endPopoverOpen} onOpenChange={setEndPopoverOpen}>
+                <Popover open={endPopoverOpen} onOpenChange={(open) => handleEndPopoverOpen(open, field.value)}>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
@@ -315,98 +384,103 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 max-h-[80vh] overflow-y-auto" align="start">
-                    <div className="flex flex-col">
-                      {/* Time Selection */}
-                      <div className="p-3 border-b">
-                        <div className="text-sm font-medium mb-2">Select Time:</div>
-                        <div className="flex items-center gap-2">
-                          <select 
-                            className="flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            value={field.value ? field.value.getHours() : (form.getValues('startTime')?.getHours() || new Date().getHours()) + 1}
-                            onChange={(e) => {
-                              const hours = parseInt(e.target.value);
-                              const currentDate = field.value || new Date();
-                              const newDate = createDateWithTime(currentDate, hours, currentDate.getMinutes());
-                              field.onChange(newDate);
-                            }}
-                          >
-                            {Array.from({ length: 24 }, (_, i) => (
-                              <option key={i} value={i}>
-                                {i.toString().padStart(2, '0')}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="text-lg font-medium">:</span>
-                          <select 
-                            className="flex h-9 w-16 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            value={field.value ? field.value.getMinutes() : form.getValues('startTime')?.getMinutes() || new Date().getMinutes()}
-                            onChange={(e) => {
-                              const minutes = parseInt(e.target.value);
-                              const currentDate = field.value || new Date();
-                              const newDate = createDateWithTime(currentDate, currentDate.getHours(), minutes);
-                              field.onChange(newDate);
-                            }}
-                          >
-                            {Array.from({ length: 60 }, (_, i) => (
-                              <option key={i} value={i}>
-                                {i.toString().padStart(2, '0')}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        {field.value && (
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Current: {format(field.value, "h:mm a")}
+                  <PopoverContent 
+                    align="start"
+                    side="bottom"
+                    sideOffset={8}
+                    className="w-[360px] p-0 z-[10000]"
+                  >
+                    <div className="flex max-h-[60vh] flex-col bg-white text-slate-900">
+                      {/* Scrollable content */}
+                      <div className="flex-1 overflow-y-auto px-4 pt-3 pb-3 space-y-3">
+                        {/* Time Selection */}
+                        <div>
+                          <div className="text-sm font-semibold mb-2 text-gray-700">Select Time</div>
+                          <div className="flex items-center gap-2">
+                            <select 
+                              data-testid="end-time-hours"
+                              className="flex h-10 w-20 rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                              value={tempEndHours}
+                              onChange={(e) => setTempEndHours(parseInt(e.target.value))}
+                            >
+                              {Array.from({ length: 24 }, (_, i) => (
+                                <option key={i} value={i}>
+                                  {i.toString().padStart(2, '0')}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="text-lg font-medium text-gray-600">:</span>
+                            <select 
+                              data-testid="end-time-minutes"
+                              className="flex h-10 w-20 rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                              value={tempEndMinutes}
+                              onChange={(e) => setTempEndMinutes(parseInt(e.target.value))}
+                            >
+                              {Array.from({ length: 60 }, (_, i) => (
+                                <option key={i} value={i}>
+                                  {i.toString().padStart(2, '0')}
+                                </option>
+                              ))}
+                            </select>
                           </div>
-                        )}
-                      </div>
-                      
-                      {/* Calendar */}
-                      <div className="p-3">
+                          {tempEndDate && (
+                            <div className="text-xs text-gray-500 mt-2">
+                              Preview: {format(createDateWithTime(tempEndDate, tempEndHours, tempEndMinutes), "PPP 'at' h:mm a")}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Calendar */}
+                        <div className="text-sm font-semibold mb-2 text-gray-700">Select Date</div>
                         <Calendar
                           mode="single"
-                          selected={field.value}
+                          selected={tempEndDate}
                           onSelect={(date) => {
                             if (date) {
-                              const startTime = form.getValues('startTime');
-                              const currentTime = field.value || new Date();
-                              
-                              let hours, minutes;
-                              if (startTime) {
-                                hours = startTime.getHours() + 1;
-                                minutes = startTime.getMinutes();
-                              } else {
-                                hours = currentTime.getHours();
-                                minutes = currentTime.getMinutes();
-                              }
-                              
-                              const newDate = createDateWithTime(date, hours, minutes);
-                              field.onChange(newDate);
+                              setTempEndDate(date);
                             }
                           }}
                           initialFocus
-                          className="rounded-md border"
+                          className="rounded-md border bg-white text-slate-900"
                         />
                       </div>
                       
-                      {/* Action Buttons - Fixed at bottom */}
-                      <div className="sticky bottom-0 bg-white border-t p-3 flex items-center justify-end space-x-2">
+                      {/* NON-scrolling footer */}
+                      <div className="border-t px-4 py-3 flex items-center justify-between gap-2 bg-white">
                         <Button
                           type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEndPopoverOpen(false)}
+                          variant="ghost"
+                          onClick={() => {
+                            field.onChange(undefined);
+                            form.setValue('endTime', undefined, { shouldValidate: true, shouldDirty: true });
+                            setEndPopoverOpen(false);
+                          }}
                         >
-                          Cancel
+                          Clear
                         </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => setEndPopoverOpen(false)}
-                        >
-                          OK
-                        </Button>
+                        <div className="ml-auto flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setEndPopoverOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            className="bg-blue-600 text-white hover:bg-blue-700"
+                            onClick={() => {
+                              if (tempEndDate) {
+                                const newDate = createDateWithTime(tempEndDate, tempEndHours, tempEndMinutes);
+                                field.onChange(newDate);
+                                form.setValue('endTime', newDate, { shouldValidate: true, shouldDirty: true });
+                              }
+                              setEndPopoverOpen(false);
+                            }}
+                          >
+                            Apply
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </PopoverContent>
@@ -424,61 +498,17 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Location</FormLabel>
-                {!isCustomLocation ? (
-                  <>
-                    <Select 
-                      onValueChange={(value) => {
-                        if (value === "_custom") {
-                          setIsCustomLocation(true);
-                        } else {
-                          field.onChange(value);
-                        }
-                      }} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select location" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Strongsville">Strongsville</SelectItem>
-                        <SelectItem value="Solon">Solon</SelectItem>
-                        <SelectItem value="Cleveland">Cleveland</SelectItem>
-                        <SelectItem value="Westlake">Westlake</SelectItem>
-                        <SelectItem value="Parma">Parma</SelectItem>
-                        <SelectItem value="_custom">+ Add custom location</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          placeholder="Enter custom location"
-                          value={customLocation}
-                          onChange={(e) => {
-                            setCustomLocation(e.target.value);
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      </FormControl>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-1 text-xs"
-                        onClick={() => {
-                          setIsCustomLocation(false);
-                          setCustomLocation("");
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Strongsville">Strongsville</SelectItem>
+                    <SelectItem value="Solon">Solon</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -534,10 +564,10 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
           
           <FormField
             control={form.control}
-            name="maxAttendees"
+            name="maxPlayers"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Maximum Attendees</FormLabel>
+                <FormLabel>Maximum Players (optional)</FormLabel>
                 <FormControl>
                   <Input type="number" min="1" {...field} />
                 </FormControl>

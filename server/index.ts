@@ -11,6 +11,7 @@ import { registerDevLogin } from "./routes/dev-login.js";
 import { registerDevEmailSandbox } from "./routes/dev-email-sandbox.js";
 import { registerKidDashboardRoutes } from "./routes/kid-dashboard.js";
 import parentAvailabilityRoutes from "./routes/parent-availability.js";
+import coachSessionRoutes from "./routes/coach-sessions.js";
 
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
@@ -157,12 +158,11 @@ registerKidDashboardRoutes(app);
 // Mount parent availability routes (requires auth)
 app.use("/api/parent", parentAvailabilityRoutes);
 
+// Mount coach session routes (requires auth)
+app.use("/api/coach", coachSessionRoutes);
+
 // Setup authentication
 setupAuth(app);
-
-// Passport
-app.use(passport.initialize());
-app.use(passport.session());
 
 // ---- Types: academy context on Request ----
 declare global {
@@ -490,14 +490,21 @@ app.post("/api/dev/login", async (req, res) => {
 
 // Standard auth login endpoint (non-dev)
 app.post("/api/auth/login", async (req, res) => {
+  console.log('🔐 POST /api/auth/login - START', {
+    hasBody: !!req.body,
+    bodyKeys: req.body ? Object.keys(req.body) : [],
+    contentType: req.headers['content-type'],
+    origin: req.headers.origin,
+    hasSession: !!req.session
+  });
+
   try {
     const { email, password } = req.body as { email: string; password: string };
     
-    console.log('🔐 POST /api/auth/login', { 
+    console.log('🔐 POST /api/auth/login - PARSED', { 
       email, 
       hasPassword: !!password,
-      origin: req.headers.origin,
-      hasSession: !!req.session 
+      passwordLength: password?.length
     });
     
     // Validate input
@@ -519,8 +526,8 @@ app.post("/api/auth/login", async (req, res) => {
 
     // Development accounts for testing
     const devAccounts = {
-      "admin@test.com": { password: "password", role: "admin", id: 1, email: "admin@test.com" },
-      "parent@test.com": { password: "password", role: "parent", id: 2, email: "parent@test.com" }
+      "admin@test.com": { password: "password", role: "admin", id: 1, email: "admin@test.com", fullName: "Admin User" },
+      "parent@test.com": { password: "password", role: "parent", id: 2, email: "parent@test.com", fullName: "Test Parent" }
     };
 
     const account = devAccounts[email as keyof typeof devAccounts];
@@ -588,7 +595,7 @@ app.post("/api/auth/login", async (req, res) => {
     const errorStack = error instanceof Error ? error.stack : undefined;
     console.error("🔐 Login error:", errorMessage);
     console.error("🔐 Stack trace:", errorStack);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: `Login failed: ${errorMessage}`
     });
@@ -1198,7 +1205,7 @@ if (process.env.SETTINGS_API_ENABLED !== 'false') {
 // Sessions API routes
 import sessionsRouter from './routes/sessions.js';
 app.use('/api/sessions', sessionsRouter);
-app.use('/api/coach/sessions', sessionsRouter);
+// Note: /api/coach/sessions is handled by coachSessionRoutes (mounted earlier)
 app.use('/api/admin/sessions', sessionsRouter);
 
 // Payments API routes

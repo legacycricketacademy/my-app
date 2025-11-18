@@ -119,4 +119,73 @@ describe("Kid Dashboard Routes", () => {
       expect([200, 404]).toContain(response.status);
     });
   });
+
+  describe("POST /api/parent/kids/:kidId/sessions/:sessionId/availability", () => {
+    it("should return 401 if not authenticated", async () => {
+      const appNoAuth = express();
+      appNoAuth.use(express.json());
+      registerKidDashboardRoutes(appNoAuth);
+
+      const response = await request(appNoAuth)
+        .post("/api/parent/kids/1/sessions/1/availability")
+        .send({ status: "confirmed" });
+      expect(response.status).toBe(401);
+    });
+
+    it("should return 403 if user is not a parent", async () => {
+      const appNonParent = express();
+      appNonParent.use(express.json());
+      appNonParent.use((req: any, res: any, next: any) => {
+        req.user = { id: 1, role: "coach" };
+        next();
+      });
+      registerKidDashboardRoutes(appNonParent);
+
+      const response = await request(appNonParent)
+        .post("/api/parent/kids/1/sessions/1/availability")
+        .send({ status: "confirmed" });
+      expect(response.status).toBe(403);
+      expect(response.body.message).toContain("Parents only");
+    });
+
+    it("should return 400 for invalid kid ID", async () => {
+      const response = await request(app)
+        .post("/api/parent/kids/invalid/sessions/1/availability")
+        .send({ status: "confirmed" });
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain("Invalid");
+    });
+
+    it("should return 400 for invalid session ID", async () => {
+      const response = await request(app)
+        .post("/api/parent/kids/1/sessions/invalid/availability")
+        .send({ status: "confirmed" });
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain("Invalid");
+    });
+
+    it("should return 400 for invalid status", async () => {
+      const response = await request(app)
+        .post("/api/parent/kids/1/sessions/1/availability")
+        .send({ status: "invalid" });
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain("Invalid status");
+    });
+
+    it("should accept confirmed status", async () => {
+      const response = await request(app)
+        .post("/api/parent/kids/1/sessions/1/availability")
+        .send({ status: "confirmed" });
+      // Will return 404 if kid/session not found, or 200/400 with data
+      expect([200, 400, 404]).toContain(response.status);
+    });
+
+    it("should accept declined status", async () => {
+      const response = await request(app)
+        .post("/api/parent/kids/1/sessions/1/availability")
+        .send({ status: "declined" });
+      // Will return 404 if kid/session not found, or 200/400 with data
+      expect([200, 400, 404]).toContain(response.status);
+    });
+  });
 });

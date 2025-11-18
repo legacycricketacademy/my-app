@@ -65,7 +65,7 @@ test.describe('Sessions E2E', () => {
     await page.getByRole('button', { name: /schedule session/i }).click();
     
     // Wait for success toast
-    await expect(page.getByText('Session scheduled successfully')).toBeVisible();
+    await expect(page.getByText('Session created successfully')).toBeVisible();
     
     // Wait for modal to close
     await expect(page.getByText('Schedule New Session')).not.toBeVisible();

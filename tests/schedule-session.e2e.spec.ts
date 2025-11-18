@@ -63,7 +63,7 @@ test.describe('Schedule Session E2E', () => {
     await page.getByRole('button', { name: 'Schedule Session' }).click();
     
     // Wait for success toast
-    await expect(page.getByText('Session Scheduled')).toBeVisible();
+    await expect(page.getByText('Session created successfully')).toBeVisible();
     
     // Dialog should close
     await expect(page.getByRole('heading', { name: 'Schedule New Training Session', exact: true })).not.toBeVisible();

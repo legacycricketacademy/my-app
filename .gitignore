@@ -19,3 +19,5 @@ register-form.html
 register-page.html
 test-register-*.js
 
+test-results/
+playwright-report/

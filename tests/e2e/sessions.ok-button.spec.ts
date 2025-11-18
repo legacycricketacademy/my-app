@@ -56,7 +56,7 @@ test('Schedule session with calendar OK button', async ({ page }) => {
   await page.getByRole('button', { name: /schedule session/i }).click();
   
   // Wait for success toast or modal to close
-  const successToast = page.getByText(/session scheduled successfully/i).or(page.getByText(/success/i));
+  const successToast = page.getByText(/session created successfully/i).or(page.getByText(/success/i));
   await expect(successToast).toBeVisible({ timeout: 5000 }).catch(() => {
     // Toast might disappear quickly, check if dialog closed instead
   });

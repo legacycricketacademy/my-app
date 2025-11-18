@@ -25,9 +25,11 @@ export function registerRoutes(app: Express) {
   });
 
   // Protected API routes with JWT verification
-  app.use("/api/admin/*", verifyJwt, requireRole("admin"));
-  app.use("/api/parent/*", verifyJwt, requireRole("parent"));
-  app.use("/api/coach/*", verifyJwt, requireRole("coach"));
+  // NOTE: These are disabled because the app uses session-based auth, not JWT
+  // The actual auth is handled by session middleware and req.user population
+  // app.use("/api/admin/*", verifyJwt, requireRole("admin"));
+  // app.use("/api/parent/*", verifyJwt, requireRole("parent"));
+  // app.use("/api/coach/*", verifyJwt, requireRole("coach"));
 
   // Test endpoints for role verification
   app.get("/api/admin/test", (req, res) => {

@@ -36,6 +36,9 @@ import RegisterDebug from "@/pages/register-debug";
 import AdminDashboard from "@/pages/admin/admin-dashboard";
 import CoachesPendingApprovalPage from "@/pages/admin/coaches-pending-approval";
 import AdminFitness from "@/pages/admin/Fitness";
+
+// Coach Pages
+import CoachSchedule from "@/pages/coach/CoachSchedule";
 import ParentFitness from "@/pages/parent/Fitness";
 import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
@@ -128,6 +131,9 @@ function AppRoutes() {
         <Route path="fitness" element={<AdminFitness />} />
         <Route path="settings" element={<SettingsPage />} />
         
+        {/* Coach Routes */}
+        <Route path="coach/schedule" element={<CoachSchedule />} />
+        
         {/* Remove the catch-all route that was causing issues */}
       </Route>
 
@@ -157,7 +163,7 @@ function AppRoutes() {
           </RequireAuth>
         }
       >
-        <Route index element={<EnhancedParentDashboard />} />
+        <Route index element={<Navigate to="/parent/kids" replace />} />
         <Route path="kids" element={<KidsList />} />
         <Route path="kids/:kidId" element={<KidDashboard />} />
         <Route path="schedule" element={<ParentSchedulePage />} />
@@ -173,6 +179,22 @@ function AppRoutes() {
       
       {/* Parent dashboard redirect */}
       <Route path="/dashboard/parent" element={<Navigate to="/parent" replace />} />
+
+      {/* Coach Routes - Direct access outside dashboard */}
+      <Route
+        path="/coach/schedule"
+        element={
+          <RequireAuth>
+            {user?.role === "admin" || user?.role === "coach" ? (
+              <DashboardLayout />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )}
+          </RequireAuth>
+        }
+      >
+        <Route index element={<CoachSchedule />} />
+      </Route>
 
       {/* Test parent routes */}
       <Route path="/simple-parent" element={<SimpleReactDashboard />} />
