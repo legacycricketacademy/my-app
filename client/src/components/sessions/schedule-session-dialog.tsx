@@ -138,9 +138,9 @@ export function ScheduleSessionDialog() {
 
   return (
     <>
-      <Button className="flex items-center gap-2" onClick={() => setOpen(true)}>
+      <Button className="flex items-center gap-2 w-full sm:w-auto" onClick={() => setOpen(true)}>
         <CalendarIcon className="h-4 w-4" />
-        <span>Schedule New Session</span>
+        <span className="text-sm sm:text-base">Schedule New Session</span>
       </Button>
       
       {isMobile ? (
@@ -212,7 +212,7 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[calc(100vh-200px)] sm:max-h-none overflow-y-auto px-1">
         <FormField
           control={form.control}
           name="title"
@@ -594,18 +594,19 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
           )}
         />
         
-        <div className="flex gap-2 pt-4">
+        <div className="flex flex-col sm:flex-row gap-2 pt-4 sticky bottom-0 bg-background pb-2">
           <Button
             type="button"
             variant="outline"
             onClick={() => setOpen(false)}
-            className="mr-2"
+            className="w-full sm:w-auto order-2 sm:order-1"
           >
             Cancel
           </Button>
           <Button 
             type="submit"
             disabled={isPendingLike(createSessionMutation)}
+            className="w-full sm:w-auto order-1 sm:order-2"
           >
             {isPendingLike(createSessionMutation) ? "Scheduling..." : "Schedule Session"}
           </Button>

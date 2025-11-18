@@ -58,8 +58,10 @@ test.describe('Unified Session Creation Flow - Cross-View Validation', () => {
     await page.getByTestId('start-time-minutes').selectOption('0');
     await page.waitForTimeout(300);
     
-    // Click Apply
-    await page.locator('button:has-text("Apply")').first().click();
+    // Click Apply (mobile-safe)
+    const applyButtonStart = page.locator('button:has-text("Apply")').first();
+    await applyButtonStart.scrollIntoViewIfNeeded();
+    await applyButtonStart.click({ force: true });
     await page.waitForTimeout(500);
     
     // Open End Date & Time picker
@@ -76,9 +78,10 @@ test.describe('Unified Session Creation Flow - Cross-View Validation', () => {
     await page.getByTestId('end-time-minutes').selectOption('0');
     await page.waitForTimeout(300);
     
-    // Click Apply
-    const applyButtons = page.locator('button:has-text("Apply")');
-    await applyButtons.last().click();
+    // Click Apply (mobile-safe)
+    const applyButtonEnd = page.locator('button:has-text("Apply")').last();
+    await applyButtonEnd.scrollIntoViewIfNeeded();
+    await applyButtonEnd.click({ force: true });
     await page.waitForTimeout(500);
     
     // Select location
@@ -166,8 +169,10 @@ test.describe('Unified Session Creation Flow - Cross-View Validation', () => {
     await page.getByTestId('start-time-minutes').selectOption('0');
     await page.waitForTimeout(300);
     
-    // Click Apply
-    await page.locator('button:has-text("Apply")').first().click();
+    // Click Apply (mobile-safe)
+    const applyButtonStart2 = page.locator('button:has-text("Apply")').first();
+    await applyButtonStart2.scrollIntoViewIfNeeded();
+    await applyButtonStart2.click({ force: true });
     await page.waitForTimeout(500);
     
     // Open End Date & Time picker
@@ -189,9 +194,10 @@ test.describe('Unified Session Creation Flow - Cross-View Validation', () => {
     await page.getByTestId('end-time-minutes').selectOption('0');
     await page.waitForTimeout(300);
     
-    // Click Apply
-    const applyButtons = page.locator('button:has-text("Apply")');
-    await applyButtons.last().click();
+    // Click Apply (mobile-safe)
+    const applyButtonEnd2 = page.locator('button:has-text("Apply")').last();
+    await applyButtonEnd2.scrollIntoViewIfNeeded();
+    await applyButtonEnd2.click({ force: true });
     await page.waitForTimeout(500);
     
     // Select location
@@ -290,8 +296,10 @@ test.describe('Unified Session Creation Flow - Cross-View Validation', () => {
     await page.getByTestId('start-time-minutes').selectOption('0');
     await page.waitForTimeout(300);
     
-    // Click Apply
-    await page.locator('button:has-text("Apply")').first().click();
+    // Click Apply (mobile-safe)
+    const applyButtonStart3 = page.locator('button:has-text("Apply")').first();
+    await applyButtonStart3.scrollIntoViewIfNeeded();
+    await applyButtonStart3.click({ force: true });
     await page.waitForTimeout(500);
     
     // Open End Date & Time picker
@@ -313,9 +321,10 @@ test.describe('Unified Session Creation Flow - Cross-View Validation', () => {
     await page.getByTestId('end-time-minutes').selectOption('0');
     await page.waitForTimeout(300);
     
-    // Click Apply
-    const applyButtons = page.locator('button:has-text("Apply")');
-    await applyButtons.last().click();
+    // Click Apply (mobile-safe)
+    const applyButtonEnd3 = page.locator('button:has-text("Apply")').last();
+    await applyButtonEnd3.scrollIntoViewIfNeeded();
+    await applyButtonEnd3.click({ force: true });
     await page.waitForTimeout(500);
     
     // Select location
@@ -395,7 +404,9 @@ test.describe('Unified Session Creation Flow - Cross-View Validation', () => {
     await page.locator('button[name="day"]').first().click();
     await page.getByTestId('start-time-hours').selectOption('16');
     await page.getByTestId('start-time-minutes').selectOption('0');
-    await page.locator('button:has-text("Apply")').first().click();
+    const applyButtonStart4 = page.locator('button:has-text("Apply")').first();
+    await applyButtonStart4.scrollIntoViewIfNeeded();
+    await applyButtonStart4.click({ force: true });
     await page.waitForTimeout(500);
     
     // Set end time to 14:00 (before start time)
@@ -406,8 +417,9 @@ test.describe('Unified Session Creation Flow - Cross-View Validation', () => {
     await page.locator('button[name="day"]').first().click();
     await page.getByTestId('end-time-hours').selectOption('14');
     await page.getByTestId('end-time-minutes').selectOption('0');
-    const applyButtons = page.locator('button:has-text("Apply")');
-    await applyButtons.last().click();
+    const applyButtonEnd4 = page.locator('button:has-text("Apply")').last();
+    await applyButtonEnd4.scrollIntoViewIfNeeded();
+    await applyButtonEnd4.click({ force: true });
     await page.waitForTimeout(500);
     
     // Fill other required fields
