@@ -5,15 +5,18 @@ import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
-import { NewSessionModal } from '@/features/sessions/NewSessionModal';
-import { useListSessions } from '@/features/sessions/useSessions';
+import { ScheduleSessionDialog } from '@/components/sessions/schedule-session-dialog';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import { format, parseISO } from 'date-fns';
 
 export default function SchedulePage() {
-  const [showNewSessionModal, setShowNewSessionModal] = useState(false);
-  const { data, isLoading, error, refetch } = useListSessions();
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["/api/coach/sessions"],
+    queryFn: () => api.get("/api/coach/sessions"),
+  });
 
-  const sessions = data?.sessions ?? [];
+  const sessions = data?.data ?? [];
 
   if (isLoading) {
     return (
@@ -74,10 +77,7 @@ export default function SchedulePage() {
             <h1 className="text-2xl font-bold text-gray-900" data-testid="heading-schedule">Schedule</h1>
             <p className="text-gray-600">Manage training sessions, matches, and events.</p>
           </div>
-          <Button onClick={() => setShowNewSessionModal(true)}>
-            <Calendar className="h-4 w-4 mr-2" />
-            Add Session
-          </Button>
+          <ScheduleSessionDialog />
         </div>
         <Card>
           <CardContent className="p-6">
@@ -85,18 +85,9 @@ export default function SchedulePage() {
               icon={Calendar}
               title="No sessions scheduled"
               description="Create your first training session or match to get started."
-              action={{
-                label: "Add Session",
-                onClick: () => setShowNewSessionModal(true)
-              }}
             />
           </CardContent>
         </Card>
-        
-        <NewSessionModal 
-          open={showNewSessionModal} 
-          onOpenChange={setShowNewSessionModal} 
-        />
       </div>
     );
   }
@@ -108,10 +99,7 @@ export default function SchedulePage() {
           <h1 className="text-2xl font-bold text-gray-900" data-testid="heading-schedule">Schedule</h1>
           <p className="text-gray-600">Manage training sessions, matches, and events.</p>
         </div>
-        <Button onClick={() => setShowNewSessionModal(true)}>
-          <Calendar className="h-4 w-4 mr-2" />
-          Add Session
-        </Button>
+        <ScheduleSessionDialog />
       </div>
 
       <div className="grid gap-6">
@@ -130,7 +118,7 @@ export default function SchedulePage() {
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-gray-400" />
                   <span className="text-sm">
-                    {format(parseISO(session.startUtc), 'EEE, d MMM • h:mm a')} - {format(parseISO(session.endUtc), 'h:mm a')}
+                    {format(parseISO(session.startTime), 'EEE, d MMM • h:mm a')} - {format(parseISO(session.endTime), 'h:mm a')}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -140,24 +128,19 @@ export default function SchedulePage() {
                 <div className="flex items-center space-x-2">
                   <Users className="h-4 w-4 text-gray-400" />
                   <span className="text-sm">
-                    0/{session.maxAttendees} players
+                    {session.maxPlayers ? `0/${session.maxPlayers}` : '0'} players
                   </span>
                 </div>
               </div>
-              {session.notes && (
+              {session.description && (
                 <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                  <p className="text-sm text-gray-600">{session.notes}</p>
+                  <p className="text-sm text-gray-600">{session.description}</p>
                 </div>
               )}
             </CardContent>
           </Card>
         ))}
       </div>
-
-      <NewSessionModal 
-        open={showNewSessionModal} 
-        onOpenChange={setShowNewSessionModal} 
-      />
     </div>
   );
 }

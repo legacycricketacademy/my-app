@@ -98,6 +98,13 @@ declare global {
 // Global dual authentication middleware factory (Session OR JWT)
 export function createAuthMiddleware(storage: typeof multiTenantStorage = multiTenantStorage) {
   return function authMiddleware(req: Request, res: Response, next: NextFunction) {
+    console.log('[AUTH MIDDLEWARE] Checking auth for:', req.method, req.path);
+    console.log('[AUTH MIDDLEWARE] Session:', { 
+      hasSession: !!req.session,
+      userId: req.session?.userId,
+      role: req.session?.role
+    });
+    
     safeLog('AUTH GUARD', { 
       session: !!req.session?.userId, 
       bearer: req.headers.authorization?.startsWith('Bearer ') === true
@@ -115,6 +122,7 @@ export function createAuthMiddleware(storage: typeof multiTenantStorage = multiT
         req.academyId = req.session.academyId;
       }
       
+      console.log('[AUTH MIDDLEWARE] Session auth OK:', req.user);
       safeLog('AUTH GUARD OK', { via: 'session', userId: req.user.id, role: req.user.role });
       return next();
     }

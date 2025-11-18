@@ -23,16 +23,16 @@ export function ParentDashboardLayout() {
   const shouldShowBanner = user && user.emailVerified === false; // explicit false
   
   const navigation = [
+    { name: "My Kids", href: "/parent/kids", icon: Users },
     { name: "Dashboard", href: "/dashboard/parent", icon: Home },
     { name: "Schedule", href: "/parent/schedule", icon: Calendar },
     { name: "Announcements", href: "/parent/announcements", icon: Bell },
-    { name: "Connect Child", href: "/parent/connect-child", icon: Users },
+    { name: "Connect Child", href: "/parent/connect-child", icon: User },
     { name: "Payments", href: "/parent/payments", icon: DollarSign },
-    { name: "My Profile", href: "/parent/profile", icon: User },
   ];
   
   const Logo = () => (
-    <Link to="/dashboard/parent">
+    <Link to="/parent/kids">
       <div className="flex items-center gap-2 font-bold text-xl text-primary cursor-pointer">
         <span className="bg-primary text-white p-1 rounded">
           🏏

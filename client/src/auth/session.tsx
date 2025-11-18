@@ -10,6 +10,7 @@ type Ctx = {
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   loginMutation: any; // For compatibility with AuthPageDev
+  logoutMutation: any; // For compatibility with DashboardLayout
 };
 
 const AuthCtx = createContext<Ctx>({
@@ -20,15 +21,17 @@ const AuthCtx = createContext<Ctx>({
   async login(){}, 
   async logout(){}, 
   async refresh(){},
-  loginMutation: { mutateAsync: async () => {}, isPending: false, isLoading: false, isSuccess: false, isError: false }
+  loginMutation: { mutateAsync: async () => {}, isPending: false, isLoading: false, isSuccess: false, isError: false },
+  logoutMutation: { mutate: () => {}, isPending: false, isLoading: false }
 });
 
 const USE_FIREBASE = (import.meta as any).env?.VITE_USE_FIREBASE === "true";
 
 async function whoami(): Promise<User | null> {
   try {
-    console.log("🔍 Checking /api/_whoami");
-    const r = await fetch("/api/_whoami", { credentials: "include" });
+    const url = '/api/_whoami';
+    console.log("🔍 Checking", url);
+    const r = await fetch(url, { credentials: "include" });
     console.log("🔍 Whoami response status:", r.status);
     if (!r.ok) {
       console.log("🔍 Whoami failed, user not authenticated");
@@ -47,7 +50,9 @@ async function serverLogin(email: string, password: string) {
   console.log("🔐 Attempting server login for:", email);
   
   // Step 1: POST /api/auth/login
-  const loginRes = await fetch("/api/auth/login", {
+  const loginUrl = '/api/auth/login';
+  console.log("🔐 Login URL:", loginUrl);
+  const loginRes = await fetch(loginUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -63,7 +68,8 @@ async function serverLogin(email: string, password: string) {
   console.log("🔐 Login success:", loginData);
   
   // Step 2: GET /api/session/me to verify session
-  const meRes = await fetch("/api/session/me", {
+  const meUrl = '/api/session/me';
+  const meRes = await fetch(meUrl, {
     method: "GET",
     credentials: "include"
   });
@@ -79,7 +85,8 @@ async function serverLogin(email: string, password: string) {
 }
 
 async function serverLogout() {
-  await fetch("/api/logout", { method: "POST", credentials: "include" }).catch(()=>{});
+  const logoutUrl = '/api/logout';
+  await fetch(logoutUrl, { method: "POST", credentials: "include" }).catch(()=>{});
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -157,6 +164,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isError: false
   }), [login, loading, user]);
 
+  // Create a logoutMutation shim for compatibility with DashboardLayout
+  const logoutMutation = useMemo(() => ({
+    mutate: async () => {
+      await logout();
+      // Redirect to auth page after logout
+      window.location.href = '/auth';
+    },
+    isPending: false,
+    isLoading: false
+  }), [logout]);
+
   const value = useMemo(() => ({ 
     user, 
     loading, 
@@ -165,8 +183,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login, 
     logout, 
     refresh, 
-    loginMutation 
-  }), [user, loading, login, logout, refresh, loginMutation]);
+    loginMutation,
+    logoutMutation
+  }), [user, loading, login, logout, refresh, loginMutation, logoutMutation]);
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }

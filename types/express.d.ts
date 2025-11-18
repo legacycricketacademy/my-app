@@ -18,6 +18,12 @@ declare module 'express-session' {
     userId?: string | number;
     userRole?: string;
     academyId?: number;
+    user?: {
+      id: string | number;
+      email?: string;
+      role?: string;
+    };
+    role?: string;
   }
 }
 

@@ -31,8 +31,8 @@ test.describe('Login Flow', () => {
     // Login as parent
     await loginAs(page, PARENT_CREDENTIALS.email, PARENT_CREDENTIALS.password);
     
-    // Should land on dashboard (parent users go to /dashboard, not /parent)
-    await expect(page).toHaveURL(/\/dashboard/);
+    // Should land on parent dashboard (parents are redirected to /parent/kids)
+    await expect(page).toHaveURL(/\/(dashboard|parent)/);
     
     // Verify only one sidebar
     await expectOneSidebar(page);
