@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Registration CTA and Page', () => {
-  test('should show "New parent? Register" button on login page', async ({ page }) => {
+  test('should show parent registration CTA on login page', async ({ page }) => {
     await page.goto('/login');
     
     // Check for the registration CTA button
     const registerButton = page.getByTestId('btn-new-parent-register');
     await expect(registerButton).toBeVisible();
-    await expect(registerButton).toContainText('New parent? Register');
+    await expect(registerButton).toContainText('Register as Parent');
   });
 
   test('should navigate to registration page when clicking register button', async ({ page }) => {
