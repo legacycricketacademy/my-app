@@ -1,5 +1,21 @@
 import { Router, type Express } from "express";
 import { db } from "../../db/index.js";
+import {
+  players,
+  sessions,
+  sessionAttendances,
+  fitnessRecords,
+  users,
+  sessionAvailability,
+} from "../../shared/schema.js";
+import {
+  battingMetrics,
+  bowlingMetrics,
+  fieldingMetrics,
+  disciplineMetrics,
+  coachNotes,
+} from "../../db/kid-metrics-schema.js";
+import { db } from "../../db/index.js";
 import { players, sessions, sessionAttendances, fitnessRecords, users, sessionAvailability } from "../../shared/schema.js";
 import { battingMetrics, bowlingMetrics, fieldingMetrics, disciplineMetrics, coachNotes } from "../../db/kid-metrics-schema.js";
 import { eq, and, desc, gte, sql } from "drizzle-orm";
