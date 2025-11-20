@@ -20,6 +20,10 @@ type ParentFixtures = {
   registeredParent: ParentUser;
   parentPage: Page;
   parentContext: BrowserContext;
+  paymentsApi: {
+    getPayments: () => Promise<any[]>;
+    getPayment: (id: number) => Promise<any | null>;
+  };
 };
 
 /**
@@ -125,6 +129,42 @@ export const test = base.extend<ParentFixtures>({
     const page = await parentContext.newPage();
     await use(page);
     await page.close();
+  },
+
+  /**
+   * Payment API helpers (uses authenticated context)
+   */
+  paymentsApi: async ({ parentPage }, use) => {
+    const api = {
+      /**
+       * Get all payments for the logged-in parent
+       */
+      async getPayments(): Promise<any[]> {
+        const response = await parentPage.evaluate(async () => {
+          const res = await fetch('/api/parent/payments', { credentials: 'include' });
+          if (!res.ok) throw new Error(`Failed to get payments: ${res.status}`);
+          const data = await res.json();
+          return data.data || [];
+        });
+        return response;
+      },
+
+      /**
+       * Get a single payment by ID
+       */
+      async getPayment(id: number): Promise<any | null> {
+        const response = await parentPage.evaluate(async (paymentId) => {
+          const res = await fetch(`/api/parent/payments/${paymentId}`, { credentials: 'include' });
+          if (res.status === 404) return null;
+          if (!res.ok) throw new Error(`Failed to get payment: ${res.status}`);
+          const data = await res.json();
+          return data.data || null;
+        }, id);
+        return response;
+      },
+    };
+
+    await use(api);
   },
 });
 

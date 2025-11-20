@@ -1,99 +1,71 @@
-import { db } from "../../server/db";
-import { payments, players, users } from "../../shared/schema";
-import { eq } from "drizzle-orm";
+/**
+ * Payment Test Fixtures
+ * 
+ * API-based payment test utilities for Playwright tests.
+ * Does NOT import server/db directly - uses HTTP APIs only.
+ */
 
-export interface PaymentFixture {
+import { test as base, expect, Page, APIRequestContext } from '@playwright/test';
+
+export interface PaymentData {
   id: number;
-  playerId: number;
+  kidId: number;
+  kidName: string;
   amount: string;
   paymentType: string;
-  month: string;
+  month: string | null;
   dueDate: string;
+  paidDate: string | null;
   status: string;
+  paymentMethod: string | null;
 }
 
-export async function createPaymentForPlayer(
-  playerId: number,
-  overrides: Partial<PaymentFixture> = {}
-): Promise<PaymentFixture> {
-  const defaultPayment = {
-    playerId,
-    amount: "250.00",
-    paymentType: "monthly_fee",
-    month: "2024-01",
-    dueDate: new Date("2024-01-15").toISOString(),
-    status: "pending",
-    ...overrides,
+type PaymentFixtures = {
+  paymentsApi: {
+    getPayments: () => Promise<PaymentData[]>;
+    getPayment: (id: number) => Promise<PaymentData | null>;
   };
+};
 
-  const [payment] = await db
-    .insert(payments)
-    .values(defaultPayment)
-    .returning();
+/**
+ * Extended test with payment-specific fixtures
+ */
+export const test = base.extend<PaymentFixtures>({
+  /**
+   * Payment API helpers (uses HTTP requests, no direct DB access)
+   */
+  paymentsApi: async ({ request }, use) => {
+    const api = {
+      /**
+       * Get all payments for the logged-in parent
+       */
+      async getPayments(): Promise<PaymentData[]> {
+        const response = await request.get('/api/parent/payments');
+        if (!response.ok()) {
+          throw new Error(`Failed to get payments: ${response.status()}`);
+        }
+        const data = await response.json();
+        return data.data || [];
+      },
 
-  return payment as PaymentFixture;
-}
+      /**
+       * Get a single payment by ID
+       */
+      async getPayment(id: number): Promise<PaymentData | null> {
+        const response = await request.get(`/api/parent/payments/${id}`);
+        if (response.status() === 404) {
+          return null;
+        }
+        if (!response.ok()) {
+          throw new Error(`Failed to get payment: ${response.status()}`);
+        }
+        const data = await response.json();
+        return data.data || null;
+      },
+    };
 
-export async function createMultiplePaymentsForPlayer(
-  playerId: number,
-  count: number = 3
-): Promise<PaymentFixture[]> {
-  const paymentPromises = [];
-  const currentDate = new Date();
+    await use(api);
+  },
+});
 
-  for (let i = 0; i < count; i++) {
-    const month = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-    const monthStr = month.toISOString().slice(0, 7); // YYYY-MM format
-    const dueDate = new Date(month.getFullYear(), month.getMonth(), 15);
-
-    paymentPromises.push(
-      createPaymentForPlayer(playerId, {
-        month: monthStr,
-        dueDate: dueDate.toISOString(),
-        status: i === 0 ? "pending" : "paid",
-        paidDate: i === 0 ? null : new Date(dueDate.getTime() + 86400000).toISOString(), // paid next day
-      })
-    );
-  }
-
-  return Promise.all(paymentPromises);
-}
-
-export async function getPaymentsForParent(parentId: number): Promise<any[]> {
-  // Get all kids for this parent
-  const kids = await db
-    .select()
-    .from(players)
-    .where(eq(players.parentId, parentId));
-
-  if (kids.length === 0) {
-    return [];
-  }
-
-  const kidIds = kids.map(k => k.id);
-
-  // Get all payments for these kids
-  const allPayments = await db
-    .select({
-      payment: payments,
-      player: players,
-    })
-    .from(payments)
-    .innerJoin(players, eq(payments.playerId, players.id))
-    .where(eq(players.parentId, parentId));
-
-  return allPayments.map(({ payment, player }) => ({
-    ...payment,
-    kidName: `${player.firstName} ${player.lastName}`,
-    kidId: player.id,
-  }));
-}
-
-export async function cleanupPayments(playerId?: number) {
-  if (playerId) {
-    await db.delete(payments).where(eq(payments.playerId, playerId));
-  } else {
-    // Clean up all test payments (be careful with this in production!)
-    await db.delete(payments);
-  }
-}
+export { expect };
