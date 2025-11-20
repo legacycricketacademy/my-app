@@ -1,190 +1,216 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
-import { format } from 'date-fns';
-import { useAuth } from '@/hooks/use-auth';
-import { ParentLayout } from '@/layout/parent-layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Calendar, CircleDollarSign, ArrowRight, Loader2 } from 'lucide-react';
-import { useMobile } from '@/hooks/use-mobile';
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { CreditCard, Calendar, DollarSign, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { api } from "@/lib/api";
 
-// Status badge component
-const StatusBadge = ({ status }: { status: string }) => {
-  const getVariant = () => {
-    switch (status.toLowerCase()) {
-      case 'paid':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'overdue':
-        return 'bg-red-100 text-red-800 border-red-200';
+interface Payment {
+  id: number;
+  kidId: number;
+  kidName: string;
+  amount: string;
+  paymentType: string;
+  month: string | null;
+  dueDate: string;
+  paidDate: string | null;
+  status: string;
+  paymentMethod: string | null;
+}
+
+export default function Payments() {
+  const navigate = useNavigate();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["/api/parent/payments"],
+    queryFn: () => api.get("/parent/payments"),
+  });
+
+  const payments: Payment[] = data?.data || [];
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "paid":
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
+      case "pending":
+        return <Clock className="h-5 w-5 text-yellow-600" />;
+      case "overdue":
+        return <AlertCircle className="h-5 w-5 text-red-600" />;
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return <Clock className="h-5 w-5 text-gray-600" />;
     }
   };
 
-  return (
-    <Badge variant="outline" className={`${getVariant()} font-medium capitalize`}>
-      {status}
-    </Badge>
-  );
-};
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "paid":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "overdue":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
 
-// Payment card component
-const PaymentCard = ({ payment, onMakePayment }: { 
-  payment: any, 
-  onMakePayment: (paymentId: number, playerId: number) => void 
-}) => {
-  const isMobile = useMobile();
-  
-  return (
-    <Card className="mb-4 overflow-hidden">
-      <CardContent className="p-0">
-        <div className="flex flex-col sm:flex-row">
-          <div className="p-4 flex-1">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h3 className="font-semibold">{payment.paymentType.replace(/_/g, ' ')}</h3>
-                <p className="text-sm text-gray-500">
-                  {payment.playerName}
-                </p>
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "—";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatAmount = (amount: string) => {
+    return `$${parseFloat(amount).toFixed(2)}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
+        <div className="flex items-center gap-3">
+          <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+          <span className="text-gray-700 font-medium" data-testid="loading-payments">Loading payments...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50 px-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-red-200">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                <CreditCard className="h-8 w-8 text-red-600" />
               </div>
-              <StatusBadge status={payment.status} />
-            </div>
-            
-            <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
-              <div className="flex items-center text-sm">
-                <Calendar className="h-4 w-4 mr-1.5 text-gray-500" />
-                <span>Due: {format(new Date(payment.dueDate), 'MMM d, yyyy')}</span>
-              </div>
-              
-              <div className="flex items-center font-medium">
-                <CircleDollarSign className="h-4 w-4 mr-1.5 text-emerald-600" />
-                ${Number(payment.amount).toFixed(2)}
-              </div>
-            </div>
-            
-            {payment.notes && (
-              <p className="mt-2 text-sm text-gray-600 line-clamp-1">{payment.notes}</p>
-            )}
-          </div>
-          
-          {payment.status === 'pending' && (
-            <div className={`bg-gray-50 ${isMobile ? 'p-3 border-t' : 'border-l p-4 flex items-center'}`}>
-              <Button 
-                onClick={() => onMakePayment(payment.id, payment.playerId)}
-                size={isMobile ? "sm" : "default"}
-                className="w-full whitespace-nowrap"
-              >
-                Make Payment
-                <ArrowRight className="ml-2 h-4 w-4" />
+              <h2 className="text-2xl font-bold text-gray-900" data-testid="error-heading">Error Loading Payments</h2>
+              <p className="text-gray-600">Unable to load payment information. Please try again.</p>
+              <Button onClick={() => window.location.reload()} className="mt-4">
+                Retry
               </Button>
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-export default function PaymentsPage() {
-  const { user } = useAuth();
-  const [, navigate] = useLocation();
-  const [activeTab, setActiveTab] = useState('all');
-  
-  // Fetch user's children
-  const playersQuery = useQuery({
-    queryKey: ['/api/parent/players'],
-    enabled: !!user
-  });
-  
-  // Fetch payments for all children
-  const paymentsQuery = useQuery({
-    queryKey: ['/api/parent/payments'],
-    enabled: !!user
-  });
-  
-  const isLoading = playersQuery.isLoading || paymentsQuery.isLoading;
-  
-  // Filter payments based on active tab
-  const filteredPayments = Array.isArray(paymentsQuery.data) 
-    ? paymentsQuery.data.filter((payment: any) => {
-        if (activeTab === 'all') return true;
-        if (activeTab === 'pending') return payment.status === 'pending';
-        if (activeTab === 'paid') return payment.status === 'paid';
-        if (activeTab === 'overdue') return payment.status === 'overdue';
-        return true;
-      }) 
-    : [];
-  
-  const handleMakePayment = (paymentId: number, playerId: number) => {
-    navigate(`/parent/make-payment/${playerId}?payment=${paymentId}`);
-  };
-  
-  return (
-    <ParentLayout title="Payments">
-      <div className="container px-4 py-6 max-w-4xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Payments</h1>
-            <p className="text-gray-500 mt-1">Manage and view payment history</p>
           </div>
-          
-          <Button 
-            className="mt-4 sm:mt-0"
-            onClick={() => navigate('/parent/payments/new')}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" /> New Payment
-          </Button>
         </div>
-        
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="paid">Paid</TabsTrigger>
-            <TabsTrigger value="overdue">Overdue</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value={activeTab}>
-            {isLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : filteredPayments.length > 0 ? (
-              <div>
-                {filteredPayments.map((payment: any) => (
-                  <PaymentCard 
-                    key={payment.id} 
-                    payment={payment} 
-                    onMakePayment={handleMakePayment}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>No Payments Found</CardTitle>
-                  <CardDescription>
-                    {activeTab === 'all' 
-                      ? "You don't have any payments yet"
-                      : `You don't have any ${activeTab} payments`
-                    }
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" onClick={() => navigate('/parent/dashboard')}>
-                    Return to Dashboard
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
       </div>
-    </ParentLayout>
+    );
+  }
+
+  if (payments.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                <CreditCard className="h-8 w-8 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">No Payments Yet</h2>
+              <p className="text-gray-600">You don't have any payment records at this time.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 px-4 py-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Payments</h1>
+          <p className="text-gray-600">View and manage your payment history</p>
+        </div>
+
+        {/* Mobile View - Cards */}
+        <div className="block lg:hidden space-y-4">
+          {payments.map((payment) => (
+            <div
+              key={payment.id}
+              onClick={() => navigate(`/parent/payments/${payment.id}`)}
+              className="bg-white rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer"
+              data-testid={`payment-card-${payment.id}`}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-900">{payment.kidName}</h3>
+                  <p className="text-sm text-gray-600">{payment.month || "—"}</p>
+                </div>
+                <div className={`px-3 py-1 rounded-full border text-sm font-medium flex items-center gap-1 ${getStatusColor(payment.status)}`}>
+                  {getStatusIcon(payment.status)}
+                  <span className="capitalize">{payment.status}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Amount</span>
+                  <span className="font-semibold text-gray-900">{formatAmount(payment.amount)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Due Date</span>
+                  <span className="text-sm text-gray-900">{formatDate(payment.dueDate)}</span>
+                </div>
+                {payment.paidDate && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Paid Date</span>
+                    <span className="text-sm text-gray-900">{formatDate(payment.paidDate)}</span>
+                  </div>
+                )}
+                {payment.paymentMethod && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Method</span>
+                    <span className="text-sm text-gray-900 capitalize">{payment.paymentMethod}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop View - Table */}
+        <div className="hidden lg:block bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Kid Name</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Month</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Amount</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Due Date</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Paid Date</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Method</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {payments.map((payment) => (
+                <tr
+                  key={payment.id}
+                  onClick={() => navigate(`/parent/payments/${payment.id}`)}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  data-testid={`payment-row-${payment.id}`}
+                >
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{payment.kidName}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{payment.month || "—"}</td>
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">{formatAmount(payment.amount)}</td>
+                  <td className="px-6 py-4">
+                    <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-sm font-medium ${getStatusColor(payment.status)}`}>
+                      {getStatusIcon(payment.status)}
+                      <span className="capitalize">{payment.status}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{formatDate(payment.dueDate)}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{formatDate(payment.paidDate)}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 capitalize">{payment.paymentMethod || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -65,6 +65,8 @@ import EmailMailbox from "@/pages/dev/EmailMailbox";
 import { DevEmailButton } from "@/components/dev/DevEmailButton";
 import KidsList from "@/pages/parent/KidsList";
 import KidDashboard from "@/pages/parent/KidDashboard";
+import Payments from "@/pages/parent/Payments";
+import PaymentDetail from "@/pages/parent/PaymentDetail";
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -169,7 +171,8 @@ function AppRoutes() {
         <Route path="schedule" element={<ParentSchedulePage />} />
         <Route path="schedule/full" element={<FullCalendarPage />} />
         <Route path="announcements" element={<ParentAnnouncementsPage />} />
-        <Route path="payments" element={<ParentPaymentsPage />} />
+        <Route path="payments" element={<Payments />} />
+        <Route path="payments/:id" element={<PaymentDetail />} />
         <Route path="payments/transactions" element={<PaymentTransactionsPage />} />
         <Route path="connect-child" element={<ConnectChildPage />} />
         <Route path="profile" element={<ParentProfilePage />} />

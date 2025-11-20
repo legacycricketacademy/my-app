@@ -11,6 +11,7 @@ import announcementsRouter from "./routes/announcements.js";
 import mailboxRouter from "./routes/_mailbox.js";
 import { flags } from "./utils/flags.js";
 import registrationRouter from "./routes/registration.js";
+import parentPaymentsRouter from "./routes/parent-payments.js";
 
 export function registerRoutes(app: Express) {
   // Test auth routes (only available in test mode)
@@ -47,6 +48,9 @@ export function registerRoutes(app: Express) {
 
   // Payments API (feature-flagged for testing)
   app.use("/api/payments", paymentsRouter);
+
+  // Parent Payments API (protected)
+  app.use("/api/parent/payments", parentPaymentsRouter);
 
   // Registration API (public) - parent registration form
   app.use("/api/registration", registerRouter);
