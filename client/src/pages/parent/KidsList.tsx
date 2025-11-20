@@ -61,21 +61,21 @@ export default function KidsList() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 px-4 py-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="flex flex-col w-full max-w-full min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 px-4 py-6 md:py-8 overflow-x-hidden">
+      <div className="w-full max-w-7xl mx-auto space-y-6 md:space-y-8">
         {/* Header */}
-        <div className="text-center space-y-3">
-          <h1 className="text-4xl font-bold text-gray-900" data-testid="heading-kids-list">My Kids</h1>
-          <p className="text-gray-600 text-lg">
+        <div className="text-center space-y-2 md:space-y-3">
+          <h1 className="text-2xl md:text-4xl font-bold text-gray-900" data-testid="heading-kids-list">My Kids</h1>
+          <p className="text-gray-600 text-base md:text-lg">
             View and manage your children's cricket training
           </p>
         </div>
 
         {kids.length === 0 ? (
-          /* Empty State */
-          <div className="flex items-center justify-center py-12">
+          /* Empty State */}
+          <div className="flex items-center justify-center py-8 md:py-12">
             <div className="w-full max-w-md">
-              <div className="bg-white rounded-2xl shadow-xl p-12 text-center space-y-6">
+              <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 text-center space-y-4 md:space-y-6">
                 <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
                   <UserPlus className="h-10 w-10 text-blue-600" />
                 </div>
@@ -98,7 +98,7 @@ export default function KidsList() {
           </div>
         ) : (
           /* Kids Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {kids.map((kid) => (
               <div
                 key={kid.id}

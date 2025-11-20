@@ -117,29 +117,29 @@ export default function Payments() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 px-4 py-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="flex flex-col w-full max-w-full min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 px-4 py-6 md:py-8 overflow-x-hidden">
+      <div className="w-full max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Payments</h1>
-          <p className="text-gray-600">View and manage your payment history</p>
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Payments</h1>
+          <p className="text-sm md:text-base text-gray-600">View and manage your payment history</p>
         </div>
 
         {/* Mobile View - Cards */}
-        <div className="block lg:hidden space-y-4">
+        <div className="block lg:hidden space-y-3 md:space-y-4">
           {payments.map((payment) => (
             <div
               key={payment.id}
               onClick={() => navigate(`/parent/payments/${payment.id}`)}
-              className="bg-white rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer"
+              className="bg-white rounded-lg md:rounded-xl shadow-md p-4 md:p-6 border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer"
               data-testid={`payment-card-${payment.id}`}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900">{payment.kidName}</h3>
-                  <p className="text-sm text-gray-600">{payment.month || "—"}</p>
+              <div className="flex items-start justify-between mb-3 md:mb-4">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-base md:text-lg text-gray-900 truncate">{payment.kidName}</h3>
+                  <p className="text-xs md:text-sm text-gray-600">{payment.month || "—"}</p>
                 </div>
-                <div className={`px-3 py-1 rounded-full border text-sm font-medium flex items-center gap-1 ${getStatusColor(payment.status)}`}>
+                <div className={`px-2 md:px-3 py-1 rounded-full border text-xs md:text-sm font-medium flex items-center gap-1 flex-shrink-0 ml-2 ${getStatusColor(payment.status)}`}>
                   {getStatusIcon(payment.status)}
                   <span className="capitalize">{payment.status}</span>
                 </div>
@@ -172,8 +172,8 @@ export default function Payments() {
         </div>
 
         {/* Desktop View - Table */}
-        <div className="hidden lg:block bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-          <table className="w-full">
+        <div className="hidden lg:block bg-white rounded-xl shadow-md border border-gray-200 overflow-x-auto">
+          <table className="w-full min-w-[800px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Kid Name</th>

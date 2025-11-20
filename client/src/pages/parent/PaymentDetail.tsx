@@ -103,8 +103,8 @@ export default function PaymentDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 px-4 py-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="flex flex-col w-full max-w-full min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 px-4 py-6 md:py-8 overflow-x-hidden">
+      <div className="w-full max-w-3xl mx-auto">
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -116,15 +116,15 @@ export default function PaymentDetail() {
         </Button>
 
         {/* Payment Detail Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl md:rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
-            <div className="flex items-center justify-between">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 md:px-8 py-4 md:py-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <h1 className="text-2xl font-bold text-white mb-1">Payment Details</h1>
-                <p className="text-blue-100">Invoice #{payment.id}</p>
+                <h1 className="text-xl md:text-2xl font-bold text-white mb-1">Payment Details</h1>
+                <p className="text-sm md:text-base text-blue-100">Invoice #{payment.id}</p>
               </div>
-              <div className={`px-4 py-2 rounded-full border-2 text-sm font-semibold flex items-center gap-2 ${getStatusColor(payment.status)} bg-white`}>
+              <div className={`px-3 md:px-4 py-1.5 md:py-2 rounded-full border-2 text-xs md:text-sm font-semibold flex items-center gap-2 ${getStatusColor(payment.status)} bg-white flex-shrink-0`}>
                 {getStatusIcon(payment.status)}
                 <span className="capitalize">{payment.status}</span>
               </div>
@@ -132,76 +132,76 @@ export default function PaymentDetail() {
           </div>
 
           {/* Content */}
-          <div className="p-8 space-y-6">
+          <div className="p-4 md:p-8 space-y-4 md:space-y-6">
             {/* Amount Section */}
-            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-              <div className="flex items-center gap-3 mb-2">
-                <DollarSign className="h-5 w-5 text-gray-600" />
-                <span className="text-sm font-medium text-gray-600">Amount</span>
+            <div className="bg-gray-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-gray-200">
+              <div className="flex items-center gap-2 md:gap-3 mb-2">
+                <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-gray-600" />
+                <span className="text-xs md:text-sm font-medium text-gray-600">Amount</span>
               </div>
-              <p className="text-4xl font-bold text-gray-900">{formatAmount(payment.amount)}</p>
+              <p className="text-3xl md:text-4xl font-bold text-gray-900">${formatAmount(payment.amount)}</p>
             </div>
 
             {/* Details Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <User className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-600">Student</span>
+                  <span className="text-xs md:text-sm font-medium text-gray-600">Student</span>
                 </div>
-                <p className="text-lg font-semibold text-gray-900">{payment.kidName}</p>
+                <p className="text-base md:text-lg font-semibold text-gray-900">{payment.kidName}</p>
               </div>
 
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-600">Month</span>
+                  <span className="text-xs md:text-sm font-medium text-gray-600">Month</span>
                 </div>
-                <p className="text-lg font-semibold text-gray-900">{payment.month || "—"}</p>
+                <p className="text-base md:text-lg font-semibold text-gray-900">{payment.month || "—"}</p>
               </div>
 
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-600">Due Date</span>
+                  <span className="text-xs md:text-sm font-medium text-gray-600">Due Date</span>
                 </div>
-                <p className="text-lg font-semibold text-gray-900">{formatDate(payment.dueDate)}</p>
+                <p className="text-base md:text-lg font-semibold text-gray-900">{formatDate(payment.dueDate)}</p>
               </div>
 
               {payment.paidDate && (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-gray-600">Paid Date</span>
+                    <span className="text-xs md:text-sm font-medium text-gray-600">Paid Date</span>
                   </div>
-                  <p className="text-lg font-semibold text-gray-900">{formatDate(payment.paidDate)}</p>
+                  <p className="text-base md:text-lg font-semibold text-gray-900">{formatDate(payment.paidDate)}</p>
                 </div>
               )}
 
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <CreditCard className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-600">Payment Type</span>
+                  <span className="text-xs md:text-sm font-medium text-gray-600">Payment Type</span>
                 </div>
-                <p className="text-lg font-semibold text-gray-900 capitalize">{payment.paymentType.replace(/_/g, " ")}</p>
+                <p className="text-base md:text-lg font-semibold text-gray-900 capitalize">{payment.paymentType.replace(/_/g, " ")}</p>
               </div>
 
               {payment.paymentMethod && (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <CreditCard className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm font-medium text-gray-600">Payment Method</span>
+                    <span className="text-xs md:text-sm font-medium text-gray-600">Payment Method</span>
                   </div>
-                  <p className="text-lg font-semibold text-gray-900 capitalize">{payment.paymentMethod}</p>
+                  <p className="text-base md:text-lg font-semibold text-gray-900 capitalize">{payment.paymentMethod}</p>
                 </div>
               )}
             </div>
 
             {/* Notes Section */}
             {payment.notes && (
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Notes</h3>
-                <p className="text-gray-900">{payment.notes}</p>
+              <div className="border-t border-gray-200 pt-4 md:pt-6">
+                <h3 className="text-xs md:text-sm font-medium text-gray-600 mb-2">Notes</h3>
+                <p className="text-sm md:text-base text-gray-900">{payment.notes}</p>
               </div>
             )}
           </div>

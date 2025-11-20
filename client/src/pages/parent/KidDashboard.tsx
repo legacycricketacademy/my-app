@@ -117,8 +117,8 @@ export default function KidDashboard() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 px-4 py-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="flex flex-col w-full max-w-full min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 px-4 py-6 md:py-8 overflow-x-hidden">
+      <div className="w-full max-w-7xl mx-auto space-y-4 md:space-y-6">
         {/* Header */}
         <div className="space-y-4">
           <Button 
@@ -132,23 +132,23 @@ export default function KidDashboard() {
           </Button>
           
           {/* Kid Info Card */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex items-center gap-4">
+          <div className="bg-white rounded-xl md:rounded-2xl shadow-lg p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3 md:gap-4">
               {kid.profileImage ? (
                 <img
                   src={kid.profileImage}
                   alt={kid.fullName}
-                  className="w-20 h-20 rounded-full object-cover border-4 border-blue-100"
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-4 border-blue-100"
                   data-testid="kid-avatar"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center border-4 border-blue-100">
-                  <User className="h-10 w-10 text-white" />
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-blue-600 flex items-center justify-center border-4 border-blue-100">
+                  <User className="h-8 w-8 md:h-10 md:w-10 text-white" />
                 </div>
               )}
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900" data-testid="kid-name">{kid.fullName}</h1>
-                <p className="text-gray-600 text-lg" data-testid="kid-info">
+              <div className="text-center sm:text-left">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900" data-testid="kid-name">{kid.fullName}</h1>
+                <p className="text-gray-600 text-sm md:text-lg" data-testid="kid-info">
                   Age {kid.age} • {kid.ageGroup} • {kid.location}
                 </p>
               </div>
@@ -157,58 +157,58 @@ export default function KidDashboard() {
         </div>
 
         {/* Metrics Grid - Simple Tiles */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
           {/* Fitness */}
-          <div className="bg-white rounded-xl shadow-md p-6 text-center" data-testid="tile-fitness">
-            <Activity className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-            <div className="text-sm font-medium text-gray-600 mb-1">Fitness</div>
-            <div className="text-2xl font-bold text-gray-900">
+          <div className="bg-white rounded-lg md:rounded-xl shadow-md p-4 md:p-6 text-center" data-testid="tile-fitness">
+            <Activity className="h-6 w-6 md:h-8 md:w-8 text-blue-600 mx-auto mb-2" />
+            <div className="text-xs md:text-sm font-medium text-gray-600 mb-1">Fitness</div>
+            <div className="text-xl md:text-2xl font-bold text-gray-900">
               {dashboardData.fitness ? `${Math.round((dashboardData.fitness.speed + dashboardData.fitness.agility + dashboardData.fitness.endurance) / 3 * 20)}%` : 'N/A'}
             </div>
           </div>
 
           {/* Batting */}
-          <div className="bg-white rounded-xl shadow-md p-6 text-center" data-testid="tile-batting">
-            <Target className="h-8 w-8 text-green-600 mx-auto mb-2" />
-            <div className="text-sm font-medium text-gray-600 mb-1">Batting</div>
-            <div className="text-2xl font-bold text-gray-900">
+          <div className="bg-white rounded-lg md:rounded-xl shadow-md p-4 md:p-6 text-center" data-testid="tile-batting">
+            <Target className="h-6 w-6 md:h-8 md:w-8 text-green-600 mx-auto mb-2" />
+            <div className="text-xs md:text-sm font-medium text-gray-600 mb-1">Batting</div>
+            <div className="text-xl md:text-2xl font-bold text-gray-900">
               {batting ? `${Math.round((batting.footwork + batting.shotSelection + batting.batSwingPath + batting.balancePosture) / 4 * 20)}%` : 'N/A'}
             </div>
           </div>
 
           {/* Bowling */}
-          <div className="bg-white rounded-xl shadow-md p-6 text-center" data-testid="tile-bowling">
-            <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-            <div className="text-sm font-medium text-gray-600 mb-1">Bowling</div>
-            <div className="text-2xl font-bold text-gray-900">
+          <div className="bg-white rounded-lg md:rounded-xl shadow-md p-4 md:p-6 text-center" data-testid="tile-bowling">
+            <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-purple-600 mx-auto mb-2" />
+            <div className="text-xs md:text-sm font-medium text-gray-600 mb-1">Bowling</div>
+            <div className="text-xl md:text-2xl font-bold text-gray-900">
               {bowling ? `${Math.round((bowling.runUpRhythm + bowling.loadGather + bowling.releaseConsistency + bowling.lineLength) / 4 * 20)}%` : 'N/A'}
             </div>
           </div>
 
           {/* Fielding */}
-          <div className="bg-white rounded-xl shadow-md p-6 text-center" data-testid="tile-fielding">
-            <Activity className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-            <div className="text-sm font-medium text-gray-600 mb-1">Fielding</div>
-            <div className="text-2xl font-bold text-gray-900">
+          <div className="bg-white rounded-lg md:rounded-xl shadow-md p-4 md:p-6 text-center" data-testid="tile-fielding">
+            <Activity className="h-6 w-6 md:h-8 md:w-8 text-orange-600 mx-auto mb-2" />
+            <div className="text-xs md:text-sm font-medium text-gray-600 mb-1">Fielding</div>
+            <div className="text-xl md:text-2xl font-bold text-gray-900">
               {fielding ? `${Math.round((fielding.throwingAccuracy + fielding.catching + fielding.groundFielding) / 3 * 20)}%` : 'N/A'}
             </div>
           </div>
 
           {/* Discipline */}
-          <div className="bg-white rounded-xl shadow-md p-6 text-center" data-testid="tile-discipline">
-            <CheckCircle2 className="h-8 w-8 text-teal-600 mx-auto mb-2" />
-            <div className="text-sm font-medium text-gray-600 mb-1">Discipline</div>
-            <div className="text-2xl font-bold text-gray-900">
+          <div className="bg-white rounded-lg md:rounded-xl shadow-md p-4 md:p-6 text-center" data-testid="tile-discipline">
+            <CheckCircle2 className="h-6 w-6 md:h-8 md:w-8 text-teal-600 mx-auto mb-2" />
+            <div className="text-xs md:text-sm font-medium text-gray-600 mb-1">Discipline</div>
+            <div className="text-xl md:text-2xl font-bold text-gray-900">
               {discipline ? `${Math.round((discipline.focus + discipline.teamwork + discipline.coachability) / 3 * 20)}%` : 'N/A'}
             </div>
           </div>
         </div>
 
         {/* Upcoming Sessions */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Calendar className="h-6 w-6 text-blue-600" />
-            <h2 className="text-2xl font-bold text-gray-900">Upcoming Sessions</h2>
+        <div className="bg-white rounded-xl md:rounded-2xl shadow-lg p-4 md:p-6">
+          <div className="flex items-center gap-2 mb-4 md:mb-6">
+            <Calendar className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Upcoming Sessions</h2>
           </div>
           
           {upcomingSessions.length === 0 ? (
@@ -216,16 +216,16 @@ export default function KidDashboard() {
               No upcoming sessions scheduled
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {upcomingSessions.map((session) => {
                 const status = session.availabilityStatus;
                 return (
                   <div
                     key={session.id}
-                    className="border border-gray-200 rounded-xl p-4 hover:border-blue-300 transition-colors"
+                    className="border border-gray-200 rounded-lg md:rounded-xl p-3 md:p-4 hover:border-blue-300 transition-colors"
                     data-testid="session-row"
                   >
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2 md:gap-3">
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                         <div className="space-y-1 flex-1">
                           <div className="font-semibold text-gray-900" data-testid="session-title">{session.title}</div>
