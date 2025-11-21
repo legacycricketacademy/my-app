@@ -85,27 +85,50 @@ test.describe("Parent Payments", () => {
     }
   });
 
-  test("parent payments API returns data", async ({ parentPage, paymentsApi }) => {
-    // Navigate to ensure session is active
-    await parentPage.goto("/parent/kids");
+  test("parent payments API returns data", async ({ parentPage }) => {
+    // Navigate to payments page to ensure session is active
+    await parentPage.goto("/parent/payments");
     await parentPage.waitForLoadState("networkidle");
 
-    // Test API directly
-    const payments = await paymentsApi.getPayments();
-    
-    console.log(`✅ API returned ${payments.length} payments`);
-    
-    // API should return an array (even if empty)
-    expect(Array.isArray(payments)).toBe(true);
+    // Call the parent payments API from within the authenticated browser context
+    const payments = await parentPage.evaluate(async () => {
+      const res = await fetch("/api/parent/payments", {
+        credentials: "include",
+      });
 
-    // If payments exist, verify structure
-    if (payments.length > 0) {
-      const firstPayment = payments[0];
-      expect(firstPayment).toHaveProperty("id");
-      expect(firstPayment).toHaveProperty("kidName");
-      expect(firstPayment).toHaveProperty("amount");
-      expect(firstPayment).toHaveProperty("status");
-      console.log(`✅ Payment structure valid: ${firstPayment.kidName} - $${firstPayment.amount}`);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Failed to fetch payments: ${res.status} ${res.statusText} - ${text}`,
+        );
+      }
+
+      const data = await res.json();
+
+      // Support both shapes: [] or { payments: [] }
+      if (Array.isArray(data)) {
+        return data;
+      }
+
+      if (Array.isArray((data as any).payments)) {
+        return (data as any).payments;
+      }
+
+      throw new Error(
+        `Unexpected payments response shape: ${JSON.stringify(data)}`,
+      );
+    });
+
+    // Basic assertions on response
+    expect(Array.isArray(payments)).toBeTruthy();
+    expect(payments.length).toBeGreaterThan(0);
+
+    for (const payment of payments as any[]) {
+      expect(payment).toHaveProperty("id");
+      expect(payment).toHaveProperty("amount");
+      expect(payment).toHaveProperty("status");
+      // Adjust these if your status enum is different
+      expect(["pending", "paid", "overdue"]).toContain(payment.status);
     }
   });
 });
