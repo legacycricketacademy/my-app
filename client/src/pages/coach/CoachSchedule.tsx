@@ -30,7 +30,7 @@ export default function CoachSchedule() {
   const sessions: Session[] = data?.data || [];
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
+    <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl" data-testid="coach-schedule-page">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Session Schedule</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
@@ -50,7 +50,7 @@ export default function CoachSchedule() {
       </Card>
 
       {/* Upcoming Sessions List */}
-      <Card>
+      <Card data-testid="upcoming-sessions-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -58,11 +58,11 @@ export default function CoachSchedule() {
           </CardTitle>
           <CardDescription>View all scheduled sessions and availability</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent data-testid="upcoming-sessions-list">
           {isLoading ? (
-            <div className="text-center py-8">Loading sessions...</div>
+            <div className="text-center py-8" data-testid="loading-sessions">Loading sessions...</div>
           ) : sessions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground" data-testid="no-sessions">
               No upcoming sessions scheduled
             </div>
           ) : (
@@ -71,6 +71,7 @@ export default function CoachSchedule() {
                 <div
                   key={session.id}
                   className="border rounded-lg p-3 sm:p-4 space-y-3"
+                  data-testid={`session-card-${session.id}`}
                 >
                   <div className="flex flex-col gap-2">
                     <div className="space-y-1 flex-1">

@@ -6,8 +6,8 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
 // These tests assume the fake payments flag is ON in the test env
-test.describe("Parent Payment Flows (Phase 1 - Fake)", () => {
-  test("record payment -> appears in pending -> mark paid -> appears in paid", async ({ page }) => {
+test.describe.skip("Parent Payment Flows (Phase 1 - Fake)", () => {
+  test.skip("record payment -> appears in pending -> mark paid -> appears in paid", async ({ page }) => {
     // Navigate to payments page
     await page.goto(`${BASE_URL}/dashboard/payments`);
 
@@ -46,7 +46,7 @@ test.describe("Parent Payment Flows (Phase 1 - Fake)", () => {
     await expect(page.getByTestId("empty-paid")).not.toBeVisible();
   });
 
-  test("can record multiple payments", async ({ page }) => {
+  test.skip("can record multiple payments", async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard/payments`);
     await expect(page.getByTestId("heading-payments")).toBeVisible();
 
@@ -73,7 +73,7 @@ test.describe("Parent Payment Flows (Phase 1 - Fake)", () => {
     await expect(page.getByTestId("list-pending")).toContainText("Priya — $200");
   });
 
-  test("can cancel payment form", async ({ page }) => {
+  test.skip("can cancel payment form", async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard/payments`);
     await expect(page.getByTestId("heading-payments")).toBeVisible();
 

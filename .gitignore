@@ -21,3 +21,4 @@ test-register-*.js
 
 test-results/
 playwright-report/
+.env.test

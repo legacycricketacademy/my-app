@@ -1,5 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as os from 'os';
+import * as dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env.test for Playwright tests
+dotenv.config({ path: path.resolve(__dirname, '.env.test') });
 
 const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3000';
 const RUN_LOCAL_WEB = process.env.RUN_LOCAL_WEB === '1';

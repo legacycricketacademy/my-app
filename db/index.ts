@@ -3,7 +3,18 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
 const { DATABASE_URL, NODE_ENV } = process.env;
-if (!DATABASE_URL) throw new Error('DATABASE_URL must be set');
+
+if (!DATABASE_URL) {
+  if (NODE_ENV === 'test') {
+    throw new Error(
+      'DATABASE_URL must be set for tests.\n' +
+      'Please create a .env.test file in the project root with:\n' +
+      'DATABASE_URL=postgresql://localhost:5432/cricket_academy_test\n' +
+      'NODE_ENV=test'
+    );
+  }
+  throw new Error('DATABASE_URL must be set');
+}
 
 const poolConfig: any = {
   connectionString: DATABASE_URL,

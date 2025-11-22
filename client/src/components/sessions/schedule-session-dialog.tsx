@@ -138,7 +138,11 @@ export function ScheduleSessionDialog() {
 
   return (
     <>
-      <Button className="flex items-center gap-2 w-full sm:w-auto" onClick={() => setOpen(true)}>
+      <Button 
+        className="flex items-center gap-2 w-full sm:w-auto" 
+        onClick={() => setOpen(true)}
+        data-testid="create-session-btn"
+      >
         <CalendarIcon className="h-4 w-4" />
         <span className="text-sm sm:text-base">Schedule New Session</span>
       </Button>
@@ -220,7 +224,7 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
             <FormItem>
               <FormLabel>Session Title</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Batting Practice" {...field} />
+                <Input placeholder="e.g. Batting Practice" {...field} data-testid="input-session-title" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -607,6 +611,7 @@ function SessionForm({ form, onSubmit, createSessionMutation, setOpen }: {
             type="submit"
             disabled={isPendingLike(createSessionMutation)}
             className="w-full sm:w-auto order-1 sm:order-2"
+            data-testid="btn-submit-session"
           >
             {isPendingLike(createSessionMutation) ? "Scheduling..." : "Schedule Session"}
           </Button>
