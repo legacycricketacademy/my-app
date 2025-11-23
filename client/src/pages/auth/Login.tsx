@@ -16,8 +16,8 @@ export default function Login(){
         <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
           {/* Header */}
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-            <p className="text-gray-600">Sign in to Legacy Cricket Academy</p>
+            <h1 className="text-3xl font-bold text-gray-900">Parent Portal Login</h1>
+            <p className="text-gray-600">Track your child's cricket journey at Legacy Cricket Academy</p>
           </div>
 
           {/* Error Message */}
@@ -107,7 +107,7 @@ export default function Login(){
               <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">New to the academy?</span>
+              <span className="px-4 bg-white text-gray-500">New parent?</span>
             </div>
           </div>
 
@@ -118,17 +118,10 @@ export default function Login(){
               className="block w-full text-center px-4 py-3 text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors font-medium"
               data-testid="btn-new-parent-register"
             >
-              Register as Parent
+              Create Parent Account
             </a>
             <p className="text-center text-sm text-gray-600">
-              Already have an account?{" "}
-              <a 
-                href="/register" 
-                className="text-blue-600 hover:text-blue-800 font-medium underline" 
-                data-testid="link-register"
-              >
-                Create one here
-              </a>
+              Get started with your child's cricket training
             </p>
           </div>
         </div>

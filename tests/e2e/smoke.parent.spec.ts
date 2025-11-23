@@ -16,8 +16,12 @@ test.describe('Parent Portal', () => {
     await page.goto('/dashboard/parent');
     await expectOneSidebar(page);
     
-    // Verify parent dashboard loaded
-    await expect(page.locator('h1').first()).toBeVisible();
+    // Verify parent dashboard loaded with parent-specific heading
+    const heading = page.locator('h1').first();
+    await expect(heading).toBeVisible();
+    
+    // Should show parent-friendly content
+    await expect(page.locator('text=/children|kids|child/i').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should navigate to parent schedule without overlay', async ({ page }) => {

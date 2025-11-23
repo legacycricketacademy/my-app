@@ -65,9 +65,9 @@ export default function KidsList() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-3">
-          <h1 className="text-4xl font-bold text-gray-900" data-testid="heading-kids-list">My Kids</h1>
+          <h1 className="text-4xl font-bold text-gray-900" data-testid="heading-kids-list">My Children</h1>
           <p className="text-gray-600 text-lg">
-            View and manage your children's cricket training
+            Track your child's cricket journey and progress
           </p>
         </div>
 
@@ -79,20 +79,16 @@ export default function KidsList() {
                 <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
                   <UserPlus className="h-10 w-10 text-blue-600" />
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-bold text-gray-900" data-testid="no-kids-heading">No Kids Found</h3>
-                  <p className="text-gray-600">
-                    You don't have any kids registered yet. Connect a child to get started.
+                <div className="space-y-3">
+                  <h3 className="text-2xl font-bold text-gray-900" data-testid="no-kids-heading">Welcome to Legacy Cricket!</h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    Your child's profile will appear here after their first evaluation session. 
+                    Our coaches will add them to the system once they've been assessed.
+                  </p>
+                  <p className="text-sm text-gray-500 italic">
+                    Need help? Contact us at info@legacycricket.com
                   </p>
                 </div>
-                <Button 
-                  onClick={() => navigate("/parent/connect-child")}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-sm"
-                  data-testid="btn-connect-child"
-                >
-                  <UserPlus className="h-5 w-5 mr-2" />
-                  Connect a Child
-                </Button>
               </div>
             </div>
           </div>

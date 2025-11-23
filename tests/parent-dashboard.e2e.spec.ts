@@ -15,12 +15,12 @@ test.describe.skip('Parent Dashboard E2E (requires parent user)', () => {
       return;
     }
     
-    // Assert: The kids list heading is visible
+    // Assert: The kids list heading is visible with parent-friendly text
     const heading = page.getByTestId('heading-kids-list');
     await expect(heading).toBeVisible();
-    await expect(heading).toHaveText('My Kids');
+    await expect(heading).toHaveText('My Children');
     
-    // Assert: Check if we have kids or empty state
+    // Assert: Check if we have kids or improved empty state
     const kidCards = page.getByTestId('kid-card');
     const kidCount = await kidCards.count();
     
@@ -28,10 +28,13 @@ test.describe.skip('Parent Dashboard E2E (requires parent user)', () => {
       // At least one kid card is visible
       await expect(kidCards.first()).toBeVisible();
     } else {
-      // Empty state should be visible
+      // Improved empty state should be visible
       const noKidsHeading = page.getByTestId('no-kids-heading');
       await expect(noKidsHeading).toBeVisible();
-      await expect(noKidsHeading).toHaveText('No Kids Found');
+      await expect(noKidsHeading).toHaveText('Welcome to Legacy Cricket!');
+      
+      // Verify friendly message is shown
+      await expect(page.locator('text=/evaluation session|coaches will add/i')).toBeVisible();
     }
   });
 
